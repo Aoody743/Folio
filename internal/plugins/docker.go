@@ -52,6 +52,10 @@ func (e *PrivilegedExecutor) validateDocker(raw json.RawMessage) error {
 		if !dockerImage.MatchString(input.Image) {
 			return failure("invalid_image", "Images must use an immutable SHA-256 digest", 400)
 		}
+	case "image_inspect", "image_remove":
+		if !dockerImage.MatchString(input.Image) {
+			return failure("invalid_image", "Images must use an immutable SHA-256 digest reference", 400)
+		}
 	case "container_create":
 		if !utilityName.MatchString(input.Name) || !dockerImage.MatchString(input.Image) {
 			return failure("invalid_input", "Container requires a simple name and digest-pinned image", 400)
@@ -129,6 +133,9 @@ func (e *PrivilegedExecutor) dockerRequest(ctx context.Context, instance Instanc
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		if response.StatusCode == 404 {
 			return failure("not_found", "Owned Docker target does not exist", 404)
+		}
+		if response.StatusCode == http.StatusConflict {
+			return failure("conflict", "Docker target is in use or conflicts with its current state", http.StatusConflict)
 		}
 		return failure("docker_operation_failed", "Docker rejected the typed operation", 502)
 	}
@@ -219,6 +226,8 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 			return nil, err
 		}
 		return map[string]any{"image": input.Image, "image_id": image["Id"], "repo_digests": image["RepoDigests"]}, nil
+	case "image_inspect", "image_remove":
+		return e.dockerImageAction(ctx, instance, input)
 	case "container_create":
 		var image map[string]any
 		if err = e.dockerRequest(ctx, instance, http.MethodGet, "/images/"+url.PathEscape(input.Image)+"/json", nil, &image); err != nil {

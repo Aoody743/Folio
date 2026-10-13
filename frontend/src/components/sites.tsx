@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 const CertificatesView = dynamic(
   () => import("./certificates").then((m) => m.CertificatesView),
@@ -28,8 +28,16 @@ import { Capability, fullDate, list } from "@/lib/api";
 import { Page, Site, SoftwareInstance } from "@/lib/resources";
 import { projectInput, Schema } from "@/lib/schema";
 import { useResource } from "@/lib/resource-hook";
+import {
+  siteCategoryCapabilities,
+  siteCategoryReferences,
+  siteListInput,
+  SiteCategory,
+  supportsSiteCategoryFilter,
+} from "@/lib/site-categories";
 import { Icon } from "./icon";
 import { ActionForm, ActionBrowser, References } from "./actions";
+import { SiteCategoriesManager } from "./site-categories";
 import {
   Pager,
   ResourceActions,
@@ -79,16 +87,40 @@ export function SitesView({
   const [offset, setOffset] = useState(0);
   const [resourcePage, setResourcePage] = useState("sites");
   const [query, setQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [selected, setSelected] = useState<Site>();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [group, setGroup] = useState("overview");
   const [operation, setOperation] = useState<string>();
   const [other, setOther] = useState<string>();
-  const available = capabilities.some((c) => c.name === "sites_list");
+  const siteListCapability = capabilities.find((c) => c.name === "sites_list");
+  const categoryCapabilities = siteCategoryCapabilities(capabilities);
+  const available = !!siteListCapability;
+  const categoryFilterAvailable =
+    !!categoryCapabilities.list && supportsSiteCategoryFilter(siteListCapability);
+  const categoryResources = useResource<Page<SiteCategory>>(
+    "sites_categories_list",
+    {},
+    !!categoryCapabilities.list && active,
+  );
+  useEffect(() => {
+    if (categoryResources.error && categoryFilter) {
+      setCategoryFilter("");
+      setOffset(0);
+    }
+  }, [categoryResources.error, categoryFilter]);
+  const visibleCategories = categoryResources.error
+    ? []
+    : list(categoryResources.data);
   const resources = useResource<Page<Site>>(
     "sites_list",
-    { limit: 20, offset, ...(query ? { query } : {}) },
+    siteListInput(siteListCapability, {
+      limit: 20,
+      offset,
+      query,
+      categoryID: categoryFilterAvailable ? categoryFilter : "",
+    }),
     available && active,
   );
   const detail = useResource<Site>(
@@ -123,6 +155,7 @@ export function SitesView({
       capabilities.some((c) => c.name === "sites_backups_list"),
   );
   const references: References = {
+    ...siteCategoryReferences(visibleCategories),
     ...(instances.data
       ? {
           web_instance: list(instances.data)
@@ -216,6 +249,15 @@ export function SitesView({
     void detail.reload();
     onExecuted();
   };
+  const categoriesChanged = (categoryID?: string) => {
+    if (categoryID && categoryFilter === categoryID) {
+      setCategoryFilter("");
+      setOffset(0);
+    }
+    void categoryResources.reload();
+    void resources.reload();
+    onExecuted();
+  };
   return (
     <div className="stack">
       <div className="section-tabs" role="tablist" aria-label="网站资源类型">
@@ -258,9 +300,40 @@ export function SitesView({
                 label="筛选网站"
                 isLabelHidden
                 value={query}
-                onChange={setQuery}
+                onChange={(value) => {
+                  setQuery(value);
+                  setOffset(0);
+                }}
                 placeholder="名称或域名"
                 startIcon={<Icon name="search" />}
+              />
+              {categoryFilterAvailable && (
+                <label className="native-field">
+                  网站分类筛选
+                  <select
+                    value={categoryFilter}
+                    onChange={(event) => {
+                      setCategoryFilter(event.target.value);
+                      setOffset(0);
+                    }}
+                  >
+                    <option value="">全部分类</option>
+                    {visibleCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  <small>空值表示全部分类。</small>
+                </label>
+              )}
+              <SiteCategoriesManager
+                capabilities={capabilities}
+                categories={visibleCategories}
+                loading={categoryResources.loading}
+                listError={categoryResources.error}
+                onReload={categoryResources.reload}
+                onChanged={categoriesChanged}
               />
               {create && (
                 <Button
@@ -290,6 +363,16 @@ export function SitesView({
                 <p className="muted" role="status">
                   正在读取网站…
                 </p>
+              )}
+              {categoryResources.error && (
+                <div className="notice warning" role="status">
+                  分类列表读取失败，网站列表已清除分类筛选条件。
+                  <Button
+                    label="重试分类列表"
+                    variant="ghost"
+                    onClick={() => void categoryResources.reload()}
+                  />
+                </div>
               )}
               <div className="resource-table-wrap">
                 <table className="resource-table">
@@ -473,6 +556,17 @@ export function SitesView({
             />
           ) : (
             <>
+              {group === "config" &&
+                typeof current.category_id === "string" &&
+                current.category_id !== "" &&
+                !categoryResources.loading &&
+                !visibleCategories.some(
+                  (category) => category.id === current.category_id,
+                ) && (
+                  <div className="notice warning" role="status">
+                    当前分类不在可见分类列表中。若要清除已删除或不可见的旧绑定，请在“网站分类”中选择“未分类”；其他配置字段仍会按本表单提交。
+                  </div>
+                )}
               <ResourceActions
                 capabilities={capabilities}
                 names={(name) =>

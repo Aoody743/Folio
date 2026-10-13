@@ -132,6 +132,11 @@ type Options struct{ Agent agent.Executor }
 type Provider struct {
 	deps    core.Dependencies
 	options Options
+	// categoryGate serializes category mutations with site mutations that can
+	// assign or restore a category. It is process-local and relies on the
+	// supported CLI runtime's exclusive server.lock and single Provider; it
+	// does not coordinate independently embedded Providers or processes.
+	categoryGate chan struct{}
 }
 
 // Runtimes is injected into the Agent by composition code. Its implementation

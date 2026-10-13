@@ -99,6 +99,7 @@ func (m *Manager) Bindings() []core.Binding {
 	bindings = append(bindings, m.phpBindings()...)
 	bindings = append(bindings, m.utilityBindings()...)
 	bindings = append(bindings, m.dockerBindings()...)
+	bindings = append(bindings, m.dockerImageBindings()...)
 	bindings = append(bindings, m.ftpBindings()...)
 	return bindings
 }

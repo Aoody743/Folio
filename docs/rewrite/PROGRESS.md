@@ -13,7 +13,14 @@
 - 本批全量 Go race 有 13 个测试包通过、2 个包无测试文件；`go vet` 通过。前端 24 项测试和 typecheck 通过。SQL/Mongo 源协议检查通过；Debian 13 QA guest 的 Sites 场景由 source-built 测试二进制执行，PHP CLI 使用真实 `/usr/bin/php8.4` 并验证普通 UID/访问控制。Sites journal 未验证 dev.11 包安装或 FPM/Web 服务生命周期。汇总见 [首批检查摘要](evidence/phase2-luna-batch1-checks-20261013.json)、[Sites durable journal 记录](evidence/phase2-sites-journal-20261013.json) 与[数据库源协议记录](evidence/phase2-database-source-protocol-20261013.json)。
 - dev.11 的 amd64/arm64 构建和 amd64 固定包 private-prefix smoke 已通过；实际 VM 升级及 managed-service 生命周期仍在验收。摘要中列有发行包 SHA256。不能据此宣称第二阶段完成。
 
-剩余工作集中在 dev.11 的真实 VM 升级/服务生命周期、第二阶段余下插件动作与验收矩阵、真实 DNS/CA 条件、ARM64 原生执行及核心管理闭环的整体验收。
+### 第二阶段 batch2 状态（dev.12，2026-10-13）
+
+dev.12 源码与固定包检查通过，但固定包的真实 VM 验收仍待 QA；第二阶段继续进行中。全量 Go race 13 个测试包通过、2 个包无测试文件，`go vet`、前端 36 项测试、TypeScript、Next.js 静态构建与双架构构建、amd64 安装包 private-prefix smoke 均通过。缓存状态对真实 Redis/Memcached 的只读检查通过；首次使用的旧认证 fixture 失败后已换成私有 fixture 重测通过。详情见 [batch2 检查摘要](evidence/phase2-luna-batch2-checks-20261013.json) 与 [dev.12 产品源码快照](evidence/phase2-dev12-product-snapshot-20261013.json)。
+
+- Sites raw-v2 私有备份与 pending-marker 恢复、分类并发 gate 已进入本批源码；分类更新省略 `category_id` 时会继承站点现有分类并纳入任务授权与执行时复核。这会收紧兼容性：只有站点权限、没有继承分类权限的调用可能被拒绝；清空分类或迁移到其他分类仍可用于修复悬空分类。系统变更工作流与站点分类 UI 已接入。
+- Cache 增加 typed status、context timeout 和 Valkey 版本来源处理；Redis、Memcached live 检查通过，Valkey 原生/主从尚未验收。Docker image 已有两项 action，registry、import/export 与 exec 仍待实现或验收。
+- dev.11 真实生产 MariaDB 自启场景暴露未解决问题：任务失败，活动 unit 已 disabled，且没有 receipt。dev.12 固定源码包含后续修复，但真实 VM 复验仍待 QA；在复验前不将 SQL/MariaDB 生命周期记为关闭。
+- 剩余范围包括首次安装失败恢复 journal、固定包原生升级及 SQL/Web/PHP 生命周期、root 高级配置精确恢复、实际浏览器新流程、ARM64 原生执行、其余插件动作，以及外部 DNS/CA 供应商与凭据条件。上述范围未完成前，不宣称第二阶段退出。
 
 ## 历史交接快照（保留当时记录）
 

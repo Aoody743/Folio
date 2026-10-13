@@ -48,30 +48,6 @@ func cacheMutationError(err error) error {
 	}
 	return failure("operation_recovery_required", "Cache mutation was not acknowledged; inspect the key before a new operation", 409)
 }
-func (m *Manager) cacheStatus(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
-	in, p, e := m.cacheInput(ctx, raw)
-	_ = in
-	if e != nil {
-		return core.ActionResult{}, e
-	}
-	bounded, cancel := context.WithTimeout(ctx, 8*time.Second)
-	defer cancel()
-	if p.Engine == "memcached" {
-		if e = probeMemcache(bounded, p); e != nil {
-			return core.ActionResult{}, e
-		}
-	} else {
-		client, e := m.cacheClient(bounded, a, p)
-		if e != nil {
-			return core.ActionResult{}, e
-		}
-		defer client.Close()
-		if e = client.Ping(bounded).Err(); e != nil {
-			return core.ActionResult{}, failure("connection_failed", "Cache endpoint is not reachable or authorized", 502)
-		}
-	}
-	return cacheResult(p, map[string]any{"id": p.ID, "engine": p.Engine, "connected": true, "database": p.Database, "prefix": p.Prefix, "sampled_at": time.Now().UTC()}), nil
-}
 func (m *Manager) cacheGet(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 	in, p, e := m.cacheInput(ctx, raw)
 	if e != nil {

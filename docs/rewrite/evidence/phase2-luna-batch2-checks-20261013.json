@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-13",
+  "version": "0.1.0-dev.12",
+  "stage_2_complete": false,
+  "checks": {
+    "full_go_race": {
+      "result": "PASS",
+      "tested_packages": 13,
+      "no_test_packages": 2,
+      "scope": "Ordinary-user cloud source tests; root cases require distinct native execution"
+    },
+    "go_vet": "PASS",
+    "frontend_tests": {
+      "result": "PASS",
+      "tests": 36,
+      "failures": 0,
+      "skipped": 0
+    },
+    "typescript": "PASS",
+    "next_static_and_two_arch_build": "PASS",
+    "actual_amd64_shipped_installer_private_prefix_smoke": "PASS",
+    "live_cache_status": {
+      "result": "PASS",
+      "services": [
+        "Redis",
+        "Memcached"
+      ],
+      "scope": "Read-only source integration against real VM services; stale authentication fixture first failed before status and corrected private fixture passed. Valkey native/replica not tested."
+    }
+  },
+  "private_log_digests": {
+    "luna-batch2-full-race.log": "4db96efc4893a41b83e585843138ec42968f1d9849908f74e2becde25dd2f7d0",
+    "luna-batch2-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "luna-batch2-frontend-tests.log": "b760bb66aeb3befaa0af14a4ef4d3a1b094d4051813413f85fd11352a29c4451",
+    "luna-batch2-typecheck.log": "e8824a3ab3ee9cecfe09018f0e06ef0c70379d4dca5749fa19705e85ad5508de",
+    "luna-batch2-build-dev12.log": "3d73ca6f7459cdc7389068dda104988aa4a80b6adbc0fd13f41982653912fe4b",
+    "luna-batch2-package-dev12.log": "ca9e7e9768105512261db83f1320983deb886d207b7b23f01e7aa06dd00d254c"
+  },
+  "archive_sha256": {
+    "linux-amd64": "458ff3fe060bbb65446eb9338fc95c2d05d3807396ae55a6524a349315a75a6c",
+    "linux-arm64": "ca81d5c0ae3e779b291a0df6461870b4c15b509023a66f526aec05a08b3659d0"
+  },
+  "pending": [
+    "dev.12 native upgrade/autostart/SQL/Web/PHP lifecycle",
+    "Root advanced configuration exact restore case",
+    "Actual new UI browser flows",
+    "Remaining Docker registry/import/export/exec",
+    "Failed first-install ownership journal and controlled recovery",
+    "Other P2 actions/plugin acceptance",
+    "Real external DNS/CA credentials",
+    "ARM64 native execution"
+  ]
+}

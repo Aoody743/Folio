@@ -3,6 +3,8 @@ package plugins
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -27,6 +29,50 @@ func (e *PrivilegedExecutor) validateAutostart(raw json.RawMessage) error {
 	return nil
 }
 
+func decodeBootState(result agent.Result, runErr error) (bool, string, error) {
+	fail := func(message string) (bool, string, error) {
+		return false, "", failure("autostart_check_failed", message, 502)
+	}
+	if result.Operation != "plugin_boot_state" || result.Truncated || result.Canceled || result.TimedOut {
+		return fail("Owned service boot state could not be read")
+	}
+	state := strings.TrimSpace(result.Stdout)
+	if state == "" || strings.ContainsAny(state, "\r\n") || result.Stderr != "" {
+		return fail("Owned service boot state could not be read")
+	}
+	if runErr != nil {
+		if errors.Is(runErr, context.Canceled) || errors.Is(runErr, context.DeadlineExceeded) {
+			return fail("Owned service boot state could not be read")
+		}
+		var exitErr *exec.ExitError
+		if !errors.As(runErr, &exitErr) || exitErr.ExitCode() != result.ExitCode {
+			return fail("Owned service boot state could not be read")
+		}
+	} else if result.ExitCode != 0 {
+		return fail("Owned service boot state could not be read")
+	}
+
+	switch state {
+	case "enabled":
+		if result.ExitCode != 0 {
+			return fail("Owned service boot state could not be verified")
+		}
+		return true, state, nil
+	case "disabled", "masked", "masked-runtime":
+		if result.ExitCode != 1 {
+			return fail("Owned service boot state could not be verified")
+		}
+		return false, state, nil
+	case "static", "indirect", "enabled-runtime", "linked", "linked-runtime":
+		if result.ExitCode != 0 {
+			return fail("Owned service boot state could not be verified")
+		}
+		return false, state, nil // Only persistent enabled counts as boot enabled.
+	default:
+		return fail("Owned service boot state is unknown")
+	}
+}
+
 func (e *PrivilegedExecutor) bootState(ctx context.Context, instance Instance) (bool, string, error) {
 	if !e.config.UseSystemd || instance.Status == "uninstalled" || instance.Service.Program == "" || instance.Service.Kind != "daemon" || !ownedUnit(instance) {
 		return false, "", failure("autostart_unavailable", "Boot selection requires an installed owned systemd daemon", 412)
@@ -40,21 +86,7 @@ func (e *PrivilegedExecutor) bootState(ctx context.Context, instance Instance) (
 		return false, "", err
 	}
 	result, err := runner.Run(ctx, agent.Request{Operation: "plugin_boot_state", Input: json.RawMessage(`{}`)})
-	if err != nil || result.Truncated {
-		return false, "", failure("autostart_check_failed", "Owned service boot state could not be read", 502)
-	}
-	state := strings.TrimSpace(result.Stdout)
-	switch state {
-	case "enabled":
-		if result.ExitCode != 0 {
-			return false, "", failure("autostart_check_failed", "Owned service boot state could not be verified", 502)
-		}
-		return true, state, nil
-	case "disabled", "masked", "static", "indirect", "enabled-runtime", "linked", "linked-runtime":
-		return false, state, nil // Only persistent enabled counts as boot enabled.
-	default:
-		return false, "", failure("autostart_check_failed", "Owned service boot state is unknown", 502)
-	}
+	return decodeBootState(result, err)
 }
 
 func (e *PrivilegedExecutor) setBootState(ctx context.Context, instance *Instance, enabled bool) error {

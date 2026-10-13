@@ -1184,6 +1184,12 @@ export function Panel() {
                           <OperationsView
                             page={morePage as "monitor" | "schedules"}
                             capabilities={caps}
+                            identityKey={JSON.stringify([
+                              session?.user?.id,
+                              session?.user?.kind,
+                              session?.user?.scopes,
+                              session?.user?.resources,
+                            ])}
                             onExecuted={noteSaved}
                           />
                         ) : (

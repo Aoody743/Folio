@@ -6,6 +6,7 @@ import { Capability, fullDate, list } from "@/lib/api";
 import { useResource } from "@/lib/resource-hook";
 import { Page } from "@/lib/resources";
 import { ActionBrowser, ActionForm } from "./actions";
+import { SystemChangeWorkflow } from "./system-change-workflow";
 import {
   ResourceActions,
   ResourceDrawer,
@@ -50,10 +51,12 @@ const cell = (key: string, value: unknown) =>
 export function OperationsView({
   page,
   capabilities,
+  identityKey,
   onExecuted,
 }: {
   page: "monitor" | "schedules";
   capabilities: Capability[];
+  identityKey: string;
   onExecuted: () => void;
 }) {
   const [tab, setTab] = useState(page === "monitor" ? "services" : "schedules");
@@ -116,6 +119,10 @@ export function OperationsView({
     void history.reload();
     onExecuted();
   };
+  const advancedCapabilities =
+    page === "monitor"
+      ? capabilities.filter((capability) => !/^system_change_/.test(capability.name))
+      : capabilities;
   const prefix =
     tab === "services"
       ? /^services_get$/
@@ -348,6 +355,13 @@ export function OperationsView({
           </>
         )}
       </Card>
+      {page === "monitor" && (
+        <SystemChangeWorkflow
+          capabilities={capabilities}
+          identityKey={identityKey}
+          onExecuted={refresh}
+        />
+      )}
       {current && (
         <ResourceDrawer
           open={open}
@@ -395,7 +409,7 @@ export function OperationsView({
           {page === "monitor" ? "服务与系统变更计划" : "自动化操作与执行历史"}
         </summary>
         <ActionBrowser
-          capabilities={capabilities}
+          capabilities={advancedCapabilities}
           category={page}
           selected={other}
           onSelect={setOther}

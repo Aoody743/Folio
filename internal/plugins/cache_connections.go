@@ -245,7 +245,7 @@ func newRedisProfile(p CacheConnection, password string) *redis.Client {
 	return newRedisProfileWithPeer(p, password, nil)
 }
 func newRedisProfileWithPeer(p CacheConnection, password string, recordPeer func(string)) *redis.Client {
-	o := &redis.Options{Addr: net.JoinHostPort(p.Host, strconv.Itoa(p.Port)), Username: p.Username, Password: password, DB: p.Database, DialTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, PoolSize: 2, MaxRetries: -1}
+	o := &redis.Options{Addr: net.JoinHostPort(p.Host, strconv.Itoa(p.Port)), Username: p.Username, Password: password, DB: p.Database, DialTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, PoolSize: 2, MaxRetries: -1, ContextTimeoutEnabled: true}
 	if p.TLS {
 		o.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12, ServerName: p.Host}
 	}

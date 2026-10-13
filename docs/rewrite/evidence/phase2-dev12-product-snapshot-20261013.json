@@ -1,0 +1,30 @@
+{
+  "baseline_commit": "58c4043af8b47e4c7a7edb6152284ccf1c4851bf",
+  "version": "0.1.0-dev.12",
+  "working_tree_dirty": true,
+  "changed_product_files": {
+    "frontend/src/components/operations.tsx": "0854ae1ebfdabadcd17c5c9ca74b8d6a71a79dcfebb02b22151a064111e91e5c",
+    "frontend/src/components/panel.tsx": "934017fe1809978ee0a9070b419bd7152ae08507a4c9c87896c86d22aac940da",
+    "frontend/src/components/site-categories.tsx": "fdda0eb4f111b1cf2dbca8bfba093fab50851fc3d01bd0a8ac54fae62fb77dab",
+    "frontend/src/components/sites.tsx": "59e59a20a06f6d1d2fe6dce3a14a14e3460d119166e6cb140ec66b3d52bfab78",
+    "frontend/src/components/system-change-workflow.tsx": "a270057f5b9417ea5d40fcd37982dec9b86da49c5b232efc32d7c7984fd5601b",
+    "frontend/src/lib/labels.ts": "aedc96891ec379d0d0b59e9d6bdb37285696614a8a2a3dd09ef1b5a964446812",
+    "frontend/src/lib/site-categories.ts": "b5130d3dcdf965281cb197648c56ad79f74d5ccd453cdec2817c5ffd2e52256d",
+    "frontend/src/lib/system-change-workflow.ts": "189cd8cfe1af1559a7fd642f8db5179e4f24440f404b595dd47a00448c7e9c6e",
+    "internal/plugins/autostart.go": "2ffa647fee0cef9c0da7e7f1016dcc8132e16d1a0c8d13fd65b214bb9f344f58",
+    "internal/plugins/cache_connections.go": "bb1f97f11950a299f938b49675aa0cce1be1f40e002defbddd7d26e42b336518",
+    "internal/plugins/cache_memcached.go": "f623eb505137eeeddff0a2c7848f3e9e86bf8b947624f4607435f5daa17e7942",
+    "internal/plugins/cache_operations.go": "ad435c45673ce4194e96c4b402724a8822b4c473410c38366cd85771a2e78a02",
+    "internal/plugins/cache_status.go": "5f16ff224890ce64e4e5623d5f8f8ecd2c8096fe7060540904e97ce342bc72e6",
+    "internal/plugins/docker.go": "65fdea6167cf0a7a86cbeb15dbb28ea0cfaf8d9864d65eac6e4efadf9681af5d",
+    "internal/plugins/docker_images.go": "4567538ce47411720a9fbef7eaa6cef22fd01ffc6887f137655ed425f62decf3",
+    "internal/plugins/provider.go": "f5f3fe37d964a01375aa34310674d23d79a3acee9e48be2aa5b97747817231b1",
+    "internal/sites/agent.go": "3551103c393e2447a4e2a97ccca38505d705a6771380cbb528740f243edcfce0",
+    "internal/sites/backup_config.go": "b7219e8f9197768f86db336dc53d136631fde1efa603c8e3df48155b126cdfc6",
+    "internal/sites/backups.go": "9c3333167b5dd2f3933e3d4ed00f4455055d48e47e044b2cd70ba61f7c0c1776",
+    "internal/sites/categories.go": "c99f584720cfdbd95f3b973ee842c6a3a8056377ea0c89a521ffdb48535f60da",
+    "internal/sites/provider.go": "966719b2ae327ef600dd6937b2270a311e75c44bacb8e3a98d745d3fb180f344",
+    "internal/sites/types.go": "8ffc74708a070c9f3e5fb0bb0113de76a8e5469344baa490446dc5c0452b3c13"
+  },
+  "scope": "Changed product source is frozen for the dev.12 tar build; unchanged source is from baseline. Generated Next assets are bound by immutable archive checksums."
+}

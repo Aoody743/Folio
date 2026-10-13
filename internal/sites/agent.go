@@ -105,6 +105,9 @@ func NewAgentExecutorWithFiles(config AgentConfig, runtimes Runtimes, sharedFile
 	if err = e.verifyJournalDirectory(); err == nil {
 		err = e.recoverWebsiteJournals(context.Background())
 	}
+	if err == nil {
+		err = e.recoverPendingBackupArtifacts()
+	}
 	if err != nil {
 		e.Close()
 		return nil, err
@@ -735,6 +738,10 @@ func (e *AgentExecutor) apply(ctx context.Context, in request) (site Site, err e
 	if err = validateSite(&site); err != nil {
 		return site, err
 	}
+	restoreConfiguration, restoringConfiguration := ctx.Value(backupRestoreConfigurationKey{}).(*backupRestoreConfiguration)
+	if restoringConfiguration && (restoreConfiguration == nil || restoreConfiguration.SiteID != site.ID || restoreConfiguration.Mode != "advanced" || restoreConfiguration.WebRuntime != site.WebInstance || site.PHPInstance == "" && restoreConfiguration.PHP != nil || site.PHPInstance != "" && (restoreConfiguration.PHP == nil || restoreConfiguration.PHPRuntime != site.PHPInstance)) {
+		return site, failure("backup_configuration_invalid", "Exact website configuration is not bound to this restore", 409)
+	}
 	old, getErr := e.get(site.ID)
 	exists := getErr == nil
 	if getErr != nil && !isNotFound(getErr) {
@@ -755,9 +762,15 @@ func (e *AgentExecutor) apply(ctx context.Context, in request) (site Site, err e
 		return site, failure("advanced_configuration_active", "Explicitly reset advanced configuration before applying typed website settings", 409)
 	}
 	site.ConfigurationMode = "managed"
+	if restoringConfiguration {
+		site.ConfigurationMode = restoreConfiguration.Mode
+	}
 	web, err := e.runtimes.Web(ctx, site.WebInstance)
 	if err != nil {
 		return site, err
+	}
+	if restoringConfiguration && web.ID != restoreConfiguration.WebRuntime {
+		return site, failure("backup_configuration_invalid", "Exact Web configuration runtime does not match the protected receipt", 409)
 	}
 	if site.IPv6 && !e.config.AllowIPv6 {
 		return site, failure("policy_denied", "IPv6 website listeners are disabled by this Agent policy", 403)
@@ -883,8 +896,20 @@ func (e *AgentExecutor) apply(ctx context.Context, in request) (site Site, err e
 		if err != nil {
 			return site, err
 		}
-		if err = applyFile(filepath.Join(php.PoolDir, site.ID+".conf"), []byte(body)); err != nil {
+		raw, rawOK, rawErr := backupRestoreBytes(ctx, site, "php", php.ID)
+		if rawErr != nil {
+			return site, rawErr
+		} else if rawOK {
+			body = string(raw.Data)
+		}
+		phpConfigPath := filepath.Join(php.PoolDir, site.ID+".conf")
+		if err = applyFile(phpConfigPath, []byte(body)); err != nil {
 			return site, err
+		}
+		if rawOK {
+			if err = restoreBackupConfigurationMode(phpConfigPath, raw); err != nil {
+				return site, err
+			}
 		}
 		runtimeIDs = append(runtimeIDs, site.PHPInstance)
 	}
@@ -937,8 +962,20 @@ func (e *AgentExecutor) apply(ctx context.Context, in request) (site Site, err e
 	if err != nil {
 		return site, err
 	}
-	if err = applyFile(filepath.Join(web.SnippetsDir, site.ID+".conf"), []byte(body)); err != nil {
+	raw, rawOK, rawErr := backupRestoreBytes(ctx, site, "web", web.ID)
+	if rawErr != nil {
+		return site, rawErr
+	} else if rawOK {
+		body = string(raw.Data)
+	}
+	webConfigPath := filepath.Join(web.SnippetsDir, site.ID+".conf")
+	if err = applyFile(webConfigPath, []byte(body)); err != nil {
 		return site, err
+	}
+	if rawOK {
+		if err = restoreBackupConfigurationMode(webConfigPath, raw); err != nil {
+			return site, err
+		}
 	}
 	for _, id := range runtimeIDs {
 		if err = e.runtimes.Check(ctx, id); err != nil {

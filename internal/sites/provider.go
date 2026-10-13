@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/agent"
@@ -16,7 +17,59 @@ func New(deps core.Dependencies, options Options) (*Provider, error) {
 	if deps.State == nil || deps.Secrets == nil || deps.Tasks == nil || deps.Authorize == nil || deps.ResolveActor == nil {
 		return nil, errors.New("website provider requires shared persistent authorization, secrets and tasks")
 	}
-	return &Provider{deps: deps, options: options}, nil
+	gate := make(chan struct{}, 1)
+	gate <- struct{}{}
+	return &Provider{deps: deps, options: options, categoryGate: gate}, nil
+}
+
+// lockCategoryMutations coordinates category create/update/delete with site
+// operations that can commit or roll back category-bearing site metadata. The
+// gate is intentionally scoped to this registered Provider: the supported CLI
+// runtime holds server.lock before creating its one Core/Provider per data
+// directory. It is not a cross-process or arbitrary embedded-Core coordinator.
+func (p *Provider) lockCategoryMutations(ctx context.Context) (func(), error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-p.categoryGate:
+		var once sync.Once
+		release := func() { once.Do(func() { p.categoryGate <- struct{}{} }) }
+		if err := ctx.Err(); err != nil {
+			release()
+			return nil, err
+		}
+		return release, nil
+	}
+}
+
+func appendResource(resources []string, resource string) []string {
+	if resource == "" {
+		return resources
+	}
+	for _, existing := range resources {
+		if existing == resource {
+			return resources
+		}
+	}
+	return append(resources, resource)
+}
+
+func (p *Provider) authorizeCategory(ctx context.Context, actor core.Actor, id string) error {
+	if id == "" {
+		return nil
+	}
+	if !safeID.MatchString(id) {
+		return failure("category_invalid", "Website category identity needs recovery inspection", 409)
+	}
+	resource := "site-category:" + id
+	if !p.deps.Authorize(actor, "sites:read", resource) {
+		return denied()
+	}
+	_, err := p.deps.State.Get(ctx, "categories", id)
+	return err
 }
 
 func object(fields map[string]any, required ...string) map[string]any {
@@ -179,6 +232,9 @@ func (p *Provider) applyResources(ctx context.Context, actor core.Actor, raw jso
 			if current.Default {
 				resources = append(resources, "host:local")
 			}
+			if _, present := fields["category_id"]; !present {
+				in.Category = current.CategoryID
+			}
 		}
 	}
 	if in.Web != "" {
@@ -194,13 +250,10 @@ func (p *Provider) applyResources(ctx context.Context, actor core.Actor, raw jso
 		resources = append(resources, "software:"+in.PHP)
 	}
 	if in.Category != "" {
-		if !p.deps.Authorize(actor, "sites:read", "site-category:"+in.Category) {
-			return nil, denied()
-		}
-		if _, err := p.deps.State.Get(ctx, "categories", in.Category); err != nil {
+		if err := p.authorizeCategory(ctx, actor, in.Category); err != nil {
 			return nil, err
 		}
-		resources = append(resources, "site-category:"+in.Category)
+		resources = appendResource(resources, "site-category:"+in.Category)
 	}
 	if in.Default {
 		resources = append(resources, "host:local")
@@ -320,6 +373,13 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 	if name == "sites_default_set" {
 		var err error
 		resources, err = p.defaultResources(ctx, actor, raw)
+		if err != nil {
+			return core.ActionResult{}, err
+		}
+	}
+	if name == "sites_backup_restore" {
+		var err error
+		resources, err = p.restoreResources(ctx, actor, raw)
 		if err != nil {
 			return core.ActionResult{}, err
 		}
@@ -459,6 +519,36 @@ func (p *Provider) Validate(job agent.Request) error {
 	}
 	return nil
 }
+
+func categoryMutationOperation(operation string) bool {
+	switch operation {
+	case "site_apply", "site_delete", "site_default_set", "site_config_set", "site_backup_restore":
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *Provider) recheckMutationCategories(ctx context.Context, actor core.Actor, operation string, in request) error {
+	switch operation {
+	case "site_apply":
+		if in.Site == nil {
+			return invalid("Website task is missing its persisted target settings")
+		}
+		return p.authorizeCategory(ctx, actor, in.Site.CategoryID)
+	case "site_delete", "site_default_set", "site_config_set":
+		// These operations preserve or remove the current category assignment.
+		// The shared gate keeps category deletion from racing their commit/rollback;
+		// they do not newly depend on access to a category the caller did not target.
+		return ctx.Err()
+	case "site_backup_restore":
+		_, err := p.authorizedRestore(ctx, actor, in)
+		return err
+	default:
+		return nil
+	}
+}
+
 func (p *Provider) Run(ctx context.Context, job agent.Request) (agent.Result, error) {
 	actor, err := p.deps.ResolveActor(ctx, core.Actor{ID: job.ActorID})
 	if err != nil {
@@ -470,6 +560,30 @@ func (p *Provider) Run(ctx context.Context, job agent.Request) (agent.Result, er
 	}
 	if in.Actor.ID != actor.ID {
 		return agent.Result{}, denied()
+	}
+	var restoreSettings *backupManifest
+	if categoryMutationOperation(job.Operation) {
+		release, lockErr := p.lockCategoryMutations(ctx)
+		if lockErr != nil {
+			return agent.Result{}, lockErr
+		}
+		defer release()
+		actor, err = p.deps.ResolveActor(ctx, core.Actor{ID: job.ActorID})
+		if err != nil {
+			return agent.Result{}, err
+		}
+		if in.Actor.ID != actor.ID {
+			return agent.Result{}, denied()
+		}
+		if job.Operation == "site_backup_restore" {
+			settings, restoreErr := p.authorizedRestore(ctx, actor, in)
+			if restoreErr != nil {
+				return agent.Result{}, restoreErr
+			}
+			restoreSettings = &settings
+		} else if err = p.recheckMutationCategories(ctx, actor, job.Operation, in); err != nil {
+			return agent.Result{}, err
+		}
 	}
 	if job.Operation == "site_default_set" {
 		if _, err = p.defaultResources(ctx, actor, encode(in)); err != nil {
@@ -483,10 +597,7 @@ func (p *Provider) Run(ctx context.Context, job agent.Request) (agent.Result, er
 		return agent.Result{}, err
 	}
 	if job.Operation == "site_backup_restore" {
-		settings, err := p.authorizedRestore(ctx, actor, in)
-		if err != nil {
-			return agent.Result{}, err
-		}
+		settings := *restoreSettings
 		if settings.Site.Protection.Enabled {
 			secret, err := p.deps.Secrets.Get(ctx, actor, Resource(in.ID), settings.Site.Protection.PasswordRef)
 			if err != nil {
@@ -523,6 +634,12 @@ func (p *Provider) authorizedRestore(ctx context.Context, actor core.Actor, in r
 	if err := p.call(ctx, actor, "site_backup_get", in, &settings); err != nil {
 		return settings, err
 	}
+	if settings.Site.ID != in.ID {
+		return settings, failure("backup_invalid", "Backup belongs to another website", 409)
+	}
+	if err := p.authorizeCategory(ctx, actor, settings.Site.CategoryID); err != nil {
+		return settings, err
+	}
 	for _, id := range []string{settings.Site.WebInstance, settings.Site.PHPInstance} {
 		if id != "" && !p.deps.Authorize(actor, "software:read", "software:"+id) {
 			return settings, denied()
@@ -547,13 +664,16 @@ func (p *Provider) restoreResources(ctx context.Context, actor core.Actor, raw j
 	if err != nil {
 		return nil, err
 	}
+	if settings.Site.CategoryID != "" {
+		resources = appendResource(resources, "site-category:"+settings.Site.CategoryID)
+	}
 	for _, id := range []string{settings.Site.WebInstance, settings.Site.PHPInstance} {
 		if id != "" {
-			resources = append(resources, "software:"+id)
+			resources = appendResource(resources, "software:"+id)
 		}
 	}
 	if settings.Site.Default {
-		resources = append(resources, "host:local")
+		resources = appendResource(resources, "host:local")
 	}
 	return resources, nil
 }

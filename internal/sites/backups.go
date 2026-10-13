@@ -10,6 +10,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -21,9 +22,10 @@ import (
 )
 
 type backupManifest struct {
-	Version int    `json:"version"`
-	Site    Site   `json:"site"`
-	Backup  Backup `json:"backup"`
+	Version       int                           `json:"version"`
+	Site          Site                          `json:"site"`
+	Backup        Backup                        `json:"backup"`
+	Configuration *backupConfigurationReference `json:"configuration,omitempty"`
 }
 type cancelRead struct {
 	ctx    context.Context
@@ -55,14 +57,14 @@ func (e *AgentExecutor) backups(id string) ([]Backup, error) {
 	}
 	out := []Backup{}
 	for _, entry := range entries {
-		if !strings.HasSuffix(entry.Name(), ".json") {
+		if strings.HasPrefix(entry.Name(), ".pending-") || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
 		var metadata backupManifest
 		if err := rootJSON(e.state, filepath.Join("backups", id, entry.Name()), &metadata); err != nil {
 			return nil, err
 		}
-		if metadata.Version != 1 || metadata.Site.ID != id {
+		if (metadata.Version != 1 && metadata.Version != 2) || metadata.Site.ID != id || metadata.Backup.SiteID != id || metadata.Backup.ID != strings.TrimSuffix(entry.Name(), ".json") {
 			return nil, errors.New("backup ownership receipt mismatch")
 		}
 		out = append(out, metadata.Backup)
@@ -87,8 +89,51 @@ func (e *AgentExecutor) backup(ctx context.Context, in request) (backup Backup, 
 	if err = e.state.MkdirAll(directory, 0700); err != nil {
 		return backup, err
 	}
-	temp := filepath.Join(directory, "."+backup.ID+".part")
-	file, err := e.state.OpenFile(temp, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err = e.verifyPrivateBackupDirectory(directory); err != nil {
+		return backup, err
+	}
+	if err = e.recoverPendingBackupsForSite(site.ID); err != nil {
+		return backup, err
+	}
+	if _, statErr := e.state.Lstat(filepath.Join(directory, ".config")); statErr == nil {
+		if err = e.verifyPrivateBackupDirectory(filepath.Join(directory, ".config")); err != nil {
+			return backup, err
+		}
+	} else if !errors.Is(statErr, fs.ErrNotExist) {
+		return backup, statErr
+	}
+	temp := backupArchiveTempPath(site.ID, backup.ID)
+	pending := pendingBackupRecord{Version: 1, SiteID: site.ID, BackupID: backup.ID, SiteRevision: site.Revision, CreatedAt: backup.CreatedAt}
+	for _, path := range []string{
+		filepath.Join(directory, backup.ID+".tar.gz"), filepath.Join(directory, backup.ID+".json"),
+		backupConfigurationPath(site.ID, backup.ID), backupConfigurationTempPath(site.ID, backup.ID),
+		temp, pendingBackupPath(site.ID, backup.ID),
+	} {
+		if _, statErr := e.state.Lstat(path); statErr == nil {
+			return backup, failure("backup_conflict", "A backup with this identity already exists", 409)
+		} else if !errors.Is(statErr, fs.ErrNotExist) {
+			return backup, statErr
+		}
+	}
+	if err = e.writePendingBackupRecord(pending); err != nil {
+		if _, markerErr := e.state.Lstat(pendingBackupPath(site.ID, backup.ID)); markerErr == nil {
+			recoveryErr := e.recoverPendingBackup(site.ID, backup.ID)
+			return backup, errors.Join(err, recoveryErr)
+		}
+		return backup, err
+	}
+	published := false
+	defer func() {
+		if published {
+			return
+		}
+		cleanupErr := e.cleanupPendingBackupArtifacts(pending)
+		if cleanupErr != nil {
+			log.Printf("website backup cleanup pending site=%s backup=%s: %v", site.ID, backup.ID, cleanupErr)
+			err = errors.Join(err, failure("backup_cleanup_required", "Failed backup artifacts remain under a protected recovery record; restart the Agent or retry backup creation", 500))
+		}
+	}()
+	file, err := e.state.OpenFile(temp, os.O_WRONLY|os.O_CREATE|os.O_EXCL|syscall.O_NOFOLLOW, 0600)
 	if err != nil {
 		return backup, err
 	}
@@ -193,10 +238,17 @@ func (e *AgentExecutor) backup(ctx context.Context, in request) (backup Backup, 
 	if err = e.state.Rename(temp, archive); err != nil {
 		return backup, err
 	}
-	metadata := backupManifest{Version: 1, Site: site, Backup: backup}
+	configuration, configErr := e.storeBackupConfiguration(ctx, site, backup.ID)
+	if configErr != nil {
+		return backup, configErr
+	}
+	metadata := backupManifest{Version: 2, Site: site, Backup: backup, Configuration: configuration}
 	if err = atomicRoot(e.state, filepath.Join(directory, backup.ID+".json"), encode(metadata), 0600); err != nil {
-		_ = e.state.Remove(archive)
 		return backup, err
+	}
+	published = true
+	if err = e.removePendingBackupRecord(pending); err != nil {
+		log.Printf("committed website backup has pending owner marker site=%s backup=%s: %v", site.ID, backup.ID, err)
 	}
 	return backup, nil
 }
@@ -213,11 +265,23 @@ func (e *AgentExecutor) deleteBackup(in request) (any, error) {
 	if metadata.Site.ID != in.ID || metadata.Backup.SiteID != in.ID || metadata.Backup.ID != in.BackupID {
 		return nil, failure("ownership_conflict", "Backup ownership receipt does not match the selected website", 409)
 	}
-	if err := e.state.Remove(filepath.Join(directory, in.BackupID+".tar.gz")); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return nil, err
+	if metadata.Version != 1 && metadata.Version != 2 {
+		return nil, failure("ownership_conflict", "Backup metadata version is invalid", 409)
 	}
-	if err := e.state.Remove(filepath.Join(directory, in.BackupID+".json")); err != nil {
-		return nil, err
+	if err := removeBackupArtifact(e, filepath.Join(directory, in.BackupID+".tar.gz")); err != nil {
+		return nil, backupCleanupFailure(in.ID, in.BackupID, err)
+	}
+	if err := removeBackupConfigSidecar(e, in.ID, in.BackupID); err != nil {
+		return nil, backupCleanupFailure(in.ID, in.BackupID, err)
+	}
+	if err := cleanupBackupConfigDirectory(e, in.ID); err != nil {
+		return nil, backupCleanupFailure(in.ID, in.BackupID, err)
+	}
+	if err := removeBackupArtifact(e, filepath.Join(directory, in.BackupID+".json")); err != nil {
+		return nil, backupCleanupFailure(in.ID, in.BackupID, err)
+	}
+	if err := syncBackupDirectory(e, directory); err != nil {
+		return nil, backupCleanupFailure(in.ID, in.BackupID, err)
 	}
 	return map[string]any{"id": in.BackupID, "deleted": true}, nil
 }
@@ -238,7 +302,7 @@ func (e *AgentExecutor) restore(ctx context.Context, in request) (any, error) {
 	if err = rootJSON(e.state, filepath.Join(directory, in.BackupID+".json"), &metadata); err != nil {
 		return nil, err
 	}
-	if metadata.Version != 1 || metadata.Site.ID != in.ID || metadata.Backup.SiteID != in.ID {
+	if (metadata.Version != 1 && metadata.Version != 2) || metadata.Site.ID != in.ID || metadata.Backup.SiteID != in.ID || metadata.Backup.ID != in.BackupID {
 		return nil, failure("ownership_conflict", "Backup belongs to another website", 409)
 	}
 	file, err := e.state.OpenFile(filepath.Join(directory, in.BackupID+".tar.gz"), os.O_RDONLY|syscall.O_NOFOLLOW, 0)
@@ -253,6 +317,10 @@ func (e *AgentExecutor) restore(ctx context.Context, in request) (any, error) {
 	}
 	if size != metadata.Backup.Size || hex.EncodeToString(hash.Sum(nil)) != metadata.Backup.SHA256 {
 		return nil, failure("checksum_mismatch", "Website backup was modified after creation", 409)
+	}
+	restoreConfiguration, err := e.loadBackupConfiguration(ctx, metadata)
+	if err != nil {
+		return nil, err
 	}
 	if _, err = file.Seek(0, io.SeekStart); err != nil {
 		return nil, err
@@ -401,13 +469,13 @@ func (e *AgentExecutor) restore(ctx context.Context, in request) (any, error) {
 	var result any
 	err = e.files.RootTransaction(ctx, "site-"+in.ID, func() error {
 		var err error
-		result, err = e.swapRestore(ctx, in, current, metadata, stage)
+		result, err = e.swapRestore(ctx, in, current, metadata, stage, restoreConfiguration)
 		return err
 	})
 	return result, err
 }
 
-func (e *AgentExecutor) swapRestore(ctx context.Context, in request, current Site, metadata backupManifest, stage string) (result any, err error) {
+func (e *AgentExecutor) swapRestore(ctx context.Context, in request, current Site, metadata backupManifest, stage string, restoreConfiguration *backupRestoreConfiguration) (result any, err error) {
 	changes, err := e.restoreSnapshots(ctx, current, metadata.Site)
 	if err != nil {
 		return nil, err
@@ -452,8 +520,9 @@ func (e *AgentExecutor) swapRestore(ctx context.Context, in request, current Sit
 	restored.CreatedAt = current.CreatedAt
 	restored.UpdatedBy = in.Actor.Public()
 	restored.DocumentRoot = current.DocumentRoot
-	apply := request{ID: in.ID, Actor: in.Actor, ExpectedRevision: current.Revision, Site: &restored, Password: in.Password}
-	restoredSite, applyErr := e.apply(ctx, apply)
+	apply := request{ID: in.ID, Actor: in.Actor, ExpectedRevision: current.Revision, Site: &restored, Password: in.Password, ResetAdvancedConfig: true}
+	restoreCtx := withBackupRestoreConfiguration(ctx, restoreConfiguration)
+	restoredSite, applyErr := e.apply(restoreCtx, apply)
 	if applyErr != nil {
 		return nil, applyErr
 	}
@@ -547,7 +616,7 @@ func (e *AgentExecutor) backupMetadata(in request) (backupManifest, error) {
 	if err != nil {
 		return metadata, err
 	}
-	if metadata.Version != 1 || metadata.Site.ID != in.ID || metadata.Backup.SiteID != in.ID {
+	if (metadata.Version != 1 && metadata.Version != 2) || metadata.Site.ID != in.ID || metadata.Backup.SiteID != in.ID || metadata.Backup.ID != in.BackupID {
 		return metadata, failure("ownership_conflict", "Backup belongs to another website", 409)
 	}
 	return metadata, nil

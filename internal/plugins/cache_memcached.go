@@ -66,6 +66,38 @@ func probeMemcacheEndpoint(ctx context.Context, p CacheConnection) (string, erro
 	}
 	return canonicalCacheEndpoint(conn.RemoteAddr().String()), nil
 }
+
+func readMemcacheStatusStats(ctx context.Context, p CacheConnection) (*memcachedStatusStats, error) {
+	conn, reader, err := memcacheConnect(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	if _, err = io.WriteString(conn, "stats\r\n"); err != nil {
+		return nil, failure("connection_failed", "Memcached runtime status query failed", 502)
+	}
+
+	stats := newMemcachedStatusStats()
+	totalBytes := 0
+	for lineCount := 0; lineCount < maxMemcacheStatsLines; lineCount++ {
+		line, readErr := memcacheLine(reader)
+		if readErr != nil {
+			return nil, readErr
+		}
+		totalBytes += len(line) + 2
+		if totalBytes > maxMemcacheStatsBytes {
+			return nil, failure("result_limit", "Memcached runtime status exceeded the 32 KiB response limit", 502)
+		}
+		if line == "END" {
+			return stats, nil
+		}
+		if err = stats.addLine(line); err != nil {
+			return nil, failure("protocol_error", "Memcached runtime status response was invalid", 502)
+		}
+	}
+	return nil, failure("result_limit", "Memcached runtime status exceeded the 256-line response limit", 502)
+}
+
 func memcacheGet(ctx context.Context, p CacheConnection, key string) (string, bool, error) {
 	conn, reader, e := memcacheConnect(ctx, p)
 	if e != nil {

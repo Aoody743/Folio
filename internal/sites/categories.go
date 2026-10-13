@@ -71,12 +71,17 @@ func (p *Provider) categoryAction(ctx context.Context, actor core.Actor, name st
 		return core.ActionResult{}, err
 	}
 	resource := "site-category:" + in.ID
+	release, err := p.lockCategoryMutations(ctx)
+	if err != nil {
+		return core.ActionResult{}, err
+	}
+	defer release()
 	if name == "sites_category_save" {
 		if strings.TrimSpace(in.Name) == "" {
 			return core.ActionResult{}, invalid("Category name cannot be empty")
 		}
 		category := Category{ID: in.ID, Name: strings.TrimSpace(in.Name), Revision: in.ExpectedRevision + 1}
-		_, err := p.deps.State.CompareAndSwap(ctx, "categories", in.ID, in.ExpectedRevision, encode(category))
+		_, err = p.deps.State.CompareAndSwap(ctx, "categories", in.ID, in.ExpectedRevision, encode(category))
 		return core.ActionResult{Data: category, Resources: []string{resource}}, err
 	}
 	var sites []Site
@@ -88,7 +93,7 @@ func (p *Provider) categoryAction(ctx context.Context, actor core.Actor, name st
 			return core.ActionResult{}, failure("category_in_use", "Move the category's websites before deleting it", 409)
 		}
 	}
-	err := p.deps.State.Transaction(ctx, func(store core.MetadataStore) error {
+	err = p.deps.State.Transaction(ctx, func(store core.MetadataStore) error {
 		_, revision, err := store.GetVersioned(ctx, "categories", in.ID)
 		if err != nil {
 			return err
