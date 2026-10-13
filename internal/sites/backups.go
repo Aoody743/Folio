@@ -257,11 +257,19 @@ func (e *AgentExecutor) restore(ctx context.Context, in request) (any, error) {
 	if _, err = file.Seek(0, io.SeekStart); err != nil {
 		return nil, err
 	}
-	stage := filepath.Join(in.ID, ".restore-"+siteTag(in.BackupID))
+	stage, err := e.recordRestoreStagePath(ctx)
+	if err != nil {
+		return nil, err
+	}
 	if err = e.content.Mkdir(stage, 0700); err != nil {
 		return nil, err
 	}
-	defer e.content.RemoveAll(stage)
+	if err = e.syncContentParent(stage); err != nil {
+		return nil, err
+	}
+	if err = e.recordRestoreStage(ctx, in.ID, in.BackupID, stage); err != nil {
+		return nil, err
+	}
 	root, err := e.content.OpenRoot(stage)
 	if err != nil {
 		return nil, err
@@ -387,6 +395,9 @@ func (e *AgentExecutor) restore(ctx context.Context, in request) (any, error) {
 			return nil, err
 		}
 	}
+	if err = syncRestoreTree(root); err != nil {
+		return nil, err
+	}
 	var result any
 	err = e.files.RootTransaction(ctx, "site-"+in.ID, func() error {
 		var err error
@@ -401,18 +412,26 @@ func (e *AgentExecutor) swapRestore(ctx context.Context, in request, current Sit
 	if err != nil {
 		return nil, err
 	}
-	public := filepath.Join(in.ID, "public")
-	previous := filepath.Join(in.ID, ".restore-previous-"+siteTag(in.BackupID))
+	if err = e.recordRestoreSwap(ctx, in.ID); err != nil {
+		return nil, err
+	}
+	active := ctx.Value(websiteJournalKey{}).(*activeWebsiteJournal)
+	public, previous, _ := websiteRestorePaths(*active.record.Swap, active.record.ID)
 	if err = e.content.Rename(public, previous); err != nil {
 		return nil, err
 	}
+	if err = e.syncContentSite(in.ID); err != nil {
+		return nil, err
+	}
 	if err = e.content.Rename(stage, public); err != nil {
-		_ = e.content.Rename(previous, public)
+		return nil, err
+	}
+	if err = e.syncContentSite(in.ID); err != nil {
 		return nil, err
 	}
 	committed := false
 	defer func() {
-		if committed {
+		if committed || journalActive(ctx, e) {
 			return
 		}
 		restoreErr := e.content.Rename(public, stage)
@@ -445,8 +464,51 @@ func (e *AgentExecutor) swapRestore(ctx context.Context, in request, current Sit
 		return nil, err
 	}
 	committed = true
-	cleanupErr := e.content.RemoveAll(previous)
-	return map[string]any{"site": restoredSite, "backup_id": in.BackupID, "restored": true, "cleanup_pending": cleanupErr != nil}, nil
+	return map[string]any{"site": restoredSite, "backup_id": in.BackupID, "restored": true}, nil
+}
+
+func syncRestoreTree(root *os.Root) error {
+	directories := []string{}
+	files := []string{}
+	if err := fs.WalkDir(root.FS(), ".", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			directories = append(directories, path)
+		} else {
+			files = append(files, path)
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	for _, path := range files {
+		file, err := root.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
+		if err != nil {
+			return err
+		}
+		syncErr := file.Sync()
+		closeErr := file.Close()
+		if err = errors.Join(syncErr, closeErr); err != nil {
+			return err
+		}
+	}
+	sort.Slice(directories, func(i, j int) bool {
+		return strings.Count(directories[i], string(filepath.Separator)) > strings.Count(directories[j], string(filepath.Separator))
+	})
+	for _, path := range directories {
+		directory, err := root.Open(path)
+		if err != nil {
+			return err
+		}
+		syncErr := directory.Sync()
+		closeErr := directory.Close()
+		if err = errors.Join(syncErr, closeErr); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 func (e *AgentExecutor) restoreSnapshots(ctx context.Context, sites ...Site) ([]changedFile, error) {
 	paths := map[string]bool{}

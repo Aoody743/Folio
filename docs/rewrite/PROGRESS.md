@@ -2,9 +2,22 @@
 
 日期：2026-10-13（Asia/Singapore）。所有检查只代表记录的环境与当前代码，不代表尚未运行的发行版或第三方服务已经兼容。
 
-## 当前交接结论（本节优先于下方历史批次）
+## 当前执行状态（优先于历史交接与下方旧批次）
 
-用户最新要求为收尾并推送 `refine` 新分支，让本地 Codex 继续；不再等待三个阶段全部完成才推送。本轮交付完整当前源码、计划、证据摘要与 [本地交接](HANDOFF.md)、[可复制 prompt](CONTINUE-PROMPT.md)。第一阶段完成；第二阶段仍在开发，第三阶段未开始，没有全功能完成声明。
+用户已恢复云端开发，要求使用 GPT-6 Luna max 按小批次继续完成第二阶段。首批源码闭环已完成，但第二阶段仍未达到退出标准，第三阶段未开始。
+
+- ACME 证书签发/续期及订单 confirm/cancel producer 已迁移到 `Tasks.SubmitPrepared`；order receipt 与 task、权限在同一 SQLite 事务提交。
+- Core 已启用 SQLite `synchronous(FULL)`，新建 master secret 在文件和目录同步成功后才继续；post-commit enqueue 对明确 transient busy 错误做有界重试。
+- Sites 已落地有界 durable WAL、身份校验及 SIGKILL 后恢复检查。
+- 数据库删除 CAS/receipt code、删除状态 UI 和备份下载已完成首批闭环。
+- 本批全量 Go race 有 13 个测试包通过、2 个包无测试文件；`go vet` 通过。前端 24 项测试和 typecheck 通过。SQL/Mongo 源协议检查通过；Debian 13 QA guest 的 Sites 场景由 source-built 测试二进制执行，PHP CLI 使用真实 `/usr/bin/php8.4` 并验证普通 UID/访问控制。Sites journal 未验证 dev.11 包安装或 FPM/Web 服务生命周期。汇总见 [首批检查摘要](evidence/phase2-luna-batch1-checks-20261013.json)、[Sites durable journal 记录](evidence/phase2-sites-journal-20261013.json) 与[数据库源协议记录](evidence/phase2-database-source-protocol-20261013.json)。
+- dev.11 的 amd64/arm64 构建和 amd64 固定包 private-prefix smoke 已通过；实际 VM 升级及 managed-service 生命周期仍在验收。摘要中列有发行包 SHA256。不能据此宣称第二阶段完成。
+
+剩余工作集中在 dev.11 的真实 VM 升级/服务生命周期、第二阶段余下插件动作与验收矩阵、真实 DNS/CA 条件、ARM64 原生执行及核心管理闭环的整体验收。
+
+## 历史交接快照（保留当时记录）
+
+截至该交接快照，用户曾要求先收尾并推送 `refine` 新分支，让本地 Codex 继续；以下内容用于保留当时状态，不代表当前执行安排。本轮交付完整源码、计划、证据摘要与 [本地交接](HANDOFF.md)、[可复制 prompt](CONTINUE-PROMPT.md)。第一阶段完成；第二阶段仍在开发，第三阶段未开始，没有全功能完成声明。
 
 - dev.10 已封装为固定开发包：amd64 SHA256 `01a5fd1a9e8597826e775d1473be0e42d568ff12465765f08b43d56cd2481aa8`；arm64 仅构建。
 - dev.10 实际文件 API 14/14、强化浏览器和新增三项编辑器回归全部通过；Ubuntu 的真实锁、端口故障、中断日志恢复、升级、回滚及重升六项通过。
@@ -63,9 +76,9 @@
 - 手动合并后的状态未清零，导致下一次编辑不再自动保存；成功保存后清理标志，失败仍保留草稿，浏览器完整回归进行中。
 - 初始Python计时包含每次创建HTTPS证书上下文，不能作为HTTP延迟；已独立复现该开销并采用Go端到端计时，原20并发/200次与性能阈值保留。
 
-## Git交付
+## Git交付（历史记录）
 
-开发原分支为 `rewrite/next-go-mcp`。按用户最新要求，以 `refine` 新分支交付当前全部源码与进度文档；完整功能继续由本地 Codex 逐阶段实施。最终推送结果见本轮交付消息。
+开发原分支为 `rewrite/next-go-mcp`。按当时交付安排，以 `refine` 新分支交付全部源码与进度文档，并由本地 Codex 继续逐阶段实施。最终推送结果见当时的交付消息。
 
 ## 第二阶段 dev.9 验收与 dev.10 修复批次
 

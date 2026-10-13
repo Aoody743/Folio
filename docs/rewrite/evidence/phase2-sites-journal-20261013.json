@@ -1,0 +1,212 @@
+{
+  "evidence_id": "phase2-sites-journal",
+  "date_utc": "2026-10-13",
+  "guest_scope": {
+    "os": "Debian 13",
+    "architecture": "amd64",
+    "test_context": "root-owned QA guest"
+  },
+  "test_run": {
+    "artifact_kind": "fixed source-built Go test binary; package installer was not run in this test",
+    "binary_sha256": "d5024ffea4dcf2a8cc84ec74bc75be2a77578122f2be12002fbc098d6760bf1e",
+    "command_args": [
+      "-test.v",
+      "-test.timeout=3m",
+      "-test.run",
+      "^(TestWebsiteJournalRootOwnedSubprocessSIGKILL|TestQARoot.*|TestQAPHPCLI.*)$"
+    ],
+    "environment": {
+      "POWERLINUX_QA_OWNED_VM": "1",
+      "POWERLINUX_QA_PHP_CLI": "/usr/bin/php8.4"
+    },
+    "exit_code": 0,
+    "result": "PASS",
+    "top_level_case_count": 23,
+    "top_level_cases": [
+      {
+        "name": "TestQARootNativeDNSAlreadyIssuedOrderRecoversWithoutRefinalizing",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootNativeDNSACMERealHTTPSAndSignedTXTThenPrivateImport",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootNativeDNSCancellationCleansUsingIndependentContext",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootNativeDNSLostCleanupRetainsOrderAndRecoversAfterRestart",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootVMACMEHTTPRealJWSCSRAndConcurrentWebsiteRead",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootVMACMEManualDNSPendingSurvivesRestartConfirmsAndCancels",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootWebsiteBackupRestorePreservesGroupReadUnderPrivateUmask",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootWebsiteArchiveStreamIntegrityAndUnsafeFiles",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootWebsiteArchiveActualUnixHTTPAndMCPChunks",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootCertificateRenewalRollsBackOnProbeFailureAndKeepsConfigGeneration",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootAdvancedConfigRequiresExplicitResetForTypedSettings",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootDefaultSwitchRequiresBothRevisionsAndRollsBackTogether",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootDeleteLateMetadataFailureRestoresConfigurationInsideCancelledTransaction",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootInterruptedRetainedPurgeCanRestartAndFinishOwnershipCleanup",
+        "status": "PASS"
+      },
+      {
+        "name": "TestWebsiteJournalRootOwnedSubprocessSIGKILL",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootPendingIdentitySIGKILLRecoveryAndUnmarkedRefusal",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQAPHPCLIPublicSelectionActuallyRunsAsOrdinaryUID",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQAPHPCLIRejectsForeignDirectoryAndEntryPoint",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQAPHPCLINativeBinaryAccessKeepsSiblingStatePrivate",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQAPHPCLIExtensionStateUsesItsOwnPublicConfiguration",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootVMWebsiteFailureRestoresActualConfigAuthAndReceipt",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootRetainedWebsiteContentSurvivesRestartAndRejectsImplicitAdoption",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootFailedWebsiteCreationCleansOnlyItsNewContentAndCanRetry",
+        "status": "PASS"
+      }
+    ],
+    "nested_subtests_observed": [
+      {
+        "name": "TestQARootNativeDNSACMERealHTTPSAndSignedTXTThenPrivateImport/dns_knot",
+        "status": "parent test PASS"
+      },
+      {
+        "name": "TestQARootNativeDNSACMERealHTTPSAndSignedTXTThenPrivateImport/dns_ispconfig",
+        "status": "parent test PASS"
+      },
+      {
+        "name": "TestQARootDefaultSwitchRequiresBothRevisionsAndRollsBackTogether/check",
+        "status": "parent test PASS"
+      },
+      {
+        "name": "TestQARootDefaultSwitchRequiresBothRevisionsAndRollsBackTogether/reload",
+        "status": "parent test PASS"
+      },
+      {
+        "name": "TestQARootPendingIdentitySIGKILLRecoveryAndUnmarkedRefusal/marked_account_is_removed_after_useradd_crash",
+        "status": "parent test PASS"
+      },
+      {
+        "name": "TestQARootPendingIdentitySIGKILLRecoveryAndUnmarkedRefusal/unmarked_account_is_never_adopted_or_deleted",
+        "status": "parent test PASS"
+      },
+      {
+        "name": "TestQARootVMWebsiteFailureRestoresActualConfigAuthAndReceipt/check",
+        "status": "parent test PASS"
+      },
+      {
+        "name": "TestQARootVMWebsiteFailureRestoresActualConfigAuthAndReceipt/reload",
+        "status": "parent test PASS"
+      }
+    ],
+    "skipped_case_count": 0,
+    "failed_case_count": 0,
+    "log_sha256": "5e6f626e3bb75517fd849a5617f38a7810f7412e64d3e1cdcd3b0626f9c407c7",
+    "log_artifact": "retained outside the repository; digest recorded here"
+  },
+  "production_continuity": {
+    "window_start_utc": "2026-10-13T15:36:56.836928+00:00",
+    "window_end_utc": "2026-10-13T15:38:13.340015+00:00",
+    "installed_version_before_and_after": "0.1.0-dev.10",
+    "installed_binary_sha256_before_and_after": "938917a7fa9124e1d41aecfafbf304a634f92f2c908f6bd9924f5ca9b49e09cb",
+    "policy_sha256_before_and_after": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+    "managed_services": {
+      "mariadb.service": {
+        "active_state_before_and_after": "active",
+        "sub_state_before_and_after": "running",
+        "main_pid_before_and_after": 362,
+        "unit_sha256_before_and_after": "0deb84a06e205a1f26607166f8075df7f8cd21d2f8e0d819b21a59b7c2254f04"
+      },
+      "memcached.service": {
+        "active_state_before_and_after": "active",
+        "sub_state_before_and_after": "running",
+        "main_pid_before_and_after": 309,
+        "unit_sha256_before_and_after": "ca6edb184282efa8f0e3b32af868fdae616386408b9edafec871e282797c9e64"
+      },
+      "postgresql.service": {
+        "active_state_before_and_after": "active",
+        "sub_state_before_and_after": "exited",
+        "main_pid_before_and_after": 0,
+        "unit_sha256_before_and_after": "3670a6eba171d9402075bb0a56a0a52cf2f5be652b43486db744defa7cdb0be3"
+      },
+      "powerlinux-agent.service": {
+        "active_state_before_and_after": "active",
+        "sub_state_before_and_after": "running",
+        "main_pid_before_and_after": 311,
+        "unit_sha256_before_and_after": "72da8be525db385eb15a2451bb9701cb0ad2590a6a3402a7f372b7f23b30aaa5"
+      },
+      "powerlinux.service": {
+        "active_state_before_and_after": "active",
+        "sub_state_before_and_after": "running",
+        "main_pid_before_and_after": 312,
+        "unit_sha256_before_and_after": "95a23bfbca0dcaa2909840e25e8c991109cfb983f6f8c52fe5852c9e9f56e7ba"
+      },
+      "redis-server.service": {
+        "active_state_before_and_after": "active",
+        "sub_state_before_and_after": "running",
+        "main_pid_before_and_after": 321,
+        "unit_sha256_before_and_after": "638211a92bf860f096003559005d7f54d51b16ebd1036d76c408c6ac3e081e8a"
+      }
+    },
+    "owned_website_account_count_before_and_after": 0,
+    "site_units_before_and_after": [],
+    "service_state_and_unit_hashes_unchanged": true
+  },
+  "scope_limits": [
+    "The installed production binary remained 0.1.0-dev.10. This is source-test-binary evidence, not dev.11 package installation or package lifecycle acceptance.",
+    "Website config-check and reload behavior ran through the site test runtime/fake runtime in isolated QA roots. No real OpenResty service lifecycle was exercised.",
+    "The PHP CLI cases executed the real /usr/bin/php8.4 binary (PHP 8.4.24) under ordinary-user and access-control scenarios. This does not establish PHP-FPM or web-server lifecycle behavior."
+  ],
+  "secrets_included": false
+}

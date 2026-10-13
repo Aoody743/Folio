@@ -130,7 +130,7 @@ func (e *AgentExecutor) setDefault(ctx context.Context, in request) (selected Si
 	changes := []changedFile{}
 	committed := false
 	defer func() {
-		if committed {
+		if committed || journalActive(ctx, e) {
 			return
 		}
 		recovery, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)

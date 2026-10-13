@@ -11,6 +11,7 @@ import { SoftwareInstance } from "@/lib/resources";
 import { choiceLabel } from "@/lib/labels";
 import { useResource } from "@/lib/resource-hook";
 import { ActionForm } from "./actions";
+import { DatabaseRecreation } from "./database-recreation";
 import { Pager, ResourceActions, State, Unavailable } from "./resource-ui";
 type Row = Record<string, unknown>;
 type Inventory = { items: unknown; total?: number; revision?: number };
@@ -95,6 +96,9 @@ export function InstanceResources({
             : `docker_${collection === "networks" ? "network" : "volume"}_create`
         : `${kind}_create`;
   const create = capabilities.find((c) => c.name === createName);
+  const databaseReceipt = capabilities.find(
+    (c) => c.name === "managed_database_receipt",
+  );
   const base =
     kind === "database" ? { instance_id: instance.id } : { id: instance.id };
   const revision =
@@ -124,11 +128,11 @@ export function InstanceResources({
                 ? "守护程序"
                 : "服务账户"}
         </h3>
-        {create && (
+        {create && (kind !== "database" || databaseReceipt) && (
           <Button
             label={
               kind === "database"
-                ? "创建数据库"
+                ? "查询后新建或重建数据库"
                 : kind === "docker"
                   ? collection === "containers"
                     ? "创建容器"
@@ -181,6 +185,12 @@ export function InstanceResources({
         <div className="notice danger" role="alert">
           {data.error}
         </div>
+      )}
+      {kind === "database" && create && !databaseReceipt && (
+        <Unavailable
+          title="缺少数据库管理记录读取权限"
+          detail="安全创建流程需要先读取指定名称的权威记录。"
+        />
       )}
       {!capabilities.some((c) => c.name === name) ? (
         <Unavailable title="当前没有此资源的读取权限" />
@@ -249,7 +259,16 @@ export function InstanceResources({
           />
         </>
       )}
-      {creating && create && (
+      {creating && create && kind === "database" && databaseReceipt && (
+        <DatabaseRecreation
+          instanceID={instance.id}
+          receiptCapability={databaseReceipt}
+          createCapability={create}
+          onBack={() => setCreating(false)}
+          onExecuted={refresh}
+        />
+      )}
+      {creating && create && kind !== "database" && (
         <ActionForm
           key={create.name + instance.id}
           capability={create}
@@ -268,16 +287,21 @@ export function InstanceResources({
         (kind === "database" ? (
           typeof current.database === "string" &&
           typeof current.username === "string" &&
+          typeof current.engine === "string" &&
           typeof current.permission === "string" &&
-          typeof current.revision === "number" ? (
+          typeof current.revision === "number" &&
+          Number.isSafeInteger(current.revision) &&
+          typeof current.state === "string" ? (
             <ManagedDatabaseResources
               key={instance.id + ":" + current.database}
               instanceID={instance.id}
               current={{
                 database: current.database,
                 username: current.username,
+                engine: current.engine,
                 permission: current.permission,
                 revision: current.revision,
+                state: current.state,
               }}
               capabilities={capabilities}
               onExecuted={refresh}
@@ -285,8 +309,8 @@ export function InstanceResources({
             />
           ) : (
             <Unavailable
-              title="数据库详情缺少当前版本"
-              detail="请重新读取资源后再修改账户。"
+              title="数据库详情缺少状态或有效版本"
+              detail="请重新读取资源；记录状态和精确版本确认后才能进行管理操作。"
             />
           )
         ) : (

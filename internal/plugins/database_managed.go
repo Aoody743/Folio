@@ -75,7 +75,10 @@ func (e *PrivilegedExecutor) validateDatabase(raw json.RawMessage) error {
 		if !validDatabaseName(in.Database) || (in.Username != "" && !validDatabaseName(in.Username)) || !validDatabasePermission(in.Permission) {
 			return failure("invalid_input", "Invalid managed database/user/permission", 400)
 		}
-	case "delete", "credential", "set_password", "set_permission", "backup", "backups_list", "backup_delete", "restore", "backup_stat":
+		if in.ExpectedRevision < 0 {
+			return failure("invalid_input", "Expected database revision cannot be negative", 400)
+		}
+	case "delete", "credential", "receipt", "set_password", "set_permission", "backup", "backups_list", "backup_delete", "restore", "backup_stat":
 		if !validDatabaseName(in.Database) {
 			return failure("invalid_input", "A concrete database name is required", 400)
 		}
@@ -115,6 +118,19 @@ func (e *PrivilegedExecutor) database(ctx context.Context, raw json.RawMessage) 
 	case "mysql", "mysql-community", "mariadb", "postgresql", "mongodb":
 	default:
 		return nil, failure("runtime_type_mismatch", "Selected software is not a managed database", 412)
+	}
+	if in.Command == "receipt" {
+		var record managedDatabaseRecord
+		if err = e.load("private", managedDatabaseKey(instance.ID, in.Database), &record); err != nil {
+			if core.ErrorCode(err) == "not_found" {
+				return nil, failure("database_receipt_not_found", "Managed database receipt does not exist for this instance and database", 404)
+			}
+			return nil, err
+		}
+		if record.InstanceID != instance.ID || record.Database != in.Database || record.Engine != instance.PluginID {
+			return nil, failure("ownership_invalid", "Database receipt does not match its instance", 412)
+		}
+		return record.ManagedDatabase, nil
 	}
 	if instance.Status == "uninstalled" {
 		return nil, failure("runtime_unavailable", "Database software is uninstalled", 412)
@@ -227,13 +243,20 @@ func quoteDatabaseIdentifier(engine, name string) string {
 	return "`" + name + "`"
 }
 func (e *PrivilegedExecutor) createManagedDatabase(ctx context.Context, instance Instance, in ManagedDatabaseInput) (ManagedDatabase, error) {
+	return e.createManagedDatabaseWithRaceHook(ctx, instance, in, nil)
+}
+
+// The optional hook lets isolated real-service tests place an external CREATE
+// in the narrow window after authoritative absence and before our CREATE.
+// Production callers always pass nil.
+func (e *PrivilegedExecutor) createManagedDatabaseWithRaceHook(ctx context.Context, instance Instance, in ManagedDatabaseInput, afterClaim func() error) (ManagedDatabase, error) {
 	var existing managedDatabaseRecord
-	err := e.load("private", managedDatabaseKey(instance.ID, in.Database), &existing)
-	if err == nil {
-		return existing.ManagedDatabase, failure("database_exists", "Managed database already has an ownership receipt", 409)
-	}
-	if core.ErrorCode(err) != "not_found" {
+	prior, err := e.loadManagedDatabaseCreationTombstone(instance, in)
+	if err != nil {
 		return ManagedDatabase{}, err
+	}
+	if prior != nil {
+		existing = *prior
 	}
 	username := in.Username
 	if username == "" {
@@ -242,8 +265,19 @@ func (e *PrivilegedExecutor) createManagedDatabase(ctx context.Context, instance
 	if len(username) > 32 {
 		return ManagedDatabase{}, failure("invalid_input", "Managed database usernames are limited to 32 bytes", 400)
 	}
-	record := managedDatabaseRecord{ManagedDatabase: ManagedDatabase{InstanceID: instance.ID, Database: in.Database, Username: username, Engine: instance.PluginID, Permission: in.Permission, State: "creating", Revision: 1, CreatedAt: time.Now().UTC().Format(time.RFC3339Nano)}, Credential: randomDatabasePassword()}
+	revision := int64(1)
+	if prior != nil {
+		if prior.Revision == int64(^uint64(0)>>1) {
+			return ManagedDatabase{}, failure("revision_exhausted", "Managed database revision cannot be advanced", 409)
+		}
+		revision = prior.Revision + 1
+	}
+	record := managedDatabaseRecord{ManagedDatabase: ManagedDatabase{InstanceID: instance.ID, Database: in.Database, Username: username, Engine: instance.PluginID, Permission: in.Permission, State: "creating", Revision: revision, CreatedAt: time.Now().UTC().Format(time.RFC3339Nano)}, Credential: randomDatabasePassword()}
 	if instance.PluginID == "mongodb" {
+		// MongoDB's createUser command implicitly creates this database and has no
+		// conditional absent-database operation. Tombstone recreation is blocked
+		// above; first creation retains this pre-existing external-writer race as
+		// an explicit ownership-fence follow-up rather than claiming atomicity.
 		client, err := e.managedMongo(ctx, instance)
 		if err != nil {
 			return ManagedDatabase{}, err
@@ -265,8 +299,13 @@ func (e *PrivilegedExecutor) createManagedDatabase(ctx context.Context, instance
 		if len(dbs) > 0 {
 			return ManagedDatabase{}, failure("ownership_conflict", "Existing MongoDB data is not owned by this panel", 409)
 		}
-		if err = e.save("private", managedDatabaseKey(instance.ID, in.Database), record); err != nil {
+		if err = e.claimManagedDatabaseCreation(instance, in, prior, record); err != nil {
 			return ManagedDatabase{}, err
+		}
+		if afterClaim != nil {
+			if err = afterClaim(); err != nil {
+				return ManagedDatabase{}, failure("operation_recovery_required", "External database creation raced with this request; the ownership receipt was preserved", 409)
+			}
 		}
 		role := "read"
 		if in.Permission == "read_write" {
@@ -294,22 +333,44 @@ func (e *PrivilegedExecutor) createManagedDatabase(ctx context.Context, instance
 		if exists != 0 {
 			return ManagedDatabase{}, failure("ownership_conflict", "Existing server database is not owned by this panel", 409)
 		}
-		if instance.PluginID == "postgresql" {
-			err = db.QueryRowContext(ctx, "SELECT count(*) FROM pg_roles WHERE rolname=$1", username).Scan(&exists)
-		} else {
-			err = db.QueryRowContext(ctx, "SELECT count(*) FROM mysql.user WHERE User=?", username).Scan(&exists)
+		rolesToCheck := []string{username}
+		if prior != nil {
+			rolesToCheck = appendUniqueName(rolesToCheck, existing.Username)
+			rolesToCheck = appendUniqueName(rolesToCheck, existing.PermissionOwner)
 		}
-		if err != nil || exists != 0 {
-			return ManagedDatabase{}, failure("ownership_conflict", "Existing or unverifiable database role is not owned by this panel", 409)
+		for _, roleName := range rolesToCheck {
+			if roleName == "" {
+				continue
+			}
+			if instance.PluginID == "postgresql" {
+				err = db.QueryRowContext(ctx, "SELECT count(*) FROM pg_roles WHERE rolname=$1", roleName).Scan(&exists)
+			} else {
+				err = db.QueryRowContext(ctx, "SELECT count(*) FROM mysql.user WHERE User=?", roleName).Scan(&exists)
+			}
+			if err != nil || exists != 0 {
+				return ManagedDatabase{}, failure("ownership_conflict", "Existing or unverifiable database role is not owned by this panel", 409)
+			}
 		}
-		if err = e.save("private", managedDatabaseKey(instance.ID, in.Database), record); err != nil {
+		if err = e.claimManagedDatabaseCreation(instance, in, prior, record); err != nil {
 			return ManagedDatabase{}, err
+		}
+		if afterClaim != nil {
+			if err = afterClaim(); err != nil {
+				return ManagedDatabase{}, failure("operation_recovery_required", "External database creation raced with this request; the ownership receipt was preserved", 409)
+			}
 		}
 		databaseID := quoteDatabaseIdentifier(instance.PluginID, in.Database)
 		roleID := quoteDatabaseIdentifier(instance.PluginID, username)
 		if instance.PluginID == "postgresql" {
-			if _, err = db.ExecContext(ctx, "CREATE ROLE "+roleID+" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS PASSWORD "+pgSQLLiteral(record.Credential)); err == nil {
-				_, err = db.ExecContext(ctx, "CREATE DATABASE "+databaseID+" OWNER "+roleID)
+			// Let the server's CREATE DATABASE uniqueness check win before creating
+			// any login. If another actor won after preflight, its database remains
+			// untouched and our durable creating receipt remains inspectable.
+			_, err = db.ExecContext(ctx, "CREATE DATABASE "+databaseID)
+			if err == nil {
+				_, err = db.ExecContext(ctx, "CREATE ROLE "+roleID+" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS PASSWORD "+pgSQLLiteral(record.Credential))
+			}
+			if err == nil && in.Permission == "read_write" {
+				_, err = db.ExecContext(ctx, "ALTER DATABASE "+databaseID+" OWNER TO "+roleID)
 			}
 			// Database ownership gives CREATE only in this database. Read-only roles
 			// own no database and receive explicit data privileges instead.
@@ -347,8 +408,11 @@ func (e *PrivilegedExecutor) createManagedDatabase(ctx context.Context, instance
 			if managedDatabaseHost(instance) == "::1" {
 				role = roleID + "@'::1'"
 			}
-			if _, err = db.ExecContext(ctx, "CREATE USER "+role+" IDENTIFIED BY "+mysqlLiteral(record.Credential)); err == nil {
-				_, err = db.ExecContext(ctx, "CREATE DATABASE "+databaseID+" CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+			// Create the namespace first so a duplicate-name race cannot leave a
+			// panel login that could be mistaken for ownership of that database.
+			_, err = db.ExecContext(ctx, "CREATE DATABASE "+databaseID+" CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+			if err == nil {
+				_, err = db.ExecContext(ctx, "CREATE USER "+role+" IDENTIFIED BY "+mysqlLiteral(record.Credential))
 			}
 			privilege := mysqlDatabasePermission(in.Permission)
 			if err == nil {
@@ -359,11 +423,94 @@ func (e *PrivilegedExecutor) createManagedDatabase(ctx context.Context, instance
 			return ManagedDatabase{}, failure("operation_recovery_required", "Database/user creation was not fully committed; inspect its preserved receipt", 409)
 		}
 	}
-	record.State = "active"
-	if err = e.save("private", managedDatabaseKey(instance.ID, in.Database), record); err != nil {
+	if err = e.commitManagedDatabaseCreation(instance, record); err != nil {
 		return ManagedDatabase{}, failure("operation_recovery_required", "Database exists but ownership receipt was not committed", 409)
 	}
 	return record.ManagedDatabase, nil
+}
+
+func (e *PrivilegedExecutor) loadManagedDatabaseCreationTombstone(instance Instance, in ManagedDatabaseInput) (*managedDatabaseRecord, error) {
+	var existing managedDatabaseRecord
+	err := e.load("private", managedDatabaseKey(instance.ID, in.Database), &existing)
+	if core.ErrorCode(err) == "not_found" {
+		if in.ExpectedRevision != 0 {
+			return nil, failure("revision_conflict", "Managed database receipt changed; reload before creating", 412)
+		}
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if existing.InstanceID != instance.ID || existing.Database != in.Database || existing.Engine != instance.PluginID || existing.Revision < 1 {
+		return nil, failure("ownership_invalid", "Database receipt does not match its instance", 412)
+	}
+	if existing.State != "deleted" {
+		if in.ExpectedRevision > 0 && existing.Revision != in.ExpectedRevision {
+			return nil, failure("revision_conflict", "Managed database changed; reload before creating", 412)
+		}
+		if existing.State == "creating" || existing.State == "deleting" || existing.State == "updating" {
+			return nil, failure("operation_recovery_required", "Database operation is unfinished; inspect its owned receipt", 409)
+		}
+		return nil, failure("database_exists", "Managed database already has an ownership receipt", 409)
+	}
+	if existing.Revision != in.ExpectedRevision {
+		return nil, failure("revision_conflict", "Managed database changed; reload before creating", 412)
+	}
+	if instance.PluginID == "mongodb" {
+		return nil, failure("database_recreation_unsupported", "MongoDB cannot atomically create only an absent database; tombstone recreation is disabled until an ownership fence is available", 409)
+	}
+	return &existing, nil
+}
+
+// This compare-and-swap is protected by the per-instance lock held by
+// database(). The exact tombstone revision is consumed once and advanced before
+// any server write; fresh names use the zero-to-one transition.
+func (e *PrivilegedExecutor) claimManagedDatabaseCreation(instance Instance, in ManagedDatabaseInput, prior *managedDatabaseRecord, next managedDatabaseRecord) error {
+	key := managedDatabaseKey(instance.ID, in.Database)
+	var current managedDatabaseRecord
+	err := e.load("private", key, &current)
+	if prior == nil {
+		if core.ErrorCode(err) != "not_found" {
+			if err != nil {
+				return err
+			}
+			return failure("revision_conflict", "Managed database was created concurrently", 412)
+		}
+		if next.Revision != 1 {
+			return failure("revision_conflict", "New database revision must begin at one", 412)
+		}
+	} else if err != nil || current.InstanceID != instance.ID || current.Database != in.Database || current.Engine != instance.PluginID || current.State != "deleted" || current.Revision != prior.Revision || current.Revision != in.ExpectedRevision || next.Revision != current.Revision+1 {
+		return failure("revision_conflict", "Deleted database receipt changed; reload before recreating", 412)
+	}
+	if next.State != "creating" || next.InstanceID != instance.ID || next.Database != in.Database || next.Engine != instance.PluginID {
+		return failure("ownership_invalid", "New database ownership receipt is invalid", 412)
+	}
+	return e.save("private", key, next)
+}
+
+func (e *PrivilegedExecutor) commitManagedDatabaseCreation(instance Instance, next managedDatabaseRecord) error {
+	key := managedDatabaseKey(instance.ID, next.Database)
+	var current managedDatabaseRecord
+	if err := e.load("private", key, &current); err != nil {
+		return err
+	}
+	if current.InstanceID != instance.ID || current.Database != next.Database || current.Engine != instance.PluginID || current.State != "creating" || current.Revision != next.Revision {
+		return failure("revision_conflict", "Database creation receipt changed before commit", 412)
+	}
+	next.State = "active"
+	return e.save("private", key, next)
+}
+
+func appendUniqueName(values []string, candidate string) []string {
+	if candidate == "" {
+		return values
+	}
+	for _, value := range values {
+		if value == candidate {
+			return values
+		}
+	}
+	return append(values, candidate)
 }
 func sha256Digest(value string) []byte { hash := sha256.Sum256([]byte(value)); return hash[:] }
 func (e *PrivilegedExecutor) mutateManagedDatabase(ctx context.Context, instance Instance, record managedDatabaseRecord, in ManagedDatabaseInput) (any, error) {
@@ -451,6 +598,14 @@ func (e *PrivilegedExecutor) listManagedDatabases(ctx context.Context, instance 
 		return nil, err
 	}
 	items := []ManagedDatabase{}
+	// A deleted receipt is the discoverable, non-secret ownership tombstone
+	// needed for a caller to present the exact expected revision on recreation.
+	// Active entries below still require proof in the live server catalog.
+	for _, r := range records {
+		if r.State == "deleted" {
+			items = append(items, r.ManagedDatabase)
+		}
+	}
 	if instance.PluginID == "mongodb" {
 		client, err := e.managedMongo(ctx, instance)
 		if err != nil {
@@ -508,7 +663,8 @@ func (m *Manager) managedDatabaseBindings() []core.Binding {
 		Required             []string
 	}{
 		{"managed_databases_list", "list", "databases:read", true, false, []string{"instance_id"}, []string{"instance_id"}},
-		{"managed_database_create", "create", "databases:admin", false, false, []string{"instance_id", "database", "username", "permission"}, []string{"instance_id", "database", "permission"}},
+		{"managed_database_receipt", "receipt", "databases:read", true, false, []string{"instance_id", "database"}, []string{"instance_id", "database"}},
+		{"managed_database_create", "create", "databases:admin", false, false, []string{"instance_id", "database", "username", "permission", "expected_revision"}, []string{"instance_id", "database", "permission"}},
 		{"managed_database_delete", "delete", "databases:delete", false, true, []string{"instance_id", "database", "expected_revision"}, []string{"instance_id", "database", "expected_revision"}},
 		{"managed_database_credentials", "credential", "databases:credentials", false, false, []string{"instance_id", "database"}, []string{"instance_id", "database"}},
 		{"managed_database_set_password", "set_password", "databases:credentials", false, false, []string{"instance_id", "database", "password", "expected_revision"}, []string{"instance_id", "database", "password", "expected_revision"}},
@@ -528,7 +684,11 @@ func (m *Manager) managedDatabaseBindings() []core.Binding {
 		for _, name := range spec.Fields {
 			fields[name] = all[name]
 		}
-		binding := m.binding(spec.Name, "Operate on an owned database using typed commands and dedicated database-only identities", spec.Scope, spec.Read, obj(fields, spec.Required...), managedDatabaseResources, func(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+		description := "Operate on an owned database using typed commands and dedicated database-only identities"
+		if spec.Command == "receipt" {
+			description = "Read the public ownership state and revision of a managed database without returning credentials"
+		}
+		binding := m.binding(spec.Name, description, spec.Scope, spec.Read, obj(fields, spec.Required...), managedDatabaseResources, func(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 			var input ManagedDatabaseInput
 			if err := parse(raw, &input); err != nil {
 				return core.ActionResult{}, err

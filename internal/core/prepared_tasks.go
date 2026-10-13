@@ -7,7 +7,11 @@ import (
 	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/jobs"
+	"github.com/ncruces/go-sqlite3"
 )
+
+const preparedEnqueueBudget = 2 * time.Second
+const preparedEnqueueAttempts = 6
 
 func (t taskSubmitter) SubmitPrepared(ctx context.Context, prior Actor, operation string, input json.RawMessage, requested TaskMetadata, prepare func(MetadataStore, jobs.Job) error) (map[string]any, error) {
 	if prepare == nil || !validNamespace.MatchString(t.namespace) {
@@ -76,11 +80,66 @@ func (t taskSubmitter) SubmitPrepared(ctx context.Context, prior Actor, operatio
 	t.s.publish(Event{Type: "tasks_changed", Data: map[string]any{"id": job.ID, "status": job.Status}}, "tasks:read", meta.Resources[0])
 	// Only the service lifetime controls post-commit enqueue. A disconnected
 	// HTTP/MCP caller cannot undo the committed metadata or orphan its task.
-	queued, enqueueErr := t.s.jobs.EnsureQueued(t.s.lifetime, job.ID, reservation)
-	view := resolvedJobView(job, meta.Actor.Public(), meta.Resources)
+	enqueueCtx, cancelEnqueue := context.WithTimeout(t.s.lifetime, preparedEnqueueBudget)
+	queued, enqueueErr := retryPreparedEnqueue(enqueueCtx, func(ctx context.Context) (jobs.Job, error) {
+		return t.s.jobs.EnsureQueued(ctx, job.ID, reservation)
+	})
+	cancelEnqueue()
+	viewJob := job
+	if queued.ID == job.ID {
+		viewJob = queued
+	}
+	view := resolvedJobView(viewJob, meta.Actor.Public(), meta.Resources)
 	if enqueueErr != nil {
 		view["pending"] = true
+		view["recovery_required"] = true
+		view["recovery_state"] = viewJob.Status
 		return view, nil
 	}
 	return resolvedJobView(queued, meta.Actor.Public(), meta.Resources), nil
+}
+
+// retryPreparedEnqueue retries only known transient admission failures. It
+// keeps the same committed task identity and reservation; it never prepares,
+// validates a new identity, or reruns the task itself. The shared context
+// bounds every database call and all backoff to the service lifetime.
+func retryPreparedEnqueue(ctx context.Context, ensure func(context.Context) (jobs.Job, error)) (jobs.Job, error) {
+	delay := 25 * time.Millisecond
+	var job jobs.Job
+	var err error
+	for attempt := 0; attempt < preparedEnqueueAttempts; attempt++ {
+		if err = ctx.Err(); err != nil {
+			return job, err
+		}
+		job, err = ensure(ctx)
+		if err == nil {
+			return job, nil
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return job, ctxErr
+		}
+		if !retryablePreparedEnqueue(err) || attempt+1 == preparedEnqueueAttempts {
+			return job, err
+		}
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			return job, ctx.Err()
+		case <-timer.C:
+		}
+		if delay < 400*time.Millisecond {
+			delay *= 2
+		}
+	}
+	return job, err
+}
+
+func retryablePreparedEnqueue(err error) bool {
+	return errors.Is(err, jobs.ErrBusy) || errors.Is(err, sqlite3.BUSY) || errors.Is(err, sqlite3.LOCKED)
 }

@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-13",
+  "baseline_commit": "d66f559553eccd1df06ba946b86244f190c571ca",
+  "branch": "refine",
+  "working_tree_dirty": true,
+  "stage_2_complete": false,
+  "checks": [
+    {
+      "command": "go test -p 1 -race -count=1 ./...",
+      "result": "PASS",
+      "tested_packages": 13,
+      "no_test_packages": 2,
+      "scope": "Cloud ordinary-user source suite; native root cases need separate evidence"
+    },
+    {
+      "command": "go vet -p 1 ./...",
+      "result": "PASS"
+    },
+    {
+      "command": "go test -p 1 -race ./internal/plugins -count=1",
+      "result": "PASS",
+      "scope": "Final dedicated receipt-not-found contract change"
+    },
+    {
+      "command": "npm test && npm run typecheck",
+      "result": "PASS",
+      "tests": 24,
+      "failures": 0,
+      "skipped": 0,
+      "source": "Observed execution session 90361; terminal output, not a captured standalone test log"
+    },
+    {
+      "command": "scripts/rewrite/build.sh --version 0.1.0-dev.11 --skip-install",
+      "result": "PASS",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "scope": "Next static export and CGO-free binaries; arm64 not executed"
+    },
+    {
+      "command": "scripts/rewrite/test-package.py immutable amd64 archive",
+      "result": "PASS",
+      "scope": "Private-prefix shipped-installer smoke; systemd VM lifecycle separate"
+    }
+  ],
+  "private_log_digests": {
+    "luna-batch1-full-race.log": "619e527c6e3a2a1d57cc6e1fee50799c99a32325c436ecc995de565532a39901",
+    "luna-batch1-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "luna-batch1-plugins-final-race.log": "3fa841a8f4b7f62676ec37f1889033f6f2491784cbba64b2396ed4fe6998a0d2",
+    "luna-batch1-build-dev11.log": "389f541a8ec2caef25237941f04f53f71419d6d2646d5eb974a7aba9d713b86c",
+    "luna-batch1-package-dev11.log": "fd60630b611d2b10175d05c04e235ea12d3c25aa606aa7da9489d10b99c853cd"
+  },
+  "archives": {
+    "linux-amd64": "6baef703f6dda19e9a094156690a84d71ac54c0e00cfad12dec814cea90ed067",
+    "linux-arm64": "c2a327d93a896dbbbcffb09da479ef0819bc738d274757c628883f646bedc231"
+  },
+  "pending": [
+    "dev.11 actual VM upgrade and managed service lifecycle",
+    "Remaining P2 plugin actions and acceptance matrix",
+    "Real external DNS provider/CA credentials",
+    "ARM64 native execution"
+  ]
+}

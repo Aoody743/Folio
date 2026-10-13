@@ -30,6 +30,7 @@ type AgentExecutor struct {
 	runtimes            Runtimes
 	state               *os.Root
 	content             *os.Root
+	lockFile            *os.File
 	files               *files.Service
 	filesOwned          bool
 	mu                  sync.Mutex
@@ -73,12 +74,19 @@ func NewAgentExecutorWithFiles(config AgentConfig, runtimes Runtimes, sharedFile
 	if err != nil {
 		return nil, err
 	}
-	content, err := os.OpenRoot(config.RootDir)
+	lockFile, err := acquireWebsiteStateLock(state)
 	if err != nil {
 		state.Close()
 		return nil, err
 	}
-	e := &AgentExecutor{config: config, runtimes: runtimes, state: state, content: content}
+	content, err := os.OpenRoot(config.RootDir)
+	if err != nil {
+		syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+		lockFile.Close()
+		state.Close()
+		return nil, err
+	}
+	e := &AgentExecutor{config: config, runtimes: runtimes, state: state, content: content, lockFile: lockFile}
 	for _, directory := range []string{"sites", "retained", "certificates", "workers", "backups", "transactions", "acme"} {
 		if err = state.MkdirAll(directory, 0700); err != nil {
 			e.Close()
@@ -94,13 +102,20 @@ func NewAgentExecutorWithFiles(config AgentConfig, runtimes Runtimes, sharedFile
 		e.Close()
 		return nil, err
 	}
+	if err = e.verifyJournalDirectory(); err == nil {
+		err = e.recoverWebsiteJournals(context.Background())
+	}
+	if err != nil {
+		e.Close()
+		return nil, err
+	}
 	all, err := e.list()
 	if err != nil {
 		e.Close()
 		return nil, err
 	}
 	for _, site := range all {
-		if err = e.addFileRoot(site); err != nil {
+		if err = e.refreshFileRoot(context.Background(), site); err != nil {
 			e.Close()
 			return nil, err
 		}
@@ -123,7 +138,7 @@ func NewAgentExecutorWithFiles(config AgentConfig, runtimes Runtimes, sharedFile
 			}
 		}
 		site.Name += " (retained)"
-		if err = e.addFileRoot(site); err != nil {
+		if err = e.refreshFileRoot(context.Background(), site); err != nil {
 			e.Close()
 			return nil, err
 		}
@@ -140,6 +155,10 @@ func (e *AgentExecutor) Close() error {
 	}
 	if e.content != nil {
 		err = errors.Join(err, e.content.Close())
+	}
+	if e.lockFile != nil {
+		err = errors.Join(err, syscall.Flock(int(e.lockFile.Fd()), syscall.LOCK_UN), e.lockFile.Close())
+		e.lockFile = nil
 	}
 	return err
 }
@@ -215,9 +234,17 @@ func (e *AgentExecutor) Run(ctx context.Context, job agent.Request) (result agen
 		return result, err
 	}
 	var data any
-	execute := func(locked context.Context) error {
-		data, err = e.executeOperation(locked, job.Operation, in)
-		return err
+	execute := func(locked context.Context) (operationErr error) {
+		if websiteJournalOperation(job.Operation) {
+			var finish func(*error)
+			locked, finish, operationErr = e.beginWebsiteJournal(locked, job.Operation, in)
+			if operationErr != nil {
+				return operationErr
+			}
+			defer finish(&operationErr)
+		}
+		data, operationErr = e.executeOperation(locked, job.Operation, in)
+		return operationErr
 	}
 	if !readOperation(job.Operation) && job.Operation != "certificate_acme_issue" && job.Operation != "certificate_acme_order" {
 		err = e.withMutationRuntimes(ctx, job.Operation, in, execute)
@@ -422,6 +449,8 @@ func (e *AgentExecutor) identity(ctx context.Context, id string) (Identity, erro
 	name := "plsite_" + siteTag(id)
 	if _, err = user.Lookup(name); err == nil {
 		return owned, failure("identity_conflict", "Website identity exists without a PowerLinux ownership receipt", 409)
+	} else if !isUnknownUserError(err) {
+		return owned, err
 	}
 	program := e.config.Programs["useradd"]
 	if program == "" {
@@ -430,7 +459,26 @@ func (e *AgentExecutor) identity(ctx context.Context, id string) (Identity, erro
 	if err = trustedProgram(program); err != nil {
 		return owned, err
 	}
-	command := exec.CommandContext(ctx, program, "--system", "--user-group", "--no-create-home", "--home-dir", filepath.Join(e.config.RootDir, id, "public"), "--shell", "/usr/sbin/nologin", name)
+	marker := ""
+	if active, ok := ctx.Value(websiteJournalKey{}).(*activeWebsiteJournal); ok && active.executor == e && active.record.NewContent != nil && active.record.NewContent.ID == id {
+		userdel := e.config.Programs["userdel"]
+		if userdel == "" {
+			return owned, failure("policy_denied", "Website identity provisioning needs the trusted userdel recovery program", 403)
+		}
+		if err = trustedProgram(userdel); err != nil {
+			return owned, err
+		}
+		marker, err = e.recordPendingWorker(ctx, id, name)
+		if err != nil {
+			return owned, err
+		}
+	}
+	args := []string{"--system", "--user-group", "--no-create-home", "--home-dir", filepath.Join(e.config.RootDir, id, "public"), "--shell", "/usr/sbin/nologin"}
+	if marker != "" {
+		args = append(args, "--comment", marker)
+	}
+	args = append(args, name)
+	command := exec.CommandContext(ctx, program, args...)
 	command.Env = []string{"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8"}
 	if err = command.Run(); err != nil {
 		return owned, failure("identity_failed", "Could not provision the isolated website identity", 500)
@@ -438,6 +486,9 @@ func (e *AgentExecutor) identity(ctx context.Context, id string) (Identity, erro
 	record, err := user.Lookup(name)
 	if err != nil {
 		return owned, err
+	}
+	if marker != "" && (record.Name != marker || filepath.Clean(record.HomeDir) != filepath.Join(e.config.RootDir, id, "public")) {
+		return owned, errors.New("created website identity does not match its durable transaction marker")
 	}
 	uid, err := strconv.ParseUint(record.Uid, 10, 32)
 	if err != nil || uid == 0 {
@@ -451,9 +502,14 @@ func (e *AgentExecutor) identity(ctx context.Context, id string) (Identity, erro
 	if err = atomicRoot(e.state, path, encode(owned), 0600); err != nil {
 		return owned, err
 	}
+	if marker != "" {
+		if err = e.clearPendingWorker(ctx, id); err != nil {
+			return owned, err
+		}
+	}
 	return owned, nil
 }
-func (e *AgentExecutor) prepareDirectories(site Site, worker Identity, web WebRuntime) error {
+func (e *AgentExecutor) prepareDirectories(ctx context.Context, site Site, worker Identity, web WebRuntime) error {
 	group, err := user.LookupGroup(web.WorkerGroup)
 	if err != nil {
 		return err
@@ -470,38 +526,121 @@ func (e *AgentExecutor) prepareDirectories(site Site, worker Identity, web WebRu
 	if err != nil || webUID == 0 {
 		return errors.New("Web worker must use an isolated non-root UID")
 	}
+	// Record a new site-root inode before creating children. If SIGKILL lands
+	// between mkdir and the durable stamp, recovery can remove only an empty
+	// directory and will refuse recursive cleanup.
+	if active, ok := ctx.Value(websiteJournalKey{}).(*activeWebsiteJournal); ok && active.executor == e && active.record.NewContent != nil {
+		if err = e.content.Mkdir(site.ID, 0751); err != nil {
+			return err
+		}
+		if err = e.syncContentParent(site.ID); err != nil {
+			return err
+		}
+		if err = e.recordNewContent(ctx, site.ID); err != nil {
+			return err
+		}
+	}
 	// The parent belongs to root. A PHP worker can write its public contents,
 	// but cannot rename the public root or replace config/run directories.
-	for path, spec := range map[string]struct {
+	ordered := []struct {
+		path     string
 		mode     fs.FileMode
 		uid, gid int
-	}{site.ID: {0751, 0, webGID}, filepath.Join(site.ID, "public"): {0750, int(worker.UID), webGID}, filepath.Join(site.ID, "logs"): {0750, 0, webGID}, filepath.Join(site.ID, "run"): {0750, 0, webGID}, filepath.Join(site.ID, "run", "proxy-cache"): {0700, webUID, webGID}, filepath.Join(site.ID, "auth"): {0750, 0, webGID}, filepath.Join(site.ID, "tmp"): {0700, int(worker.UID), int(worker.GID)}} {
-		if err = e.content.MkdirAll(path, spec.mode); err != nil {
-			return err
+	}{
+		{site.ID, 0751, 0, webGID},
+		{filepath.Join(site.ID, "public"), 0750, int(worker.UID), webGID},
+		{filepath.Join(site.ID, "logs"), 0750, 0, webGID},
+		{filepath.Join(site.ID, "run"), 0750, 0, webGID},
+		{filepath.Join(site.ID, "run", "proxy-cache"), 0700, webUID, webGID},
+		{filepath.Join(site.ID, "auth"), 0750, 0, webGID},
+		{filepath.Join(site.ID, "tmp"), 0700, int(worker.UID), int(worker.GID)},
+	}
+	for _, spec := range ordered {
+		path := spec.path
+		mode, uid, gid := spec.mode, spec.uid, spec.gid
+		if path != site.ID {
+			if err = e.content.MkdirAll(path, mode); err != nil {
+				return err
+			}
 		}
 		info, err := e.content.Lstat(path)
 		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 			return errors.New("website directory is not an owned real directory")
 		}
-		if err = e.content.Chown(path, spec.uid, spec.gid); err != nil {
+		if err = e.content.Chown(path, uid, gid); err != nil {
 			return err
 		}
-		if err = e.content.Chmod(path, spec.mode); err != nil {
+		if err = e.content.Chmod(path, mode); err != nil {
 			return err
+		}
+		if err = e.syncContentDirectory(path); err != nil {
+			return err
+		}
+		if path != site.ID {
+			if err = e.syncContentParent(path); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
-func (e *AgentExecutor) addFileRoot(site Site) error {
-	info, err := e.content.Stat(filepath.Join(site.ID, "public"))
+
+func (e *AgentExecutor) syncContentDirectory(path string) error {
+	dir, err := e.content.Open(path)
 	if err != nil {
 		return err
 	}
+	syncErr := dir.Sync()
+	closeErr := dir.Close()
+	return errors.Join(syncErr, closeErr)
+}
+
+func (e *AgentExecutor) syncContentParent(path string) error {
+	parent, err := e.content.Open(filepath.Dir(path))
+	if err != nil {
+		return err
+	}
+	syncErr := parent.Sync()
+	closeErr := parent.Close()
+	return errors.Join(syncErr, closeErr)
+}
+
+func (e *AgentExecutor) addFileRoot(site Site) error {
+	spec, err := e.fileRootSpec(site)
+	if err != nil {
+		return err
+	}
+	return e.files.AddRoot(spec)
+}
+
+func (e *AgentExecutor) refreshFileRoot(ctx context.Context, site Site) error {
+	spec, err := e.fileRootSpec(site)
+	if err != nil {
+		return err
+	}
+	id := spec.ID
+	err = e.files.RootTransaction(ctx, id, func() error {
+		if deleteErr := e.files.DeleteRoot(id); deleteErr != nil {
+			return deleteErr
+		}
+		return e.files.AddRoot(spec)
+	})
+	if errors.Is(err, files.ErrNotFound) {
+		return e.files.AddRoot(spec)
+	}
+	return err
+}
+
+func (e *AgentExecutor) fileRootSpec(site Site) (files.RootSpec, error) {
+	info, err := e.content.Stat(filepath.Join(site.ID, "public"))
+	if err != nil {
+		return files.RootSpec{}, err
+	}
 	stat, ok := info.Sys().(*syscall.Stat_t)
 	if !ok {
-		return errors.New("website inode identity is unavailable")
+		return files.RootSpec{}, errors.New("website inode identity is unavailable")
 	}
-	return e.files.AddRoot(files.RootSpec{ID: "site-" + site.ID, Label: site.Name, Path: e.paths(site).DocumentRoot, DefaultFileMode: 0640, DefaultDirMode: 0750, ExpectedDevice: uint64(stat.Dev), ExpectedInode: stat.Ino})
+	return files.RootSpec{ID: "site-" + site.ID, Label: site.Name, Path: e.paths(site).DocumentRoot, DefaultFileMode: 0640, DefaultDirMode: 0750, ExpectedDevice: uint64(stat.Dev), ExpectedInode: stat.Ino}, nil
 }
 func (e *AgentExecutor) validateTLS(site Site) error {
 	if !site.TLS.Enabled {
@@ -543,7 +682,7 @@ type changedFile struct {
 }
 
 func snapshotConfig(path string) (changedFile, error) {
-	file, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	file, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
 	if errors.Is(err, fs.ErrNotExist) {
 		return changedFile{path: path}, nil
 	}
@@ -679,7 +818,7 @@ func (e *AgentExecutor) apply(ctx context.Context, in request) (site Site, err e
 	runtimeIDs := []string{site.WebInstance}
 	committed, fileRootAdded := false, false
 	defer func() {
-		if committed {
+		if committed || journalActive(ctx, e) {
 			return
 		}
 		restoreCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
@@ -707,7 +846,7 @@ func (e *AgentExecutor) apply(ctx context.Context, in request) (site Site, err e
 			err = errors.Join(err, failure("rollback_incomplete", "Website update failed and its configuration needs recovery inspection", 500))
 		}
 	}()
-	if err = e.prepareDirectories(site, worker, web); err != nil {
+	if err = e.prepareDirectories(ctx, site, worker, web); err != nil {
 		return site, err
 	}
 	paths := e.paths(site)
@@ -761,6 +900,9 @@ func (e *AgentExecutor) apply(ctx context.Context, in request) (site Site, err e
 		}
 		changes = append(changes, previous)
 		if err = os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return site, err
+		}
+		if err = e.syncJournalFileParent(ctx, journalFile{Kind: "php", RuntimeID: old.PHPInstance, Path: site.ID + ".conf"}); err != nil {
 			return site, err
 		}
 		runtimeIDs = append(runtimeIDs, old.PHPInstance)
@@ -858,14 +1000,18 @@ func (e *AgentExecutor) remove(ctx context.Context, in request) (result any, err
 	if err != nil {
 		return nil, err
 	}
-	targets := []string{filepath.Join(web.SnippetsDir, site.ID+".conf")}
+	type removeTarget struct {
+		path    string
+		journal journalFile
+	}
+	targets := []removeTarget{{filepath.Join(web.SnippetsDir, site.ID+".conf"), journalFile{Kind: "web", RuntimeID: site.WebInstance, Path: site.ID + ".conf"}}}
 	runtimeIDs := []string{site.WebInstance}
 	if site.PHPInstance != "" {
 		php, err := e.runtimes.PHP(ctx, site.PHPInstance)
 		if err != nil {
 			return nil, err
 		}
-		targets = append(targets, filepath.Join(php.PoolDir, site.ID+".conf"))
+		targets = append(targets, removeTarget{filepath.Join(php.PoolDir, site.ID+".conf"), journalFile{Kind: "php", RuntimeID: site.PHPInstance, Path: site.ID + ".conf"}})
 		runtimeIDs = append(runtimeIDs, site.PHPInstance)
 	}
 	changes := []changedFile{}
@@ -880,7 +1026,7 @@ func (e *AgentExecutor) remove(ctx context.Context, in request) (result any, err
 	}
 	committed := false
 	defer func() {
-		if committed {
+		if committed || journalActive(ctx, e) {
 			return
 		}
 		recoverErr := rollbackConfigs(changes)
@@ -893,13 +1039,16 @@ func (e *AgentExecutor) remove(ctx context.Context, in request) (result any, err
 			err = errors.Join(err, failure("rollback_incomplete", "Website removal failed and its owned configuration needs recovery inspection", 500))
 		}
 	}()
-	for _, path := range targets {
-		before, err := snapshotConfig(path)
+	for _, target := range targets {
+		before, err := snapshotConfig(target.path)
 		if err != nil {
 			return nil, err
 		}
 		changes = append(changes, before)
-		if err = os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err = os.Remove(target.path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+		if err = e.syncJournalFileParent(ctx, target.journal); err != nil {
 			return nil, err
 		}
 	}
@@ -920,8 +1069,14 @@ func (e *AgentExecutor) remove(ctx context.Context, in request) (result any, err
 	if err = e.state.Remove(filepath.Join("sites", site.ID+".json")); err != nil {
 		return nil, err
 	}
+	if err = e.syncStateDirectory("sites"); err != nil {
+		return nil, err
+	}
 	committed = true
 	if !in.KeepData {
+		if err = commitWebsiteJournal(ctx); err != nil {
+			return map[string]any{"id": site.ID, "deleted": true, "data_retained": true}, err
+		}
 		if _, purgeErr := e.purgeRetained(ctx, request{ID: site.ID, ExpectedRevision: site.Revision}); purgeErr != nil {
 			return map[string]any{"id": site.ID, "deleted": true, "data_retained": true}, failure("site_cleanup_required", "Website configuration was removed; its retained ownership receipt remains for content cleanup", 500)
 		}
@@ -1024,7 +1179,7 @@ func (e *AgentExecutor) configSet(ctx context.Context, in request) (data any, er
 	}
 	committed := false
 	defer func() {
-		if committed {
+		if committed || journalActive(ctx, e) {
 			return
 		}
 		recoverErr := rollbackConfigs([]changedFile{previous})

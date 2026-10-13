@@ -63,6 +63,32 @@ func (e *AgentExecutor) certificates() ([]Certificate, error) {
 	return out, nil
 }
 func (e *AgentExecutor) importCertificate(ctx context.Context, in request) (meta Certificate, err error) {
+	if journalActive(ctx, e) {
+		return e.importCertificateBody(ctx, in)
+	}
+	if mutationRuntimeActive(ctx, e) {
+		journalCtx, finish, beginErr := e.beginWebsiteJournal(ctx, "certificate_import", in)
+		if beginErr != nil {
+			return Certificate{}, beginErr
+		}
+		defer finish(&err)
+		return e.importCertificateBody(journalCtx, in)
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	err = e.withMutationRuntimes(ctx, "certificate_import", in, func(locked context.Context) (callbackErr error) {
+		journalCtx, finish, beginErr := e.beginWebsiteJournal(locked, "certificate_import", in)
+		if beginErr != nil {
+			return beginErr
+		}
+		defer finish(&callbackErr)
+		meta, callbackErr = e.importCertificateBody(journalCtx, in)
+		return callbackErr
+	})
+	return meta, err
+}
+
+func (e *AgentExecutor) importCertificateBody(ctx context.Context, in request) (meta Certificate, err error) {
 	if in.Certificate == nil || in.Certificate.ID != in.ID {
 		return Certificate{}, invalid("Certificate metadata is required")
 	}
@@ -111,7 +137,7 @@ func (e *AgentExecutor) importCertificate(ctx context.Context, in request) (meta
 	changes := []changedFile{}
 	committed := false
 	defer func() {
-		if committed {
+		if committed || journalActive(ctx, e) {
 			return
 		}
 		recoverErr := rollbackConfigs(changes)
@@ -238,6 +264,9 @@ func (e *AgentExecutor) deleteCertificate(in request) (any, error) {
 		if err = e.state.Remove(filepath.Join("certificates", in.ID+"."+extension)); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return nil, err
 		}
+	}
+	if err = e.syncStateDirectory("certificates"); err != nil {
+		return nil, err
 	}
 	return map[string]any{"id": in.ID, "deleted": true}, nil
 }

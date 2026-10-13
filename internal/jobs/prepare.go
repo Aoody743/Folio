@@ -101,9 +101,12 @@ func sameReservedJob(reservation *Reservation, job Job) bool {
 // active/terminal records are idempotent; a queued record starts at most once.
 // A nil reservation is only a retry of an already committed identity.
 //
-// Call this with the service lifetime context after COMMIT. An expired caller
-// context prevents starting new work and returns its durable record with an
-// error; it does not roll back metadata or authorize discarding a reservation.
+// Call this with the service lifetime context after COMMIT. A canceled context
+// may return a cached result, but never performs a detached store read or
+// starts work. With a reservation it returns that opaque prepared identity
+// alongside the context error; callers must not mistake it for a verified
+// durable record. Cancellation does not roll back metadata or authorize
+// discarding a committed reservation.
 func (m *Manager) EnsureQueued(ctx context.Context, id string, reservation *Reservation) (Job, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -122,15 +125,15 @@ func (m *Manager) EnsureQueued(ctx context.Context, id string, reservation *Rese
 		}
 		return clone(failed), nil
 	}
+	if err := ctx.Err(); err != nil {
+		if reservation != nil {
+			return reservation.Job(), err
+		}
+		return Job{}, err
+	}
 	// The read must remain under m.mu: a lock-free queued snapshot can become
 	// stale after a fast executor finishes and otherwise cause a second Run.
-	readCtx := ctx
-	var cancel context.CancelFunc
-	if ctx.Err() != nil {
-		readCtx, cancel = context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
-		defer cancel()
-	}
-	job, err := m.store.Get(readCtx, id)
+	job, err := m.store.Get(ctx, id)
 	if err != nil {
 		if reservation != nil {
 			return reservation.Job(), err
@@ -167,7 +170,7 @@ func (m *Manager) EnsureQueued(ctx context.Context, id string, reservation *Rese
 		now := time.Now().UTC()
 		job.Status, job.UpdatedAt = Canceled, now
 		job.Result = &agent.Result{Operation: job.Operation, ExitCode: -1, Canceled: true, FinishedAt: now}
-		if err := m.store.Save(context.WithoutCancel(ctx), job); err != nil {
+		if err := m.store.Save(ctx, job); err != nil {
 			job.Status, job.Error = Failed, "cannot persist canceled task: "+err.Error()
 			m.failedPersistence[id] = clone(job)
 			return clone(job), err

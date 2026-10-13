@@ -96,6 +96,9 @@ func (r siteRuntimes) PHP(ctx context.Context, id string) (sites.PHPRuntime, err
 }
 func (r siteRuntimes) Check(ctx context.Context, id string) error  { return r.software.Check(ctx, id) }
 func (r siteRuntimes) Reload(ctx context.Context, id string) error { return r.software.Reload(ctx, id) }
+func (r siteRuntimes) RecoverRuntime(ctx context.Context, id string) error {
+	return r.software.RecoverRuntime(ctx, id)
+}
 func (r siteRuntimes) WithRuntimeTransaction(ctx context.Context, ids []string, callback func(context.Context) error) error {
 	return r.software.WithRuntimeTransaction(ctx, ids, callback)
 }

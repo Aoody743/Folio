@@ -12,12 +12,14 @@ import { TextArea } from "@astryxdesign/core/TextArea";
 import {
   action as execute,
   APIError,
+  apiErrorMessage,
   Capability,
   intentKey,
   Task,
 } from "@/lib/api";
 import {
   initialValue,
+  applyLockedPreset,
   isDecimalCursorSchema,
   normalizeInput,
   Schema,
@@ -391,6 +393,9 @@ export function ActionForm({
   onBack,
   compact = false,
   references,
+  cacheKeySuffix = "",
+  lockedPresetFields = [],
+  formatError,
 }: {
   capability: Capability;
   preset?: Record<string, unknown>;
@@ -398,6 +403,9 @@ export function ActionForm({
   onBack?: () => void;
   compact?: boolean;
   references?: References;
+  cacheKeySuffix?: string;
+  lockedPresetFields?: string[];
+  formatError?: (error: APIError) => string | undefined;
 }) {
   const schema = (capability.input_schema ?? {
     type: "object",
@@ -432,7 +440,8 @@ export function ActionForm({
     ":" +
     Object.keys(schema.properties ?? {})
       .sort()
-      .join(",");
+      .join(",") +
+    (cacheKeySuffix ? `:${cacheKeySuffix}` : "");
   const [draft, setDraft] = useState<unknown>(
     () => readDraft(cacheKey) ?? initialValue(schema),
   );
@@ -516,13 +525,20 @@ export function ActionForm({
     if (recovery) return;
     let input: unknown;
     try {
-      input = normalizeInput(schema, raw ? JSON.parse(rawValue) : draft);
+      input = normalizeInput(
+        schema,
+        applyLockedPreset(
+          raw ? JSON.parse(rawValue) : draft,
+          preset,
+          lockedPresetFields,
+        ),
+      );
       if (
         ["database_query", "database_instance_query"].includes(capability.name)
       )
         validateSQLParameters(input);
     } catch (e) {
-      setError((e as Error).message);
+      setError(apiErrorMessage(e, formatError));
       return;
     }
     if (!capability.read_only && !confirm) {
@@ -575,7 +591,7 @@ export function ActionForm({
       awaitingRevision.current = applied.expected_revision;
       onExecuted?.(response, { action: capability.name, input: contextInput });
     } catch (e) {
-      setError((e as Error).message);
+      setError(apiErrorMessage(e, formatError));
       if (e instanceof APIError) {
         setDetails(e.details);
         setConflict(
@@ -670,11 +686,14 @@ export function ActionForm({
             label="参数"
             fieldKey=""
             references={references}
-            readonlyFields={
-              typeof preset.expected_revision === "number"
-                ? ["expected_revision"]
-                : []
-            }
+            readonlyFields={Array.from(
+              new Set([
+                ...lockedPresetFields,
+                ...(typeof preset.expected_revision === "number"
+                  ? ["expected_revision"]
+                  : []),
+              ]),
+            )}
           />
         )}
         {error && (

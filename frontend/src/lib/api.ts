@@ -100,6 +100,14 @@ export class APIError extends Error {
     this.name = "APIError";
   }
 }
+export function apiErrorMessage(
+  error: unknown,
+  formatError?: (error: APIError) => string | undefined,
+): string {
+  if (error instanceof APIError)
+    return formatError?.(error) ?? error.message;
+  return error instanceof Error ? error.message : String(error);
+}
 let csrf = "";
 export function setCSRF(token = "") {
   csrf = token;

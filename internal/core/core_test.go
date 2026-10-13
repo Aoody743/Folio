@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"encoding/base32"
 	"encoding/json"
@@ -46,11 +47,21 @@ func expectCode(t *testing.T, err error, code string) {
 }
 
 func TestBootstrapIsLocalSecretAndSingleUse(t *testing.T) {
-	s, e := New(t.TempDir())
+	dataDir := t.TempDir()
+	s, e := New(dataDir)
 	if e != nil {
 		t.Fatal(e)
 	}
 	defer s.Close()
+	keyPath := filepath.Join(dataDir, "encryption-key")
+	keyBefore, e := os.ReadFile(keyPath)
+	if e != nil {
+		t.Fatal(e)
+	}
+	keyInfo, e := os.Stat(keyPath)
+	if e != nil || keyInfo.Mode().Perm() != 0600 {
+		t.Fatal("master key was not created with private 0600 permissions", keyInfo, e)
+	}
 	_, e = s.Setup(context.Background(), "attacker", "admin", "a secure long password")
 	expectCode(t, e, "unauthorized")
 	secret, _ := os.ReadFile(s.SetupSecretFile())
@@ -70,6 +81,22 @@ func TestBootstrapIsLocalSecretAndSingleUse(t *testing.T) {
 	info, _ := os.Stat(filepath.Join(s.dataDir, "powerlinux.db"))
 	if info.Mode().Perm() != 0600 {
 		t.Fatalf("database exposed mode %v", info.Mode())
+	}
+	if e = s.Close(); e != nil {
+		t.Fatal(e)
+	}
+	reopened, e := New(dataDir)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer reopened.Close()
+	keyAfter, e := os.ReadFile(keyPath)
+	if e != nil || !bytes.Equal(keyBefore, keyAfter) || !bytes.Equal(reopened.secret, s.secret) {
+		t.Fatal("reopening replaced or failed to load the stable master key", e)
+	}
+	keyInfo, e = os.Stat(keyPath)
+	if e != nil || keyInfo.Mode().Perm() != 0600 {
+		t.Fatal("reopened master key did not retain private 0600 permissions", keyInfo, e)
 	}
 }
 

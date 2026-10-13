@@ -3,15 +3,23 @@ import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { bytes, Capability, fullDate, list } from "@/lib/api";
 import { choiceLabel } from "@/lib/labels";
+import {
+  isActiveManagedDatabaseState,
+  canRecreateDeletedManagedDatabase,
+  isDeletedManagedDatabaseState,
+} from "@/lib/database-recreation";
 import { Page } from "@/lib/resources";
 import { useResource } from "@/lib/resource-hook";
 import { ActionForm } from "./actions";
-import { Pager, ResourceActions, Unavailable } from "./resource-ui";
+import { DatabaseRecreation } from "./database-recreation";
+import { Pager, ResourceActions, State, Unavailable } from "./resource-ui";
 type Database = {
   database: string;
   username: string;
+  engine: string;
   permission: string;
   revision: number;
+  state: string;
 };
 type Backup = {
   id: string;
@@ -38,16 +46,27 @@ export function ManagedDatabaseResources({
   const [operation, setOperation] = useState<string>();
   const [selectedBackup, setSelectedBackup] = useState<string>();
   const [creatingBackup, setCreatingBackup] = useState(false);
+  const [recreatingDatabase, setRecreatingDatabase] = useState(false);
   const [offset, setOffset] = useState(0);
   const has = (name: string) => capabilities.some((c) => c.name === name);
+  const activeDatabase = isActiveManagedDatabaseState(current.state);
   const backups = useResource<Page<Backup>>(
     "managed_database_backups_list",
     { instance_id: instanceID, database: current.database },
-    active && group === "backups" && has("managed_database_backups_list"),
+    active &&
+      activeDatabase &&
+      group === "backups" &&
+      has("managed_database_backups_list"),
   );
   const rows = list(backups.data);
   const backup = rows.find((row) => row.id === selectedBackup);
   const create = capabilities.find((c) => c.name === "managed_database_backup");
+  const databaseCreate = capabilities.find(
+    (c) => c.name === "managed_database_create",
+  );
+  const databaseReceipt = capabilities.find(
+    (c) => c.name === "managed_database_receipt",
+  );
   const preset = {
     instance_id: instanceID,
     database: current.database,
@@ -59,6 +78,68 @@ export function ManagedDatabaseResources({
     void backups.reload();
     onExecuted();
   };
+  if (!activeDatabase) {
+    const deleted = isDeletedManagedDatabaseState(current.state);
+    return (
+      <section className="stack" aria-label="数据库记录状态">
+        <div className="detail-grid">
+          <div>
+            <small>数据库名称</small>
+            <strong>{current.database}</strong>
+            <span>{current.username}</span>
+          </div>
+          <div>
+            <small>记录状态</small>
+            <State value={current.state || "unknown"} />
+            <span className="muted">保留版本 {current.revision}</span>
+          </div>
+        </div>
+        {deleted ? (
+          <>
+            <div className="notice warning">
+              此数据库已删除，不能修改账户或读取、创建及恢复备份。重建前会重新读取权威管理记录。
+            </div>
+            {canRecreateDeletedManagedDatabase(current) &&
+            databaseCreate &&
+            databaseReceipt ? (
+              recreatingDatabase ? (
+                <DatabaseRecreation
+                  key={`${instanceID}:${current.database}`}
+                  instanceID={instanceID}
+                  initialDatabase={current.database}
+                  receiptCapability={databaseReceipt}
+                  createCapability={databaseCreate}
+                  onBack={() => setRecreatingDatabase(false)}
+                  onExecuted={refresh}
+                />
+              ) : (
+                <Button
+                  label="查询后按此版本重建"
+                  variant="primary"
+                  onClick={() => setRecreatingDatabase(true)}
+                />
+              )
+            ) : current.engine === "mongodb" ? (
+              <Unavailable
+                title="MongoDB 暂不支持重建已删除数据库"
+                detail="服务目前无法为 MongoDB tombstone 提供原子所有权保护，因此不会提交重建操作。"
+              />
+            ) : (
+              <Unavailable
+                title="当前没有安全重建所需的权限"
+                detail="需要读取数据库管理记录和创建数据库的权限。"
+              />
+            )}
+          </>
+        ) : (
+          <Unavailable
+            title="数据库记录当前不可操作"
+            detail={`当前状态为 ${current.state || "unknown"}；仅 active 记录可管理账户和备份。`}
+          />
+        )}
+      </section>
+    );
+  }
   return (
     <section className="stack" aria-label="数据库资源管理">
       <div className="detail-grid">

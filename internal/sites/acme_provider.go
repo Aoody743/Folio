@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/core"
+	"github.com/Aoody743/PowerLinux/internal/jobs"
 )
 
 type acmePublicInput struct {
@@ -55,7 +56,35 @@ func (p *Provider) acmeBindings() []core.Binding {
 				request.ACME = &input
 				request.OrderRef = orderRef
 				request.AuthorizedSites = acmeDeclaredSites(resources)
-				job, err := p.deps.Tasks.Submit(ctx, a, "certificate_acme_order", encode(request), resources)
+				orderActionRevision, previousJobID, err := p.acmeOrderActionRetry(ctx, a, in.ID, orderRef)
+				if err != nil {
+					return core.ActionResult{}, err
+				}
+				job, err := p.deps.Tasks.SubmitPrepared(ctx, a, "certificate_acme_order", encode(request), core.TaskMetadata{Resources: resources}, func(store core.MetadataStore, job jobs.Job) error {
+					if err := pinDNSCredentialVersionTx(ctx, store, input); err != nil {
+						return err
+					}
+					key := acmeOrderActionKey(in.ID, orderRef)
+					previous, revision, err := store.GetVersioned(ctx, "acme_order_actions", key)
+					if isNotFound(err) {
+						revision, err = 0, nil
+					}
+					if err != nil {
+						return err
+					}
+					if revision != orderActionRevision {
+						return failure("revision_conflict", "ACME order action changed while its task was prepared", 412)
+					}
+					if revision > 0 {
+						var saved acmeOrderSubmission
+						if json.Unmarshal(previous, &saved) != nil || saved.CertificateID != in.ID || saved.OrderRef != orderRef || saved.JobID == "" || saved.JobID != previousJobID || !slices.Contains([]string{"confirm", "cancel"}, saved.Kind) {
+							return failure("metadata_invalid", "ACME order action receipt needs recovery inspection", 500)
+						}
+					}
+					receipt := acmeOrderSubmission{CertificateID: in.ID, OrderRef: orderRef, Kind: spec.kind, JobID: job.ID, CreatedAt: job.CreatedAt}
+					_, err = store.CompareAndSwap(ctx, "acme_order_actions", key, orderActionRevision, encode(receipt))
+					return err
+				})
 				id, _ := job["id"].(string)
 				return core.ActionResult{Data: job, Resources: resources, TaskID: id}, err
 			}
@@ -190,7 +219,7 @@ func (p *Provider) pinACMECredential(ctx context.Context, a core.Actor, input *A
 		}
 		input.CredentialRevision = revision
 	}
-	value, err := p.loadDNSCredentialVersion(ctx, input.CredentialID, input.CredentialRevision)
+	value, err := p.readDNSCredentialVersion(ctx, input.CredentialID, input.CredentialRevision)
 	if err != nil {
 		return err
 	}
@@ -198,6 +227,67 @@ func (p *Provider) pinACMECredential(ctx context.Context, a core.Actor, input *A
 		return invalid("Pinned DNS credential provider does not match the selected adapter")
 	}
 	return nil
+}
+
+// readDNSCredentialVersion validates the selected immutable version without
+// adopting a legacy head as a side effect. New pins are created with the task,
+// settings and authorization in SubmitPrepared's SQLite transaction.
+func (p *Provider) readDNSCredentialVersion(ctx context.Context, id string, revision int64) (DNSCredential, error) {
+	if !safeID.MatchString(id) || revision <= 0 {
+		return DNSCredential{}, invalid("A pinned DNS credential revision is required")
+	}
+	raw, err := p.deps.State.Get(ctx, "dns_credential_versions", dnsVersionID(id, revision))
+	if isNotFound(err) {
+		value, current, loadErr := p.loadDNSCredential(ctx, id)
+		if loadErr != nil {
+			return DNSCredential{}, loadErr
+		}
+		if current != revision {
+			return DNSCredential{}, failure("credential_version_unavailable", "The original DNS credential version needs recovery inspection", 412)
+		}
+		return value, nil
+	}
+	if err != nil {
+		return DNSCredential{}, err
+	}
+	var value dnsCredentialVersion
+	if json.Unmarshal(raw, &value) != nil || value.ID != id || value.Revision != revision || value.Provider == "" || value.SecretRef == "" {
+		return DNSCredential{}, failure("metadata_invalid", "DNS credential version needs recovery inspection", 500)
+	}
+	return value.DNSCredential, nil
+}
+
+func pinDNSCredentialVersionTx(ctx context.Context, store core.MetadataStore, input ACMEInput) error {
+	if input.Challenge != "dns" {
+		return nil
+	}
+	if !safeID.MatchString(input.CredentialID) || input.CredentialRevision <= 0 {
+		return invalid("A pinned DNS credential revision is required")
+	}
+	key := dnsVersionID(input.CredentialID, input.CredentialRevision)
+	raw, _, err := store.GetVersioned(ctx, "dns_credential_versions", key)
+	if err == nil {
+		var version dnsCredentialVersion
+		if json.Unmarshal(raw, &version) != nil || version.ID != input.CredentialID || version.Revision != input.CredentialRevision || version.Provider != input.Provider || version.SecretRef == "" {
+			return failure("metadata_invalid", "Pinned DNS credential version needs recovery inspection", 500)
+		}
+		return nil
+	}
+	if !isNotFound(err) {
+		return err
+	}
+	currentRaw, revision, err := store.GetVersioned(ctx, "dns_credentials", input.CredentialID)
+	if err != nil {
+		return err
+	}
+	if revision != input.CredentialRevision {
+		return failure("credential_version_unavailable", "The original DNS credential version needs recovery inspection", 412)
+	}
+	var current DNSCredential
+	if json.Unmarshal(currentRaw, &current) != nil || current.ID != input.CredentialID || current.SecretRef == "" || current.Provider != input.Provider {
+		return failure("metadata_invalid", "DNS credential needs recovery inspection", 500)
+	}
+	return ensureDNSCredentialVersion(ctx, store, current, revision)
 }
 func (p *Provider) dnsCredentialsAction(ctx context.Context, a core.Actor, name string, raw json.RawMessage) (core.ActionResult, error) {
 	if strings.HasSuffix(name, "list") {
@@ -412,15 +502,61 @@ func (p *Provider) acmeResources(ctx context.Context, a core.Actor, raw json.Raw
 	return resources, nil
 }
 
-// Until core offers one SQLite transaction for metadata preparation and durable
-// job creation, an unresolved preparation is a fail-closed submission receipt.
-// It is never an assertion that a process-crash window was replayed safely.
+// Submission receipts now commit with their durable task and authorization.
+// Legacy receipts without a task identity remain fail-closed because their
+// process-crash window cannot be proven safe to replay.
 type acmeSubmission struct {
 	Input            ACMEInput `json:"input"`
 	ExpectedRevision int64     `json:"expected_revision"`
 	ActorID          string    `json:"actor_id"`
 	JobID            string    `json:"job_id,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
+}
+
+type acmeOrderSubmission struct {
+	CertificateID string    `json:"certificate_id"`
+	OrderRef      string    `json:"order_ref"`
+	Kind          string    `json:"kind"`
+	JobID         string    `json:"job_id"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+func acmeOrderActionKey(id, orderRef string) string { return id + "@" + orderRef }
+
+// acmeOrderActionRetry verifies a prior durable action before allowing a new
+// one for the same root order. Only a task known to have been canceled before
+// its executor started is safe to replace automatically; a running, completed,
+// failed or interrupted task may already have changed the remote ACME state.
+func (p *Provider) acmeOrderActionRetry(ctx context.Context, actor core.Actor, id, orderRef string) (int64, string, error) {
+	key := acmeOrderActionKey(id, orderRef)
+	raw, revision, err := p.deps.State.GetVersioned(ctx, "acme_order_actions", key)
+	if isNotFound(err) {
+		return 0, "", nil
+	}
+	if err != nil {
+		return 0, "", err
+	}
+	var saved acmeOrderSubmission
+	if json.Unmarshal(raw, &saved) != nil || saved.CertificateID != id || saved.OrderRef != orderRef || saved.JobID == "" || !slices.Contains([]string{"confirm", "cancel"}, saved.Kind) {
+		return 0, "", failure("metadata_invalid", "ACME order action receipt needs recovery inspection", 500)
+	}
+	job, err := p.deps.Tasks.Get(ctx, actor, saved.JobID)
+	if err != nil {
+		return 0, "", &core.Error{Code: "acme_order_action_state_unavailable", Message: "The prior ACME task state cannot be verified; inspect it before retrying", Status: 409, Details: map[string]any{"task_id": saved.JobID}}
+	}
+	status, _ := job["status"].(string)
+	if status != "canceled" {
+		return 0, "", &core.Error{Code: "acme_order_action_submitted", Message: "An action was already submitted for this ACME order; inspect its saved task before retrying", Status: 409, Details: map[string]any{"task_id": saved.JobID, "status": status}}
+	}
+	var result struct {
+		StartedAt time.Time `json:"started_at"`
+		Canceled  bool      `json:"canceled"`
+	}
+	encoded, _ := json.Marshal(job["result"])
+	if json.Unmarshal(encoded, &result) != nil || !result.Canceled || !result.StartedAt.IsZero() {
+		return 0, "", &core.Error{Code: "acme_order_action_recovery_required", Message: "The prior ACME task may have reached the executor; inspect the order before retrying", Status: 409, Details: map[string]any{"task_id": saved.JobID}}
+	}
+	return revision, saved.JobID, nil
 }
 
 var acmeSubmissionLocks certificateLocks
@@ -482,6 +618,13 @@ func (p *Provider) submitACME(ctx context.Context, a core.Actor, name string, ra
 		return core.ActionResult{}, err
 	}
 	defer unlock()
+	_, settingsRevision, err := p.deps.State.GetVersioned(ctx, "acme_settings", identity.ID)
+	if isNotFound(err) {
+		settingsRevision, err = 0, nil
+	}
+	if err != nil {
+		return core.ActionResult{}, err
+	}
 	in, err := p.effectiveACME(ctx, raw)
 	if err != nil {
 		return core.ActionResult{}, err
@@ -498,77 +641,45 @@ func (p *Provider) submitACME(ctx context.Context, a core.Actor, name string, ra
 	if err != nil {
 		return core.ActionResult{}, err
 	}
-	prepared := acmeSubmission{Input: in.ACMEInput, ExpectedRevision: in.ExpectedRevision, ActorID: a.ID, CreatedAt: time.Now().UTC()}
-	var previous json.RawMessage
-	var settingsRevision int64
-	err = p.deps.State.Transaction(ctx, func(store core.MetadataStore) error {
-		var revision int64
-		var err error
-		previous, revision, err = store.GetVersioned(ctx, "acme_settings", in.ID)
-		if err != nil && !isNotFound(err) {
+	job, err := p.deps.Tasks.SubmitPrepared(ctx, a, "certificate_acme_issue", encode(request{ID: in.ID, ExpectedRevision: in.ExpectedRevision, ACME: &in.ACMEInput, AuthorizedSites: acmeDeclaredSites(resources), Actor: a.Public()}), core.TaskMetadata{Resources: resources}, func(store core.MetadataStore, job jobs.Job) error {
+		if err := pinDNSCredentialVersionTx(ctx, store, in.ACMEInput); err != nil {
 			return err
 		}
-		settingsRevision, err = store.CompareAndSwap(ctx, "acme_settings", in.ID, revision, encode(in.ACMEInput))
+		_, currentSettingsRevision, err := store.GetVersioned(ctx, "acme_settings", in.ID)
+		if isNotFound(err) {
+			currentSettingsRevision, err = 0, nil
+		}
 		if err != nil {
 			return err
 		}
-		submissionRevision, err = store.CompareAndSwap(ctx, "acme_submissions", in.ID, submissionRevision, encode(prepared))
+		if currentSettingsRevision != settingsRevision {
+			return failure("revision_conflict", "ACME renewal settings changed while its task was prepared", 412)
+		}
+		if _, err = store.CompareAndSwap(ctx, "acme_settings", in.ID, settingsRevision, encode(in.ACMEInput)); err != nil {
+			return err
+		}
+		_, currentSubmissionRevision, err := store.GetVersioned(ctx, "acme_submissions", in.ID)
+		if isNotFound(err) {
+			currentSubmissionRevision, err = 0, nil
+		}
+		if err != nil {
+			return err
+		}
+		if currentSubmissionRevision != submissionRevision {
+			return failure("revision_conflict", "ACME submission changed while its task was prepared", 412)
+		}
+		prepared := acmeSubmission{Input: in.ACMEInput, ExpectedRevision: in.ExpectedRevision, ActorID: a.ID, JobID: job.ID, CreatedAt: job.CreatedAt}
+		_, err = store.CompareAndSwap(ctx, "acme_submissions", in.ID, submissionRevision, encode(prepared))
 		return err
 	})
 	if err != nil {
 		return core.ActionResult{}, err
 	}
-	job, err := p.deps.Tasks.Submit(ctx, a, "certificate_acme_issue", encode(request{ID: in.ID, ExpectedRevision: in.ExpectedRevision, ACME: &in.ACMEInput, AuthorizedSites: acmeDeclaredSites(resources), Actor: a.Public()}), resources)
-	if err != nil {
-		// These codes are returned by core before calling jobs.Submit. A generic
-		// task_rejected may reflect an uncertain persistence error, so it must
-		// keep the preparation rather than pretending no job was created.
-		if slices.Contains([]string{"forbidden", "unauthorized", "invalid_input"}, core.ErrorCode(err)) {
-			cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
-			defer cancel()
-			rollbackErr := p.deps.State.Transaction(cleanupCtx, func(store core.MetadataStore) error {
-				current, revision, e := store.GetVersioned(cleanupCtx, "acme_submissions", in.ID)
-				if e != nil {
-					return e
-				}
-				if revision != submissionRevision || string(current) != string(encode(prepared)) {
-					return failure("revision_conflict", "ACME preparation changed; rollback left it untouched", 412)
-				}
-				current, revision, e = store.GetVersioned(cleanupCtx, "acme_settings", in.ID)
-				if e != nil {
-					return e
-				}
-				if revision != settingsRevision || string(current) != string(encode(in.ACMEInput)) {
-					return failure("revision_conflict", "ACME settings changed; rollback left them untouched", 412)
-				}
-				if previous == nil {
-					e = store.Delete(cleanupCtx, "acme_settings", in.ID)
-				} else {
-					_, e = store.CompareAndSwap(cleanupCtx, "acme_settings", in.ID, revision, previous)
-				}
-				if e != nil {
-					return e
-				}
-				return store.Delete(cleanupCtx, "acme_submissions", in.ID)
-			})
-			err = errors.Join(err, rollbackErr)
-		}
-		return core.ActionResult{}, err
-	}
 	id, _ := job["id"].(string)
 	if id == "" {
-		return core.ActionResult{}, failure("acme_submission_pending", "Task submission returned no durable identity; its preparation was retained", 502)
+		return core.ActionResult{}, failure("acme_submission_pending", "Prepared task returned no durable identity; inspect ACME submission state before retrying", 502)
 	}
-	prepared.JobID = id
-	commitCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
-	defer cancel()
-	_, err = p.deps.State.CompareAndSwap(commitCtx, "acme_submissions", in.ID, submissionRevision, encode(prepared))
-	if err != nil {
-		// A real job already exists. Preserve its response instead of making
-		// the client retry and obscure the job behind an HTTP failure.
-		job["submission_metadata_pending"] = true
-	}
-	return core.ActionResult{Data: job, TaskID: id, Resources: resources, AuditSummary: map[string]any{"submission_metadata_pending": err != nil}}, nil
+	return core.ActionResult{Data: job, TaskID: id, Resources: resources}, nil
 }
 func (p *Provider) resolveACMEJob(ctx context.Context, a core.Actor, in *request) error {
 	if !p.deps.Authorize(a, "certificates:write", CertificateResource(in.ID)) {

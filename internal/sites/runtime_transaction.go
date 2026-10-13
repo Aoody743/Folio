@@ -2,6 +2,13 @@ package sites
 
 import "context"
 
+type mutationRuntimeContextKey struct{}
+
+func mutationRuntimeActive(ctx context.Context, executor *AgentExecutor) bool {
+	active, ok := ctx.Value(mutationRuntimeContextKey{}).(*AgentExecutor)
+	return ok && active == executor
+}
+
 // Production composition implements this through the protected software
 // instance locks. Test runtimes may omit it without claiming lifecycle proof.
 type RuntimeTransactions interface {
@@ -63,16 +70,28 @@ func (e *AgentExecutor) mutationRuntimes(operation string, in request) ([]string
 }
 
 func (e *AgentExecutor) withMutationRuntimes(ctx context.Context, operation string, in request, callback func(context.Context) error) error {
+	run := func(locked context.Context) error {
+		return callback(context.WithValue(locked, mutationRuntimeContextKey{}, e))
+	}
 	transaction, ok := e.runtimes.(RuntimeTransactions)
 	if !ok {
-		return callback(ctx)
+		return run(ctx)
 	}
 	ids, err := e.mutationRuntimes(operation, in)
 	if err != nil {
 		return err
 	}
 	if len(ids) == 0 {
-		return callback(ctx)
+		return run(ctx)
 	}
-	return transaction.WithRuntimeTransaction(ctx, ids, callback)
+	return transaction.WithRuntimeTransaction(ctx, ids, run)
+}
+
+func websiteJournalOperation(operation string) bool {
+	switch operation {
+	case "site_apply", "site_delete", "site_config_set", "site_default_set", "site_backup_restore", "certificate_import", "certificate_delete":
+		return true
+	default:
+		return false
+	}
 }

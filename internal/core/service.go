@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -82,7 +83,7 @@ func New(dataDir string) (*Service, error) {
 		return nil, errors.New("database cannot be a symlink")
 	}
 	uri := url.URL{Scheme: "file", Path: dbpath}
-	uri.RawQuery = "_txlock=immediate&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)"
+	uri.RawQuery = "_txlock=immediate&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)&_pragma=synchronous(FULL)"
 	db, err := sql.Open("sqlite3", uri.String())
 	if err != nil {
 		return nil, err
@@ -173,13 +174,26 @@ func loadOrCreateSecret(path string, n int) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = f.WriteString(base64.RawURLEncoding.EncodeToString(raw) + "\n")
+	encoded := []byte(base64.RawURLEncoding.EncodeToString(raw) + "\n")
+	n, writeErr := f.Write(encoded)
+	if writeErr == nil && n != len(encoded) {
+		writeErr = io.ErrShortWrite
+	}
+	if writeErr == nil {
+		writeErr = f.Sync()
+	}
 	closeErr := f.Close()
+	if err = errors.Join(writeErr, closeErr); err != nil {
+		return nil, err
+	}
+	dir, err := os.Open(filepath.Dir(path))
 	if err != nil {
 		return nil, err
 	}
-	if closeErr != nil {
-		return nil, closeErr
+	syncErr := dir.Sync()
+	closeErr = dir.Close()
+	if err = errors.Join(syncErr, closeErr); err != nil {
+		return nil, err
 	}
 	return raw, nil
 }

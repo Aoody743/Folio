@@ -39,6 +39,12 @@ func (r *qaDeleteRuntime) Reload(ctx context.Context, id string) error {
 	return err
 }
 
+func (r *qaDeleteRuntime) RecoverRuntime(ctx context.Context, id string) error {
+	// Keep the wrapper's transaction-marker and cancellation assertions on the
+	// recovery path instead of bypassing them through the embedded fixture.
+	return r.Reload(ctx, id)
+}
+
 func TestQARootDeleteLateMetadataFailureRestoresConfigurationInsideCancelledTransaction(t *testing.T) {
 	e, fixture := qaRootExecutor(t)
 	site := rootOwnedTestSite(t)

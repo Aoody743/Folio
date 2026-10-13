@@ -3,9 +3,11 @@ package sites
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -91,11 +93,11 @@ func (s *credentialTrackedSecrets) latest() string {
 
 type credentialFaultState struct {
 	core.MetadataStore
-	failSettings, failVersion, failSubmissionCommit *atomic.Bool
+	failVersion *atomic.Bool
 }
 
 func (s credentialFaultState) CompareAndSwap(ctx context.Context, kind, id string, expected int64, raw json.RawMessage) (int64, error) {
-	if kind == "acme_settings" && s.failSettings.Load() || kind == "dns_credential_versions" && s.failVersion.Load() || kind == "acme_submissions" && expected > 0 && s.failSubmissionCommit.Load() {
+	if kind == "dns_credential_versions" && s.failVersion.Load() {
 		return 0, failure("fixture_persistence_failed", "Injected persistence failure", 500)
 	}
 	return s.MetadataStore.CompareAndSwap(ctx, kind, id, expected, raw)
@@ -114,11 +116,17 @@ type credentialVersionFixture struct {
 	agent    *credentialVersionAgent
 	secrets  *credentialTrackedSecrets
 	state    credentialFaultState
+	dataDir  string
 }
 
 func newCredentialVersionFixture(t *testing.T) credentialVersionFixture {
 	t.Helper()
-	s, err := core.New(t.TempDir())
+	return newCredentialVersionFixtureAt(t, t.TempDir())
+}
+
+func newCredentialVersionFixtureAt(t *testing.T, dataDir string) credentialVersionFixture {
+	t.Helper()
+	s, err := core.New(dataDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +141,7 @@ func newCredentialVersionFixture(t *testing.T) credentialVersionFixture {
 	}
 	deps := s.Runtime("sites")
 	secrets := &credentialTrackedSecrets{SecretStore: deps.Secrets}
-	state := credentialFaultState{MetadataStore: deps.State, failSettings: &atomic.Bool{}, failVersion: &atomic.Bool{}, failSubmissionCommit: &atomic.Bool{}}
+	state := credentialFaultState{MetadataStore: deps.State, failVersion: &atomic.Bool{}}
 	deps.State, deps.Secrets = state, secrets
 	agentFixture := &credentialVersionAgent{orders: map[string]ACMEInput{}, refs: map[string]string{}, received: make(chan request, 16)}
 	p, err := New(deps, Options{Agent: agentFixture})
@@ -146,7 +154,19 @@ func newCredentialVersionFixture(t *testing.T) credentialVersionFixture {
 	if err = s.RegisterExecutor(JobOperationNames(), p); err != nil {
 		t.Fatal(err)
 	}
-	return credentialVersionFixture{s, a, p, agentFixture, secrets, state}
+	return credentialVersionFixture{s, a, p, agentFixture, secrets, state, dataDir}
+}
+
+func credentialExecSQL(t *testing.T, dataDir, statement string) {
+	t.Helper()
+	db, err := sql.Open("sqlite3", "file:"+filepath.ToSlash(filepath.Join(dataDir, "powerlinux.db")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(statement); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func (f credentialVersionFixture) save(t *testing.T, expected int64, token string) {
@@ -189,6 +209,19 @@ func credentialAwaitJob(t *testing.T, f credentialVersionFixture, id, status str
 		case <-time.After(5 * time.Millisecond):
 		}
 	}
+}
+
+func credentialListTasks(t *testing.T, f credentialVersionFixture) []map[string]any {
+	t.Helper()
+	value, err := f.service.Execute(context.Background(), f.actor, "tasks_list", encode(map[string]any{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobs, ok := value.([]map[string]any)
+	if !ok {
+		t.Fatalf("unexpected task list result %T", value)
+	}
+	return jobs
 }
 
 type credentialQueueGate struct {
@@ -517,45 +550,51 @@ func TestDNSCredentialVersionQueuedCertificateDoesNotAdoptUndeclaredWebsiteRefer
 	}
 }
 
-func TestACMESubmissionPreparationFailureAndUnknownCommitNeverLoseOrOverwriteSettings(t *testing.T) {
+func TestACMEPreparedSQLiteFaultsRollBackTaskSettingsAndCredentialPin(t *testing.T) {
 	f := newCredentialVersionFixture(t)
 	f.save(t, 0, "initial-token")
 	input := credentialInput("prepared-certificate")
-	f.state.failSettings.Store(true)
-	if _, err := f.service.Execute(context.Background(), f.actor, "certificates_acme_issue", credentialPublicRaw(input)); core.ErrorCode(err) != "fixture_persistence_failed" {
-		t.Fatal("settings preparation failure was not propagated", err)
+	// Exercise adoption of an existing credential head by the same transaction
+	// that commits its first ACME task.
+	if err := f.state.Delete(context.Background(), "dns_credential_versions", dnsVersionID("version-dns", 1)); err != nil {
+		t.Fatal(err)
 	}
-	if _, err := f.state.Get(context.Background(), "acme_settings", input.ID); !isNotFound(err) {
-		t.Fatal("failed settings transaction left a partial configuration", err)
-	}
-	select {
-	case <-f.agent.received:
-		t.Fatal("a task ran before its settings committed")
-	default:
-	}
-	f.state.failSettings.Store(false)
-	release := credentialHoldFourSlots(t, f)
-	f.state.failSubmissionCommit.Store(true)
-	result, err := f.service.Execute(context.Background(), f.actor, "certificates_acme_issue", credentialPublicRaw(input))
-	if err != nil || result.(map[string]any)["submission_metadata_pending"] != true {
-		t.Fatal("a real queued job was hidden by a post-submit persistence failure", err)
-	}
-	id := result.(map[string]any)["id"].(string)
-	input.Domains = []string{"changed.example.test"}
-	if _, err := f.service.Execute(context.Background(), f.actor, "certificates_acme_issue", credentialPublicRaw(input)); core.ErrorCode(err) != "acme_submission_pending" {
-		t.Fatal("unknown submission was replayed or overwritten", err)
-	}
-	raw, err := f.state.Get(context.Background(), "acme_settings", input.ID)
-	var saved ACMEInput
-	if err != nil || json.Unmarshal(raw, &saved) != nil || saved.Domains[0] != "example.test" || saved.CredentialRevision != 1 {
-		t.Fatal("pending submission lost its original pinned settings", err)
-	}
-	f.state.failSubmissionCommit.Store(false)
-	release()
-	credentialAwaitJob(t, f, id, "succeeded")
-	issued := <-f.agent.received
-	if issued.ACME.Domains[0] != "example.test" {
-		t.Fatal("the actual durable job received replacement settings")
+	for _, fault := range []struct {
+		name      string
+		statement string
+	}{
+		{"task_metadata", `CREATE TRIGGER reject_acme_task_metadata BEFORE INSERT ON task_metadata BEGIN SELECT RAISE(FAIL,'injected task metadata fault'); END`},
+		{"submission_receipt", `CREATE TRIGGER reject_acme_submission BEFORE INSERT ON provider_state WHEN NEW.namespace='sites' AND NEW.kind='acme_submissions' BEGIN SELECT RAISE(FAIL,'injected ACME receipt fault'); END`},
+	} {
+		t.Run(fault.name, func(t *testing.T) {
+			t.Cleanup(func() {
+				credentialExecSQL(t, f.dataDir, `DROP TRIGGER IF EXISTS reject_acme_task_metadata; DROP TRIGGER IF EXISTS reject_acme_submission;`)
+			})
+			credentialExecSQL(t, f.dataDir, fault.statement)
+			if _, err := f.service.Execute(context.Background(), f.actor, "certificates_acme_issue", credentialPublicRaw(input)); err == nil {
+				t.Fatal("injected SQLite fault was reported as a successful ACME task")
+			}
+			if _, err := f.state.Get(context.Background(), "acme_settings", input.ID); !isNotFound(err) {
+				t.Fatal("failed prepared transaction left ACME settings", err)
+			}
+			if _, err := f.state.Get(context.Background(), "acme_submissions", input.ID); !isNotFound(err) {
+				t.Fatal("failed prepared transaction left a submission receipt", err)
+			}
+			if _, err := f.state.Get(context.Background(), "dns_credential_versions", dnsVersionID("version-dns", 1)); !isNotFound(err) {
+				t.Fatal("failed prepared transaction left a credential pin", err)
+			}
+			jobs := credentialListTasks(t, f)
+			for _, job := range jobs {
+				if job["operation"] == "certificate_acme_issue" {
+					t.Fatal("failed ACME preparation left a durable task")
+				}
+			}
+			select {
+			case <-f.agent.received:
+				t.Fatal("failed prepared transaction reached the ACME executor")
+			default:
+			}
+		})
 	}
 }
 

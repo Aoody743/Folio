@@ -25,6 +25,18 @@ export type Schema = {
   anyOf?: Schema[];
   writeOnly?: boolean;
 };
+export function applyLockedPreset(
+  value: unknown,
+  preset: Record<string, unknown>,
+  fields: string[],
+): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const result = { ...(value as Record<string, unknown>) };
+  for (const field of fields)
+    if (Object.prototype.hasOwnProperty.call(preset, field))
+      result[field] = preset[field];
+  return result;
+}
 export function isDecimalCursorSchema(schema: Schema): boolean {
   const variants = schema.oneOf ?? schema.anyOf;
   return (

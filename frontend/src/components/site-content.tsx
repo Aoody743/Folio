@@ -15,6 +15,7 @@ import {
 import { Page, Site } from "@/lib/resources";
 import { useResource } from "@/lib/resource-hook";
 import { readDraft, saveDraft, forgetDraft } from "@/lib/draft-cache";
+import { verifiedSiteBackupDownloadHref } from "@/lib/site-backup-download";
 import { ActionForm } from "./actions";
 import { Pager, ResourceActions, Unavailable } from "./resource-ui";
 import { TaskResult } from "./task-result";
@@ -282,6 +283,8 @@ export function SiteBackups({
 }) {
   const [selected, setSelected] = useState<string>();
   const [operation, setOperation] = useState<string>();
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
   const [creating, setCreating] = useState(false);
   const [offset, setOffset] = useState(0);
   const records = useResource<Backup[] | Page<Backup>>(
@@ -292,9 +295,48 @@ export function SiteBackups({
   const rows = list(records.data);
   const current = rows.find((row) => row.id === selected);
   const create = capabilities.find((c) => c.name === "sites_backup_create");
+  const download = capabilities.some(
+    (c) => c.name === "sites_backup_download",
+  );
   const refresh = () => {
     void records.reload();
     onExecuted();
+  };
+  const downloadBackup = async (backup: Backup) => {
+    setDownloading(true);
+    setDownloadError("");
+    try {
+      const result = await action<unknown>("sites_backup_download", {
+        id,
+        backup_id: backup.id,
+      });
+      const href = verifiedSiteBackupDownloadHref(
+        result,
+        {
+          siteID: id,
+          backupID: backup.id,
+          size: backup.size,
+          sha256: backup.sha256,
+        },
+        window.location.origin,
+      );
+      const anchor = document.createElement("a");
+      anchor.href = href;
+      anchor.download = `${backup.id}.tar.gz`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    } catch (error) {
+      setDownloadError(
+        error instanceof APIError && error.code === "forbidden"
+          ? "下载被服务器拒绝：请检查网站备份与站点文件读取权限。"
+          : error instanceof Error
+            ? error.message
+            : "网站备份下载准备失败。",
+      );
+    } finally {
+      setDownloading(false);
+    }
   };
   return (
     <section className="stack" aria-label="网站备份">
@@ -303,7 +345,9 @@ export function SiteBackups({
         {create && (
           <Button
             label="创建网站备份"
+            isDisabled={downloading}
             onClick={() => {
+              setDownloadError("");
               setCreating(!creating);
               setOperation(undefined);
             }}
@@ -325,8 +369,10 @@ export function SiteBackups({
                 key={row.id}
                 className="instance-row"
                 aria-pressed={selected === row.id}
+                disabled={downloading}
                 onClick={() => {
                   setSelected(row.id);
+                  setDownloadError("");
                   setOperation(undefined);
                   setCreating(false);
                 }}
@@ -371,6 +417,27 @@ export function SiteBackups({
           <p className="muted">
             选定备份 {current.id}。恢复会使用当前网站版本检查，并验证备份产物。
           </p>
+          {download && (
+            <div className="stack">
+              <Button
+                label="下载已验证网站备份"
+                variant="primary"
+                isLoading={downloading}
+                isDisabled={downloading}
+                onClick={() => void downloadBackup(current)}
+              />
+              {downloading && (
+                <p className="muted" role="status">
+                  正在验证备份并准备下载…
+                </p>
+              )}
+              {downloadError && (
+                <div className="notice danger" role="alert">
+                  {downloadError}
+                </div>
+              )}
+            </div>
+          )}
           <ResourceActions
             capabilities={capabilities}
             names={(name) =>

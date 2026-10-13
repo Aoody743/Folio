@@ -1,0 +1,31 @@
+{
+  "baseline_commit": "d66f559553eccd1df06ba946b86244f190c571ca",
+  "version": "0.1.0-dev.11",
+  "working_tree_dirty": true,
+  "changed_product_files": {
+    "cmd/powerlinux/agent.go": "49a0c860b7505f4000def164f4b6bcbf69ec3db5da1b319ebd925d93d69fb5ad",
+    "frontend/src/components/actions.tsx": "483d8589ccdae27287f51645b53a619d9627a3d722ff41332246c0d8b765bbc7",
+    "frontend/src/components/database-recreation.tsx": "f49e42e1b859df829503ce2be5a6d488e118bd3394f3f9c424815d16b53f1d68",
+    "frontend/src/components/instance-resources.tsx": "77f47f4974cfeaccdde5a920523b7c17920ac80d9b7848f568f6cada8275a322",
+    "frontend/src/components/managed-databases.tsx": "1265c05f3cfece96289ad940be4400c13be49a793e504dae41652ea5a9ad4c72",
+    "frontend/src/components/resource-ui.tsx": "80ece843852e9cd47189e3e61b09415ef44cfa73908a0146ec68975f0609a6a2",
+    "frontend/src/components/site-content.tsx": "612be7cbe30441dac00419c7ab58a8475d1b51662e3cb88e90f5cd73d3d93376",
+    "frontend/src/lib/api.ts": "8febd3186ba8c9ae5a731e38800e34c330906b736c3437bdccc8c42254743c07",
+    "frontend/src/lib/database-recreation.ts": "4a0506da39e2afae20f469ea84195569e865b0c1f497efc623ab4fd05868bb35",
+    "frontend/src/lib/labels.ts": "ee58023476ff46ed24f3eec5beb6b361b830cff353671f9e9945ecb4f6b89508",
+    "frontend/src/lib/schema.ts": "6170ac514e7edb40445be7b003b3669e6aad0d9648f5ac24dffcf23ed6e1c550",
+    "frontend/src/lib/site-backup-download.ts": "a357fe74fd8c5929001bd6dc476b12f167ad3dc4ff5b08111d2c3ebb0162cde1",
+    "internal/core/prepared_tasks.go": "2870b9269f2bc25c4f8e016ebfdc7b68a07b4ae6d5947befdde9a3afa8529e0c",
+    "internal/core/service.go": "06858b7203c38cb5731a3698a641a7cd8cc5781a3031726b99e269601caa9995",
+    "internal/jobs/prepare.go": "2d185ee511c2204af3e7d48ae14bf9f397e7b009a9cb3ebbe790b93aa0d7faa1",
+    "internal/plugins/database_managed.go": "d517b13bf5b413a1d0f66f22ec6e6dc6c984281d02e0d571f48d83487fb24c0f",
+    "internal/sites/acme_provider.go": "496a17032b42694c9beb812f2ac097a75ba256ec77bd75cc948cb730183a58fe",
+    "internal/sites/agent.go": "fade1c04f5e76133342fb0ac17ee50d9c249cf8c1f5b143636a0c41bcf12abe4",
+    "internal/sites/backups.go": "2b66cf68133ec8e481831f28dfb8194f3e6a8a8449ba95f5c7980fc840a50b4f",
+    "internal/sites/certificates.go": "9ac7f550d4118f0ce924929a75b01c731b77e625efeb4ff2a28482c3621f9849",
+    "internal/sites/default.go": "30db8e55eb7844315ad5a2be22137949ed0307adc4131638fc52d77fbabbf6d0",
+    "internal/sites/journal.go": "65869438989ba9c296fd4734bc9105324bfd32a3f486154e5e0b81220ba1f5e9",
+    "internal/sites/runtime_transaction.go": "28187cbb926895adb401d3d617cc2dade7ea4ce0b9016c6c5d53708d8a652602"
+  },
+  "scope": "Hashes bind changed product source to frozen dev.11 build. Unchanged source is from baseline commit; generated assets are inside tar checksum."
+}

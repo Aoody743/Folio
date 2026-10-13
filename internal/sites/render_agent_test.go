@@ -250,6 +250,16 @@ func (r *qaRuntimeFixture) Reload(context.Context, string) error {
 	return nil
 }
 
+// RecoverRuntime models an already-running test runtime. Production composition
+// uses plugins.PrivilegedExecutor.RecoverRuntime, which never starts a stopped
+// service; this fixture records the revalidation/reload performed in tests.
+func (r *qaRuntimeFixture) RecoverRuntime(ctx context.Context, id string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return r.Reload(ctx, id)
+}
+
 func qaRootExecutor(t *testing.T) (*AgentExecutor, *qaRuntimeFixture) {
 	t.Helper()
 	qaOwnedRootVM(t)

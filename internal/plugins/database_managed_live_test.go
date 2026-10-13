@@ -5,12 +5,14 @@ package plugins
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,13 +34,16 @@ func liveManagedFixture(t *testing.T, engine string) (*core.Service, core.Actor,
 	if json.Unmarshal(fixtures[engine+"_admin"], &in) != nil {
 		t.Fatal("invalid isolated administrative fixture metadata")
 	}
-	e := testAgent(t)
+	e := shortPathDatabaseFixtureAgent(t)
 	id := engine + "-managed-fixture"
 	instance := Instance{ID: id, PluginID: engine, InstanceID: "managed-fixture", Status: "external-fixture", Paths: e.instancePaths(engine, "managed-fixture"), Revision: 1, Ownership: "fixture", Config: map[string]any{"bind": in.Host, "port": in.Port}, Service: ServiceProfile{ID: id, Unit: "powerlinux-plugin-" + id + ".service"}}
 	for _, dir := range []string{instance.Paths.DataDir, instance.Paths.RunDir, instance.Paths.BackupDir} {
 		if err := os.MkdirAll(dir, 0700); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if engine == "mariadb" || engine == "mysql" {
+		installManagedMySQLSocketFixture(t, instance, in)
 	}
 	if err := e.save("receipts", id, instance); err != nil {
 		t.Fatal(err)
@@ -47,7 +52,7 @@ func liveManagedFixture(t *testing.T, engine string) (*core.Service, core.Actor,
 	if err := e.save("private", databasePrivateID(instance), credential); err != nil {
 		t.Fatal(err)
 	}
-	socket := filepath.Join(t.TempDir(), "database-agent.sock")
+	socket := filepath.Join(instance.Paths.RunDir, "database-agent.sock")
 	server, err := agent.NewUnixServer(socket, []uint32{uint32(os.Getuid())}, e)
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +103,252 @@ func liveManagedJob(t *testing.T, s *core.Service, a core.Actor, name string, in
 	return nil
 }
 func uniqueManagedName() string { return "qa_pl_" + fmt.Sprintf("%x", time.Now().UnixNano()) }
+
+func liveManagedSQLAdmin(t *testing.T, engine string, in DatabaseRegisterInput, database string) *sql.DB {
+	t.Helper()
+	db, err := openSQLProfile(context.Background(), DatabaseConnection{Engine: engine, Host: in.Host, Port: in.Port, Username: in.Username, Access: "instance"}, in.Password, database)
+	if err != nil {
+		t.Fatal("isolated SQL administrator authentication failed")
+	}
+	return db
+}
+
+func liveManagedSQLRoleExists(ctx context.Context, admin *sql.DB, engine, username string) (bool, error) {
+	var count int
+	var err error
+	if engine == "postgresql" {
+		err = admin.QueryRowContext(ctx, "SELECT count(*) FROM pg_roles WHERE rolname=$1", username).Scan(&count)
+	} else {
+		err = admin.QueryRowContext(ctx, "SELECT count(*) FROM mysql.user WHERE User=?", username).Scan(&count)
+	}
+	return count > 0, err
+}
+
+func TestLiveManagedDeletedDatabaseRecreationCASAndExternalOwnership(t *testing.T) {
+	for _, engine := range []string{"mariadb", "postgresql"} {
+		t.Run(engine, func(t *testing.T) {
+			s, a, _, e, instance, fixture := liveManagedFixture(t, engine)
+			ctx := context.Background()
+			name := uniqueManagedName()
+			admin := liveManagedSQLAdmin(t, engine, fixture, fixture.Database)
+			defer admin.Close()
+			t.Cleanup(func() {
+				admin := liveManagedSQLAdmin(t, engine, fixture, fixture.Database)
+				defer admin.Close()
+				_, _ = admin.ExecContext(context.Background(), "DROP DATABASE IF EXISTS "+quoteDatabaseIdentifier(engine, name))
+				username := "pl_" + hex.EncodeToString(sha256Digest(instance.ID + "|" + name)[:10])
+				if engine == "postgresql" {
+					_, _ = admin.ExecContext(context.Background(), "DROP ROLE IF EXISTS "+quoteDatabaseIdentifier(engine, username))
+				} else {
+					_, _ = admin.ExecContext(context.Background(), "DROP USER IF EXISTS "+quoteDatabaseIdentifier(engine, username)+"@'127.0.0.1'")
+				}
+			})
+
+			liveAction(t, s, a, "managed_database_create", map[string]any{"instance_id": instance.ID, "database": name, "permission": "read_write"})
+			created := liveManagedRecord(t, e, instance, name)
+			if created.Revision != 1 {
+				t.Fatal("first database receipt did not start at revision one")
+			}
+			oldCredential := created.Credential
+			liveManagedJob(t, s, a, "managed_database_delete", map[string]any{"instance_id": instance.ID, "database": name, "expected_revision": created.Revision})
+			tombstone := liveManagedRecord(t, e, instance, name)
+			if tombstone.State != "deleted" || tombstone.Revision != 2 || tombstone.Credential != "" {
+				t.Fatal("database deletion did not retain a credential-free revision tombstone")
+			}
+			publicRaw, _ := json.Marshal(liveAction(t, s, a, "managed_database_receipt", map[string]any{"instance_id": instance.ID, "database": name}))
+			var publicReceipt ManagedDatabase
+			if json.Unmarshal(publicRaw, &publicReceipt) != nil || publicReceipt.State != "deleted" || publicReceipt.Revision != 2 || publicReceipt.Username != tombstone.Username || strings.Contains(string(publicRaw), "credential") || strings.Contains(string(publicRaw), "password") {
+				t.Fatal("authorized database receipt did not expose only public tombstone metadata")
+			}
+			listRaw, _ := json.Marshal(liveAction(t, s, a, "managed_databases_list", map[string]any{"instance_id": instance.ID}))
+			var listed struct {
+				Items []ManagedDatabase `json:"items"`
+			}
+			if json.Unmarshal(listRaw, &listed) != nil || strings.Contains(string(listRaw), "credential") || strings.Contains(string(listRaw), "password") {
+				t.Fatal("managed database list returned invalid or secret-bearing metadata")
+			}
+			tombstoneFound := false
+			for _, item := range listed.Items {
+				if item.Database == name && item.State == "deleted" && item.Revision == 2 {
+					tombstoneFound = true
+				}
+			}
+			if !tombstoneFound {
+				t.Fatal("managed database list hid the deleted ownership tombstone")
+			}
+
+			create := func(expected int64) json.RawMessage {
+				raw, _ := json.Marshal(map[string]any{"instance_id": instance.ID, "database": name, "permission": "read_write", "expected_revision": expected})
+				return raw
+			}
+			if _, err := s.Execute(ctx, a, "managed_database_create", create(1)); core.ErrorStatus(err) != 412 || core.ErrorCode(err) != "revision_conflict" {
+				t.Fatal("stale create revision did not fail before server mutation", core.ErrorCode(err))
+			}
+
+			username := tombstone.Username
+			password := randomDatabasePassword()
+			if engine == "postgresql" {
+				_, err := admin.ExecContext(ctx, "CREATE ROLE "+quoteDatabaseIdentifier(engine, username)+" LOGIN PASSWORD "+pgSQLLiteral(password))
+				if err != nil {
+					t.Fatal("external SQL role fixture setup failed")
+				}
+				defer admin.ExecContext(context.Background(), "DROP ROLE IF EXISTS "+quoteDatabaseIdentifier(engine, username))
+			} else {
+				_, err := admin.ExecContext(ctx, "CREATE USER "+quoteDatabaseIdentifier(engine, username)+"@'127.0.0.1' IDENTIFIED BY "+mysqlLiteral(password))
+				if err != nil {
+					t.Fatal("external SQL user fixture setup failed")
+				}
+				defer admin.ExecContext(context.Background(), "DROP USER IF EXISTS "+quoteDatabaseIdentifier(engine, username)+"@'127.0.0.1'")
+			}
+			if _, err := s.Execute(ctx, a, "managed_database_create", create(2)); core.ErrorStatus(err) != 409 || core.ErrorCode(err) != "ownership_conflict" {
+				t.Fatal("same-name external SQL user was accepted for database recreation", core.ErrorCode(err))
+			}
+			if exists, err := liveManagedSQLRoleExists(ctx, admin, engine, username); err != nil || !exists {
+				t.Fatal("database recreation removed or changed an external SQL user")
+			}
+			if current := liveManagedRecord(t, e, instance, name); current.State != "deleted" || current.Revision != 2 {
+				t.Fatal("external-user conflict changed the ownership tombstone")
+			}
+			if engine == "postgresql" {
+				_, _ = admin.ExecContext(ctx, "DROP ROLE IF EXISTS "+quoteDatabaseIdentifier(engine, username))
+			} else {
+				_, _ = admin.ExecContext(ctx, "DROP USER IF EXISTS "+quoteDatabaseIdentifier(engine, username)+"@'127.0.0.1'")
+			}
+
+			_, err := admin.ExecContext(ctx, "CREATE DATABASE "+quoteDatabaseIdentifier(engine, name))
+			if err != nil {
+				t.Fatal("external SQL database fixture setup failed")
+			}
+			external := liveManagedSQLAdmin(t, engine, fixture, name)
+			if _, err = external.ExecContext(ctx, "CREATE TABLE owned_marker(value VARCHAR(32))"); err == nil {
+				_, err = external.ExecContext(ctx, "INSERT INTO owned_marker(value) VALUES('external')")
+			}
+			external.Close()
+			if err != nil {
+				t.Fatal("external SQL data fixture setup failed")
+			}
+			if _, err = s.Execute(ctx, a, "managed_database_create", create(2)); core.ErrorStatus(err) != 409 || core.ErrorCode(err) != "ownership_conflict" {
+				t.Fatal("same-name external SQL database was accepted for recreation", core.ErrorCode(err))
+			}
+			external = liveManagedSQLAdmin(t, engine, fixture, name)
+			var marker string
+			if err = external.QueryRowContext(ctx, "SELECT value FROM owned_marker").Scan(&marker); err != nil || marker != "external" {
+				t.Fatal("database recreation changed existing external SQL data")
+			}
+			external.Close()
+			_, _ = admin.ExecContext(ctx, "DROP DATABASE "+quoteDatabaseIdentifier(engine, name))
+
+			liveAction(t, s, a, "managed_database_create", map[string]any{"instance_id": instance.ID, "database": name, "permission": "read_write", "expected_revision": 2})
+			recreated := liveManagedRecord(t, e, instance, name)
+			fresh := liveManagedRecord(t, e, instance, name)
+			if recreated.Revision != 3 || fresh.State != "active" || fresh.Revision != 3 || fresh.Username != username || fresh.Credential == "" || fresh.Credential == oldCredential {
+				t.Fatal("same-name recreation did not commit a fresh credential at the next revision")
+			}
+			profile := DatabaseConnection{Engine: engine, Host: fixture.Host, Port: fixture.Port, Username: fresh.Username, Database: name, Access: "database"}
+			client, err := openSQLProfile(ctx, profile, fresh.Credential, name)
+			if err != nil {
+				t.Fatal("new managed SQL identity did not authenticate")
+			}
+			var tableCount int
+			query := "SELECT count(*) FROM information_schema.tables WHERE table_schema=? AND table_name='owned_marker'"
+			if engine == "postgresql" {
+				query = "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='owned_marker'"
+			}
+			if engine == "postgresql" {
+				err = client.QueryRowContext(ctx, query).Scan(&tableCount)
+			} else {
+				err = client.QueryRowContext(ctx, query, name).Scan(&tableCount)
+			}
+			client.Close()
+			if err != nil || tableCount != 0 {
+				t.Fatal("recreated database retained data from the external database")
+			}
+
+			liveManagedJob(t, s, a, "managed_database_delete", map[string]any{"instance_id": instance.ID, "database": name, "expected_revision": 3})
+			var wg sync.WaitGroup
+			results := make(chan error, 2)
+			for range 2 {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					_, err := s.Execute(ctx, a, "managed_database_create", create(4))
+					results <- err
+				}()
+			}
+			wg.Wait()
+			close(results)
+			successes, conflicts := 0, 0
+			for err := range results {
+				if err == nil {
+					successes++
+				} else if core.ErrorStatus(err) == 412 && core.ErrorCode(err) == "revision_conflict" {
+					conflicts++
+				} else {
+					t.Fatalf("concurrent same-revision create returned unexpected result: %s", core.ErrorCode(err))
+				}
+			}
+			if successes != 1 || conflicts != 1 {
+				t.Fatalf("same tombstone revision was not consumed once: successes=%d conflicts=%d", successes, conflicts)
+			}
+			if current := liveManagedRecord(t, e, instance, name); current.State != "active" || current.Revision != 5 {
+				t.Fatal("concurrent create did not leave one active next-revision receipt")
+			}
+			liveManagedJob(t, s, a, "managed_database_delete", map[string]any{"instance_id": instance.ID, "database": name, "expected_revision": 5})
+		})
+	}
+}
+
+func TestLiveManagedDatabaseCreateRacePreservesExternalDatabaseAndCreatingReceipt(t *testing.T) {
+	for _, engine := range []string{"mariadb", "postgresql"} {
+		t.Run(engine, func(t *testing.T) {
+			_, _, _, e, instance, fixture := liveManagedFixture(t, engine)
+			ctx := context.Background()
+			name := uniqueManagedName()
+			admin := liveManagedSQLAdmin(t, engine, fixture, fixture.Database)
+			defer admin.Close()
+			t.Cleanup(func() {
+				cleanupAdmin := liveManagedSQLAdmin(t, engine, fixture, fixture.Database)
+				defer cleanupAdmin.Close()
+				_, _ = cleanupAdmin.ExecContext(context.Background(), "DROP DATABASE IF EXISTS "+quoteDatabaseIdentifier(engine, name))
+				username := "pl_" + hex.EncodeToString(sha256Digest(instance.ID + "|" + name)[:10])
+				if engine == "postgresql" {
+					_, _ = cleanupAdmin.ExecContext(context.Background(), "DROP ROLE IF EXISTS "+quoteDatabaseIdentifier(engine, username))
+				} else {
+					_, _ = cleanupAdmin.ExecContext(context.Background(), "DROP USER IF EXISTS "+quoteDatabaseIdentifier(engine, username)+"@'127.0.0.1'")
+				}
+			})
+			input := ManagedDatabaseInput{InstanceID: instance.ID, Database: name, Permission: "read_write"}
+			_, err := e.createManagedDatabaseWithRaceHook(ctx, instance, input, func() error {
+				if _, err := admin.ExecContext(ctx, "CREATE DATABASE "+quoteDatabaseIdentifier(engine, name)); err != nil {
+					return err
+				}
+				external := liveManagedSQLAdmin(t, engine, fixture, name)
+				defer external.Close()
+				if _, err := external.ExecContext(ctx, "CREATE TABLE owned_marker(value VARCHAR(32))"); err != nil {
+					return err
+				}
+				_, err := external.ExecContext(ctx, "INSERT INTO owned_marker(value) VALUES('race-winner')")
+				return err
+			})
+			if core.ErrorStatus(err) != 409 || core.ErrorCode(err) != "operation_recovery_required" {
+				t.Fatal("server-side duplicate CREATE was treated as successful", core.ErrorCode(err))
+			}
+			receipt := liveManagedRecord(t, e, instance, name)
+			if receipt.State != "creating" || receipt.Revision != 1 {
+				t.Fatal("failed server-side CREATE lost its durable recovery receipt")
+			}
+			if exists, err := liveManagedSQLRoleExists(ctx, admin, engine, receipt.Username); err != nil || exists {
+				t.Fatal("database CREATE race left an owned login that could take over the external database")
+			}
+			external := liveManagedSQLAdmin(t, engine, fixture, name)
+			var marker string
+			if err := external.QueryRowContext(ctx, "SELECT value FROM owned_marker").Scan(&marker); err != nil || marker != "race-winner" {
+				t.Fatal("failed managed CREATE changed the external race winner's data")
+			}
+			external.Close()
+		})
+	}
+}
 
 func TestLiveManagedMongoCreatePermissionsBSONRestoreAndDelete(t *testing.T) {
 	s, a, m, e, instance, _ := liveManagedFixture(t, "mongodb")
@@ -202,15 +453,64 @@ func TestLiveManagedMongoCreatePermissionsBSONRestoreAndDelete(t *testing.T) {
 	if _, err = e.databaseBackupMetadata(ctx, instance, name, backup.ID); core.ErrorStatus(err) != 404 {
 		t.Fatal("deleted backup receipt remains downloadable")
 	}
+	oldCredential := record.Credential
 	liveManagedJob(t, s, a, "managed_database_delete", map[string]any{"instance_id": instance.ID, "database": name, "expected_revision": 4})
-	if liveManagedRecord(t, e, instance, name).State != "deleted" {
+	tombstone := liveManagedRecord(t, e, instance, name)
+	if tombstone.State != "deleted" || tombstone.Revision != 5 || tombstone.Credential != "" {
 		t.Fatal("database deletion receipt missing")
 	}
+
+	// MongoDB createUser implicitly creates its target database, so a DB-absent
+	// check cannot be made atomic with creation. Keep both external-object cases
+	// visible and require the typed tombstone limitation to leave them untouched.
+	createInput := map[string]any{"instance_id": instance.ID, "database": name, "permission": "read_write", "expected_revision": tombstone.Revision}
+	if err = admin.Database(name).RunCommand(ctx, bson.D{{Key: "createUser", Value: tombstone.Username}, {Key: "pwd", Value: randomDatabasePassword()}, {Key: "roles", Value: bson.A{bson.D{{Key: "role", Value: "readWrite"}, {Key: "db", Value: name}}}}}).Err(); err != nil {
+		t.Fatal("external MongoDB user fixture setup failed")
+	}
+	if _, err = s.Execute(ctx, a, "managed_database_create", mustDatabaseJSON(t, createInput)); core.ErrorStatus(err) != 409 || core.ErrorCode(err) != "database_recreation_unsupported" {
+		t.Fatal("MongoDB tombstone recreation did not report its ownership-fence limitation", core.ErrorCode(err))
+	}
+	var externalUsers struct {
+		Users []bson.M `bson:"users"`
+	}
+	if err = admin.Database(name).RunCommand(ctx, bson.D{{Key: "usersInfo", Value: tombstone.Username}}).Decode(&externalUsers); err != nil || len(externalUsers.Users) != 1 {
+		t.Fatal("unsupported MongoDB recreation changed the external user")
+	}
+	_ = admin.Database(name).Drop(ctx)
+
+	if _, err = admin.Database(name).Collection("external_marker").InsertOne(ctx, bson.D{{Key: "owner", Value: "external"}}); err != nil {
+		t.Fatal("external MongoDB data fixture setup failed")
+	}
+	if _, err = s.Execute(ctx, a, "managed_database_create", mustDatabaseJSON(t, createInput)); core.ErrorStatus(err) != 409 || core.ErrorCode(err) != "database_recreation_unsupported" {
+		t.Fatal("MongoDB tombstone recreation accepted an external database", core.ErrorCode(err))
+	}
+	var marker struct {
+		Owner string `bson:"owner"`
+	}
+	if err = admin.Database(name).Collection("external_marker").FindOne(ctx, bson.D{}).Decode(&marker); err != nil || marker.Owner != "external" {
+		t.Fatal("unsupported MongoDB recreation changed external database data")
+	}
+	_ = admin.Database(name).Drop(ctx)
+	if _, err = s.Execute(ctx, a, "managed_database_create", mustDatabaseJSON(t, createInput)); core.ErrorStatus(err) != 409 || core.ErrorCode(err) != "database_recreation_unsupported" {
+		t.Fatal("MongoDB tombstone recreation was not explicitly blocked after authoritative absence", core.ErrorCode(err))
+	}
+	if current := liveManagedRecord(t, e, instance, name); current.State != "deleted" || current.Revision != tombstone.Revision || current.Credential != "" {
+		t.Fatal("unsupported MongoDB recreation changed the deletion tombstone")
+	}
 	private, err := os.ReadFile(filepath.Join(e.config.StateDir, "private", managedDatabaseKey(instance.ID, name)+".json"))
-	if err != nil || strings.Contains(string(private), password) {
+	if err != nil || strings.Contains(string(private), oldCredential) {
 		t.Fatal("private credential state was not encrypted")
 	}
-	t.Logf("isolated database %s created, read/write checked, BSON+index restored, backup and database removed", name)
+	t.Logf("isolated database %s created, read/write checked, BSON+index restored; MongoDB same-name recreation remains typed blocked pending atomic ownership fence", name)
+}
+
+func mustDatabaseJSON(t *testing.T, input any) json.RawMessage {
+	t.Helper()
+	raw, err := json.Marshal(input)
+	if err != nil {
+		t.Fatal("database input serialization failed")
+	}
+	return raw
 }
 
 func TestLiveManagedPostgresPermissionOwnershipAndCleanup(t *testing.T) {

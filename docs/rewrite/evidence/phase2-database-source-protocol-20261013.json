@@ -1,0 +1,68 @@
+{
+  "schema_version": "powerlinux.qa.source-protocol-summary.v1",
+  "captured_at_utc": "2026-10-13",
+  "scope": "Source integration tests against isolated external database protocol fixtures.",
+  "limitations": [
+    "These results are source-test evidence only.",
+    "They do not validate a guest package install, daemon installation, upgrade, autostart, or service lifecycle.",
+    "Private fixture paths, credentials, and tokens are excluded."
+  ],
+  "runs": [
+    {
+      "suite": "managed SQL source protocol",
+      "command": "go test -p 1 ./internal/plugins -count=1 -run '^TestLiveManaged'",
+      "status": "PASS",
+      "elapsed_seconds": 12.327,
+      "protocols": ["MariaDB", "PostgreSQL"],
+      "tests": [
+        {
+          "name": "TestLiveManagedDeletedDatabaseRecreationCASAndExternalOwnership",
+          "status": "PASS",
+          "protocols": ["MariaDB", "PostgreSQL"]
+        },
+        {
+          "name": "TestLiveManagedDatabaseCreateRacePreservesExternalDatabaseAndCreatingReceipt",
+          "status": "PASS",
+          "protocols": ["MariaDB", "PostgreSQL"]
+        },
+        {
+          "name": "TestLiveManagedPostgresPermissionOwnershipAndCleanup",
+          "status": "PASS",
+          "protocols": ["PostgreSQL"]
+        },
+        {
+          "name": "TestLiveManagedMariaPermissionRevokesAutomaticRoutineGrants",
+          "status": "PASS",
+          "protocols": ["MariaDB"]
+        },
+        {
+          "name": "TestLiveManagedMongoCreatePermissionsBSONRestoreAndDelete",
+          "status": "SKIP",
+          "reason": "MongoDB uses a separate fixture and was run independently."
+        }
+      ]
+    },
+    {
+      "suite": "managed MongoDB source protocol",
+      "command": "go test -p 1 ./internal/plugins -count=1 -run '^TestLiveManagedMongoCreatePermissionsBSONRestoreAndDelete$'",
+      "status": "PASS",
+      "elapsed_seconds": 0.386,
+      "protocols": ["MongoDB"],
+      "observed": [
+        "Database and user permissions were exercised through the real MongoDB protocol.",
+        "BSON data and indexes were restored and checked.",
+        "Same-name database recreation remains typed-blocked pending an atomic ownership fence."
+      ]
+    }
+  ],
+  "preflight_history": [
+    {
+      "status": "BLOCKED_BY_TEST_FIXTURE_PRECONDITIONS",
+      "details": [
+        "The initial MariaDB relay socket path exceeded the Linux Unix socket limit.",
+        "The configured local SQL tunnel was absent."
+      ],
+      "resolution": "The test fixture was shortened and strict-host-key local SQL forwards were restored; the scoped SQL suite then passed."
+    }
+  ]
+}

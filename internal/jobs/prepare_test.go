@@ -24,6 +24,16 @@ type preparedRealExecutor struct {
 	after          func()
 }
 
+type countingPreparedStore struct {
+	Store
+	getCalls atomic.Int32
+}
+
+func (s *countingPreparedStore) Get(ctx context.Context, id string) (Job, error) {
+	s.getCalls.Add(1)
+	return s.Store.Get(ctx, id)
+}
+
 func (e *preparedRealExecutor) Validate(request agent.Request) error {
 	return e.delegate.Validate(request)
 }
@@ -284,6 +294,45 @@ func TestPreparedCommitCancellationAndClosePreserveDurableRecovery(t *testing.T)
 				}
 			}
 		})
+	}
+}
+
+func TestEnsureQueuedCanceledContextNeverDetachesAStoreRead(t *testing.T) {
+	_, executor := preparedFilesystem(t)
+	base := testStore(t)
+	store := &countingPreparedStore{Store: base}
+	manager := preparedManager(t, executor, store)
+	reservation := preparedLease(t, manager, "cancel-before-commit")
+	job := reservation.Job()
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	view, err := manager.EnsureQueued(canceled, job.ID, reservation)
+	if !errors.Is(err, context.Canceled) || view.ID != job.ID || view.Status != Queued {
+		t.Fatal("canceled uncommitted request lost its opaque reservation identity", err, view)
+	}
+	if store.getCalls.Load() != 0 {
+		t.Fatal("canceled uncommitted request detached its context for a store read")
+	}
+	if _, err := base.Get(context.Background(), job.ID); !errors.Is(err, ErrNotFound) {
+		t.Fatal("canceled preparation was mistaken for a durable commit", err)
+	}
+
+	preparedCommit(t, base, reservation)
+	view, err = manager.EnsureQueued(canceled, job.ID, reservation)
+	if !errors.Is(err, context.Canceled) || view.ID != job.ID || view.Status != Queued {
+		t.Fatal("canceled committed task lost its opaque recovery identity", err, view)
+	}
+	if store.getCalls.Load() != 0 {
+		t.Fatal("service-lifetime cancellation detached its context for a store read")
+	}
+	if view, err = manager.EnsureQueued(context.Background(), job.ID, reservation); err != nil || view.ID != job.ID {
+		t.Fatal("live service context did not verify and queue the committed task", err)
+	}
+	if store.getCalls.Load() != 1 {
+		t.Fatal("uncanceled retry did not verify its committed task through the store", store.getCalls.Load())
+	}
+	if finished := waitJob(t, manager, job.ID); finished.Status != Succeeded || executor.runs.Load() != 1 {
+		t.Fatal("committed work did not run once after a live retry")
 	}
 }
 
