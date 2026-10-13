@@ -1,0 +1,20 @@
+{
+  "binary": "/workspace/powerlinux/test-artifacts/files-kernel-exdev-dev10-amd64.test",
+  "sha256": "6924b45afca891e1992925a014ed909b3774aa2f7f08edbbbd01270921b33a84",
+  "guest_binary": "/root/powerlinux-qa-tests/files-kernel-exdev-dev10-amd64.test",
+  "compiled_tests": [
+    "TestKernelEXDEVMoveTreeRecycleRestoreAndRollback",
+    "TestKernelEXDEVCancelDrainsLeaseAndRestoresSource"
+  ],
+  "actual_devices": [
+    "32 /tmp",
+    "25 /dev/shm"
+  ],
+  "scope": "actual root Debian systemd QEMU kernel EXDEV/filetransaction/cancellation native-test binary; not immutable release REST/MCP or nativeARM proof",
+  "result": "ALL2 actual root kernel EXDEV groups PASS",
+  "log": {
+    "path": "/workspace/powerlinux/test-artifacts/files-kernel-exdev-dev10-debian-20261013-r1.log",
+    "sha256": "840c89e2cc8f7f46c43328998feeeab673fe4664d18f4852f06d501b89234143"
+  },
+  "kernel_device_proof": "actual rename errnoEXDEV with disk=32,tmpfs=25; fulltree UID/GID/mode/recycle/restore/unsafe rollback and64MiB cancellation lease/source restoration"
+}

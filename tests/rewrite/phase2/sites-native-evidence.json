@@ -1,0 +1,53 @@
+{
+  "stage": 2,
+  "module": "sites/native ACME/PHP CLI",
+  "root_VM": "actual Ubuntu24.04/Debian13 systemd QEMU TCG",
+  "results": {
+    "ubuntu_sites_r1": "6 pass, manual persisted DNS fails RFC challenge null payload",
+    "ubuntu_sites_r2_manual": "same manual failure, strict reason established",
+    "ubuntu_sites_r3": "all7 top-level groups pass after runtime Payload=nil correction",
+    "debian_php_r3": "original3 actual CLI groups pass",
+    "debian_php_r4": "all4 actual root CLI groups pass: ordinary UID, foreign path refusal, native ELF dependencies/sibling privacy, own opcache extension configuration",
+    "root_policy_source": "3/3 root positive+negative source validator pass"
+  },
+  "logs": {
+    "ubuntu_sites_r1": {
+      "path": "/workspace/powerlinux/test-artifacts/sites-qa-ubuntu-20261013-r1.log",
+      "sha256": "9a44c0f6e42acc7d5980fd29703820833c1683adac505e5884f20cba47a748d0"
+    },
+    "ubuntu_sites_r2_manual": {
+      "path": "/workspace/powerlinux/test-artifacts/sites-qa-ubuntu-20261013-r2-manual.log",
+      "sha256": "759eab1f7487d9f4bad92fecd977c885c89664a9f1a3c107c9b47025847c81c2"
+    },
+    "ubuntu_sites_r3": {
+      "path": "/workspace/powerlinux/test-artifacts/sites-qa-ubuntu-20261013-r3.log",
+      "sha256": "e0ca2d3180ec0e9f49b33688a78a073c6e92ca0a7ffec79b71404cd39059577b"
+    },
+    "debian_php_r3": {
+      "path": "/workspace/powerlinux/test-artifacts/php-cli-qa-debian-20261013-r3.log",
+      "sha256": "cd242b7013b63af4a10e7474355d9156dd6df52e6dd6854b567e485ae1dad0b1"
+    },
+    "debian_php_r4": {
+      "path": "/workspace/powerlinux/test-artifacts/php-cli-qa-debian-20261013-r4.log",
+      "sha256": "34a5757106674dd93171c4e13389e8ef3ffaff995c8dc3c8eaae7844e257b9db"
+    },
+    "root_policy_source": {
+      "path": "/workspace/powerlinux/test-artifacts/policy-source-root-ubuntu-20261013-r1.log",
+      "sha256": "b9efc12cff53a72647971215cdc1987d0a5a9f8022695af56213379e651fe6e3"
+    }
+  },
+  "artifacts": {
+    "sites_binary_r3": "/workspace/tools/qa-ubuntu/guest/sites-test-artifact-20261013-r3.json",
+    "PHP_binary_r4": "/workspace/tools/qa-vm/guest/php-cli-test-artifact-20261013-r4.json"
+  },
+  "explicit_limits": [
+    "strict local HTTPS CA is protocol fixture, not external CA or DNSprovider verification",
+    "check/reload fixtures with real filesystem do not claim actual OpenResty/nginx/FPM processes",
+    "signed preinstalled PHP CLI fixture is not managed software lifecycle",
+    "Production dev8 API/Agent/terminal has separate agent-terminal-dev8-evidence.json; managed plugin/nativeWeb/external provider capability gates require separate runtime evidence"
+  ],
+  "QA_owned_test_sources": [
+    "internal/sites/acme_protocol_test.go",
+    "internal/sites/render_agent_test.go"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "stage": 2,
+  "module": "files",
+  "actual_release": "0.1.0-dev.9",
+  "archive_sha256": "ca7d61746eb3023c93c79265feb4b350d869e8bc2a56c230b08f79211ab1afb1",
+  "source_manifest_JSON_sha256": "b15c034eafcb3384409cd17b376d516b98b7ce828e6bb3a394d1ce0d259c417a",
+  "source_manifest_files_map_sha256": "0ecca59dac76c977272e4cc7d9f11d89a2e2e25e889fe73489dadd591903d132",
+  "results": {
+    "api": "ALL14PASS including originalrecycle+SQLitedefaultsettings regression, batchstale/unsafe/preauth and all12previous gates",
+    "browser": "FULLPASS actual4000lineCM input/UTF8PUT→GB18030 diskbytes+metadata, humanhistorynewrevision, conflict/offline draft andretry, 5MiBactualHTTPinterruption/resume/downloadSHA,1440/768/390/320 responsive no errors"
+  },
+  "logs": {
+    "api": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-dev9-20261013-r1.log",
+      "sha256": "0bba847be400b96cc6f409ba16ab66b11cdca05c1ae2034d8e9a54009d93e035"
+    },
+    "browser": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-browser-dev9-20261013-r1.log",
+      "sha256": "d614a6b8276fa79d6854b69ca1cea411b5e236aeaf1a8f8023e97c585ff0ea3d"
+    }
+  },
+  "QA_test_source_snapshot": "/workspace/powerlinux/test-artifacts/dev9-20261013-r1",
+  "browser_screenshots": "/workspace/powerlinux/qa-artifacts/phase2-files-dev9-20261013-r1",
+  "previous_real_failures_preserved": "tests/rewrite/phase2/files-dev8-evidence.json",
+  "limits": [
+    "Specific14API andcompletebrowser verified, not235routes/23plugins aswhole",
+    "NativecrossfilesystemEXDEV/crossAPI-Agent/optionalexternalformats requireseparateruntimeevidence",
+    "No nativeARM/externalprovider validation"
+  ]
+}

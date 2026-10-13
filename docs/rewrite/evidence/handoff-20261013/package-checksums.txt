@@ -1,0 +1,2 @@
+2d3f02ca60f89ab8f88135fa2159d99848ffffcd93426f3d8420788d377ffc9e  powerlinux-0.1.0-handoff.1-linux-amd64.tar.gz
+ab2e665ccc8b46ebe31caca7515b7018a79a72c7773a6f1cdc3e09ec0285866e  powerlinux-0.1.0-handoff.1-linux-arm64.tar.gz

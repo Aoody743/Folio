@@ -1,0 +1,21 @@
+{
+  "binary": "/workspace/powerlinux/test-artifacts/sites-native-dns-dev10-r4.test",
+  "binary_sha256": "7226639d3f946ab50e988fb89f57dbf2c4251a08250c8d906ef7c043c8108a08",
+  "guest_binary": "/root/powerlinux-qa-tests/sites-native-dns-dev10-r4.test",
+  "command": "printf '%s  %s\\n' '7226639d3f946ab50e988fb89f57dbf2c4251a08250c8d906ef7c043c8108a08' '/root/powerlinux-qa-tests/sites-native-dns-dev10-r4.test' | sha256sum --check --status; chmod 0700 '/root/powerlinux-qa-tests/sites-native-dns-dev10-r4.test'; env POWERLINUX_QA_OWNED_VM=1 GOMAXPROCS=2 '/root/powerlinux-qa-tests/sites-native-dns-dev10-r4.test' -test.v -test.run '^TestQARootNativeDNS' -test.timeout=120s",
+  "execution_exit": 0,
+  "deployment_version_policy_services_unchanged": true,
+  "scope": "Actual root isolated temporary native DNS/TSIG and verified HTTPS ACME protocol fixtures; no external public provider or final immutable package claim",
+  "log": {
+    "path": "/workspace/powerlinux/test-artifacts/sites-native-dns-dev10-root-debian-20261013-r4.log",
+    "sha256": "f5fe52a40a36b96b11c9aee7ffbd1f9e4af24ef82af39b20b7b2c74394cfcf21"
+  },
+  "previous_r2_failure": "Preserved; root diagnosed empty ISPConfig trusted allowlist fixture, fixed nonempty provider config without weakening assertions",
+  "additional_r4_gates": [
+    "Credential revision1 pinned",
+    "Public order.input contains no credential values",
+    "Close executor before New reload of actual account/receipts"
+  ],
+  "stage": 2,
+  "result": "ALL3 actual root native protocol groups PASS (first group includes dns_knot/dns_ispconfig)"
+}

@@ -1,0 +1,25 @@
+{
+  "stage": 2,
+  "actual_release": "0.1.0-dev.9",
+  "archive_sha256": "ca7d61746eb3023c93c79265feb4b350d869e8bc2a56c230b08f79211ab1afb1",
+  "result": "All3 additional actual-browser regression gates FAIL; original Files14 and complete browser PASS remain separately preserved",
+  "script": {
+    "path": "tests/rewrite/phase2/test_file_editor_regressions.py",
+    "sha256": "370274c47db8fb4279ec9cc764054e24c51d0107eacd600658aab31276711381"
+  },
+  "log": {
+    "path": "/workspace/powerlinux/test-artifacts/file-editor-regressions-dev9-20261013-r1.log",
+    "sha256": "f6d25f086c25c399b29313965c2668e9b090fe61080b3a17afd50a20c946c925"
+  },
+  "artifacts": "/workspace/powerlinux/qa-artifacts/file-editor-regressions-dev9-20261013-r1",
+  "cases": {
+    "small_encoding_save_refresh_and_reopen": "Actual GB18030 bytes/hash/content correct; save-triggered stale UTF8 fs_read400 causes visible alert. Subsequent reopen assertions unrun after gate failure.",
+    "guard_resolved_after_successful_save": "Actual human save bytes/hash/content correct; resolved draft guard remains visible. Subsequent different-file navigation unrun after failure.",
+    "guard_resolved_after_explicit_discard": "Discard restores actual baseline without disk write; resolved draft guard remains visible. Subsequent different-file navigation unrun after failure."
+  },
+  "limits": [
+    "No injected page code, mocked response or mutable UI source",
+    "These extra3 gates supplement the unchanged original full browser script",
+    "Pending fixed immutable package; not source-fix acceptance"
+  ]
+}

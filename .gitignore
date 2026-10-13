@@ -196,3 +196,16 @@ plugins/goedge-happy
 /plugins/choose-linux-python
 *.md5
 /bak
+
+# Go/Next rewrite generated dependencies, assets and private state
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/tsconfig.tsbuildinfo
+/internal/webassets/dist/*
+!/internal/webassets/dist/README.txt
+/build/
+/.release/
+/.powerlinux/
+/coverage.out
+/tests/rewrite/artifacts/

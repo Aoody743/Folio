@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "allowed_users": ["powerlinux"],
+  "socket_group": "powerlinux",
+  "plugins": {
+    "root_dir": "/opt/powerlinux-software",
+    "state_dir": "/var/lib/powerlinux-agent/software",
+    "run_user": "powerlinux-services",
+    "run_group": "powerlinux-services",
+    "api_user": "powerlinux",
+    "enable_system_packages": false,
+    "use_systemd": true
+  },
+  "sites": {
+    "version": 1,
+    "root_dir": "/srv/powerlinux-sites",
+    "state_dir": "/var/lib/powerlinux-agent/sites",
+    "programs": {
+      "useradd": "/usr/sbin/useradd",
+      "userdel": "/usr/sbin/userdel",
+      "usermod": "/usr/sbin/usermod"
+    },
+    "allowed_ports": [80, 443],
+    "allow_ipv6": true
+  }
+}

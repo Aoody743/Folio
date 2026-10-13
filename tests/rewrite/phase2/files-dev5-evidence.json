@@ -1,0 +1,68 @@
+{
+  "phase": 2,
+  "module": "files",
+  "tested_at_utc": "2026-10-12T19:08:26.379873+00:00",
+  "release_version": "0.1.0-dev.5",
+  "archive_sha256": "b465c9f9427936d41ee69a4e0535865dce982a7bed792d2930880ce27deacd9e",
+  "command": "POWERLINUX_TEST_BINARY=/workspace/powerlinux/test-artifacts/dev5-package/powerlinux python3 tests/rewrite/phase2/test_files.py",
+  "log_path": "/workspace/powerlinux/test-artifacts/phase2-files-dev5.log",
+  "log_sha256": "51cb11bff5b6ffae4b9783af742e2d2f41ed9eea0b1c1840f1da81f30e98916d",
+  "results": [
+    {
+      "case": "test_01_permissions_and_native_mcp_registry",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_02_unicode_encoding_history_and_conflicting_edits",
+      "outcome": "failed"
+    },
+    {
+      "case": "test_03_directory_paging_search_and_actual_size",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_04_copy_move_scope_and_overwrite_conflict",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_05_permissions_and_symlink_boundaries",
+      "outcome": "failed"
+    },
+    {
+      "case": "test_06_recycle_conflict_restore_purge_and_restart",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_07_large_upload_http_mcp_resume_download_range_auth",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_08_upload_oversize_checksum_csrf_rollback_and_cancel",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_09_real_archive_roundtrip_and_malicious_entries",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_10_tail_matches_real_line_semantics",
+      "outcome": "passed"
+    }
+  ],
+  "failures": [
+    {
+      "case": "test_02",
+      "reason": "GB18030 not supported, actual400 unsupported_encoding; downstream history/conflict checks did not execute"
+    },
+    {
+      "case": "test_05",
+      "reason": "Outside-root final symlink read returns500 instead of explicit403; no outside content was returned; later loop assertions did not execute"
+    }
+  ],
+  "limits": [
+    "Actual compiled package served REST+native HTTP MCP; filesystem UI not yet tested",
+    "GB18030 supplementary-codepoint/audit assertions strengthened after this run; source snapshot for dev5 was not retained",
+    "8 passed test cases do not cover all filesystem acceptance groups or any other plugin",
+    "Remote HTTPS download positive path, all optional archive tools, directory-policy inheritance and batch preflight still pending"
+  ]
+}

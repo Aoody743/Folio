@@ -1,0 +1,6772 @@
+{
+  "updated": "2026-10-13",
+  "timezone": "Asia/Singapore",
+  "baseline_commit": "a0b700753f6242d40dd60b40a4533960b58a3632",
+  "description": "实施台账：保留所有旧条目，按实际依赖调整阶段。implemented表示有真实实现，verified还要求对应验收证据；静态动作数量不是验收数。",
+  "core_routes": [
+    {
+      "id": "CORE-001",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 24
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-002",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "list",
+        "path": "/list",
+        "methods": [
+          "POST"
+        ],
+        "line": 31
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-003",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "logs",
+        "path": "/logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 38
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-004",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "crontab_del",
+        "path": "/del",
+        "methods": [
+          "POST"
+        ],
+        "line": 44
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-005",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "del_logs",
+        "path": "/del_logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 50
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-006",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "set_cron_status",
+        "path": "/set_cron_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 57
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-007",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "get_data_list",
+        "path": "/get_data_list",
+        "methods": [
+          "POST"
+        ],
+        "line": 63
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-008",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "get_crond_find",
+        "path": "/get_crond_find",
+        "methods": [
+          "POST"
+        ],
+        "line": 71
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-009",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "modify_crond",
+        "path": "/modify_crond",
+        "methods": [
+          "POST"
+        ],
+        "line": 79
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-010",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "start_task",
+        "path": "/start_task",
+        "methods": [
+          "POST"
+        ],
+        "line": 102
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-011",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/crontab/__init__.py",
+        "function": "add",
+        "path": "/add",
+        "methods": [
+          "POST"
+        ],
+        "line": 109
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-012",
+      "phase": 1,
+      "status": "verified",
+      "old": {
+        "file": "web/admin/dashboard/dashboard.py",
+        "function": "index",
+        "path": "/",
+        "methods": [
+          "GET"
+        ],
+        "line": 36
+      },
+      "new_action": "static UI /",
+      "acceptance_case": "tests/rewrite/test_browser.py",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "CORE-013",
+      "phase": 2,
+      "status": "in_progress",
+      "old": {
+        "file": "web/admin/dashboard/dashboard.py",
+        "function": "overview_stats",
+        "path": "/overview_stats",
+        "methods": [
+          "GET"
+        ],
+        "line": 43
+      },
+      "new_action": "system_get_status (aggregate site/task counters pending phase2)",
+      "acceptance_case": "tests/rewrite/test_phase1.py:test_12_real_status_latency_and_audit_no_secret",
+      "evidence": "docs/rewrite/PROGRESS.md (final release/browser gate pending)",
+      "phase_adjustment": "基础主机快照已实现，完整聚合还依赖第二阶段站点／计划任务／防火墙资源。"
+    },
+    {
+      "id": "CORE-014",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/dashboard/dashboard.py",
+        "function": "admin_safe_path",
+        "path": "/<path>",
+        "methods": [
+          "GET"
+        ],
+        "line": 66
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-015",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/dashboard/dashboard.py",
+        "function": "webhook",
+        "path": "/hook",
+        "methods": [
+          "POST",
+          "GET"
+        ],
+        "line": 113
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-016",
+      "phase": 1,
+      "status": "verified",
+      "old": {
+        "file": "web/admin/dashboard/login.py",
+        "function": "login",
+        "path": "/login",
+        "methods": [
+          "GET"
+        ],
+        "line": 90
+      },
+      "new_action": "static UI login; /api/v1/session",
+      "acceptance_case": "tests/rewrite/test_browser.py",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "CORE-017",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/dashboard/login.py",
+        "function": "close",
+        "path": "/close",
+        "methods": [
+          "GET"
+        ],
+        "line": 115
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "旧/close是面板关闭页，不是注销；与第二阶段维护／登录开关设置一同实现，保留有效手动控制。"
+    },
+    {
+      "id": "CORE-018",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/dashboard/login.py",
+        "function": "code",
+        "path": "/code",
+        "methods": [
+          "GET"
+        ],
+        "line": 125
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-019",
+      "phase": 1,
+      "status": "verified",
+      "old": {
+        "file": "web/admin/dashboard/login.py",
+        "function": "check_login",
+        "path": "/check_login",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 138
+      },
+      "new_action": "/api/v1/session",
+      "acceptance_case": "internal/httpapi/httpapi_test.go:TestCookieCSRFAndCrossSiteProtection",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "CORE-020",
+      "phase": 1,
+      "status": "verified",
+      "old": {
+        "file": "web/admin/dashboard/login.py",
+        "function": "verifyLogin",
+        "path": "/verify_login",
+        "methods": [
+          "POST"
+        ],
+        "line": 144
+      },
+      "new_action": "/api/v1/auth/login with mandatory TOTP",
+      "acceptance_case": "internal/core/core_test.go:TestTOTPIsRequiredAndReplayIsRejected",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "CORE-021",
+      "phase": 1,
+      "status": "verified",
+      "old": {
+        "file": "web/admin/dashboard/login.py",
+        "function": "do_login",
+        "path": "/do_login",
+        "methods": [
+          "POST"
+        ],
+        "line": 171
+      },
+      "new_action": "/api/v1/auth/login",
+      "acceptance_case": "tests/rewrite/test_phase1.py:test_02_authentication_cookie_csrf_and_logout",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "CORE-022",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 33
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-023",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "check_exists_files",
+        "path": "/check_exists_files",
+        "methods": [
+          "POST"
+        ],
+        "line": 40
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-024",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "batch_paste",
+        "path": "/batch_paste",
+        "methods": [
+          "POST"
+        ],
+        "line": 67
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-025",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "zip",
+        "path": "/zip",
+        "methods": [
+          "POST"
+        ],
+        "line": 75
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-026",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "file_access",
+        "path": "/file_access",
+        "methods": [
+          "POST"
+        ],
+        "line": 85
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-027",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "set_file_access",
+        "path": "/set_file_access",
+        "methods": [
+          "POST"
+        ],
+        "line": 94
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-028",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "copy_file",
+        "path": "/copy_file",
+        "methods": [
+          "POST"
+        ],
+        "line": 107
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-029",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "get_body",
+        "path": "/get_body",
+        "methods": [
+          "POST"
+        ],
+        "line": 115
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-030",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "save_body",
+        "path": "/save_body",
+        "methods": [
+          "POST"
+        ],
+        "line": 122
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-031",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "get_file_last_body",
+        "path": "/get_last_body",
+        "methods": [
+          "POST"
+        ],
+        "line": 131
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-032",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "get_dir",
+        "path": "/get_dir",
+        "methods": [
+          "POST"
+        ],
+        "line": 148
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-033",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "unzip",
+        "path": "/unzip",
+        "methods": [
+          "POST"
+        ],
+        "line": 169
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-034",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "uncompress",
+        "path": "/uncompress",
+        "methods": [
+          "POST"
+        ],
+        "line": 179
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-035",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "set_batch_data",
+        "path": "/set_batch_data",
+        "methods": [
+          "POST"
+        ],
+        "line": 188
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-036",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "upload_file",
+        "path": "/upload_file",
+        "methods": [
+          "POST"
+        ],
+        "line": 199
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-037",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "upload_segment",
+        "path": "/upload_segment",
+        "methods": [
+          "POST"
+        ],
+        "line": 224
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-038",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "mv_file",
+        "path": "/mv_file",
+        "methods": [
+          "POST"
+        ],
+        "line": 239
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-039",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "create_file",
+        "path": "/create_file",
+        "methods": [
+          "POST"
+        ],
+        "line": 247
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-040",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "create_dir",
+        "path": "/create_dir",
+        "methods": [
+          "POST"
+        ],
+        "line": 255
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-041",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "get_dir_size",
+        "path": "/get_dir_size",
+        "methods": [
+          "POST"
+        ],
+        "line": 263
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-042",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "delete",
+        "path": "/delete",
+        "methods": [
+          "POST"
+        ],
+        "line": 274
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-043",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "delete_dir",
+        "path": "/delete_dir",
+        "methods": [
+          "POST"
+        ],
+        "line": 282
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-044",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "download",
+        "path": "/download",
+        "methods": [
+          "GET"
+        ],
+        "line": 289
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-045",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "download_file",
+        "path": "/download_file",
+        "methods": [
+          "POST"
+        ],
+        "line": 303
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-046",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/files.py",
+        "function": "close_logs",
+        "path": "/close_logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 320
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-047",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/recycle.py",
+        "function": "get_recycle_bin",
+        "path": "/get_recycle_bin",
+        "methods": [
+          "POST"
+        ],
+        "line": 27
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-048",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/recycle.py",
+        "function": "re_recycle_bin",
+        "path": "/re_recycle_bin",
+        "methods": [
+          "POST"
+        ],
+        "line": 33
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-049",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/recycle.py",
+        "function": "del_recycle_bin",
+        "path": "/del_recycle_bin",
+        "methods": [
+          "POST"
+        ],
+        "line": 39
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-050",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/recycle.py",
+        "function": "recycle_bin",
+        "path": "/recycle_bin",
+        "methods": [
+          "POST"
+        ],
+        "line": 46
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-051",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/files/recycle.py",
+        "function": "close_recycle_bin",
+        "path": "/close_recycle_bin",
+        "methods": [
+          "POST"
+        ],
+        "line": 52
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-052",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 25
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-053",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "get_list",
+        "path": "/get_list",
+        "methods": [
+          "POST"
+        ],
+        "line": 33
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-054",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "get_www_path",
+        "path": "/get_www_path",
+        "methods": [
+          "POST"
+        ],
+        "line": 41
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-055",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "get_ssh_info",
+        "path": "/get_ssh_info",
+        "methods": [
+          "POST"
+        ],
+        "line": 48
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-056",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "set_ping",
+        "path": "/set_ping",
+        "methods": [
+          "POST"
+        ],
+        "line": 55
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-057",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "set_ssh_port",
+        "path": "/set_ssh_port",
+        "methods": [
+          "POST"
+        ],
+        "line": 62
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-058",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "add_accept_port",
+        "path": "/add_accept_port",
+        "methods": [
+          "POST"
+        ],
+        "line": 69
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-059",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "del_accept_port",
+        "path": "/del_accept_port",
+        "methods": [
+          "POST"
+        ],
+        "line": 80
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-060",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "set_fw",
+        "path": "/set_fw",
+        "methods": [
+          "POST"
+        ],
+        "line": 90
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-061",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "set_ssh_root_status",
+        "path": "/set_ssh_root_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 98
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-062",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "set_ssh_pass_status",
+        "path": "/set_ssh_pass_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 106
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-063",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/firewall/__init__.py",
+        "function": "set_ssh_pubkey_status",
+        "path": "/set_ssh_pubkey_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 114
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-064",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/logs/__init__.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 25
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-065",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/logs/__init__.py",
+        "function": "get_log_list",
+        "path": "/get_log_list",
+        "methods": [
+          "POST"
+        ],
+        "line": 32
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-066",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/logs/__init__.py",
+        "function": "del_panel_logs",
+        "path": "/del_panel_logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 47
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-067",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/logs/__init__.py",
+        "function": "get_audit_logs_files",
+        "path": "/get_audit_logs_files",
+        "methods": [
+          "POST"
+        ],
+        "line": 55
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-068",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/logs/__init__.py",
+        "function": "get_audit_file",
+        "path": "/get_audit_file",
+        "methods": [
+          "POST"
+        ],
+        "line": 62
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-069",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/monitor/__init__.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 27
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-070",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/monitor/__init__.py",
+        "function": "api_overview",
+        "path": "/api/overview",
+        "methods": [
+          "GET"
+        ],
+        "line": 129
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-071",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 29
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-072",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "init",
+        "path": "/init",
+        "methods": [
+          "POST"
+        ],
+        "line": 36
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-073",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "init_install",
+        "path": "/init_install",
+        "methods": [
+          "POST"
+        ],
+        "line": 42
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-074",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "index_list",
+        "path": "/index_list",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 49
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-075",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "list",
+        "path": "/list",
+        "methods": [
+          "GET"
+        ],
+        "line": 56
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-076",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "set_index",
+        "path": "/set_index",
+        "methods": [
+          "POST"
+        ],
+        "line": 73
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-077",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "install",
+        "path": "/install",
+        "methods": [
+          "POST"
+        ],
+        "line": 86
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-078",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "uninstall",
+        "path": "/uninstall",
+        "methods": [
+          "POST"
+        ],
+        "line": 100
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-079",
+      "phase": 3,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "menu",
+        "path": "/menu",
+        "methods": [
+          "GET"
+        ],
+        "line": 109
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-080",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "file",
+        "path": "/file",
+        "methods": [
+          "GET"
+        ],
+        "line": 128
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-081",
+      "phase": 3,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "update_zip",
+        "path": "/update_zip",
+        "methods": [
+          "POST"
+        ],
+        "line": 155
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-082",
+      "phase": 3,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "input_zip",
+        "path": "/input_zip",
+        "methods": [
+          "POST"
+        ],
+        "line": 162
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-083",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "setting",
+        "path": "/setting",
+        "methods": [
+          "GET"
+        ],
+        "line": 171
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-084",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "run",
+        "path": "/run",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 180
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-085",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/plugins/__init__.py",
+        "function": "callback",
+        "path": "/callback",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 199
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-086",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/app.py",
+        "function": "set_panel_api",
+        "path": "/set_panel_api",
+        "methods": [
+          "POST"
+        ],
+        "line": 31
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-087",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/app.py",
+        "function": "get_app_list",
+        "path": "/get_app_list",
+        "methods": [
+          "POST"
+        ],
+        "line": 46
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-088",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/app.py",
+        "function": "add_app",
+        "path": "/add_app",
+        "methods": [
+          "POST"
+        ],
+        "line": 61
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-089",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/app.py",
+        "function": "toggle_app_status",
+        "path": "/toggle_app_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 76
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-090",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/app.py",
+        "function": "delete_app",
+        "path": "/delete_app",
+        "methods": [
+          "POST"
+        ],
+        "line": 87
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-091",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/notify_email.py",
+        "function": "get_notify_email",
+        "path": "/get_notify_email",
+        "methods": [
+          "POST"
+        ],
+        "line": 31
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-092",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/notify_email.py",
+        "function": "set_notify_email",
+        "path": "/set_notify_email",
+        "methods": [
+          "POST"
+        ],
+        "line": 46
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-093",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/notify_email.py",
+        "function": "set_notify_email_test",
+        "path": "/set_notify_email_test",
+        "methods": [
+          "POST"
+        ],
+        "line": 62
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-094",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/notify_email.py",
+        "function": "set_notify_email_enable",
+        "path": "/set_notify_email_enable",
+        "methods": [
+          "POST"
+        ],
+        "line": 75
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-095",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/notify_tgbot.py",
+        "function": "get_notify_tgbot",
+        "path": "/get_notify_tgbot",
+        "methods": [
+          "POST"
+        ],
+        "line": 31
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-096",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/notify_tgbot.py",
+        "function": "set_notify_tgbot",
+        "path": "/set_notify_tgbot",
+        "methods": [
+          "POST"
+        ],
+        "line": 44
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-097",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/notify_tgbot.py",
+        "function": "set_notify_tgbot_test",
+        "path": "/set_notify_tgbot_test",
+        "methods": [
+          "POST"
+        ],
+        "line": 59
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-098",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/notify_tgbot.py",
+        "function": "set_notify_tgbot_enable",
+        "path": "/set_notify_tgbot_enable",
+        "methods": [
+          "POST"
+        ],
+        "line": 71
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-099",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_bookmark.py",
+        "function": "add_panel_info",
+        "path": "/add_panel_info",
+        "methods": [
+          "POST"
+        ],
+        "line": 33
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-100",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_bookmark.py",
+        "function": "get_panel_list",
+        "path": "/get_panel_list",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 52
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-101",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_bookmark.py",
+        "function": "del_panel_info",
+        "path": "/del_panel_info",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 60
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-102",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_bookmark.py",
+        "function": "set_panel_info",
+        "path": "/set_panel_info",
+        "methods": [
+          "POST"
+        ],
+        "line": 72
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-103",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_ssl.py",
+        "function": "get_panel_ssl",
+        "path": "/get_panel_ssl",
+        "methods": [
+          "POST"
+        ],
+        "line": 33
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-104",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_ssl.py",
+        "function": "save_panel_ssl",
+        "path": "/save_panel_ssl",
+        "methods": [
+          "POST"
+        ],
+        "line": 40
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-105",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_ssl.py",
+        "function": "del_panel_ssl",
+        "path": "/del_panel_ssl",
+        "methods": [
+          "POST"
+        ],
+        "line": 49
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-106",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_ssl.py",
+        "function": "set_panel_local_ssl",
+        "path": "/set_panel_local_ssl",
+        "methods": [
+          "POST"
+        ],
+        "line": 56
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-107",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_ssl.py",
+        "function": "close_panel_ssl",
+        "path": "/close_panel_ssl",
+        "methods": [
+          "POST"
+        ],
+        "line": 63
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-108",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/panel_ssl.py",
+        "function": "set_panel_domain",
+        "path": "/set_panel_domain",
+        "methods": [
+          "POST"
+        ],
+        "line": 69
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-109",
+      "phase": 1,
+      "status": "verified",
+      "old": {
+        "file": "web/admin/setting/secondary_verifiy.py",
+        "function": "get_auth_secret",
+        "path": "/get_auth_secret",
+        "methods": [
+          "POST"
+        ],
+        "line": 31
+      },
+      "new_action": "/api/v1/account/totp/enroll",
+      "acceptance_case": "internal/core/core_test.go:TestTOTPIsRequiredAndReplayIsRejected",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "CORE-110",
+      "phase": 1,
+      "status": "verified",
+      "old": {
+        "file": "web/admin/setting/secondary_verifiy.py",
+        "function": "set_auth_secret",
+        "path": "/set_auth_secret",
+        "methods": [
+          "POST"
+        ],
+        "line": 58
+      },
+      "new_action": "/api/v1/account/totp/confirm|disable",
+      "acceptance_case": "internal/core/core_test.go:TestTOTPIsRequiredAndReplayIsRejected",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "CORE-111",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 32
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-112",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_webname",
+        "path": "/set_webname",
+        "methods": [
+          "POST"
+        ],
+        "line": 39
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-113",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_ip",
+        "path": "/set_ip",
+        "methods": [
+          "POST"
+        ],
+        "line": 49
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-114",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_backup_dir",
+        "path": "/set_backup_dir",
+        "methods": [
+          "POST"
+        ],
+        "line": 59
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-115",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_footer_text",
+        "path": "/set_footer_text",
+        "methods": [
+          "POST"
+        ],
+        "line": 69
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-116",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_www_dir",
+        "path": "/set_www_dir",
+        "methods": [
+          "POST"
+        ],
+        "line": 79
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-117",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_admin_path",
+        "path": "/set_admin_path",
+        "methods": [
+          "POST"
+        ],
+        "line": 90
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-118",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_basic_auth",
+        "path": "/set_basic_auth",
+        "methods": [
+          "POST"
+        ],
+        "line": 122
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-119",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_status_code",
+        "path": "/set_status_code",
+        "methods": [
+          "POST"
+        ],
+        "line": 157
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-120",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "open_debug",
+        "path": "/open_debug",
+        "methods": [
+          "POST"
+        ],
+        "line": 175
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-121",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "close_panel",
+        "path": "/close_panel",
+        "methods": [
+          "POST"
+        ],
+        "line": 187
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-122",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_ipv6_status",
+        "path": "/set_ipv6_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 198
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-123",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_name",
+        "path": "/set_name",
+        "methods": [
+          "POST"
+        ],
+        "line": 214
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-124",
+      "phase": 1,
+      "status": "implemented",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_password",
+        "path": "/set_password",
+        "methods": [
+          "POST"
+        ],
+        "line": 228
+      },
+      "new_action": "/api/v1/account/password",
+      "acceptance_case": "internal/core/auth.go:ChangePassword",
+      "evidence": "docs/rewrite/PROGRESS.md (final release/browser gate pending)"
+    },
+    {
+      "id": "CORE-125",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/setting.py",
+        "function": "set_port",
+        "path": "/set_port",
+        "methods": [
+          "POST"
+        ],
+        "line": 242
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-126",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/temp_login.py",
+        "function": "get_temp_login",
+        "path": "/get_temp_login",
+        "methods": [
+          "POST"
+        ],
+        "line": 31
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-127",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/temp_login.py",
+        "function": "set_temp_login",
+        "path": "/set_temp_login",
+        "methods": [
+          "POST"
+        ],
+        "line": 45
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-128",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/temp_login.py",
+        "function": "remove_temp_login",
+        "path": "/remove_temp_login",
+        "methods": [
+          "POST"
+        ],
+        "line": 66
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-129",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/temp_login.py",
+        "function": "get_temp_login_logs",
+        "path": "/get_temp_login_logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 77
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null,
+      "phase_adjustment": "依赖第二阶段设置／外部集成／临时访问模块，保留完整能力待实现。"
+    },
+    {
+      "id": "CORE-130",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/timezone.py",
+        "function": "get_timezone_list",
+        "path": "/get_timezone_list",
+        "methods": [
+          "POST"
+        ],
+        "line": 28
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-131",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/timezone.py",
+        "function": "sync_date",
+        "path": "/sync_date",
+        "methods": [
+          "POST"
+        ],
+        "line": 37
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-132",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/setting/timezone.py",
+        "function": "set_timezone",
+        "path": "/set_timezone",
+        "methods": [
+          "POST"
+        ],
+        "line": 47
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-133",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/backup.py",
+        "function": "get_backup",
+        "path": "/get_backup",
+        "methods": [
+          "POST"
+        ],
+        "line": 29
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-134",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/backup.py",
+        "function": "to_backup",
+        "path": "/to_backup",
+        "methods": [
+          "POST"
+        ],
+        "line": 38
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-135",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/backup.py",
+        "function": "del_backup",
+        "path": "/del_backup",
+        "methods": [
+          "POST"
+        ],
+        "line": 45
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-136",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/dir.py",
+        "function": "get_dir_user_ini",
+        "path": "/get_dir_user_ini",
+        "methods": [
+          "POST"
+        ],
+        "line": 28
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-137",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/dir.py",
+        "function": "set_dir_user_ini",
+        "path": "/set_dir_user_ini",
+        "methods": [
+          "POST"
+        ],
+        "line": 35
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-138",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/dir.py",
+        "function": "get_dir_binding",
+        "path": "/get_dir_binding",
+        "methods": [
+          "POST"
+        ],
+        "line": 43
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-139",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/dir.py",
+        "function": "add_dir_bind",
+        "path": "/add_dir_bind",
+        "methods": [
+          "POST"
+        ],
+        "line": 51
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-140",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/dir.py",
+        "function": "get_dir_bind_rewrite",
+        "path": "/get_dir_bind_rewrite",
+        "methods": [
+          "POST"
+        ],
+        "line": 61
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-141",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/dir.py",
+        "function": "del_dir_bind",
+        "path": "/del_dir_bind",
+        "methods": [
+          "POST"
+        ],
+        "line": 70
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-142",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/logs.py",
+        "function": "get_logs",
+        "path": "/get_logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 29
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-143",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/logs.py",
+        "function": "get_error_logs",
+        "path": "/get_error_logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 36
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-144",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/php.py",
+        "function": "get_cli_php_version",
+        "path": "/get_cli_php_version",
+        "methods": [
+          "POST"
+        ],
+        "line": 29
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-145",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/php.py",
+        "function": "set_cli_php_version",
+        "path": "/set_cli_php_version",
+        "methods": [
+          "POST"
+        ],
+        "line": 52
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-146",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/proxy.py",
+        "function": "get_proxy_list",
+        "path": "/get_proxy_list",
+        "methods": [
+          "POST"
+        ],
+        "line": 31
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-147",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/proxy.py",
+        "function": "set_proxy",
+        "path": "/set_proxy",
+        "methods": [
+          "POST"
+        ],
+        "line": 38
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-148",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/proxy.py",
+        "function": "set_proxy_status",
+        "path": "/set_proxy_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 54
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-149",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/proxy.py",
+        "function": "get_proxy_conf",
+        "path": "/get_proxy_conf",
+        "methods": [
+          "POST"
+        ],
+        "line": 64
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-150",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/proxy.py",
+        "function": "save_proxy_conf",
+        "path": "/save_proxy_conf",
+        "methods": [
+          "POST"
+        ],
+        "line": 72
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-151",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/proxy.py",
+        "function": "del_proxy",
+        "path": "/del_proxy",
+        "methods": [
+          "POST"
+        ],
+        "line": 82
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-152",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/redirect.py",
+        "function": "get_redirect",
+        "path": "/get_redirect",
+        "methods": [
+          "POST"
+        ],
+        "line": 30
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-153",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/redirect.py",
+        "function": "set_redirect",
+        "path": "/set_redirect",
+        "methods": [
+          "POST"
+        ],
+        "line": 37
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-154",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/redirect.py",
+        "function": "set_redirect_status",
+        "path": "/set_redirect_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 50
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-155",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/redirect.py",
+        "function": "get_redirect_conf",
+        "path": "/get_redirect_conf",
+        "methods": [
+          "POST"
+        ],
+        "line": 59
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-156",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/redirect.py",
+        "function": "save_redirect_conf",
+        "path": "/save_redirect_conf",
+        "methods": [
+          "POST"
+        ],
+        "line": 67
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-157",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/redirect.py",
+        "function": "del_redirect",
+        "path": "/del_redirect",
+        "methods": [
+          "POST"
+        ],
+        "line": 79
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-158",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 26
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-159",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "list",
+        "path": "/list",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 32
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-160",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "add",
+        "path": "/add",
+        "methods": [
+          "POST"
+        ],
+        "line": 49
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-161",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "stop",
+        "path": "/stop",
+        "methods": [
+          "POST"
+        ],
+        "line": 60
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-162",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "start",
+        "path": "/start",
+        "methods": [
+          "POST"
+        ],
+        "line": 67
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-163",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "add_domain",
+        "path": "/add_domain",
+        "methods": [
+          "POST"
+        ],
+        "line": 74
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-164",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "del_domain",
+        "path": "/del_domain",
+        "methods": [
+          "POST"
+        ],
+        "line": 83
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-165",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "delete",
+        "path": "/delete",
+        "methods": [
+          "POST"
+        ],
+        "line": 93
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-166",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_root_dir",
+        "path": "/get_root_dir",
+        "methods": [
+          "POST"
+        ],
+        "line": 101
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-167",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_index",
+        "path": "/get_index",
+        "methods": [
+          "POST"
+        ],
+        "line": 109
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-168",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_index",
+        "path": "/set_index",
+        "methods": [
+          "POST"
+        ],
+        "line": 119
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-169",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_limit_net",
+        "path": "/get_limit_net",
+        "methods": [
+          "POST"
+        ],
+        "line": 127
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-170",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_limit_net",
+        "path": "/set_limit_net",
+        "methods": [
+          "POST"
+        ],
+        "line": 134
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-171",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "close_limit_net",
+        "path": "/close_limit_net",
+        "methods": [
+          "POST"
+        ],
+        "line": 144
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-172",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_host_conf",
+        "path": "/get_host_conf",
+        "methods": [
+          "POST"
+        ],
+        "line": 151
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-173",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "save_host_conf",
+        "path": "/save_host_conf",
+        "methods": [
+          "POST"
+        ],
+        "line": 159
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-174",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_site_php_version",
+        "path": "/get_site_php_version",
+        "methods": [
+          "POST"
+        ],
+        "line": 168
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-175",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_site_domains",
+        "path": "/get_site_domains",
+        "methods": [
+          "POST"
+        ],
+        "line": 175
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-176",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_php_version",
+        "path": "/set_php_version",
+        "methods": [
+          "POST"
+        ],
+        "line": 183
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-177",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "check_web_status",
+        "path": "/check_web_status",
+        "methods": [
+          "POST"
+        ],
+        "line": 191
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-178",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_php_version",
+        "path": "/get_php_version",
+        "methods": [
+          "POST"
+        ],
+        "line": 207
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-179",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_end_date",
+        "path": "/set_end_date",
+        "methods": [
+          "POST"
+        ],
+        "line": 213
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-180",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_ps",
+        "path": "/set_ps",
+        "methods": [
+          "POST"
+        ],
+        "line": 222
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-181",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_domain",
+        "path": "/get_domain",
+        "methods": [
+          "POST"
+        ],
+        "line": 230
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-182",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_rewrite_list",
+        "path": "/get_rewrite_list",
+        "methods": [
+          "POST"
+        ],
+        "line": 237
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-183",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_rewrite_conf",
+        "path": "/get_rewrite_conf",
+        "methods": [
+          "POST"
+        ],
+        "line": 243
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-184",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_rewrite_tpl",
+        "path": "/get_rewrite_tpl",
+        "methods": [
+          "POST"
+        ],
+        "line": 251
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-185",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_rewrite",
+        "path": "/set_rewrite",
+        "methods": [
+          "POST"
+        ],
+        "line": 258
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-186",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_rewrite_tpl",
+        "path": "/set_rewrite_tpl",
+        "methods": [
+          "POST"
+        ],
+        "line": 268
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-187",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "logs_open",
+        "path": "/logs_open",
+        "methods": [
+          "POST"
+        ],
+        "line": 276
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-188",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_path",
+        "path": "/set_path",
+        "methods": [
+          "POST"
+        ],
+        "line": 283
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-189",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_site_run_path",
+        "path": "/set_site_run_path",
+        "methods": [
+          "POST"
+        ],
+        "line": 292
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-190",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_has_pwd",
+        "path": "/set_has_pwd",
+        "methods": [
+          "POST"
+        ],
+        "line": 301
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-191",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "close_has_pwd",
+        "path": "/close_has_pwd",
+        "methods": [
+          "POST"
+        ],
+        "line": 310
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-192",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_security",
+        "path": "/get_security",
+        "methods": [
+          "POST"
+        ],
+        "line": 317
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-193",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_security",
+        "path": "/set_security",
+        "methods": [
+          "POST"
+        ],
+        "line": 324
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-194",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "get_default_site",
+        "path": "/get_default_site",
+        "methods": [
+          "POST"
+        ],
+        "line": 337
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-195",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site.py",
+        "function": "set_default_site",
+        "path": "/set_default_site",
+        "methods": [
+          "POST"
+        ],
+        "line": 343
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-196",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site_default.py",
+        "function": "get_site_doc",
+        "path": "/get_site_doc",
+        "methods": [
+          "POST"
+        ],
+        "line": 27
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-197",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site_types.py",
+        "function": "get_site_types",
+        "path": "/get_site_types",
+        "methods": [
+          "POST"
+        ],
+        "line": 29
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-198",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site_types.py",
+        "function": "add_site_type",
+        "path": "/add_site_type",
+        "methods": [
+          "POST"
+        ],
+        "line": 38
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-199",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site_types.py",
+        "function": "remove_site_type",
+        "path": "/remove_site_type",
+        "methods": [
+          "POST"
+        ],
+        "line": 46
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-200",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site_types.py",
+        "function": "modify_site_type_name",
+        "path": "/modify_site_type_name",
+        "methods": [
+          "POST"
+        ],
+        "line": 57
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-201",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/site_types.py",
+        "function": "set_site_type",
+        "path": "/set_site_type",
+        "methods": [
+          "POST"
+        ],
+        "line": 72
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-202",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "get_ssl",
+        "path": "/get_ssl",
+        "methods": [
+          "POST"
+        ],
+        "line": 30
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-203",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "set_ssl",
+        "path": "/set_ssl",
+        "methods": [
+          "POST"
+        ],
+        "line": 38
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-204",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "close_ssl_conf",
+        "path": "/close_ssl_conf",
+        "methods": [
+          "POST"
+        ],
+        "line": 48
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-205",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "delete_ssl",
+        "path": "/delete_ssl",
+        "methods": [
+          "POST"
+        ],
+        "line": 57
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-206",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "get_cert_list",
+        "path": "/get_cert_list",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 66
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-207",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "get_dnsapi",
+        "path": "/get_dnsapi",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 73
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-208",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "set_dnsapi",
+        "path": "/set_dnsapi",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 79
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-209",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "set_cert_to_site",
+        "path": "/set_cert_to_site",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 87
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-210",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "remove_cert",
+        "path": "/remove_cert",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 95
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-211",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "http_to_https",
+        "path": "/http_to_https",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 102
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-212",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl.py",
+        "function": "close_to_https",
+        "path": "/close_to_https",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 109
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-213",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl_acme.py",
+        "function": "get_acme_logs",
+        "path": "/get_acme_logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 31
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-214",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl_acme.py",
+        "function": "create_acme",
+        "path": "/create_acme",
+        "methods": [
+          "POST"
+        ],
+        "line": 40
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-215",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl_let.py",
+        "function": "get_let_logs",
+        "path": "/get_let_logs",
+        "methods": [
+          "POST"
+        ],
+        "line": 30
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-216",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/site/ssl_let.py",
+        "function": "create_let",
+        "path": "/create_let",
+        "methods": [
+          "POST"
+        ],
+        "line": 39
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-217",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/soft/__init__.py",
+        "function": "index",
+        "path": "/index",
+        "methods": [
+          "GET"
+        ],
+        "line": 21
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-218",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "system_total",
+        "path": "/system_total",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 28
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-219",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "get_env_info",
+        "path": "/get_env_info",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 41
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-220",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "network",
+        "path": "/network",
+        "methods": [
+          "GET"
+        ],
+        "line": 47
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-221",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "disk_info",
+        "path": "/disk_info",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 59
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-222",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "get_load_average",
+        "path": "/get_load_average",
+        "methods": [
+          "GET"
+        ],
+        "line": 66
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-223",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "get_disk_io",
+        "path": "/get_disk_io",
+        "methods": [
+          "GET"
+        ],
+        "line": 75
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-224",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "get_cpu_io",
+        "path": "/get_cpu_io",
+        "methods": [
+          "GET"
+        ],
+        "line": 84
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-225",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "get_network_io",
+        "path": "/get_network_io",
+        "methods": [
+          "GET"
+        ],
+        "line": 93
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-226",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "restart",
+        "path": "/restart",
+        "methods": [
+          "POST"
+        ],
+        "line": 102
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-227",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "restart_server",
+        "path": "/restart_server",
+        "methods": [
+          "POST"
+        ],
+        "line": 109
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-228",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "shutdown_server",
+        "path": "/shutdown_server",
+        "methods": [
+          "POST"
+        ],
+        "line": 118
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-229",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/system.py",
+        "function": "set_control",
+        "path": "/set_control",
+        "methods": [
+          "POST"
+        ],
+        "line": 127
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-230",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/system/upgrade.py",
+        "function": "update_server",
+        "path": "/update_server",
+        "methods": [
+          "GET"
+        ],
+        "line": 25
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-231",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/task/__init__.py",
+        "function": "task_count",
+        "path": "/count",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "line": 28
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-232",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/task/__init__.py",
+        "function": "list",
+        "path": "/list",
+        "methods": [
+          "POST"
+        ],
+        "line": 33
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-233",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/task/__init__.py",
+        "function": "get_exec_log",
+        "path": "/get_exec_log",
+        "methods": [
+          "POST"
+        ],
+        "line": 41
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-234",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/task/__init__.py",
+        "function": "get_task_speed",
+        "path": "/get_task_speed",
+        "methods": [
+          "POST"
+        ],
+        "line": 48
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    },
+    {
+      "id": "CORE-235",
+      "phase": 2,
+      "status": "planned",
+      "old": {
+        "file": "web/admin/task/__init__.py",
+        "function": "remove_task",
+        "path": "/remove_task",
+        "methods": [
+          "POST"
+        ],
+        "line": 85
+      },
+      "new_action": null,
+      "acceptance_case": null,
+      "evidence": null
+    }
+  ],
+  "plugins": [
+    {
+      "id": "PLUGIN-acme_pandominassl_apply",
+      "name": "acme_pandominassl_apply",
+      "title": "ACME泛域名SSL",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "dnsapi_add",
+        "dnsapi_del",
+        "dnsapi_list",
+        "dnsapi_list_all",
+        "domain_add",
+        "domain_del",
+        "domain_list",
+        "domain_status_toggle",
+        "email_add",
+        "email_del",
+        "email_list",
+        "get_run_hook_id_cmd",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_hook",
+        "run_hook_cmd",
+        "run_hook_id",
+        "run_info",
+        "run_log",
+        "run_sync_cf_cmd",
+        "run_sync_cf_data",
+        "run_sync_dnspod_cmd",
+        "run_sync_dnspod_data",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-alist",
+      "name": "alist",
+      "title": "Alist",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "clear_copy_task",
+        "conf",
+        "config_tpl",
+        "home_page",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "3.37.4",
+        "3.38.0",
+        "3.45.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-backup_ftp",
+      "name": "backup_ftp",
+      "title": "FTP存储空间",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "create_dir",
+        "delete_dir",
+        "delete_file",
+        "get_list",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "set_config",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-clean",
+      "name": "clean",
+      "title": "日志清理",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "clean",
+        "clean_run",
+        "conf",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": "1.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-cloudreve",
+      "name": "cloudreve",
+      "title": "cloudreve",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "home_page",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "3.8.3"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-cryptocurrency_trade",
+      "name": "cryptocurrency_trade",
+      "title": "量化交易",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "get_db_conf",
+        "get_user_conf",
+        "reload",
+        "restart",
+        "set_db_conf",
+        "set_user_conf",
+        "start",
+        "status",
+        "stop",
+        "sync_data_add",
+        "sync_data_add_task",
+        "sync_data_delete",
+        "sync_data_list"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-data_query",
+      "name": "data_query",
+      "title": "数据管理",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": "1.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-docker",
+      "name": "docker",
+      "title": "Docker",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "con_list",
+        "conf",
+        "docker_add_ip",
+        "docker_con_log",
+        "docker_create_con",
+        "docker_del_ip",
+        "docker_exec",
+        "docker_get_iplist",
+        "docker_login",
+        "docker_logout",
+        "docker_port_check",
+        "docker_pull",
+        "docker_pull_reg",
+        "docker_remove_con",
+        "docker_remove_image",
+        "docker_run_con",
+        "docker_stop_con",
+        "get_docker_create_info",
+        "image_list",
+        "image_pick_dir",
+        "image_pick_list",
+        "image_pick_load",
+        "image_pick_save",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "repo_list",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-doh",
+      "name": "doh",
+      "title": "DoH",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "get_total_statistics",
+        "init_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "post_receive_log",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "old_metadata_versions": [
+        "0.9.15"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-dynamic-tracking",
+      "name": "dynamic-tracking",
+      "title": "动态追踪",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "file_list",
+        "get_file_path",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "remove_file_path",
+        "restart",
+        "run_info",
+        "run_log",
+        "simple_trace",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "0.1"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-dztasks",
+      "name": "dztasks",
+      "title": "dztasks",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "home_page",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.2"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-fail2ban",
+      "name": "fail2ban",
+      "title": "fail2ban",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "get_black_list",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "set_black_ip",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-gdrive",
+      "name": "gdrive",
+      "title": "谷歌云网盘",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "clear_auth",
+        "conf",
+        "create_dir",
+        "delete_dir",
+        "delete_file",
+        "get_list",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "set_auth_url",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": "2.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-gitea",
+      "name": "gitea",
+      "title": "Gitea",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "get_gogs_conf",
+        "get_rsa_public",
+        "get_total_statistics",
+        "gogs_edit_tpl",
+        "init_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "post_receive_log",
+        "project_script_debug",
+        "project_script_edit",
+        "project_script_load",
+        "project_script_run",
+        "project_script_self",
+        "project_script_self_create",
+        "project_script_self_del",
+        "project_script_self_enable",
+        "project_script_self_logs",
+        "project_script_self_rename",
+        "project_script_self_run",
+        "project_script_self_status",
+        "project_script_unload",
+        "reload",
+        "repo_list",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_gogs_conf",
+        "uninstall_pre_inspection",
+        "user_list",
+        "user_project_list"
+      ],
+      "old_metadata_versions": [
+        "1.17.2",
+        "1.18.5",
+        "1.22.1",
+        "1.24.3"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-gogs",
+      "name": "gogs",
+      "title": "Gogs",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "get_gogs_conf",
+        "get_rsa_public",
+        "get_total_statistics",
+        "gogs_edit_tpl",
+        "init_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "post_receive_log",
+        "project_script_debug",
+        "project_script_edit",
+        "project_script_load",
+        "project_script_run",
+        "project_script_self",
+        "project_script_self_create",
+        "project_script_self_del",
+        "project_script_self_enable",
+        "project_script_self_logs",
+        "project_script_self_rename",
+        "project_script_self_run",
+        "project_script_self_status",
+        "project_script_unload",
+        "reload",
+        "repo_list",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_gogs_conf",
+        "user_list",
+        "user_project_list"
+      ],
+      "old_metadata_versions": [
+        "0.11.86",
+        "0.12.9",
+        "0.13.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-gorse",
+      "name": "gorse",
+      "title": "Gorse",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "info",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "0.4.15"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-grafana",
+      "name": "grafana",
+      "title": "grafana",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "grafana_url",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "old_metadata_versions": [
+        "12.1.0"
+      ],
+      "old_version_directories": [
+        "12.1.0"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-haproxy",
+      "name": "haproxy",
+      "title": "haproxy",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "2.6"
+      ],
+      "old_version_directories": [
+        "2.6"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-imail",
+      "name": "imail",
+      "title": "邮件服务",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [],
+      "old_metadata_versions": [
+        "0.0.19"
+      ],
+      "old_version_directories": [
+        "0.0.19"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-keepalived",
+      "name": "keepalived",
+      "title": "keepalived",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_scripts_tpl",
+        "config_tpl",
+        "default_scripts_tpl",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "2.2.8"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-lam",
+      "name": "lam",
+      "title": "LAM",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "access_log",
+        "conf",
+        "config_inc",
+        "error_log",
+        "get_cfg",
+        "get_home_page",
+        "get_pma_option",
+        "get_pma_port",
+        "get_set_php_ver",
+        "reload",
+        "restart",
+        "set_php_ver",
+        "set_pma_password",
+        "set_pma_path",
+        "set_pma_port",
+        "set_pma_username",
+        "start",
+        "status",
+        "stop",
+        "version"
+      ],
+      "old_metadata_versions": [
+        "9.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-ldap",
+      "name": "ldap",
+      "title": "LDAP",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "get_redis_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_redis_conf"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-loki",
+      "name": "loki",
+      "title": "loki",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "grafana_url",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "promtail_conf",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "old_metadata_versions": [
+        "3.5.3"
+      ],
+      "old_version_directories": [
+        "3.5.3"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-lvs",
+      "name": "lvs",
+      "title": "LVS",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-manticoresearch",
+      "name": "manticoresearch",
+      "title": "manticoresearch",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "db_to_sphinx",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "query_log",
+        "read_config_tpl",
+        "rebuild",
+        "reload",
+        "restart",
+        "run_log",
+        "run_status",
+        "run_status_test",
+        "sphinx_cmd",
+        "start",
+        "status",
+        "stop",
+        "update_all",
+        "update_delta"
+      ],
+      "old_metadata_versions": [
+        "7.4.6"
+      ],
+      "old_version_directories": [
+        "apt",
+        "yum"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-mariadb",
+      "name": "mariadb",
+      "title": "MariaDB",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_db",
+        "add_master_rep_slave_user",
+        "add_slave_ssh",
+        "add_slave_sync_user",
+        "alter_table",
+        "bin_log",
+        "binlog_list",
+        "clean_bin_log",
+        "conf",
+        "db_status",
+        "del_db",
+        "del_master_rep_slave_user",
+        "del_slave_ssh",
+        "del_slave_sync_user",
+        "delete_db_backup",
+        "delete_slave",
+        "do_full_sync",
+        "dump_mysql_data",
+        "error_log",
+        "fix_db_access",
+        "full_sync",
+        "full_sync_cmd",
+        "get_db_access",
+        "get_db_backup_import_list",
+        "get_db_backup_list",
+        "get_db_info",
+        "get_db_list",
+        "get_db_rw",
+        "get_dbrun_mode",
+        "get_master_rep_slave_list",
+        "get_master_rep_slave_user_cmd",
+        "get_master_rep_slave_user_cmd_ssh",
+        "get_master_status",
+        "get_masterdb_list",
+        "get_slave_list",
+        "get_slave_ssh_by_ip",
+        "get_slave_ssh_list",
+        "get_slave_sync_cmd",
+        "get_slave_sync_mode",
+        "get_slave_sync_user_by_ip",
+        "get_slave_sync_user_list",
+        "get_total_statistics",
+        "import_db_backup",
+        "import_db_external",
+        "import_db_external_progress",
+        "import_db_external_progress_bar",
+        "init_pwd",
+        "init_slave_status",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "my_db_pos",
+        "my_port",
+        "opt_table",
+        "reload",
+        "repair_table",
+        "reset_master",
+        "restart",
+        "root_pwd",
+        "run_info",
+        "set_db_access",
+        "set_db_backup",
+        "set_db_master",
+        "set_db_pos",
+        "set_db_ps",
+        "set_db_slave",
+        "set_db_status",
+        "set_dbmaster_access",
+        "set_dbrun_mode",
+        "set_master_status",
+        "set_my_port",
+        "set_root_pwd",
+        "set_slave_status",
+        "set_slave_sync_mode",
+        "set_user_pwd",
+        "show_log",
+        "start",
+        "status",
+        "stop",
+        "sync_database_repair",
+        "sync_database_repair_log",
+        "sync_get_databases",
+        "sync_to_databases",
+        "try_slave_sync_bugfix",
+        "uninstall_pre_inspection",
+        "update_master_rep_slave_user",
+        "update_slave_ssh"
+      ],
+      "old_metadata_versions": [
+        "10.6",
+        "10.7",
+        "10.8",
+        "10.9",
+        "10.11",
+        "11.0",
+        "11.1",
+        "11.2",
+        "11.3",
+        "11.4",
+        "11.5",
+        "11.6",
+        "11.7",
+        "11.8",
+        "12.0"
+      ],
+      "old_version_directories": [
+        "10.11",
+        "10.6",
+        "10.7",
+        "10.8",
+        "10.9",
+        "11.0",
+        "11.1",
+        "11.2",
+        "11.3",
+        "11.4",
+        "11.5",
+        "11.6",
+        "11.7",
+        "11.8",
+        "12.0",
+        "12.1"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-memcached",
+      "name": "memcached",
+      "title": "Memcached",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf_env",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "restart",
+        "run_info",
+        "save_conf",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.6"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-migration_api",
+      "name": "migration_api",
+      "title": "一键迁移API",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "bg_process",
+        "get_conf",
+        "get_speed",
+        "status",
+        "step_four",
+        "step_one",
+        "step_three",
+        "step_two"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-mongodb",
+      "name": "mongodb",
+      "title": "MongoDB",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_db",
+        "conf",
+        "config_key",
+        "cron_add_check",
+        "cron_del_check",
+        "del_db",
+        "del_db_table",
+        "del_repl_node",
+        "delete_db_backup",
+        "get_all_role",
+        "get_config",
+        "get_db_access",
+        "get_db_backup_import_list",
+        "get_db_backup_list",
+        "get_db_info",
+        "get_db_list",
+        "get_repl_config",
+        "import_db_backup",
+        "import_db_external",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "repl_close",
+        "repl_init",
+        "repl_set_name",
+        "repl_set_node",
+        "restart",
+        "root_pwd",
+        "run_doc_info",
+        "run_info",
+        "run_log",
+        "run_repl_info",
+        "set_config",
+        "set_config_auth",
+        "set_db_access",
+        "set_db_backup",
+        "set_db_ps",
+        "set_root_pwd",
+        "set_user_pwd",
+        "start",
+        "status",
+        "stop",
+        "sync_get_databases",
+        "sync_to_databases",
+        "test",
+        "test_data",
+        "uninstall_pre_inspection"
+      ],
+      "old_metadata_versions": [
+        "4.4",
+        "5.0",
+        "6.0",
+        "7.0",
+        "8.0",
+        "8.2"
+      ],
+      "old_version_directories": [
+        "4.4",
+        "5.0",
+        "6.0",
+        "7.0",
+        "8.0",
+        "8.2"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-mosquitto",
+      "name": "mosquitto",
+      "title": "mosquitto",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "2.0.18"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-msonedrive",
+      "name": "msonedrive",
+      "title": "OneDrive",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "clear_auth",
+        "conf",
+        "create_dir",
+        "delete_dir",
+        "delete_file",
+        "get_list",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "set_auth_url",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": "1.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-mtproxy",
+      "name": "mtproxy",
+      "title": "mtproxy",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "conf_env",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "url"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-mysql",
+      "name": "mysql",
+      "title": "MySQL",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_db",
+        "add_master_rep_slave_user",
+        "add_slave_ssh",
+        "add_slave_sync_user",
+        "alter_table",
+        "bin_log",
+        "binlog_list",
+        "clean_bin_log",
+        "conf",
+        "db_status",
+        "del_db",
+        "del_master_rep_slave_user",
+        "del_slave_ssh",
+        "del_slave_sync_user",
+        "delete_db_backup",
+        "delete_slave",
+        "do_full_sync",
+        "dump_mysql_data",
+        "error_log",
+        "fix_db_access",
+        "full_sync",
+        "full_sync_cmd",
+        "get_db_access",
+        "get_db_backup_import_list",
+        "get_db_backup_list",
+        "get_db_info",
+        "get_db_list",
+        "get_dbrun_mode",
+        "get_master_rep_slave_list",
+        "get_master_rep_slave_user_cmd",
+        "get_master_status",
+        "get_masterdb_list",
+        "get_slave_list",
+        "get_slave_ssh_by_ip",
+        "get_slave_ssh_list",
+        "get_slave_sync_cmd",
+        "get_slave_sync_mode",
+        "get_slave_sync_user_by_ip",
+        "get_slave_sync_user_list",
+        "get_total_statistics",
+        "import_db_backup",
+        "import_db_backup_progress",
+        "import_db_backup_progress_bar",
+        "import_db_external",
+        "import_db_external_progress",
+        "import_db_external_progress_bar",
+        "init_pwd",
+        "init_slave_status",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "my_db_pos",
+        "my_port",
+        "opt_table",
+        "reload",
+        "repair_table",
+        "reset_master",
+        "restart",
+        "root_pwd",
+        "run_info",
+        "set_db_access",
+        "set_db_backup",
+        "set_db_master",
+        "set_db_pos",
+        "set_db_ps",
+        "set_db_rw",
+        "set_db_slave",
+        "set_db_status",
+        "set_dbmaster_access",
+        "set_dbrun_mode",
+        "set_master_status",
+        "set_my_port",
+        "set_root_pwd",
+        "set_slave_status",
+        "set_slave_sync_mode",
+        "set_user_pwd",
+        "show_log",
+        "start",
+        "status",
+        "stop",
+        "sync_database_repair",
+        "sync_database_repair_log",
+        "sync_get_databases",
+        "sync_to_databases",
+        "try_slave_sync_bugfix",
+        "uninstall_pre_inspection",
+        "update_master_rep_slave_user",
+        "update_slave_ssh"
+      ],
+      "old_metadata_versions": [
+        "5.5",
+        "5.6",
+        "5.7",
+        "8.0",
+        "8.2",
+        "8.3",
+        "8.4",
+        "9.0",
+        "9.1",
+        "9.2",
+        "9.3",
+        "9.4"
+      ],
+      "old_version_directories": [
+        "5.5",
+        "5.6",
+        "5.7",
+        "8.0",
+        "8.2",
+        "8.3",
+        "8.4",
+        "9.0",
+        "9.1",
+        "9.2",
+        "9.3",
+        "9.4"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-mysql-community",
+      "name": "mysql-community",
+      "title": "MySQL[Tar]",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_db",
+        "add_master_rep_slave_user",
+        "add_slave_ssh",
+        "add_slave_sync_user",
+        "alter_table",
+        "bin_log",
+        "binlog_list",
+        "clean_bin_log",
+        "conf",
+        "db_status",
+        "del_db",
+        "del_master_rep_slave_user",
+        "del_slave_ssh",
+        "del_slave_sync_user",
+        "delete_db_backup",
+        "delete_slave",
+        "do_full_sync",
+        "dump_mysql_data",
+        "error_log",
+        "fix_db_access",
+        "fix_db_access2",
+        "full_sync",
+        "full_sync_cmd",
+        "get_db_access",
+        "get_db_backup_import_list",
+        "get_db_backup_list",
+        "get_db_info",
+        "get_db_list",
+        "get_dbrun_mode",
+        "get_master_rep_slave_list",
+        "get_master_rep_slave_user_cmd",
+        "get_master_status",
+        "get_masterdb_list",
+        "get_slave_list",
+        "get_slave_ssh_by_ip",
+        "get_slave_ssh_list",
+        "get_slave_sync_cmd",
+        "get_slave_sync_mode",
+        "get_slave_sync_user_by_ip",
+        "get_slave_sync_user_list",
+        "get_total_statistics",
+        "import_db_backup",
+        "import_db_external",
+        "import_db_external_progress",
+        "import_db_external_progress_bar",
+        "init_pwd",
+        "init_slave_status",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "my_db_pos",
+        "my_port",
+        "opt_table",
+        "reload",
+        "repair_table",
+        "reset_master",
+        "restart",
+        "root_pwd",
+        "run_info",
+        "set_db_access",
+        "set_db_backup",
+        "set_db_master",
+        "set_db_pos",
+        "set_db_ps",
+        "set_db_rw",
+        "set_db_slave",
+        "set_db_status",
+        "set_dbmaster_access",
+        "set_dbrun_mode",
+        "set_master_status",
+        "set_my_port",
+        "set_root_pwd",
+        "set_slave_status",
+        "set_slave_sync_mode",
+        "set_user_pwd",
+        "show_log",
+        "start",
+        "status",
+        "stop",
+        "sync_database_repair",
+        "sync_database_repair_log",
+        "sync_get_databases",
+        "sync_to_databases",
+        "try_slave_sync_bugfix",
+        "uninstall_pre_inspection",
+        "update_master_rep_slave_user",
+        "update_slave_ssh"
+      ],
+      "old_metadata_versions": [
+        "5.7",
+        "8.0",
+        "8.2",
+        "8.3",
+        "8.4",
+        "9.0",
+        "9.1",
+        "9.2",
+        "9.3"
+      ],
+      "old_version_directories": [
+        "5.7",
+        "8.0",
+        "8.2",
+        "8.3",
+        "8.4",
+        "9.0",
+        "9.1",
+        "9.2",
+        "9.3"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-nezha",
+      "name": "nezha",
+      "title": "哪吒监控",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [],
+      "old_metadata_versions": [
+        "0.15.2"
+      ],
+      "old_version_directories": [
+        "0.15.2"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-ollama",
+      "name": "ollama",
+      "title": "ollama",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [
+        "1.0"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-op_load_balance",
+      "name": "op_load_balance",
+      "title": "OP负载均衡",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_load_balance",
+        "check_url",
+        "get_health_status",
+        "get_logs",
+        "install_pre_inspection",
+        "load_balance_delete",
+        "load_balance_list",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-op_waf",
+      "name": "op_waf",
+      "title": "OP防火墙",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_area_limit",
+        "add_ip_black",
+        "add_ip_white",
+        "add_rule",
+        "add_site_cdn_header",
+        "add_site_rule",
+        "area_limit_switch",
+        "clean_drop_ip",
+        "conf",
+        "del_area_limit",
+        "del_ipv6_black",
+        "get_area_limit",
+        "get_country",
+        "get_default_site",
+        "get_logs_list",
+        "get_rule",
+        "get_safe_logs",
+        "get_site_config",
+        "get_site_config_byname",
+        "get_site_rule",
+        "import_data",
+        "install_pre_inspection",
+        "modify_rule",
+        "output_data",
+        "reload",
+        "remove_ip_black",
+        "remove_ip_white",
+        "remove_rule",
+        "remove_site_cdn_header",
+        "remove_site_rule",
+        "restart",
+        "save_scan_rule",
+        "set_cc_conf",
+        "set_ipv6_black",
+        "set_obj_open",
+        "set_obj_status",
+        "set_retry",
+        "set_rule_state",
+        "set_safe_verify",
+        "set_site_cc_conf",
+        "set_site_obj_open",
+        "set_site_retry",
+        "start",
+        "status",
+        "stop",
+        "test_run",
+        "waf_conf",
+        "waf_srceen"
+      ],
+      "old_metadata_versions": [
+        "0.4.1"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-openresty",
+      "name": "openresty",
+      "title": "OpenResty",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "check",
+        "conf",
+        "cron_add_check",
+        "cron_del_check",
+        "error_log",
+        "get_cfg",
+        "get_os",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_info",
+        "set_cfg",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.17.8",
+        "1.19.3",
+        "1.21.4",
+        "1.25.3",
+        "1.27.1",
+        "rtmp"
+      ],
+      "old_version_directories": [
+        "1.17.8",
+        "1.19.3",
+        "1.21.4",
+        "1.25.3",
+        "1.27.1",
+        "1.29.2",
+        "rtmp"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-pgadmin",
+      "name": "pgadmin",
+      "title": "pgadmin",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "access_log",
+        "conf",
+        "error_log",
+        "get_cfg",
+        "get_home_page",
+        "get_pg_option",
+        "get_pg_port",
+        "reload",
+        "restart",
+        "set_pg_password",
+        "set_pg_port",
+        "set_pg_username",
+        "start",
+        "status",
+        "stop",
+        "version"
+      ],
+      "old_metadata_versions": [
+        "4"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-php",
+      "name": "php",
+      "title": "PHP",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "app_start",
+        "clean_session_old",
+        "conf",
+        "fpm_log",
+        "fpm_slow_log",
+        "get_disable_func",
+        "get_fpm_conf",
+        "get_fpm_conf_file",
+        "get_fpm_file",
+        "get_fpm_status",
+        "get_lib_conf",
+        "get_limit_conf",
+        "get_php_conf",
+        "get_phpinfo",
+        "get_session_conf",
+        "get_session_count",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_lib",
+        "install_pre_inspection",
+        "opcache_blacklist_file",
+        "reload",
+        "restart",
+        "set_disable_func",
+        "set_fpm_conf",
+        "set_max_size",
+        "set_max_time",
+        "set_session_conf",
+        "start",
+        "status",
+        "stop",
+        "submit_php_conf",
+        "uninstall_lib"
+      ],
+      "old_metadata_versions": [
+        "53",
+        "54",
+        "55",
+        "56",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85"
+      ],
+      "old_version_directories": [
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85",
+        "common"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-php-apt",
+      "name": "php-apt",
+      "title": "PHP[APT]",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "app_start",
+        "clean_session_old",
+        "conf",
+        "fpm_log",
+        "fpm_slow_log",
+        "get_disable_func",
+        "get_fpm_conf",
+        "get_fpm_conf_file",
+        "get_fpm_file",
+        "get_fpm_status",
+        "get_lib_conf",
+        "get_limit_conf",
+        "get_php_conf",
+        "get_phpinfo",
+        "get_session_conf",
+        "get_session_count",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_lib",
+        "install_pre_inspection",
+        "opcache_blacklist_file",
+        "reload",
+        "restart",
+        "set_disable_func",
+        "set_fpm_conf",
+        "set_max_size",
+        "set_max_time",
+        "set_session_conf",
+        "start",
+        "status",
+        "stop",
+        "submit_php_conf",
+        "uninstall_lib"
+      ],
+      "old_metadata_versions": [
+        "56",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85"
+      ],
+      "old_version_directories": [
+        "56",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85",
+        "common"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-php-guard",
+      "name": "php-guard",
+      "title": "PHP守护",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "status"
+      ],
+      "old_metadata_versions": "1.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-php-yum",
+      "name": "php-yum",
+      "title": "PHP[YUM]",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "app_start",
+        "clean_session_old",
+        "conf",
+        "fpm_log",
+        "fpm_slow_log",
+        "get_disable_func",
+        "get_fpm_conf",
+        "get_fpm_conf_file",
+        "get_fpm_file",
+        "get_fpm_status",
+        "get_lib_conf",
+        "get_limit_conf",
+        "get_php_conf",
+        "get_phpinfo",
+        "get_session_conf",
+        "get_session_count",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_lib",
+        "install_pre_inspection",
+        "opcache_blacklist_file",
+        "reload",
+        "restart",
+        "set_disable_func",
+        "set_fpm_conf",
+        "set_max_size",
+        "set_max_time",
+        "set_session_conf",
+        "start",
+        "status",
+        "stop",
+        "submit_php_conf",
+        "uninstall_lib"
+      ],
+      "old_metadata_versions": [
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85"
+      ],
+      "old_version_directories": [
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85",
+        "common"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-phpldapadmin",
+      "name": "phpldapadmin",
+      "title": "phpLDAPadmin",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "access_log",
+        "conf",
+        "config_inc",
+        "error_log",
+        "get_cfg",
+        "get_home_page",
+        "get_pma_option",
+        "get_pma_port",
+        "get_set_php_ver",
+        "reload",
+        "restart",
+        "set_php_ver",
+        "set_pma_password",
+        "set_pma_path",
+        "set_pma_port",
+        "set_pma_username",
+        "start",
+        "status",
+        "stop",
+        "version"
+      ],
+      "old_metadata_versions": [
+        "1.2.6.7"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-phpmyadmin",
+      "name": "phpmyadmin",
+      "title": "phpMyAdmin",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "access_log",
+        "conf",
+        "config_inc",
+        "error_log",
+        "get_cfg",
+        "get_home_page",
+        "get_pma_option",
+        "get_pma_port",
+        "get_set_php_ver",
+        "install_pre_inspection",
+        "plugins_db_support",
+        "reload",
+        "restart",
+        "set_php_ver",
+        "set_pma_choose",
+        "set_pma_password",
+        "set_pma_path",
+        "set_pma_port",
+        "set_pma_username",
+        "start",
+        "status",
+        "stop",
+        "version"
+      ],
+      "old_metadata_versions": [
+        "4.4.15",
+        "4.9.11",
+        "5.2.1"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-postgresql",
+      "name": "postgresql",
+      "title": "PostgreSQL",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_db",
+        "add_master_rep_slave_user",
+        "add_slave_ssh",
+        "conf",
+        "config_tpl",
+        "db_status",
+        "del_db",
+        "del_master_rep_slave_user",
+        "del_slave_ssh",
+        "delete_db_backup",
+        "do_full_sync",
+        "get_db_access",
+        "get_db_list",
+        "get_master_rep_slave_list",
+        "get_master_rep_slave_user_cmd",
+        "get_master_status",
+        "get_slave_list",
+        "get_slave_ssh_by_ip",
+        "get_slave_ssh_list",
+        "import_db_backup",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "pg_back",
+        "pg_back_list",
+        "pg_hba_conf",
+        "pg_port",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "root_pwd",
+        "run_info",
+        "run_log",
+        "set_db_access",
+        "set_db_rw",
+        "set_db_status",
+        "set_master_status",
+        "set_pg_port",
+        "set_slave_status",
+        "set_user_pwd",
+        "slave_sync_cmd",
+        "slow_log",
+        "start",
+        "status",
+        "stop",
+        "sync_get_databases",
+        "uninstall_pre_inspection",
+        "update_slave_ssh"
+      ],
+      "old_metadata_versions": [
+        "14",
+        "15",
+        "16",
+        "17"
+      ],
+      "old_version_directories": [
+        "14",
+        "15",
+        "16",
+        "17",
+        "18"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-prometheus",
+      "name": "prometheus",
+      "title": "prometheus",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "prometheus_url",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "old_metadata_versions": [
+        "3.5.0"
+      ],
+      "old_version_directories": [
+        "3.5.0"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-pureftp",
+      "name": "pureftp",
+      "title": "PureFtpd",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_ftp",
+        "conf",
+        "del_ftp",
+        "get_ftp_list",
+        "get_www_dir",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "mod_ftp",
+        "mod_ftp_port",
+        "reload",
+        "restart",
+        "start",
+        "start_ftp",
+        "status",
+        "stop",
+        "stop_ftp"
+      ],
+      "old_metadata_versions": "1.0.49",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-redis",
+      "name": "redis",
+      "title": "Redis",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "cluster_info",
+        "cluster_nodes",
+        "conf",
+        "config_tpl",
+        "get_redis_conf",
+        "info_replication",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_redis_conf"
+      ],
+      "old_metadata_versions": [
+        "4.0.14",
+        "5.0.14",
+        "6.0.20",
+        "6.2.16",
+        "7.0.15",
+        "7.2.9",
+        "7.4.7",
+        "8.0.5",
+        "8.2.3"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-rsyncd",
+      "name": "rsyncd",
+      "title": "rsyncd",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_rec",
+        "cmd_rec_cmd",
+        "cmd_rec_secret_key",
+        "conf",
+        "del_rec",
+        "get_rec",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "lsyncd_add",
+        "lsyncd_add_exclude",
+        "lsyncd_conf_log",
+        "lsyncd_delete",
+        "lsyncd_get",
+        "lsyncd_get_exclude",
+        "lsyncd_list",
+        "lsyncd_log",
+        "lsyncd_remove_exclude",
+        "lsyncd_run",
+        "rec_list",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": "2.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-simpleping",
+      "name": "simpleping",
+      "title": "SimplePing",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "ip_list",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-sphinx",
+      "name": "sphinx",
+      "title": "sphinx",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "db_to_sphinx",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "query_log",
+        "read_config_tpl",
+        "rebuild",
+        "reload",
+        "restart",
+        "run_log",
+        "run_status",
+        "sphinx_cmd",
+        "start",
+        "status",
+        "stop",
+        "update_all",
+        "update_delta"
+      ],
+      "old_metadata_versions": [
+        "3.1.1",
+        "3.2.1",
+        "3.3.1",
+        "3.4.1",
+        "3.5.1",
+        "3.6.1",
+        "3.7.1",
+        "3.8.1"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-supervisor",
+      "name": "supervisor",
+      "title": "supervisor",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_job",
+        "conf",
+        "confd_list",
+        "confd_list_error_log",
+        "confd_list_trace_log",
+        "config_tpl",
+        "del_job",
+        "get_job_info",
+        "get_sup_list",
+        "get_user_list",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_log_error_tpl",
+        "read_config_log_tpl",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "restart_job",
+        "run_log",
+        "start",
+        "start_job",
+        "status",
+        "stop",
+        "sup_clear_log",
+        "update_job"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-swap",
+      "name": "swap",
+      "title": "swap",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "change_swap",
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "swap_status"
+      ],
+      "old_metadata_versions": "1.1",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-sys-opt",
+      "name": "sys-opt",
+      "title": "系统优化",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "config_tpl",
+        "cron_run_log",
+        "hosts",
+        "msg_run_log",
+        "read_config_tpl",
+        "reload",
+        "resolv",
+        "restart",
+        "sec_run_log",
+        "start",
+        "status",
+        "stop",
+        "sys_run_log"
+      ],
+      "old_metadata_versions": "1.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-system_safe",
+      "name": "system_safe",
+      "title": "系统加固",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-tamper_proof_py",
+      "name": "tamper_proof_py",
+      "title": "网站防篡改程序PY",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [],
+      "old_metadata_versions": "1.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-task_manager",
+      "name": "task_manager",
+      "title": "任务管理器",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "status"
+      ],
+      "old_metadata_versions": "1.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-tgbot",
+      "name": "tgbot",
+      "title": "tgbot",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "bot_ext_list",
+        "get_bot_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_log",
+        "set_bot_conf",
+        "set_ext_status",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-tgclient",
+      "name": "tgclient",
+      "title": "tgclient",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "client_ext_list",
+        "get_client_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_log",
+        "set_client_conf",
+        "set_ext_status",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "old_metadata_versions": [
+        "1.1"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-valkey",
+      "name": "valkey",
+      "title": "valkey",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [
+        "cluster_info",
+        "cluster_nodes",
+        "conf",
+        "config_tpl",
+        "get_redis_conf",
+        "info_replication",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_redis_conf"
+      ],
+      "old_metadata_versions": [
+        "8.0.1",
+        "8.1.3"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-varnish",
+      "name": "varnish",
+      "title": "varnish",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "conf_service",
+        "config_tpl",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-webhook",
+      "name": "webhook",
+      "title": "WebHook",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "add_hook",
+        "config_tpl",
+        "del_hook",
+        "get_list",
+        "get_log",
+        "read_config_tpl",
+        "run_shell",
+        "run_shell_cmd",
+        "status"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-webssh",
+      "name": "webssh",
+      "title": "SSH终端",
+      "phase": 2,
+      "status": "planned",
+      "old_declared_actions": [],
+      "old_metadata_versions": "2.0",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-webstats",
+      "name": "webstats",
+      "title": "网站统计",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "get_client_stat_list",
+        "get_default_site",
+        "get_global_conf",
+        "get_ip_stat_list",
+        "get_logs_error_list",
+        "get_logs_list",
+        "get_logs_realtime_info",
+        "get_overview_list",
+        "get_site_conf",
+        "get_site_list",
+        "get_spider_stat_list",
+        "get_uri_stat_list",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_info",
+        "set_global_conf",
+        "set_site_conf",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "old_metadata_versions": "0.2.5",
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-xhprof",
+      "name": "xhprof",
+      "title": "xhprof",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "app_start",
+        "conf",
+        "get_home_page",
+        "get_set_php_ver",
+        "get_xhprof_port",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "set_php_ver",
+        "set_xhprof_port",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-xui",
+      "name": "xui",
+      "title": "xui",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "info",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "old_metadata_versions": [
+        "1.0"
+      ],
+      "old_version_directories": [],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-zabbix",
+      "name": "zabbix",
+      "title": "Zabbix",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "php_conf",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection",
+        "zabbix_agent_conf",
+        "zabbix_agent_log",
+        "zabbix_server_conf"
+      ],
+      "old_metadata_versions": [
+        "6.0",
+        "7.0"
+      ],
+      "old_version_directories": [
+        "6.0",
+        "7.0"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    },
+    {
+      "id": "PLUGIN-zabbix_agent",
+      "name": "zabbix_agent",
+      "title": "Zabbix Agent",
+      "phase": 3,
+      "status": "planned",
+      "old_declared_actions": [
+        "agentd_conf",
+        "agentd_default_conf",
+        "agentd_read_conf",
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection",
+        "zabbix_agent_conf"
+      ],
+      "old_metadata_versions": [
+        "7.0"
+      ],
+      "old_version_directories": [
+        "6.0",
+        "7.0"
+      ],
+      "new_manifest": null,
+      "acceptance_cases": [],
+      "evidence": null
+    }
+  ],
+  "new_features": [
+    {
+      "id": "NEW-UI-SHELL",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "NEW-FIVE-THEMES",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "NEW-SHARED-NOTES",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "NEW-MCP-STDIO",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "NEW-MCP-HTTP",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "NEW-ACTION-REGISTRY",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "NEW-AGENT-BOUNDARY",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "NEW-PERSISTENT-TASKS",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    },
+    {
+      "id": "NEW-CORE-INSTALLER",
+      "phase": 1,
+      "status": "verified",
+      "evidence": "docs/rewrite/PHASE1-ACCEPTANCE.md"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "allowed_users": ["powerlinux"],
+  "socket_group": "powerlinux",
+  "host": {
+    "version": 1,
+    "state_dir": "/var/lib/powerlinux-agent/system",
+    "api_user": "powerlinux",
+    "enabled_kinds": ["service_state", "panel_config", "script_execution"],
+    "programs": {"systemctl": "/usr/bin/systemctl"},
+    "services": [{"id": "panel", "unit": "powerlinux.service", "ownership": "adopted", "protected": true}],
+    "protected_ports": [22, 80, 443, 9000],
+    "confirmation_seconds": 120,
+    "enable_root_scripts": false,
+    "script_profiles": [{
+      "id": "local",
+      "user": "powerlinux-terminal",
+      "shell": "/bin/bash",
+      "home": "/var/lib/powerlinux-terminal",
+      "work_dir": "/var/lib/powerlinux-terminal/workspace",
+      "timeout_seconds": 300
+    }]
+  },
+  "terminal": {
+    "api_user": "powerlinux",
+    "state_dir": "/var/lib/powerlinux-agent/terminal",
+    "profiles": [{
+      "id": "local",
+      "label": "Local isolated user",
+      "user": "powerlinux-terminal",
+      "shell": "/bin/bash",
+      "home": "/var/lib/powerlinux-terminal",
+      "work_dir": "/var/lib/powerlinux-terminal/workspace"
+    }],
+    "enable_root": false,
+    "max_sessions": 16,
+    "max_per_actor": 4,
+    "idle_seconds": 900,
+    "lease_seconds": 60,
+    "protected_paths": ["/var/lib/powerlinux", "/etc/powerlinux", "/var/lib/powerlinux-agent"]
+  }
+}

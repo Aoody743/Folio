@@ -1,0 +1,34 @@
+{
+  "stage": 2,
+  "actual_release": "0.1.0-dev.9",
+  "archive_sha256": "ca7d61746eb3023c93c79265feb4b350d869e8bc2a56c230b08f79211ab1afb1",
+  "actual_target": "Debian13 systemd QEMU production API+rootAgent",
+  "results": {
+    "r1": "3 passed; group4 passed stream/MCP/history but read immediately after Type=simple restart got transient404; cleanup also raced readiness",
+    "r2": "ALL4PASS11.870s after real ordinary-UID Agent-health readiness gate; original business assertions unchanged"
+  },
+  "logs": {
+    "r1": {
+      "path": "/workspace/powerlinux/test-artifacts/agent-files-dev9-debian-20261013-r1.log",
+      "sha256": "04ad8eee9e4e7f57f2ab8723da40b27d81599d061ca1f47122d84268daf4f047"
+    },
+    "r2": {
+      "path": "/workspace/powerlinux/test-artifacts/agent-files-dev9-debian-20261013-r2.log",
+      "sha256": "758a11839bc8e876df2b353083a1206afd52c3e136346d9f1a6782387759e8de"
+    }
+  },
+  "script": {
+    "path": "tests/rewrite/phase2/test_agent_files_vm.py",
+    "sha256": "50e0f14cf5178b6849fe487a7736352d400d95eca3cfd2253d29705b216d3512"
+  },
+  "checks": [
+    "Real REST/HTTP MCP API↔Agent file copy/move with safe destinationUID/GID and conflict/preauth",
+    "Directory roundtrip0770/0500/0440, exactbytes and lateunsafe symlink no destination",
+    "files:host explicitscope plus protected data/policy/SSH paths and intermediate symlink403",
+    "3MiB real HTTP Agent upload/fullHEADRange+MCP32KiB/authorhistory/recycle/restoredSHA/Agentrestart/tokenrevoke"
+  ],
+  "cleanup": "All known r1/r2 own prefixes/trash and created tokens cleaned; no DB fixtures/services/globalconfig changed",
+  "limits": [
+    "Separate actual API↔Agent file evidence; no managed software/23plugin/externalprovider/nativeARM claim"
+  ]
+}

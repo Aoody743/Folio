@@ -1,0 +1,24 @@
+{
+  "binary": "/workspace/powerlinux/test-artifacts/sites-native-dns-dev10-r2.test",
+  "binary_sha256": "8dd9dbeecd42e7dcdd27d391b844e97b1b9463a9ce6f7216b1d2eff22ad2002a",
+  "guest_binary": "/root/powerlinux-qa-tests/sites-native-dns-dev10-r2.test",
+  "command": "printf '%s  %s\\n' '8dd9dbeecd42e7dcdd27d391b844e97b1b9463a9ce6f7216b1d2eff22ad2002a' '/root/powerlinux-qa-tests/sites-native-dns-dev10-r2.test' | sha256sum --check --status; chmod 0700 '/root/powerlinux-qa-tests/sites-native-dns-dev10-r2.test'; env POWERLINUX_QA_OWNED_VM=1 GOMAXPROCS=2 '/root/powerlinux-qa-tests/sites-native-dns-dev10-r2.test' -test.v -test.run '^TestQARootNativeDNS' -test.timeout=120s",
+  "execution_exit": 1,
+  "deployment_version_policy_services_unchanged": true,
+  "scope": "Actual root isolated temporary native DNS/TSIG and verified HTTPS ACME protocol fixtures; no external public provider or final immutable package claim",
+  "log": {
+    "path": "/workspace/powerlinux/test-artifacts/sites-native-dns-dev10-root-debian-20261013-r2.log",
+    "sha256": "a3c501fe8d39015cdbf393bb63d0d1ca09ce1f1a8e1f5e40e745d3d6cf553a48"
+  },
+  "stage": 2,
+  "results": {
+    "TestQARootNativeDNSACMERealHTTPSAndSignedTXTThenPrivateImport": "PASS with dns_knot and dns_ispconfig subcases",
+    "TestQARootNativeDNSCancellationCleansUsingIndependentContext": "PASS",
+    "TestQARootNativeDNSLostCleanupRetainsOrderAndRecoversAfterRestart": "FAIL acme_native_dns_test.go:207: Knot requires one to sixteen explicit update endpoints"
+  },
+  "limits": [
+    "Temporary authenticated DNS/CA protocol fixtures, no external public credentials",
+    "Two passed groups do not cover failed restart/recovery or final source/package acceptance"
+  ],
+  "root_diagnosis": "Fixture provided nil/empty ISPConfig AllowedDNSUpdateServers; constructor correctly refused. r4 uses only nonempty provider allowlists and retains original exact3 gates; not a product weakening."
+}

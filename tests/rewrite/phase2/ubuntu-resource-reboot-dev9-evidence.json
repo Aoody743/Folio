@@ -1,0 +1,50 @@
+{
+  "owned_previous_qemu_pid": 12202,
+  "previous_process_state": "Exited zombie under PID1, cmdline empty; image lock acquisition succeeded without any bypass",
+  "initial_setup_wait": "Original wait incorrectly counted zombie as running; aborted before image mutation, recorded55s timeout",
+  "owned_new_qemu_pid": 108379,
+  "backup_image": "/workspace/tools/qa-ubuntu/guest/disk-grow-20261013-r1/ubuntu-overlay.before-grow.qcow2",
+  "virtual_size_before": 3758096384,
+  "virtual_size_after": 12348030976,
+  "offline_image_check_exit": 0,
+  "logical_before_sha256": "8379d0afb34eb548a1293bd2df2fb7360fa792e2e8daf46b773e14d991876565",
+  "root_policy_sha256_expected": "5d4f23f9ca530ccdab2f2d56aa1ce3e9ba24305261863d1589c001b149dd8455",
+  "scope": "Authorized isolated Ubuntu QA disk resource precondition, not product installer success",
+  "guest_partition_and_filesystem_growth": "Completed by stock cloud-init growpart/resizefs during reboot; actual root filesystem/device sizes measured",
+  "known_host_preserved_sha256": "dc6f6e7242d3b5ae6f10da5fc21d2fe82c138f66027266ee5b425b8b891005f5",
+  "available_bytes_after": 8447983616,
+  "logical_version_key_config_policy_API_Agent_unchanged": true,
+  "actual_API_and_ordinaryUID_Agent_health": "PASS exactdev9/policy",
+  "original_human_note_after_reboot": "PASS actual password login and existing note",
+  "restored_forward_pid": 110628,
+  "fixed_public_origin_preserved": true,
+  "native_software_reboot": "FAIL product installs start but do not enable units; sourceconfirmed by MCP, newdev11 required",
+  "native_start_precondition_after_failure": [
+    {
+      "instance": "openresty-nativeqa",
+      "task_id": "6b6705b7cd8cb9a9f04b80704fedeeac",
+      "status": "succeeded"
+    },
+    {
+      "instance": "php-apt-nativeqa",
+      "task_id": "0e1f9a9614a0587a5cb0b7ebfb66dd05",
+      "status": "succeeded"
+    }
+  ],
+  "stage": 2,
+  "evidence": {
+    "path": "/workspace/tools/qa-ubuntu/guest/disk-grow-20261013-r1/disk-grow-evidence.json",
+    "sha256": "7f28019815bd8e2905f07ed1a00318dc423383d19f6a5d61a563d0785ce05a27"
+  },
+  "result": "Resource setup and API/Agent/data/key/SSH continuity PASS; native software auto-start after actual reboot FAIL",
+  "failed_units": [
+    "powerlinux-plugin-openresty-nativeqa.service",
+    "powerlinux-plugin-php-apt-nativeqa.service"
+  ],
+  "actual_post_reboot_enable_state": "disabled",
+  "fix_acceptance": "Await immutabledev11 product autostart fix and another actual reboot; typed starts only restore prerequisite",
+  "limits": [
+    "Owned Ubuntu24.04 QEMU TCG disk precondition only",
+    "Actual product reboot failure retained; manual starts do not pass reboot gate"
+  ]
+}

@@ -1,3 +1,5 @@
+> **`refine` 分支重构交接**：Next.js + Astryx / Go / 原生 MCP 的新版源码和三阶段计划位于本分支。第一阶段已验收，第二阶段进行中，第三阶段尚未开始；当前不是正式发行版。先读 [本地开发交接](docs/rewrite/HANDOFF.md)、[接续 Codex prompt](docs/rewrite/CONTINUE-PROMPT.md) 和 [当前进度](docs/rewrite/PROGRESS.md)。新版构建与安装见 [scripts/rewrite/README.md](scripts/rewrite/README.md)；下方介绍与安装命令属于保留的旧实现。
+
 <p align="center">
   <img src="./web/static/logo.png" width="120" alt="PowerLinux 3" />
 </p>

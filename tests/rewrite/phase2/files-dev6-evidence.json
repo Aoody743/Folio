@@ -1,0 +1,64 @@
+{
+  "release_version": "0.1.0-dev.6",
+  "archive_sha256": "8cf9764f9c43cb16154c28111633585368deefe20eb5c1ed77eb2ad0bef9e444",
+  "test_source_sha256": "48a9552493d52dc7ab878038bc3d63a4ed9e3807a47ebabbe6564f66b7b55f2b",
+  "started_at": "2026-10-12T19:21:16.536251+00:00",
+  "source_snapshot": "/workspace/powerlinux/test-artifacts/dev6-package/test_files.source.corrected.py",
+  "phase": 2,
+  "module": "files",
+  "tested_at_utc": "2026-10-12T19:23:00.099185+00:00",
+  "log_path": "/workspace/powerlinux/test-artifacts/phase2-files-dev6-corrected.log",
+  "log_sha256": "251c474593afb718ca25a8361754a9e3667b8cf06f6d835af7faef02f4b72357",
+  "results": [
+    {
+      "case": "test_01_permissions_and_native_mcp_registry",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_02_unicode_encoding_history_and_conflicting_edits",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_03_directory_paging_search_and_actual_size",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_04_copy_move_scope_and_overwrite_conflict",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_05_permissions_and_symlink_boundaries",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_06_recycle_conflict_restore_purge_and_restart",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_07_large_upload_http_mcp_resume_download_range_auth",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_08_upload_oversize_checksum_csrf_rollback_and_cancel",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_09_real_archive_roundtrip_and_malicious_entries",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_10_tail_matches_real_line_semantics",
+      "outcome": "passed"
+    }
+  ],
+  "runtime_seconds": 4.053,
+  "prior_failures_retained": [
+    "phase2-files-dev5.log (2 product defects)",
+    "phase2-files-dev6.log (QA history-index assumption; full newest-first snapshots are correct)"
+  ],
+  "limits": [
+    "This actual release retains phase-one static UI; new file UI untested",
+    "Remote HTTPS positive download, all optional archive tools, directory inheritance/batch preflight remain pending",
+    "No claim that all fs acceptance groups or any other plugin are verified"
+  ]
+}

@@ -1,0 +1,586 @@
+"use client";
+import { useRef, useState } from "react";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { action, Capability, fullDate, list, Task } from "@/lib/api";
+import { choiceLabel } from "@/lib/labels";
+import { Page } from "@/lib/resources";
+import { useResource } from "@/lib/resource-hook";
+import { ActionContext, ActionForm, References } from "./actions";
+import { TaskResult } from "./task-result";
+import {
+  ResourceActions,
+  ResourceDrawer,
+  State,
+  Unavailable,
+} from "./resource-ui";
+type Certificate = {
+  id: string;
+  name: string;
+  domains: string[];
+  issuer: string;
+  expires_at: string;
+  revision: number;
+  source: string;
+};
+type DNSProvider = {
+  id: string;
+  name: string;
+  fields: string[];
+  available: boolean;
+  reason: string;
+};
+type DNSCredential = {
+  id: string;
+  name: string;
+  provider: string;
+  revision: number;
+  updated_at: string;
+  credential_configured: boolean;
+};
+type Order = {
+  certificate_id: string;
+  state: string;
+  expires_at: string;
+  provider?: string;
+  confirmation_action?: string;
+  cancellation_action?: string;
+  records?: { name: string; type: string; value: string }[];
+};
+export function CertificatesView({
+  capabilities,
+  onExecuted,
+  active = true,
+  siteID,
+}: {
+  capabilities: Capability[];
+  onExecuted: () => void;
+  active?: boolean;
+  siteID?: string;
+}) {
+  const [page, setPage] = useState("certificates");
+  const [selected, setSelected] = useState<Certificate>();
+  const [credential, setCredential] = useState<DNSCredential>();
+  const [open, setOpen] = useState(false);
+  const [create, setCreate] = useState<string>();
+  const [operation, setOperation] = useState<string>();
+  const [orderID, setOrderID] = useState("");
+  const [loadedID, setLoadedID] = useState("");
+  const [orderTask, setOrderTask] = useState<Task>();
+  const [lookupError, setLookupError] = useState("");
+  const lookupGeneration = useRef(0);
+  const has = (name: string) => capabilities.some((c) => c.name === name);
+  const certificates = useResource<Page<Certificate>>(
+    "certificates_list",
+    {},
+    active && has("certificates_list"),
+  );
+  const providers = useResource<Page<DNSProvider>>(
+    "certificates_dns_providers",
+    {},
+    active &&
+      (page === "dns" ||
+        create === "certificates_acme_issue" ||
+        create === "certificates_dns_credentials_save") &&
+      has("certificates_dns_providers"),
+  );
+  const credentials = useResource<Page<DNSCredential>>(
+    "certificates_dns_credentials_list",
+    {},
+    active &&
+      (page === "dns" || create === "certificates_acme_issue") &&
+      has("certificates_dns_credentials_list"),
+  );
+  const order = useResource<Order>(
+    "certificates_acme_status",
+    { id: loadedID },
+    active &&
+      page === "manual" &&
+      !!loadedID &&
+      has("certificates_acme_status"),
+    5000,
+  );
+  const current =
+    list(certificates.data).find((c) => c.id === selected?.id) ?? selected;
+  const currentCredential =
+    list(credentials.data).find((c) => c.id === credential?.id) ?? credential;
+  const selectedAction = capabilities.find((c) => c.name === create);
+  const references: References = {
+    ...(providers.data
+      ? {
+          provider: list(providers.data).map((row) => ({
+            value: row.id,
+            label: row.name + (row.available ? "" : " · 不可用"),
+            disabled: !row.available,
+          })),
+        }
+      : {}),
+    ...(credentials.data
+      ? {
+          credential_id: list(credentials.data).map((row) => ({
+            value: row.id,
+            label: `${row.name} · ${row.provider}`,
+          })),
+        }
+      : {}),
+  };
+  const refresh = () => {
+    void certificates.reload();
+    void credentials.reload();
+    void order.reload();
+    onExecuted();
+  };
+  const showOrder = (value: Order, task?: Task) => {
+    setOrderID(value.certificate_id);
+    setLoadedID(value.certificate_id);
+    if (
+      ["pending_dns", "recovery_required", "dns_cleanup_required"].includes(
+        value.state,
+      )
+    ) {
+      setPage("manual");
+      setCreate(undefined);
+      setOpen(false);
+      setOperation(undefined);
+      if (task) setOrderTask(task);
+    }
+    if (value.state === "cancelled") {
+      setLoadedID("");
+      setOperation(undefined);
+      if (task) setOrderTask(task);
+    }
+  };
+  const saved = (result?: unknown, context?: ActionContext) => {
+    const generation = ++lookupGeneration.current;
+    refresh();
+    const value = result as {
+      certificate_id?: string;
+      id?: string;
+      state?: string;
+      domains?: string[];
+      expires_at?: string;
+      certificate?: Certificate;
+    };
+    const certificate = value?.certificate ?? value;
+    if (
+      certificate?.id &&
+      Array.isArray(certificate.domains) &&
+      certificate.expires_at
+    ) {
+      setPage("certificates");
+      setCreate(undefined);
+      setLoadedID("");
+      setOpen(false);
+      setOperation(undefined);
+      setOrderTask(undefined);
+      setLookupError("");
+      return;
+    }
+    if (value?.certificate_id) {
+      showOrder(value as Order, context?.task);
+      setLookupError("");
+      return;
+    }
+    if (
+      context?.task &&
+      context.input.id &&
+      /^certificates_acme_(issue|renew|confirm|cancel)$/.test(context.action) &&
+      has("certificates_acme_status")
+    ) {
+      setLookupError("");
+      void action<Order>("certificates_acme_status", { id: context.input.id })
+        .then((value) => {
+          if (generation !== lookupGeneration.current) return;
+          showOrder(value, context.task);
+        })
+        .catch((e) => {
+          if (generation === lookupGeneration.current)
+            setLookupError(`保留订单状态未能读取：${(e as Error).message}`);
+        });
+    }
+  };
+  const statusNames: Record<string, string> = {
+    pending_dns: "待确认DNS记录",
+    issued: "已签发",
+    cancelled: "已取消",
+    not_due: "尚未到续期时间",
+    interrupted: "已中断",
+    expired: "订单已到期",
+    recovery_required: "DNS订单待恢复",
+    dns_cleanup_required: "DNS记录待清理",
+  };
+  return (
+    <div className="stack">
+      <Card className="panel-card">
+        {lookupError && (
+          <div className="notice danger" role="alert">
+            {lookupError}
+          </div>
+        )}
+        <div className="card-heading">
+          <h2>证书与验证</h2>
+          <div className="button-row">
+            {has("certificates_import") && (
+              <Button
+                label="导入证书"
+                onClick={() => setCreate("certificates_import")}
+              />
+            )}{" "}
+            {has("certificates_acme_issue") && (
+              <Button
+                label="申请ACME证书"
+                variant="primary"
+                onClick={() => setCreate("certificates_acme_issue")}
+              />
+            )}
+          </div>
+        </div>
+        <div className="section-tabs" role="tablist" aria-label="证书资源类型">
+          {[
+            { id: "certificates", label: "证书" },
+            { id: "manual", label: "DNS验证与恢复" },
+            { id: "dns", label: "DNS凭据与提供商" },
+          ].map((tab) => (
+            <button
+              role="tab"
+              aria-selected={page === tab.id}
+              key={tab.id}
+              onClick={() => {
+                setPage(tab.id);
+                setOpen(false);
+                setOperation(undefined);
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {page === "certificates" ? (
+          <>
+            {certificates.error && (
+              <div className="notice danger" role="alert">
+                {certificates.error}
+              </div>
+            )}
+            {!has("certificates_list") ? (
+              <Unavailable title="证书服务暂不可用" />
+            ) : (
+              <>
+                <div className="resource-table-wrap">
+                  <table className="resource-table">
+                    <thead>
+                      <tr>
+                        <th>名称 / 域名</th>
+                        <th>颁发者</th>
+                        <th>到期</th>
+                        <th>来源</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {list(certificates.data).map((cert) => (
+                        <tr key={cert.id}>
+                          <td>
+                            <button
+                              className="resource-name"
+                              onClick={() => {
+                                setSelected(cert);
+                                setOperation(undefined);
+                                setOpen(true);
+                              }}
+                            >
+                              {cert.name || cert.id}
+                            </button>
+                            <small>{cert.domains.join(" · ")}</small>
+                          </td>
+                          <td>{cert.issuer}</td>
+                          <td>{fullDate(cert.expires_at)}</td>
+                          <td>{choiceLabel(cert.source)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {!list(certificates.data).length &&
+                  !certificates.loading &&
+                  !certificates.error && (
+                    <Unavailable
+                      title="暂无可见证书"
+                      detail="导入已有证书，或通过真实ACME流程申请。没有签发产物时不会显示已签发。"
+                    />
+                  )}
+              </>
+            )}
+          </>
+        ) : page === "manual" ? (
+          <div className="form-stack">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                ++lookupGeneration.current;
+                if (orderID !== loadedID) setOrderTask(undefined);
+                setLookupError("");
+                setLoadedID(orderID);
+                void order.reload();
+              }}
+              className="button-row"
+            >
+              <TextInput
+                label="待验证证书标识"
+                value={orderID}
+                onChange={setOrderID}
+              />
+              <Button
+                label="读取DNS验证订单"
+                type="submit"
+                isDisabled={!orderID || !has("certificates_acme_status")}
+              />
+            </form>
+            {order.error && (
+              <div className="notice danger" role="alert">
+                {order.error}
+              </div>
+            )}
+            {orderTask && (
+              <TaskResult submitted={orderTask} capabilities={capabilities} />
+            )}
+            {order.data && (
+              <>
+                <p className="muted">
+                  读取于 {fullDate(order.loadedAt)}
+                  {order.error ? " · 当前状态未能刷新" : ""}
+                </p>
+                <div className="resource-summary">
+                  <strong>
+                    {statusNames[order.data.state] ?? order.data.state}
+                  </strong>
+                  <span className="muted">
+                    到期 {fullDate(order.data.expires_at)}
+                  </span>
+                </div>
+                {order.data.state === "pending_dns" ? (
+                  <p className="muted">
+                    在域名DNS中添加以下实际TXT记录，再确认验证。等待记录与创建订单均不代表证书已经签发。
+                  </p>
+                ) : (
+                  <div className="notice warning">
+                    {order.data.provider && (
+                      <p>DNS提供商：{order.data.provider}</p>
+                    )}
+                    <p>
+                      此订单保留了DNS验证或清理状态。确认会使用原凭据继续验证；取消会清理此订单创建的记录。清理失败时订单仍保留，可以再次恢复。
+                    </p>
+                    <p>订单待恢复不代表证书已经签发。</p>
+                  </div>
+                )}
+                {!!order.data.records?.length && (
+                  <div className="resource-table-wrap">
+                    <table className="resource-table">
+                      <thead>
+                        <tr>
+                          <th>记录名称</th>
+                          <th>类型</th>
+                          <th>实际值</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {order.data.records?.map((record, i) => (
+                          <tr key={i}>
+                            <td>
+                              <code>{record.name}</code>
+                            </td>
+                            <td>{record.type}</td>
+                            <td>
+                              <code className="wrap-code">{record.value}</code>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <ResourceActions
+                  capabilities={capabilities}
+                  names={(name) =>
+                    name ===
+                      (order.data?.confirmation_action ??
+                        "certificates_acme_confirm") ||
+                    name ===
+                      (order.data?.cancellation_action ??
+                        "certificates_acme_cancel")
+                  }
+                  preset={{ id: loadedID }}
+                  selected={operation}
+                  onSelect={setOperation}
+                  onExecuted={saved}
+                />
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="card-heading">
+              <h3>受保护的DNS凭据</h3>
+              {has("certificates_dns_credentials_save") && (
+                <Button
+                  label="添加DNS凭据"
+                  onClick={() => setCreate("certificates_dns_credentials_save")}
+                />
+              )}
+            </div>
+            {credentials.error && (
+              <div className="notice danger" role="alert">
+                {credentials.error}
+              </div>
+            )}
+            <div className="instance-list">
+              {list(credentials.data).map((item) => (
+                <button
+                  className="instance-row"
+                  key={item.id}
+                  onClick={() => {
+                    setCredential(item);
+                    setOpen(true);
+                    setOperation(undefined);
+                  }}
+                >
+                  <div>
+                    <strong>{item.name}</strong>
+                    <p>
+                      {item.provider} · {fullDate(item.updated_at)}
+                    </p>
+                  </div>
+                  <span>
+                    {item.credential_configured ? "已保存凭据" : "未配置凭据"}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {!list(credentials.data).length && !credentials.loading && (
+              <Unavailable
+                title="暂无DNS凭据"
+                detail="凭据保存在服务器，网页和MCP读取列表都不会得到密钥。"
+              />
+            )}
+            <h3>DNS提供商</h3>
+            {providers.error && (
+              <div className="notice danger" role="alert">
+                {providers.error}
+              </div>
+            )}
+            <div className="provider-grid">
+              {list(providers.data).map((provider) => (
+                <div key={provider.id} className="provider-card">
+                  <div className="resource-summary">
+                    <strong>{provider.name}</strong>
+                    <State
+                      value={provider.available ? "not_tested" : "unavailable"}
+                    />
+                  </div>
+                  <code>{provider.id}</code>
+                  <p className="muted">{provider.reason}</p>
+                  <details>
+                    <summary>凭据字段</summary>
+                    <code className="wrap-code">
+                      {provider.fields.join(" · ")}
+                    </code>
+                  </details>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </Card>
+      {selectedAction && (
+        <ResourceDrawer
+          open={!!create}
+          title={
+            create === "certificates_import"
+              ? "导入证书"
+              : create === "certificates_dns_credentials_save"
+                ? "添加DNS凭据"
+                : "申请ACME证书"
+          }
+          onClose={() => setCreate(undefined)}
+        >
+          <ActionForm
+            capability={selectedAction}
+            preset={{
+              expected_revision: 0,
+              ...(siteID ? { site_id: siteID } : {}),
+              ...(create === "certificates_acme_issue"
+                ? { challenge: siteID ? "http_webroot" : "manual_dns" }
+                : {}),
+            }}
+            onExecuted={saved}
+            references={references}
+          />
+        </ResourceDrawer>
+      )}
+      {page === "certificates" && current && (
+        <ResourceDrawer
+          open={open}
+          title={`证书 · ${current.name}`}
+          onClose={() => setOpen(false)}
+        >
+          <div className="detail-grid">
+            <div>
+              <small>域名</small>
+              <span>{current.domains.join(" · ")}</span>
+            </div>
+            <div>
+              <small>到期</small>
+              <span>{fullDate(current.expires_at)}</span>
+            </div>
+          </div>
+          <ResourceActions
+            capabilities={capabilities}
+            names={(name) =>
+              /^certificates_/.test(name) &&
+              !name.includes("dns_") &&
+              !name.endsWith("_list") &&
+              !name.endsWith("_issue") &&
+              !name.endsWith("_import") &&
+              !name.includes("_confirm") &&
+              !name.includes("_cancel") &&
+              name !== "certificates_acme_status"
+            }
+            preset={{
+              id: current.id,
+              expected_revision: current.revision,
+              ...(siteID ? { site_id: siteID } : {}),
+            }}
+            selected={operation}
+            onSelect={setOperation}
+            onExecuted={saved}
+          />
+        </ResourceDrawer>
+      )}
+      {page === "dns" && currentCredential && (
+        <ResourceDrawer
+          open={open}
+          title={`DNS凭据 · ${currentCredential.name}`}
+          onClose={() => setOpen(false)}
+        >
+          <ResourceActions
+            capabilities={capabilities}
+            names={(name) =>
+              name === "certificates_dns_credentials_save" ||
+              name === "certificates_dns_credentials_delete"
+            }
+            preset={{
+              id: currentCredential.id,
+              name: currentCredential.name,
+              provider: currentCredential.provider,
+              expected_revision: currentCredential.revision,
+            }}
+            selected={operation}
+            onSelect={setOperation}
+            onExecuted={refresh}
+            references={references}
+          />
+        </ResourceDrawer>
+      )}
+    </div>
+  );
+}

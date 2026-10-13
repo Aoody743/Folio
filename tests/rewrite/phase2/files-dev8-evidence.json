@@ -1,0 +1,36 @@
+{
+  "module": "files",
+  "stage": 2,
+  "actual_release": "0.1.0-dev.8",
+  "archive_sha256": "9a6b4f487a3f752610e93732e677eaaed46bd5ca204b3bcc04768be67db421bb",
+  "source_manifest_JSON_sha256": "13a43b45432dcffeb8c67bba868b100bc16cc7be9b4f8035743662c312178b20",
+  "source_manifest_files_map_sha256": "47df641c56aa782fbdb5931c8b9db220c7dfdcc1a994d5b15ac3087ce46db5bf",
+  "results": {
+    "api14": "12 PASS, 2 FAIL; original recycle06 and default setting13 real metadata-not-found regression",
+    "browser_r3": "FAIL at large CodeMirror fill; actual44byte header, MCPconflict/draft/manualmerge/offline/history-new-human-revision gates PASS before failure",
+    "first_browser_r2": "business failure masked by screenshot timeout; corrected diagnostic capture only, original log retained"
+  },
+  "logs": {
+    "api14": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-dev8-20261013-r2.log",
+      "sha256": "161d125e09966f8c77ebb5ba8424938f7f9ee94bf82090ac043923edf0a60088"
+    },
+    "browser_r2": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-browser-dev8-20261013-r2.log",
+      "sha256": "7588ff22f82b5252319bdefda7902e9fdf335fc81e32767b002d9f4abd6fbc4d"
+    },
+    "browser_r3": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-browser-dev8-20261013-r3.log",
+      "sha256": "50353640ecda2e475ba31140cc3fa49493e26372e4df082ba283bd174a9af9f5"
+    }
+  },
+  "browser_diagnostic": {
+    "path": "/workspace/powerlinux/qa-artifacts/phase2-files-dev8-20261013-r3/file-browser-failure.json",
+    "sha256": "e6f63026d0eeeb257215275ba70a07463c0d1462125c78c5330a790338aa27f6"
+  },
+  "test_source_snapshot": "/workspace/powerlinux/test-artifacts/dev8-20261013-r2",
+  "limits": [
+    "No files group promotion until immutable dev9 regression reruns all14+complete strengthened browser",
+    "Frontend independent actual profile found native insertText45s hang, future product beforeinput transaction fix not yet release verified"
+  ]
+}

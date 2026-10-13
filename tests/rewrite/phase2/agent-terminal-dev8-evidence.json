@@ -1,0 +1,42 @@
+{
+  "stage": 2,
+  "actual_release": "0.1.0-dev.8",
+  "archive_sha256": "9a6b4f487a3f752610e93732e677eaaed46bd5ca204b3bcc04768be67db421bb",
+  "platform": "actual Ubuntu24.04 PID1systemd kernel6.8.0-142 QEMUTCG amd64",
+  "production_install": "PASS clean/repeat/foreignvendor+FIFO4negative/APIordinaryUID+Agentroot+separateterminalUID/policycheckreadonly/realAPIpeerhealth/unlistedrootdeny/globalfilespreserved/note+Agentrestartpersistence",
+  "terminal": "ALL3PASS actual isolatedPTY+OpenSSH+REST+HTTPMCP+stdio+WS/CSRF/share/revoke/secretprivacy/hosts+shortcut restartpersistence",
+  "logs": {
+    "install": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-agent-install-dev8-ubuntu-20261013-r1.log",
+      "sha256": "262b0067cc60f01f0f5de842f6e7c44cb232a0dcdd201e643b6ab2ab0ee9773d"
+    },
+    "terminal_r1_echo_falsematch": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-terminal-dev8-ubuntu-20261013-r1.log",
+      "sha256": "bb6c003dfb2cd9b908afe0ecdfd8e6223a742fd3825d6d13217c2aa8c254ec31"
+    },
+    "terminal_r2_auditlimit_harness": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-terminal-dev8-ubuntu-20261013-r2.log",
+      "sha256": "ba276fdf6cf4671dbb936f8d6cf766c74b594b1c1c608c901569c168b98f7dc1"
+    },
+    "terminal_r3_all3pass": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-terminal-dev8-ubuntu-20261013-r3.log",
+      "sha256": "d8bc42ddcea3557928d085d4b6dc39d5d23a4a524a7d5387033efeb068f94563"
+    }
+  },
+  "test_source_snapshot": {
+    "path": "/workspace/powerlinux/test-artifacts/dev8-20261013-r2/test_terminal_vm.py.audit-pagination-r3.source",
+    "sha256": "bd6a947b72058a856a362b89525fdf33e0b273645912a71bcad421a5622d431b"
+  },
+  "installer_metadata": "/workspace/tools/qa-ubuntu/agent-acceptance/actual-install-evidence.json",
+  "unit_preflight_metadata": "/workspace/tools/qa-ubuntu/agent-acceptance/actual-unit-preflight-evidence.json",
+  "QA_corrections": [
+    "never preseed an unmarked configdir; cleaninstall then update newly managed trustedpublicendpoint",
+    "await exact CRLF shell-ready line after stty toprevent SSH inputecho from impersonating output",
+    "two100record audit pages preserve200record coverage"
+  ],
+  "limits": [
+    "No real failed-upgrade/manualrollback/reboot pass yet",
+    "No nativeARM claim",
+    "No software/web/DB lifecycle promotion from configured modulehealth"
+  ]
+}

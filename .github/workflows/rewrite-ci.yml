@@ -1,0 +1,60 @@
+name: PowerLinux rewrite checks
+on:
+  push:
+    paths: ['cmd/**', 'internal/**', 'third_party/**', 'frontend/**', 'integration/**', 'tests/rewrite/**', 'scripts/rewrite/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/rewrite*.yml']
+  pull_request:
+    paths: ['cmd/**', 'internal/**', 'third_party/**', 'frontend/**', 'integration/**', 'tests/rewrite/**', 'scripts/rewrite/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/rewrite*.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rewrite-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-and-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/.cache/rewrite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Frozen dependency installation
+        run: make rewrite-deps
+      - name: Go, UI and installer tests
+        run: make rewrite-test
+      - name: Static UI and two Linux architectures
+        run: make rewrite-build REWRITE_VERSION=dev-${GITHUB_SHA::12} REWRITE_BUILD_FLAGS=--skip-install
+      - name: Verify artifact checksum manifest
+        working-directory: dist/rewrite
+        run: sha256sum --check CHECKSUMS.txt
+      - name: Run the actual amd64 package in an isolated prefix
+        run: python3 scripts/rewrite/test-package.py dist/rewrite/powerlinux-dev-${GITHUB_SHA::12}-linux-amd64.tar.gz
+      - name: Build provenance
+        if: github.event_name != 'pull_request' && github.repository == 'Aoody743/PowerLinux'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'dist/rewrite/*.tar.gz'
+      - name: Development packages (not a published release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: powerlinux-dev-${{ github.sha }}
+          path: dist/rewrite/*
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,35 @@
+{
+  "stage": 2,
+  "actual_release": "0.1.0-dev.10",
+  "archive_sha256": "01a5fd1a9e8597826e775d1473be0e42d568ff12465765f08b43d56cd2481aa8",
+  "source_manifest_JSON_sha256": "94f99ba2c4c26a34f173ab116a34b17fd3f2199d35b5aba9e4d0b9337bc1a46f",
+  "source_manifest_files_map_sha256": "b598f150b6726e9513b17130893a9c2310c7cabe2d7b7f254519deff77458091",
+  "module": "files",
+  "results": {
+    "api": "ALL14PASS, 14 actual tests in 2.062s",
+    "browser": "FULLPASS unchanged strengthened browser: conflicts/manual merge/offline draft/retry, 4000line native CodeMirror and actual UTF8 PUT→GB18030 80000bytes, history restore new human revision, 5MiB interruption/resume/SHA, responsive 1440/768/390/320, no JS/static errors"
+  },
+  "logs": {
+    "api": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-dev10-20261013-r1.log",
+      "sha256": "6978aa3a55adf09c990779acd7be1c6f64b2b12c6d3b9c43da4d12597fed7738"
+    },
+    "browser": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-browser-dev10-20261013-r1.log",
+      "sha256": "ab17b806ad230bad611fdba8bf5611f7513032a4b61845a76026fd86704f5cc7"
+    }
+  },
+  "QA_test_source_snapshot": "/workspace/powerlinux/test-artifacts/dev10-20261013-r1",
+  "QA_script_SHA256": {
+    "test_files.py": "b14ed5c414cfda5fbaa076e93b7001c952d6db735b856828a1f0540709f9649a",
+    "test_files_browser.py": "af8d02ce0bb59f69224dd9bac96eb13a92daac211c49285a95af32f5ee8e7730",
+    "test_file_editor_regressions.py": "370274c47db8fb4279ec9cc764054e24c51d0107eacd600658aab31276711381"
+  },
+  "browser_screenshots": "/workspace/powerlinux/qa-artifacts/phase2-files-dev10-20261013-r1",
+  "previous_failures_preserved": "files-dev8-evidence.json",
+  "limits": [
+    "Specific14API and complete browser acceptance only, not all235routes/23plugins",
+    "Kernel EXDEV and cross API-Agent evidence remain separately scoped",
+    "Native arm64 and external providers unverified"
+  ]
+}

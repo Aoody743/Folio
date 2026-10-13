@@ -1,0 +1,36 @@
+{
+  "stage": 2,
+  "actual_release_candidate": "0.1.0-dev.10",
+  "archive_sha256": "01a5fd1a9e8597826e775d1473be0e42d568ff12465765f08b43d56cd2481aa8",
+  "actual_old_release": "0.1.0-dev.9",
+  "results": {
+    "production_data_lock": "PASS actual contention rejects candidate before DB/snapshot/current changes and preserves lock inode",
+    "prestart": "UNVERIFIED: QA wrapper failed reading private VERSION as ordinary API UID before real bind; resulting old-service health failure correctly retains recovery journal",
+    "remaining_original_gates": "UNRUN after first failure",
+    "corrected_fixture_recovery": "PASS packaged installer recovered actual prior API+Agent readiness and cleared retained journal after QA drop-in removed; original nonzero Interrupted installation detected exit retained"
+  },
+  "qa_defect": "Only QA wrapper used private release VERSION (0600). Corrected to unchanged executable version command as ordinary UID; no artifact permissions or archive/health modifications. Original gate assertions unchanged.",
+  "logs": {
+    "run": {
+      "path": "/workspace/powerlinux/test-artifacts/agent-upgrade-dev10-ubuntu-20261013-r1.log",
+      "sha256": "508b1d50da781f50150455f9f25c6bfd9113e028014df4247b92f8b824943dc3"
+    },
+    "systemd": {
+      "path": "/workspace/tools/qa-ubuntu/agent-acceptance/agent-upgrade-369d16f7d7fe/prestart-failure-systemd.log",
+      "sha256": "d56e213ae2ca911775efdc5bb9bd8f1b090baf5643b7f2eb3ce682b17a0ef8df"
+    },
+    "recovery": {
+      "path": "/workspace/tools/qa-ubuntu/agent-acceptance/agent-upgrade-369d16f7d7fe/qa-fixture-corrected-real-journal-recovery.log",
+      "sha256": "094fb170302981693aa5b6bee8247f616609b5328bd50d8eeb912612d79acb63"
+    }
+  },
+  "qa_source_snapshot": {
+    "path": "/workspace/tools/qa-ubuntu/agent-acceptance/upgrade-dev10-20261013-r1-script.py",
+    "sha256": "757b261d50f790d8071a4f3fd928c6a6ea26c499f457dae904c769bfde362ec4"
+  },
+  "limits": [
+    "This failed prestart attempt cannot count as intended EADDRINUSE recovery or completion of6 gates",
+    "Latest-ledger snapshot is taken after actual candidate root-peer readiness for attempted constructor migrations",
+    "Await corrected full immutable-package run; no false product-defect claim from QA bug"
+  ]
+}

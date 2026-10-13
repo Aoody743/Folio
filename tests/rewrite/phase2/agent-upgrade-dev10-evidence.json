@@ -1,0 +1,93 @@
+{
+  "stage": 2,
+  "candidate_version": "0.1.0-dev.10",
+  "actual_previous_version": "0.1.0-dev.9",
+  "candidate_archive_sha256": "01a5fd1a9e8597826e775d1473be0e42d568ff12465765f08b43d56cd2481aa8",
+  "deployed_binary_sha256": "938917a7fa9124e1d41aecfafbf304a634f92f2c908f6bd9924f5ca9b49e09cb",
+  "source_manifest_JSON_sha256": "94f99ba2c4c26a34f173ab116a34b17fd3f2199d35b5aba9e4d0b9337bc1a46f",
+  "source_manifest_canonical_map_sha256": "b598f150b6726e9513b17130893a9c2310c7cabe2d7b7f254519deff77458091",
+  "packaged_installer_sha256": "4c1113dea4ee629c952b1a3ae5d1cd909aded76918549c437dda6daf93a5cc32",
+  "QA_script_snapshot": {
+    "path": "/workspace/tools/qa-ubuntu/agent-acceptance/upgrade-dev10-20261013-r2-script.py",
+    "sha256": "7e6b2e8b80be5fc35d969213c4c778e874e0e282278d3d4156bf36b54f10118e"
+  },
+  "actual_platform": [
+    "6.8.0-142-generic",
+    "ubuntu 24.04"
+  ],
+  "result": "ALL6 actual immutable-package checks PASS, plus initial readiness and final successful reupgrade",
+  "checks": [
+    {
+      "check": "strict package/guest identity and actual initial API+Agent health",
+      "result": "PASS"
+    },
+    {
+      "check": "real production data flock blocks DB replacement/snapshot and preserves inode",
+      "result": "PASS"
+    },
+    {
+      "check": "actual candidate EADDRINUSE before Agent attempt restores original policy/units/API health",
+      "result": "PASS"
+    },
+    {
+      "check": "SIGKILL actual installer after durable snapshot; next invocation recovers with real old health",
+      "result": "PASS"
+    },
+    {
+      "check": "actual API peer denial after Agent attempt retains policy/ledger, recovers API, disables Agent with marker",
+      "result": "PASS"
+    },
+    {
+      "check": "actual distinct-version upgrade and explicit reviewed policy recovery, API+Agent health and shared note",
+      "result": "PASS"
+    },
+    {
+      "check": "real manual rollback restores API binary/config/units/pre-upgrade note snapshot while retaining latest Agent policy/ledger",
+      "result": "PASS"
+    },
+    {
+      "check": "actual distinct-version upgrade and explicit reviewed policy recovery, API+Agent health and shared note",
+      "result": "PASS"
+    }
+  ],
+  "logs": {
+    "run": {
+      "path": "/workspace/powerlinux/test-artifacts/agent-upgrade-dev10-ubuntu-20261013-r2.log",
+      "sha256": "c4cbd1b0209af1630ef7085e2b2f993fcf0a476ee3b09ef22dcfc4d7bfea0135"
+    },
+    "structured": {
+      "path": "/workspace/tools/qa-ubuntu/agent-acceptance/upgrade-dev10-20261013-r2.json",
+      "sha256": "4bbe88b3c644a8b7b251f2a1aea00cff48638d673eb8824d9f57be73f5cd2b62"
+    },
+    "final_handoff": {
+      "path": "/workspace/tools/qa-ubuntu/agent-acceptance/upgrade-dev10-handoff-20261013-r2.log",
+      "sha256": "a92ad2a0efe277661e6697aefb3259142a7da6fa78edb2756f4eac857b26de74"
+    }
+  },
+  "assertions": [
+    "Actual ordinary-UID production data flock blocks candidate before DB/snapshot/current changes; same device+inode maintained",
+    "Candidate-only actual configured-port occupancy yields bind failure; pre-Agent not_started restores original policy/config/mainunits and actual old readiness",
+    "Actual installer process group SIGKILL after durable snapshot then subsequent packaged installer recovers with actual old API+Agent health and clears journal",
+    "Candidate root-peer actual health captured latest rootledger; API peer denied, actual attempted recovery retains that ledger/policy, stops+disables Agent and marks recovery",
+    "Reviewed original policy successfully upgrades actual distinct version with unchanged old human note and ordinary-UID Agent health",
+    "Manual rollback restores actual pre-upgrade DB snapshot: prior human note preserved, post-upgrade note404; latest policy/rootledger kept; same lock inode",
+    "Final actual upgrade10: package binary SHA, API/Agent versions+policyhealth, enabled+active, no pending/recovery marker or QA drop-in"
+  ],
+  "final_policy_sha256": "5d4f23f9ca530ccdab2f2d56aa1ce3e9ba24305261863d1589c001b149dd8455",
+  "data_lock_device_inode": [
+    64769,
+    85453
+  ],
+  "candidate_ready_rootledger_artifacts": 108,
+  "fault_scope": "QA-owned drop-in and actual candidate-only occupied listen port; unchanged binary/archive/health; latest root ledger never reverted",
+  "fault_fixture_correction": "First attempt read private VERSION as ordinary API UID. Only QA wrapper corrected to unchanged executable version command, original assertions kept; r1 logs+real journal recovery preserved separately.",
+  "previous_failed_attempt": "agent-upgrade-dev10-r1-evidence.json",
+  "resource_precondition": "ubuntu-resource-reboot-dev9-evidence.json",
+  "private_deployment_snapshots": "Retained actual installer backups and root-private QA logs, no blind ledger restore/cleanup",
+  "final_exclusive_handoff": "release sysops owned-Ubuntu window, QA guest mutations paused",
+  "limits": [
+    "Owned Ubuntu24.04 amd64 QEMU TCG only; not nativeARM/productionhost performance",
+    "Managed software auto-start reboot FAIL remains separate, requires immutabledev11 fix+actual reboot",
+    "Six upgrade checks do not complete23plugins, all235routes, external DNS/CA, or allstage2"
+  ]
+}

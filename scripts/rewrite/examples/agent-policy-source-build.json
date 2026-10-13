@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "allowed_users": ["powerlinux"],
+  "socket_group": "powerlinux",
+  "plugins": {
+    "root_dir": "/opt/powerlinux-software",
+    "state_dir": "/var/lib/powerlinux-agent/software",
+    "run_user": "powerlinux-services",
+    "run_group": "powerlinux-services",
+    "api_user": "powerlinux",
+    "enable_system_packages": false,
+    "enable_source_build": true,
+    "build_user": "powerlinux-build",
+    "build_group": "powerlinux-build",
+    "build_root_dir": "/var/cache/powerlinux-build",
+    "use_systemd": true
+  }
+}

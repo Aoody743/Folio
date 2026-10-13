@@ -1,0 +1,1 @@
+{"health":{"requests":200,"concurrency":20,"p50_ms":1.829463,"p95_ms":5.280739,"max_ms":5.932803},"status":{"requests":200,"concurrency":20,"p50_ms":13.938032,"p95_ms":46.852552,"max_ms":114.659948},"transport":"Go net/http keep-alive;20concurrent;200measured requests per endpoint;100warmup"}

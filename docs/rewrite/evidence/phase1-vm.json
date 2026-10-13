@@ -1,0 +1,24 @@
+{
+  "platform": "Debian13 amd64",
+  "virtualization": "QEMU TCG",
+  "pid1": "systemd",
+  "kernel": "6.12.107+deb13-amd64",
+  "archive_sha256": "68c7dba055ca0106fd5ca380e61adebf5b4748df0f5c5c35545c06d59427abc6",
+  "version": "0.1.0-dev.3",
+  "checks": [
+    "clean production install",
+    "ordinary-user service",
+    "health",
+    "repeated install",
+    "protected global-file hashes unchanged",
+    "shared note real API",
+    "service restart persists state",
+    "uninstall retains data"
+  ],
+  "not_yet_verified": [
+    "different-version upgrade+failed health rollback",
+    "guest reboot",
+    "Ubuntu",
+    "arm64"
+  ]
+}

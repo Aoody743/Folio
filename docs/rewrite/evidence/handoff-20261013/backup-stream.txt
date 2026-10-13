@@ -1,0 +1,15 @@
+=== RUN   TestQARootWebsiteBackupRestorePreservesGroupReadUnderPrivateUmask
+    backup_permissions_test.go:15: root-only integration: execute test binary in owned systemd QEMU VM; host pass is not VM evidence
+--- SKIP: TestQARootWebsiteBackupRestorePreservesGroupReadUnderPrivateUmask (0.00s)
+=== RUN   TestWebsiteBackupByteRangesAreBounded
+--- PASS: TestWebsiteBackupByteRangesAreBounded (0.00s)
+=== RUN   TestWebsiteBackupExportRequiresBothScopesAndExactFileResource
+--- PASS: TestWebsiteBackupExportRequiresBothScopesAndExactFileResource (0.31s)
+=== RUN   TestQARootWebsiteArchiveStreamIntegrityAndUnsafeFiles
+    backup_stream_test.go:160: root-only integration: execute test binary in owned systemd QEMU VM; host pass is not VM evidence
+--- SKIP: TestQARootWebsiteArchiveStreamIntegrityAndUnsafeFiles (0.00s)
+=== RUN   TestQARootWebsiteArchiveActualUnixHTTPAndMCPChunks
+    backup_stream_test.go:206: root-only integration: execute test binary in owned systemd QEMU VM; host pass is not VM evidence
+--- SKIP: TestQARootWebsiteArchiveActualUnixHTTPAndMCPChunks (0.00s)
+PASS
+ok  	github.com/Aoody743/PowerLinux/internal/sites	1.351s

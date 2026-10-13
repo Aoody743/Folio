@@ -1,0 +1,43 @@
+# 第二阶段实现边界草案
+
+第一阶段已通过最终验收，本文件为第二阶段当前实施契约。各模块完成后先做实际闭环验证，再进入下一组能力。
+
+## 共同接口
+
+- 现有REST、MCP、共享权限、SQLite、任务与审计保留。新能力通过同一业务动作注册，不各自开通绕过权限的HTTP接口。
+- core提供受信任的内置Provider注册接口：唯一动作名、输入/输出schema、scope、只读／任务语义、实际资源鉴权、执行结果与审计资源。内置动作不能被覆盖；注册在HTTP/MCP启动前完成。
+- Provider可依赖core类型，core不导入Provider实现；CLI负责初始化与注入，避免循环依赖。共享SQLite访问与任务提交通过明确接口注入。
+- schema验证支持嵌套对象、数组、枚举及界限；在业务层进行同一校验，REST与MCP行为一致。
+- 成功的普通状态轮询不逐次同步写审计。写入、凭据操作、安全事件、导出与任务提交保留有界、脱敏且资源范围正确的记录。
+- 大文件、上传、下载、终端与dump使用流或有界帧，不能装进64KiB动作JSON或截断日志。JSON动作负责控制与发现，流接口仍使用同一身份、资源与CSRF策略。
+- 长任务保持SQLite持久化、4并发和有界排队；工具实际退出、产物与健康状态决定成功，不能以启动进程作为成功。
+
+## 文件与终端
+
+- 文件资源为`fs:<root-id>`，路径只接受受控root下相对路径。浏览、读取与修改分别检查scope；源、目的地与归档每一项都检查边界。
+- 保留编码编辑、expected_hash冲突、内容历史、权限／所有者、递归搜索、分页、分段上传、远程下载、复制移动、不同归档格式、回收站与恢复。
+- 本地使用真实PTY；远程SSH校验host key，凭据仅引用私有Secret ID。主机与快捷命令配置持久化。
+- 终端使用显式`terminal:connect`与目标资源，限制会话、帧、回放和租期；人和MCP操作同一会话引擎。运行用户、Shell和配置来源受信任，不能从普通服务动作输入任意程序。
+
+## 软件、网站与数据库
+
+- catalog明确集成版本与软件版本、来源、平台／架构、校验或签名、依赖、特有能力与真实验证状态。
+- 软件管理使用计划→资源锁→可信产物→配置校验→原子提交→启动／reload→健康验证→失败恢复；默认卸载保留数据与归属记录。
+- Docker通过受控Agent操作；API用户不持有任意Docker socket访问权。软件安装本身为按需显式动作，核心安装不预装所有服务。
+- 网站配置、TLS、PHP与数据库逐项保留[SCOPE-CORRECTIONS.md](SCOPE-CORRECTIONS.md)列出的特有能力。数据库复制与导入恢复使用实际服务与版本适配。
+- OpenResty/PHP→网站/域名→TLS→数据库→文件→访问→备份恢复是阶段二必须完成的真实闭环。
+- DNS外部提供商、云盘、邮件等无凭据时继续实现与本地协议验收，真实外部验证单独记录；不能算已验证。
+
+## 工作分配
+
+| Agent | 文件所有权与职责 |
+| --- | --- |
+| backend | `internal/core`、`internal/httpapi`；Provider/权限/schema/共享存储与任务适配，认证与设置的缺项；集成新模块到统一API |
+| executor | `internal/agent`、`internal/jobs`、`internal/files`、`internal/terminal`；真实文件、PTY/SSH、流式Runner和受控Unix执行契约 |
+| mcp | `internal/plugins`与内置catalog；可信软件生命周期及23插件的特有能力；保持原MCP桥接兼容新Provider |
+| frontend | `frontend`；网站／软件／文件等实际资源界面、终端、任务和操作抽屉；保留四卡主页、五导航、五主题 |
+| release | `scripts/rewrite`、Makefile、CI，以及独立`internal/systemops`；计划任务、安全/系统设置受控操作与Agent部署／升级恢复 |
+| qa | `tests/rewrite`；实际软件、数据库、文件、终端、MCP、浏览器、容器与VM验收，以及逐插件证据 |
+| root | `cmd/powerlinux`、依赖锁、跨模块初始化、网站／TLS领域模块、文档台账与最终Git集成 |
+
+复杂插件按完整用户闭环迭代，Agent需要调整分工时先同步root。任何子Agent不自行提交／推送，不调用旧`eval`／Shell安装入口，不以通用启停代替插件迁移。

@@ -1,0 +1,24 @@
+{
+  "binary": "/workspace/powerlinux/test-artifacts/sites-recovery-dev10-r1.test",
+  "binary_sha256": "a628a04efaf34ba17fbf0d90fe98e6bcd3110dde45163cee47ba241c054ea86b",
+  "guest_binary": "/root/powerlinux-qa-tests/sites-recovery-dev10-r1.test",
+  "command": "printf '%s  %s\\n' 'a628a04efaf34ba17fbf0d90fe98e6bcd3110dde45163cee47ba241c054ea86b' '/root/powerlinux-qa-tests/sites-recovery-dev10-r1.test' | sha256sum --check --status; chmod 0700 '/root/powerlinux-qa-tests/sites-recovery-dev10-r1.test'; env POWERLINUX_QA_OWNED_VM=1 GOMAXPROCS=2 '/root/powerlinux-qa-tests/sites-recovery-dev10-r1.test' -test.v -test.run '^TestQARoot(NativeDNS|DeleteLateMetadata|InterruptedRetainedPurge)' -test.timeout=120s",
+  "execution_exit": 0,
+  "deployment_version_policy_services_and_worker_groups_unchanged": true,
+  "scope": "Actual root isolated native DNS/verifiedHTTPS CA and RootFS deletion/purge recovery fixtures, private state and random owned workercleanup; no public DNS/nativeWeb/final immutable package claim",
+  "log": {
+    "path": "/workspace/powerlinux/test-artifacts/sites-recovery-dev10-root-debian-20261013-r1.log",
+    "sha256": "7e6399f9b45a1b61f275ac0d00e12310024a8f4eb437ee2ece50fd47fde04385"
+  },
+  "expected_top_level_count": 6,
+  "stage": 2,
+  "result": "ALL6 actual root isolated recovery groups PASS, plus2provider subcases",
+  "assertions": [
+    "Native CA already-issued/processing recovery rejects duplicate finalize and downloads issued leaf",
+    "Native signedDNS/verifiedHTTPS CA issuance and private import",
+    "Independent-context DNS cancellation",
+    "Lost-cleanup restart preserves order and cleanup authority",
+    "Delete late-metadata failure restores config under cancelledctx/inherited transaction marker",
+    "Interrupted retained purge resumes ownership cleanup after restart"
+  ]
+}

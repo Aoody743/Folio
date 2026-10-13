@@ -1,0 +1,29 @@
+
+> powerlinux-ui@0.1.0 test
+> node --test tests/*.test.mjs
+
+✔ cookie write uses same origin credentials and session CSRF, preserving revision (22.326318ms)
+✔ 412 retains structured current note so UI cannot silently overwrite (0.999683ms)
+✔ invalid or failed transport cannot be reported as operation success (1.859901ms)
+✔ identity source distinguishes human, MCP, API and unknown actors (0.223309ms)
+✔ action retry preserves caller intent and file stream keeps raw body with session CSRF (1.546949ms)
+✔ login credentials are consumed only from fragment and removed from remaining URL (1.588791ms)
+✔ post authentication return accepts only a local authorization path (0.330417ms)
+✔ nested resource schema keeps optional omission and preserves intentional empty file content (2.623004ms)
+✔ map schemas reject invalid values and enforce limits without prototype mutation (0.352059ms)
+✔ union schemas distinguish exactly one branch and allow declared null (0.309797ms)
+✔ resource presets discard server-only metadata and nested credential references (0.446978ms)
+✔ container CPU bounds reject zero and non-finite values while allowing fractional limits (0.359219ms)
+✔ SQL signed and unsigned integers display original decimal text; rounded or malformed values fail closed (1.492619ms)
+✔ binary SQL values preserve bytes rather than attempting UTF-8 decoding (0.455021ms)
+✔ Redis continuation strings retain all uint64 digits and reject overflow, non-decimal and rounded legacy numbers (0.795322ms)
+✔ SQL parameter normalization keeps decimal strings and typed integer objects; unsafe JSON numbers cannot be submitted (0.363265ms)
+✔ HTTP API round trip preserves tagged integers and posts exact SQL parameters and Redis cursor strings (34.289296ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 940.350419

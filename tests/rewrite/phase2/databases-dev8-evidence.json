@@ -1,0 +1,27 @@
+{
+  "module": "database/cache native adapters",
+  "stage": 2,
+  "actual_release": "0.1.0-dev.8",
+  "archive_sha256": "9a6b4f487a3f752610e93732e677eaaed46bd5ca204b3bcc04768be67db421bb",
+  "results": "ALL10 PASS actual MariaDB/PostgreSQL/MongoDB/Redis/Memcached REST/HTTPMCP/stdio; scopes, dangerousroles, SQLparameterCRUD, MongoCRUD, namespacealiasoverlap, SCANcontinuations, TTL, secretprivacy, CAS/restart/revoke",
+  "logs": {
+    "r1_9pass_1invalid_QA_limit": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-databases-dev8-20261013-r1.log",
+      "sha256": "d5277abdb9683fc31a0168da68987f1d4fe76ed1e79edb7ac6a4c957d7793e71"
+    },
+    "r2_all10pass": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-databases-dev8-20261013-r2.log",
+      "sha256": "974075b562cafbdb592022951c06eda637f4db427c00b69ef93629ac748f3ad1"
+    }
+  },
+  "QA_correction": "original audit request limit200 invalid under canonical1–100; two valid100record pages preserve200record coverage, original result retained",
+  "test_source_snapshot": {
+    "path": "/workspace/powerlinux/test-artifacts/dev8-20261013-r2/test_databases.py.audit-pagination-r2.source",
+    "sha256": "c06144eb307bcc3bb1fdda3cd0825e948956852add4ba6eed22556ccc8678bf3"
+  },
+  "limits": [
+    "Preinstalled/native driver fixtures are not managed lifecycle",
+    "No OracleMySQL native fixture, backup/restore/replication/DB account lifecycle passed by this suite",
+    "TLS remote/provider credentials and nativeARM still external conditions"
+  ]
+}

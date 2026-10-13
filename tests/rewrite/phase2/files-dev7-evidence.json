@@ -1,0 +1,112 @@
+{
+  "archive_sha256": "4f98ebd60f3a46b5c2adee8544e7addb556d6fc1a967478541fcf644b5f04138",
+  "version": "0.1.0-dev.7",
+  "started_at_utc": "2026-10-13T06:26:28.789489+00:00",
+  "test_source_snapshots": {
+    "test_files.py": "7e97f0cf5c3d4eed57a10526f2f5d306b0317d3fb278e1e5d732234f1a481e39",
+    "test_files_browser.py": "dbac4eec295e6bb80ed91ff652a0f3b56ea9e88ca6f62aab01a535c971e69e24"
+  },
+  "phase": 2,
+  "module": "files",
+  "actual_api_results": [
+    {
+      "case": "test_01_permissions_and_native_mcp_registry",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_02_unicode_encoding_history_and_conflicting_edits",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_03_directory_paging_search_and_actual_size",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_04_copy_move_scope_and_overwrite_conflict",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_05_permissions_and_symlink_boundaries",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_06_recycle_conflict_restore_purge_and_restart",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_07_large_upload_http_mcp_resume_download_range_auth",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_08_upload_oversize_checksum_csrf_rollback_and_cancel",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_09_real_archive_roundtrip_and_malicious_entries",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_10_tail_matches_real_line_semantics",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_11_stdio_provider_files_share_actual_runtime",
+      "outcome": "passed"
+    },
+    {
+      "case": "test_12_streamed_text_encoding_conflict_csrf_and_idempotency",
+      "outcome": "passed"
+    }
+  ],
+  "actual_browser_result": {
+    "actual_release": "0.1.0-dev.7",
+    "flows": [
+      "UIcreate",
+      "CodeMirror edit+realMCP read",
+      "realMCP concurrent409",
+      "closed conflict draft retention",
+      "manual merge",
+      "offline save retention+retry",
+      "file history",
+      "5MiB binary HTTP upload/transport interruption/resume",
+      "actual browser download hash"
+    ],
+    "viewports": [
+      1440,
+      768,
+      390,
+      320
+    ],
+    "artifacts": "/workspace/powerlinux/qa-artifacts/phase2-files-dev7-20261013-r1"
+  },
+  "completed_at_utc": "2026-10-13T06:26:37.616629+00:00",
+  "logs": {
+    "api": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-dev7-20261013-r1.log",
+      "sha256": "99a357f396ae4c05e4ee8d8d9dcb57635525b03eee3de4a166e088264b04d803"
+    },
+    "browser": {
+      "path": "/workspace/powerlinux/test-artifacts/phase2-files-browser-dev7-20261013-r1.log",
+      "sha256": "4690b2a48bb3afdea5bfef50a8fb536b8b98eaec3737122c55c1f21164fde949"
+    }
+  },
+  "limits": [
+    "Remote positive HTTPS download blocked by direct DNS/network; no private/mock substitute counted",
+    "Optional archive tools/all formats, directory inheritance and batch preflight not yet fully verified",
+    "No claim that Agent/terminal/sites/23 plugin lifecycle or all phase2 capabilities are complete"
+  ],
+  "supplemental_metadata_regression": {
+    "outcome": "failed",
+    "tested_at_utc": "2026-10-13T07:26:58.455142+00:00",
+    "source_sha256": "73ebc84304796b00b000594ccabab80f8fd2e39db7c2c37d99eb809e605f4926",
+    "source_snapshot": "/workspace/powerlinux/test-artifacts/dev7-20261013-size-r1/test_files_browser.py.source",
+    "actual_saved_utf8_bytes": 44,
+    "actual_UI_header_bytes": 0,
+    "actual_MCP_content_confirmed": true,
+    "log": "/workspace/powerlinux/test-artifacts/phase2-files-browser-dev7-size-20261013-r1.log",
+    "log_sha256": "df343f4759965a1559fa12d723b969263d6a1909d72a957dbc746c3641dc6b53",
+    "screenshot": "/workspace/powerlinux/qa-artifacts/phase2-files-dev7-size-20261013-r1/file-browser-failure.png",
+    "next_fix": "frontend source updates base.size from actual saved entry; awaits new immutable package",
+    "subsequent_new_history_restore_large_UI_PUT": "unrun; early metadata gate failed"
+  }
+}

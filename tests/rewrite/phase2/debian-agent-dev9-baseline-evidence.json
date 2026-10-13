@@ -1,0 +1,75 @@
+{
+  "actual_version": "0.1.0-dev.9",
+  "archive_sha256": "ca7d61746eb3023c93c79265feb4b350d869e8bc2a56c230b08f79211ab1afb1",
+  "policy_sha256": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+  "retained_p1_data": "/var/lib/powerlinux-qa-p1-retained-20261013",
+  "original_data_metadata_sha256": "37d58b69ee4cef6400fc6fd5edf064845d17195701a85095244ce2cdbeeaf197",
+  "checks": [
+    "strict actual immutable package",
+    "uninstalled original P1 data preserved same inode and owner/mode",
+    "normally initialized new private QA account",
+    "original password/MFA/DB not altered",
+    "actual API health",
+    "actual ordinary-UID Unix Agent health",
+    "real shared human note"
+  ],
+  "private_panel_fixture": "/workspace/tools/qa-vm/agent-acceptance-dev9/panel-fixture-private.json",
+  "production_baseline": "Continuous new dev9 fixture for future dev10 upgrade",
+  "cleanup_plan": "Stop API/Agent before any data switch; retain new QA data under a private separately protected name, uninstall only PowerLinux API/Agent if desired, then rename original P1 data to /var/lib/powerlinux. Preserve latest managed software/site ledger and owned services for deliberate recovery; never delete either data tree or copy an old root ledger over the current host.",
+  "limits": [
+    "Fresh authorized QA identity alongside retained P1 state; does not prove original P1 credential continuity",
+    "No native software lifecycle, new DB operations or ARM proof yet"
+  ],
+  "stage": 2,
+  "logs": {
+    "actual-api-and-authenticated-agent-health": {
+      "path": "/workspace/tools/qa-vm/agent-acceptance-dev9/actual-api-and-authenticated-agent-health.log",
+      "sha256": "3edcad4f2bfd5168a35d0f173d7c5d565ef52e0d740cbdbaaa0729f45320372a"
+    },
+    "actual-immutable-dev9-production-deployment": {
+      "path": "/workspace/tools/qa-vm/agent-acceptance-dev9/actual-immutable-dev9-production-deployment.log",
+      "sha256": "4a4c3aa9f288cd37bc8ceef1155c4ff51a5a2107e4c046535dfd5e31711c5ff3"
+    },
+    "actual-managed-public-origin-config": {
+      "path": "/workspace/tools/qa-vm/agent-acceptance-dev9/actual-managed-public-origin-config.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "original-identity-and-uninstalled-state": {
+      "path": "/workspace/tools/qa-vm/agent-acceptance-dev9/original-identity-and-uninstalled-state.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "original-p1-data-metadata-and-hashes": {
+      "path": "/workspace/tools/qa-vm/agent-acceptance-dev9/original-p1-data-metadata-and-hashes.log",
+      "sha256": "37d58b69ee4cef6400fc6fd5edf064845d17195701a85095244ce2cdbeeaf197"
+    },
+    "prepare-owned-qa-roots": {
+      "path": "/workspace/tools/qa-vm/agent-acceptance-dev9/prepare-owned-qa-roots.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "same-inode-preserved-p1-data-rename": {
+      "path": "/workspace/tools/qa-vm/agent-acceptance-dev9/same-inode-preserved-p1-data-rename.log",
+      "sha256": "56f79e6865941b239fe733d8c9df5fe3abda5cafe49a5536a7d7ad4b2c60be2a"
+    }
+  },
+  "temporary_repository_transport": {
+    "reverse_ssh_pid": 100248,
+    "guest_loopback_port": 19081,
+    "host_loopback_port": 43957,
+    "original_source_sha256": "1aea522ae24da35f8b02e3d56288df9c4adf67d9a51baac3d2eabacb46391ce3",
+    "temporary_mirror_source_sha256": "46031522b860d3e5c55b520300c76a96ca32fe00be3655430af167f858b21804",
+    "origins": {
+      "debian": "https://deb.debian.org/debian/",
+      "debian-security": "https://deb.debian.org/debian-security/"
+    },
+    "guest_original_backup": "/root/powerlinux-qa-baseline-dev9/debian.sources.original",
+    "transport": "guest loopbackHTTP over strict pinned SSH; normal verified official upstream HTTPS",
+    "crypto": "Signed-By and all APT signature/package SHA policy unchanged",
+    "cleanup": "Restore exact backup into /etc/apt/sources.list.d/debian.sources; verify original SHA; stop only this owned reverseSSH and Debian relay after native software tests"
+  },
+  "stockAPT_actual_signature_policy": "PASS apt-get update exit0; three original signed suites and native package hashes, no crypto overrides",
+  "stockAPT_log": {
+    "path": "/workspace/tools/qa-debian-repository-relay-20261013-r1/stock-apt-update.log",
+    "sha256": "72320c072ef499ce2d03cc83c06f95a8bc7faedff718729ef7da13d945c922f6"
+  },
+  "original_P1_credential_search": "Host/guest filenames inspected; no retained panel credential found; no secret values output"
+}

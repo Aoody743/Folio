@@ -1,0 +1,28 @@
+{
+  "stage": 2,
+  "actual_release": "0.1.0-dev.10",
+  "archive_sha256": "01a5fd1a9e8597826e775d1473be0e42d568ff12465765f08b43d56cd2481aa8",
+  "source_manifest_JSON_sha256": "94f99ba2c4c26a34f173ab116a34b17fd3f2199d35b5aba9e4d0b9337bc1a46f",
+  "source_manifest_files_map_sha256": "b598f150b6726e9513b17130893a9c2310c7cabe2d7b7f254519deff77458091",
+  "result": "ALL3PASS, actual Chromium regression gates in22.760s",
+  "QA_script": {
+    "path": "/workspace/powerlinux/server/PowerLinux/tests/rewrite/phase2/test_file_editor_regressions.py",
+    "sha256": "370274c47db8fb4279ec9cc764054e24c51d0107eacd600658aab31276711381"
+  },
+  "log": {
+    "path": "/workspace/powerlinux/test-artifacts/file-editor-regressions-dev10-20261013-r1.log",
+    "sha256": "542f79142a1624221af9da6cbe08ea6ebbbace54a948f311786fac1004378e99"
+  },
+  "artifacts": "/workspace/powerlinux/qa-artifacts/file-editor-regressions-dev10-20261013-r1",
+  "cases": {
+    "small_encoding_save_refresh_and_reopen": "PASS actual20line UTF8→GB18030 save bytes/hash, automatic GB18030 fs_read200, no alert, close/reopen same file correct",
+    "guard_resolved_after_successful_save": "PASS actual human save and resolved draft-switch notice gone; different-file navigation usable",
+    "guard_resolved_after_explicit_discard": "PASS discard leaves disk unchanged, resolved notice gone; different-file navigation usable"
+  },
+  "previous_real_failure": "file-editor-dev9-regressions-evidence.json",
+  "limits": [
+    "Same script SHA and assertions as dev9 genuine failures",
+    "No injected page code, mock responses, or mutable product source",
+    "Supplements unchanged original strengthened browser"
+  ]
+}

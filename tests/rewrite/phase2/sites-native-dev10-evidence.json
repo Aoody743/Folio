@@ -1,0 +1,18 @@
+{
+  "binary": "/workspace/powerlinux/test-artifacts/sites-native-dev10-r1.test",
+  "binary_sha256": "98876324ec19482e4b9d2e7ea99e3da3bf8bbe09c04d726fe28ee85bd64d9ad9",
+  "guest_binary": "/root/powerlinux-qa-tests/sites-native-dev10-r1.test",
+  "command": "printf '%s  %s\\n' '98876324ec19482e4b9d2e7ea99e3da3bf8bbe09c04d726fe28ee85bd64d9ad9' '/root/powerlinux-qa-tests/sites-native-dev10-r1.test' | sha256sum --check --status; chmod 0700 '/root/powerlinux-qa-tests/sites-native-dev10-r1.test'; env POWERLINUX_QA_OWNED_VM=1 GOMAXPROCS=2 '/root/powerlinux-qa-tests/sites-native-dev10-r1.test' -test.v -test.run 'TestQARoot(DefaultSwitch|WebsiteBackupRestorePreservesGroupRead)' -test.timeout=120s",
+  "execution_exit": 0,
+  "scope": "Actual Debian root protected filesystem/default dual-CAS/backup restore; pure config reload fixtures, not native OpenResty/FPM or immutable package integration proof",
+  "log": {
+    "path": "/workspace/powerlinux/test-artifacts/sites-native-dev10-root-debian-20261013-r1.log",
+    "sha256": "04d8928be61da5974686e59145adeaebc5eb367947e969954a505ee822ad4176"
+  },
+  "result": "ALL2 actual root filesystem/default dualrevision/backup permissions groups PASS (2 nested rollback subcases)",
+  "stage": 2,
+  "tests": [
+    "TestQARootWebsiteBackupRestorePreservesGroupReadUnderPrivateUmask",
+    "TestQARootDefaultSwitchRequiresBothRevisionsAndRollsBackTogether"
+  ]
+}

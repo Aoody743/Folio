@@ -1,0 +1,7243 @@
+{
+  "plugins": [
+    {
+      "name": "acme_pandominassl_apply",
+      "title": "ACME泛域名SSL",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "apaOp",
+        "autoSyncDomain",
+        "autoUpdateSslData",
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "dnsapiAdd",
+        "dnsapiDel",
+        "dnsapiList",
+        "dnsapiListAll",
+        "domainAdd",
+        "domainApplyPathJudge",
+        "domainDel",
+        "domainList",
+        "domainStatusToggle",
+        "emailAdd",
+        "emailDel",
+        "emailList",
+        "getArgs",
+        "getConf",
+        "getDnsapiData",
+        "getDnsapiExportVar",
+        "getDnsapiKv",
+        "getHomeDir",
+        "getHookIdCmd",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getRunUser",
+        "getServerDir",
+        "hookWriteLog",
+        "initDreplace",
+        "pSqliteDb",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runHook",
+        "runHookCmd",
+        "runHookDstDomain",
+        "runHookId",
+        "runHookPy",
+        "runLog",
+        "runSyncCfCmd",
+        "runSyncCfData",
+        "runSyncCfDataRow",
+        "runSyncDnsPodCmd",
+        "runSyncDnsPodData",
+        "runSyncDnspodDataRow",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "dnsapi_add",
+        "dnsapi_del",
+        "dnsapi_list",
+        "dnsapi_list_all",
+        "domain_add",
+        "domain_del",
+        "domain_list",
+        "domain_status_toggle",
+        "email_add",
+        "email_del",
+        "email_list",
+        "get_run_hook_id_cmd",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_hook",
+        "run_hook_cmd",
+        "run_hook_id",
+        "run_info",
+        "run_log",
+        "run_sync_cf_cmd",
+        "run_sync_cf_data",
+        "run_sync_dnspod_cmd",
+        "run_sync_dnspod_data",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "alist",
+      "title": "Alist",
+      "type": 0,
+      "versions": [
+        "3.37.4",
+        "3.38.0",
+        "3.45.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__delete_port",
+        "__release_port",
+        "alistOp",
+        "checkArgs",
+        "clearCopyTask",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "homePage",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "openPort",
+        "pSqliteDb",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "clear_copy_task",
+        "conf",
+        "config_tpl",
+        "home_page",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "backup_ftp",
+      "title": "FTP存储空间",
+      "type": "运行环境",
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "backupAllFunc",
+        "checkArgs",
+        "createDir",
+        "deleteDir",
+        "deleteFile",
+        "findPathName",
+        "getArgs",
+        "getConf",
+        "getList",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "in_array",
+        "installPreInspection",
+        "setConf",
+        "status"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "create_dir",
+        "delete_dir",
+        "delete_file",
+        "get_list",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "set_config",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "clean",
+      "title": "日志清理",
+      "type": "运行环境",
+      "versions": "1.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "cleanDirLog",
+        "cleanFileLog",
+        "cleanLog",
+        "cleanRun",
+        "cleanSelfFileLog",
+        "getArgs",
+        "getConf",
+        "getInitDFile",
+        "getLockFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "get_filePath_fileName_fileExt",
+        "initConf",
+        "reload",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "clean",
+        "clean_run",
+        "conf",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "cloudreve",
+      "title": "cloudreve",
+      "type": 0,
+      "versions": [
+        "3.8.3"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "alistOp",
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getCloudrevePort",
+        "getConf",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "homePage",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "pSqliteDb",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "home_page",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "cryptocurrency_trade",
+      "title": "量化交易",
+      "type": "量化交易",
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "contentReplace",
+        "getArgs",
+        "getConfigData",
+        "getDbConf",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getUserConf",
+        "initDreplace",
+        "isSqlError",
+        "op",
+        "restartSup",
+        "restartSupDst",
+        "setDbConf",
+        "setUserConf",
+        "start",
+        "status",
+        "stop",
+        "syncDataAdd",
+        "syncDataAddTask",
+        "syncDataAddTaskInstall",
+        "syncDataAddTaskUninstall",
+        "syncDataDelete",
+        "syncDataList",
+        "writeConf"
+      ],
+      "declared_action_strings": [
+        "get_db_conf",
+        "get_user_conf",
+        "reload",
+        "restart",
+        "set_db_conf",
+        "set_user_conf",
+        "start",
+        "status",
+        "stop",
+        "sync_data_add",
+        "sync_data_add_task",
+        "sync_data_delete",
+        "sync_data_list"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "data_query",
+      "title": "数据管理",
+      "type": 0,
+      "versions": "1.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "appOp",
+        "checkArgs",
+        "getArgs",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "docker",
+      "title": "Docker",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "IsPortExists",
+        "__check_dst_port",
+        "__release_port",
+        "checkArgs",
+        "checkImage",
+        "conList",
+        "conListData",
+        "delete_user_info",
+        "dockerAddIP",
+        "dockerCreateCon",
+        "dockerDelIP",
+        "dockerExec",
+        "dockerImagePickDir",
+        "dockerImagePickList",
+        "dockerImagePickLoad",
+        "dockerImagePickSave",
+        "dockerLogCon",
+        "dockerLogin",
+        "dockerLoginCheck",
+        "dockerLogout",
+        "dockerOp",
+        "dockerPlulPath",
+        "dockerPortCheck",
+        "dockerPull",
+        "dockerPullPrivateNew",
+        "dockerPullReg",
+        "dockerRemoveCon",
+        "dockerRemoveImage",
+        "dockerRunCon",
+        "dockerStopCon",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getDClient",
+        "getDockerCreateInfo",
+        "getDockerIpList",
+        "getDockerIpListData",
+        "getImageListFunc",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "imageList",
+        "imageListData",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "reload",
+        "repoList",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "utc_to_local"
+      ],
+      "declared_action_strings": [
+        "con_list",
+        "conf",
+        "docker_add_ip",
+        "docker_con_log",
+        "docker_create_con",
+        "docker_del_ip",
+        "docker_exec",
+        "docker_get_iplist",
+        "docker_login",
+        "docker_logout",
+        "docker_port_check",
+        "docker_pull",
+        "docker_pull_reg",
+        "docker_remove_con",
+        "docker_remove_image",
+        "docker_run_con",
+        "docker_stop_con",
+        "get_docker_create_info",
+        "image_list",
+        "image_pick_dir",
+        "image_pick_list",
+        "image_pick_load",
+        "image_pick_save",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "repo_list",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "doh",
+      "title": "DoH",
+      "type": "doh",
+      "versions": [
+        "0.9.15"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "appOp",
+        "checkArgs",
+        "contentReplace",
+        "getArgs",
+        "getConfTpl",
+        "getHomeDir",
+        "getInitDFile",
+        "getInitdConf",
+        "getInitdConfTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getTotalStatistics",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "uninstallPreInspection"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "get_total_statistics",
+        "init_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "post_receive_log",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "dynamic-tracking",
+      "title": "动态追踪",
+      "type": 0,
+      "versions": [
+        "0.1"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "dtFileList",
+        "dtGetFilePath",
+        "dtOp",
+        "dtRemoveFilePath",
+        "dtSimpleTrace",
+        "getArgs",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "get_file",
+        "get_file_path",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "file_list",
+        "get_file_path",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "remove_file_path",
+        "restart",
+        "run_info",
+        "run_log",
+        "simple_trace",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "dztasks",
+      "title": "dztasks",
+      "type": 0,
+      "versions": [
+        "1.2"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "dzOp",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getDzPassword",
+        "getDzPort",
+        "getDzUsername",
+        "getHomePage",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "homePage",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runInfo",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "home_page",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "fail2ban",
+      "title": "fail2ban",
+      "type": 0,
+      "versions": [
+        "1.1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "_read_conf",
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "f2bDir",
+        "f2bEtcDir",
+        "f2bOp",
+        "getArgs",
+        "getBlackFile",
+        "getBlackList",
+        "getBlackListArr",
+        "getConf",
+        "getConfTpl",
+        "getConfigFile",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initDreplace",
+        "initFail2BanD",
+        "initJailD",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runLog",
+        "setBlackIp",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "get_black_list",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "set_black_ip",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "gdrive",
+      "title": "谷歌云网盘",
+      "type": "扩展",
+      "versions": "2.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "backupAllFunc",
+        "checkArgs",
+        "clearAuth",
+        "createDir",
+        "deleteDir",
+        "deleteFile",
+        "findPathName",
+        "getArgs",
+        "getConf",
+        "getList",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "in_array",
+        "installPreInspection",
+        "isAuthApi",
+        "setAuthUrl",
+        "status"
+      ],
+      "declared_action_strings": [
+        "clear_auth",
+        "conf",
+        "create_dir",
+        "delete_dir",
+        "delete_file",
+        "get_list",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "set_auth_url",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "gitea",
+      "title": "Gitea",
+      "type": "Git服务器",
+      "versions": [
+        "1.17.2",
+        "1.18.5",
+        "1.22.1",
+        "1.24.3"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "appOp",
+        "checkArgs",
+        "checkProjectListIsHasScript",
+        "checkRepoListIsHasScript",
+        "contentReplace",
+        "getAllUserProject",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getDbConfValue",
+        "getGiteaDbType",
+        "getGogsConf",
+        "getHomeDir",
+        "getHttpPort",
+        "getInitDFile",
+        "getInitdConf",
+        "getInitdConfTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getRootPath",
+        "getRootUrl",
+        "getRsaPublic",
+        "getRunUser",
+        "getServerDir",
+        "getSshPort",
+        "getTotalStatistics",
+        "gogsEditTpl",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "isSqlError",
+        "pMysqlDb",
+        "pQuery",
+        "pSqliteDb",
+        "postReceiveLog",
+        "projectScriptDebug",
+        "projectScriptEdit",
+        "projectScriptLoad",
+        "projectScriptRun",
+        "projectScriptSelf",
+        "projectScriptSelf_Create",
+        "projectScriptSelf_Del",
+        "projectScriptSelf_Enable",
+        "projectScriptSelf_Logs",
+        "projectScriptSelf_Rename",
+        "projectScriptSelf_Run",
+        "projectScriptSelf_Status",
+        "projectScriptUnload",
+        "reload",
+        "repoList",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "submitGogsConf",
+        "uninstallPreInspection",
+        "userList",
+        "userProjectList"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "get_gogs_conf",
+        "get_rsa_public",
+        "get_total_statistics",
+        "gogs_edit_tpl",
+        "init_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "post_receive_log",
+        "project_script_debug",
+        "project_script_edit",
+        "project_script_load",
+        "project_script_run",
+        "project_script_self",
+        "project_script_self_create",
+        "project_script_self_del",
+        "project_script_self_enable",
+        "project_script_self_logs",
+        "project_script_self_rename",
+        "project_script_self_run",
+        "project_script_self_status",
+        "project_script_unload",
+        "reload",
+        "repo_list",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_gogs_conf",
+        "uninstall_pre_inspection",
+        "user_list",
+        "user_project_list"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "gogs",
+      "title": "Gogs",
+      "type": "Git服务器",
+      "versions": [
+        "0.11.86",
+        "0.12.9",
+        "0.13.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "checkProjectListIsHasScript",
+        "checkRepoListIsHasScript",
+        "contentReplace",
+        "getAllUserProject",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getDbConfValue",
+        "getGogsConf",
+        "getGogsDbType",
+        "getHomeDir",
+        "getHttpPort",
+        "getInitDFile",
+        "getInitdConf",
+        "getInitdConfTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getRootPath",
+        "getRootUrl",
+        "getRsaPublic",
+        "getRunUser",
+        "getServerDir",
+        "getSshPort",
+        "getTotalStatistics",
+        "gogsEditTpl",
+        "gogsOp",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "isSqlError",
+        "pMysqlDb",
+        "pQuery",
+        "pSqliteDb",
+        "postReceiveLog",
+        "projectScriptDebug",
+        "projectScriptEdit",
+        "projectScriptLoad",
+        "projectScriptRun",
+        "projectScriptSelf",
+        "projectScriptSelf_Create",
+        "projectScriptSelf_Del",
+        "projectScriptSelf_Enable",
+        "projectScriptSelf_Logs",
+        "projectScriptSelf_Rename",
+        "projectScriptSelf_Run",
+        "projectScriptSelf_Status",
+        "projectScriptUnload",
+        "reload",
+        "repoList",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "submitGogsConf",
+        "userList",
+        "userProjectList"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "get_gogs_conf",
+        "get_rsa_public",
+        "get_total_statistics",
+        "gogs_edit_tpl",
+        "init_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "post_receive_log",
+        "project_script_debug",
+        "project_script_edit",
+        "project_script_load",
+        "project_script_run",
+        "project_script_self",
+        "project_script_self_create",
+        "project_script_self_del",
+        "project_script_self_enable",
+        "project_script_self_logs",
+        "project_script_self_rename",
+        "project_script_self_run",
+        "project_script_self_status",
+        "project_script_unload",
+        "reload",
+        "repo_list",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_gogs_conf",
+        "user_list",
+        "user_project_list"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "gorse",
+      "title": "Gorse",
+      "type": 0,
+      "versions": [
+        "0.4.15"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getGorseInfo",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getPort",
+        "getServerDir",
+        "gorseOp",
+        "initDreplace",
+        "initRedisConf",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "info",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "grafana",
+      "title": "grafana",
+      "type": 0,
+      "versions": [
+        "12.1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "contentReplace",
+        "gOp",
+        "getArgs",
+        "getConf",
+        "getInitDFile",
+        "getInitDTpl",
+        "getInstallVerion",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "grafanaUrl",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "openPort",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "uninstallPreInspection"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "grafana_url",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "version_directories": [
+        "12.1.0"
+      ]
+    },
+    {
+      "name": "haproxy",
+      "title": "haproxy",
+      "type": 0,
+      "versions": [
+        "2.6"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "haOp",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": [
+        "2.6"
+      ]
+    },
+    {
+      "name": "imail",
+      "title": "邮件服务",
+      "type": 0,
+      "versions": [
+        "0.0.19"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [],
+      "declared_action_strings": [],
+      "version_directories": [
+        "0.0.19"
+      ]
+    },
+    {
+      "name": "keepalived",
+      "title": "keepalived",
+      "type": "soft",
+      "versions": [
+        "2.2.8"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "configScriptsTpl",
+        "configTpl",
+        "contentReplace",
+        "copyScripts",
+        "defaultScriptsTpl",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getPort",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "kpOp",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_scripts_tpl",
+        "config_tpl",
+        "default_scripts_tpl",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "lam",
+      "title": "LAM",
+      "type": "运行环境",
+      "versions": [
+        "9.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__delete_port",
+        "__release_port",
+        "accessLog",
+        "checkArgs",
+        "contentReplace",
+        "delPort",
+        "errorLog",
+        "getArgs",
+        "getCachePhpVer",
+        "getCfg",
+        "getConf",
+        "getConfInc",
+        "getHomePage",
+        "getPhpVer",
+        "getPluginDir",
+        "getPluginName",
+        "getPmaOption",
+        "getPmaPort",
+        "getPort",
+        "getServerDir",
+        "getSetPhpVer",
+        "initCfg",
+        "installVersion",
+        "openPort",
+        "reload",
+        "restart",
+        "returnCfg",
+        "setCfg",
+        "setPhpVer",
+        "setPmaPassword",
+        "setPmaPath",
+        "setPmaPort",
+        "setPmaUsername",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "access_log",
+        "conf",
+        "config_inc",
+        "error_log",
+        "get_cfg",
+        "get_home_page",
+        "get_pma_option",
+        "get_pma_port",
+        "get_set_php_ver",
+        "reload",
+        "restart",
+        "set_php_ver",
+        "set_pma_password",
+        "set_pma_path",
+        "set_pma_port",
+        "set_pma_username",
+        "start",
+        "status",
+        "stop",
+        "version"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "ldap",
+      "title": "LDAP",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getPort",
+        "getRedisConf",
+        "getRedisConfInfo",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "ladpOp",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "submitRedisConf"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "get_redis_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_redis_conf"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "loki",
+      "title": "loki",
+      "type": 0,
+      "versions": [
+        "3.5.3"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "contentReplace",
+        "gOp",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDFile",
+        "getInstallVerion",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getPromtailConf",
+        "getPromtailConfTpl",
+        "getServerDir",
+        "grafanaUrl",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "uninstallPreInspection"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "grafana_url",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "promtail_conf",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "version_directories": [
+        "3.5.3"
+      ]
+    },
+    {
+      "name": "lvs",
+      "title": "LVS",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "getArgs",
+        "getConf",
+        "getInitDFile",
+        "getIpvsadm",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "haOp",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "manticoresearch",
+      "title": "manticoresearch",
+      "type": 0,
+      "versions": [
+        "7.4.6"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "checkIndexSph",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getHttpPort",
+        "getInitDFile",
+        "getInitDTpl",
+        "getMainPort",
+        "getMysqlPort",
+        "getPluginDir",
+        "getPluginName",
+        "getSeName",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "isInitFile",
+        "makeDbToSphinx",
+        "makeDbToSphinxTest",
+        "mcsOp",
+        "mkdirAll",
+        "queryLog",
+        "readConfigTpl",
+        "rebuild",
+        "reload",
+        "restart",
+        "runLog",
+        "runStatus",
+        "runStatusTest",
+        "sphinxCmd",
+        "sphinxConfParse",
+        "start",
+        "status",
+        "stop",
+        "updateAll",
+        "updateDelta"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "db_to_sphinx",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "query_log",
+        "read_config_tpl",
+        "rebuild",
+        "reload",
+        "restart",
+        "run_log",
+        "run_status",
+        "run_status_test",
+        "sphinx_cmd",
+        "start",
+        "status",
+        "stop",
+        "update_all",
+        "update_delta"
+      ],
+      "version_directories": [
+        "apt",
+        "yum"
+      ]
+    },
+    {
+      "name": "mariadb",
+      "title": "MariaDB",
+      "type": "运行环境",
+      "versions": [
+        "10.6",
+        "10.7",
+        "10.8",
+        "10.9",
+        "10.11",
+        "11.0",
+        "11.1",
+        "11.2",
+        "11.3",
+        "11.4",
+        "11.5",
+        "11.6",
+        "11.7",
+        "11.8",
+        "12.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__createUser",
+        "addDb",
+        "addMasterRepSlaveUser",
+        "addSlaveSSH",
+        "addSlaveSyncUser",
+        "alterTable",
+        "appCMD",
+        "asyncTmpfile",
+        "binLog",
+        "binLogList",
+        "checkArgs",
+        "cleanBinLog",
+        "closeSkipGrantTables",
+        "contentReplace",
+        "delDb",
+        "delMasterRepSlaveUser",
+        "delSlaveSSH",
+        "delSlaveSyncUser",
+        "deleteDbBackup",
+        "deleteSlave",
+        "doFullSync",
+        "doFullSyncSSH",
+        "doFullSyncUser",
+        "dumpMysqlData",
+        "findBinlogDoDb",
+        "findBinlogSlaveDoDb",
+        "fixDbAccess",
+        "fullSync",
+        "fullSyncCmd",
+        "getArgs",
+        "getBackupDir",
+        "getConf",
+        "getDataDir",
+        "getDbAccess",
+        "getDbBackupImportList",
+        "getDbBackupList",
+        "getDbBackupListFunc",
+        "getDbInfo",
+        "getDbList",
+        "getDbPort",
+        "getDbServerId",
+        "getDbrunMode",
+        "getErrorLog",
+        "getInitDFile",
+        "getInitdTpl",
+        "getLogBinName",
+        "getMasterDbList",
+        "getMasterRepSlaveList",
+        "getMasterRepSlaveUserCmd",
+        "getMasterRepSlaveUserCmdSsh",
+        "getMasterStatus",
+        "getMyDbPos",
+        "getMyPort",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getShowLogFile",
+        "getSlaveList",
+        "getSlaveSSHByIp",
+        "getSlaveSSHList",
+        "getSlaveSyncCmd",
+        "getSlaveSyncMode",
+        "getSlaveSyncUserByIp",
+        "getSlaveSyncUserList",
+        "getSocketFile",
+        "getSyncModeFile",
+        "getSyncMysqlDB",
+        "getTotalStatistics",
+        "importDbBackup",
+        "importDbExternal",
+        "importDbExternalProgress",
+        "importDbExternalProgressBar",
+        "initDreplace",
+        "initMariaDbPwd",
+        "initMysqlData",
+        "initSlaveStatus",
+        "initSlaveStatusSSH",
+        "initSlaveStatusSyncUser",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "isSqlError",
+        "makeInitRsaKey",
+        "myDbStatus",
+        "myOp",
+        "openSkipGrantTables",
+        "optTable",
+        "pGetDbUser",
+        "pMysqlDb",
+        "pSqliteDb",
+        "parseSlaveSyncCmd",
+        "recognizeDbMode",
+        "reload",
+        "repairTable",
+        "resetDbRootPwd",
+        "resetMaster",
+        "restart",
+        "rootPwd",
+        "runInfo",
+        "setDbAccess",
+        "setDbBackup",
+        "setDbMaster",
+        "setDbMasterAccess",
+        "setDbPs",
+        "setDbRw",
+        "setDbSlave",
+        "setDbStatus",
+        "setDbrunMode",
+        "setMasterStatus",
+        "setMyDbPos",
+        "setMyPort",
+        "setRootPwd",
+        "setSlaveStatus",
+        "setSlaveSyncMode",
+        "setUserPwd",
+        "start",
+        "status",
+        "stop",
+        "syncDatabaseRepair",
+        "syncDatabaseRepairLog",
+        "syncDatabaseRepairTempFile",
+        "syncGetDatabases",
+        "syncToDatabases",
+        "toDbBase",
+        "trySlaveSyncBugfix",
+        "uninstallPreInspection",
+        "updateMasterRepSlaveUser",
+        "updateSlaveSSH",
+        "writeDbSyncStatus"
+      ],
+      "declared_action_strings": [
+        "add_db",
+        "add_master_rep_slave_user",
+        "add_slave_ssh",
+        "add_slave_sync_user",
+        "alter_table",
+        "bin_log",
+        "binlog_list",
+        "clean_bin_log",
+        "conf",
+        "db_status",
+        "del_db",
+        "del_master_rep_slave_user",
+        "del_slave_ssh",
+        "del_slave_sync_user",
+        "delete_db_backup",
+        "delete_slave",
+        "do_full_sync",
+        "dump_mysql_data",
+        "error_log",
+        "fix_db_access",
+        "full_sync",
+        "full_sync_cmd",
+        "get_db_access",
+        "get_db_backup_import_list",
+        "get_db_backup_list",
+        "get_db_info",
+        "get_db_list",
+        "get_db_rw",
+        "get_dbrun_mode",
+        "get_master_rep_slave_list",
+        "get_master_rep_slave_user_cmd",
+        "get_master_rep_slave_user_cmd_ssh",
+        "get_master_status",
+        "get_masterdb_list",
+        "get_slave_list",
+        "get_slave_ssh_by_ip",
+        "get_slave_ssh_list",
+        "get_slave_sync_cmd",
+        "get_slave_sync_mode",
+        "get_slave_sync_user_by_ip",
+        "get_slave_sync_user_list",
+        "get_total_statistics",
+        "import_db_backup",
+        "import_db_external",
+        "import_db_external_progress",
+        "import_db_external_progress_bar",
+        "init_pwd",
+        "init_slave_status",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "my_db_pos",
+        "my_port",
+        "opt_table",
+        "reload",
+        "repair_table",
+        "reset_master",
+        "restart",
+        "root_pwd",
+        "run_info",
+        "set_db_access",
+        "set_db_backup",
+        "set_db_master",
+        "set_db_pos",
+        "set_db_ps",
+        "set_db_slave",
+        "set_db_status",
+        "set_dbmaster_access",
+        "set_dbrun_mode",
+        "set_master_status",
+        "set_my_port",
+        "set_root_pwd",
+        "set_slave_status",
+        "set_slave_sync_mode",
+        "set_user_pwd",
+        "show_log",
+        "start",
+        "status",
+        "stop",
+        "sync_database_repair",
+        "sync_database_repair_log",
+        "sync_get_databases",
+        "sync_to_databases",
+        "try_slave_sync_bugfix",
+        "uninstall_pre_inspection",
+        "update_master_rep_slave_user",
+        "update_slave_ssh"
+      ],
+      "version_directories": [
+        "10.11",
+        "10.6",
+        "10.7",
+        "10.8",
+        "10.9",
+        "11.0",
+        "11.1",
+        "11.2",
+        "11.3",
+        "11.4",
+        "11.5",
+        "11.6",
+        "11.7",
+        "11.8",
+        "12.0",
+        "12.1"
+      ]
+    },
+    {
+      "name": "memcached",
+      "title": "Memcached",
+      "type": 0,
+      "versions": [
+        "1.6"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "getArgs",
+        "getConf",
+        "getConfEnv",
+        "getConfTpl",
+        "getInitDFile",
+        "getMemPort",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "memOp",
+        "reload",
+        "restart",
+        "runInfo",
+        "saveConf",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf_env",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "restart",
+        "run_info",
+        "save_conf",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "migration_api",
+      "title": "一键迁移API",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "bgProcessRun",
+        "checkArgs",
+        "getArgs",
+        "getCfgData",
+        "getConf",
+        "getInitDFile",
+        "getPid",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getSpeed",
+        "getStepOneData",
+        "get_dst_config",
+        "get_speed_data",
+        "get_src_config",
+        "get_src_info",
+        "initDreplace",
+        "status",
+        "stepFour",
+        "stepOne",
+        "stepThree",
+        "stepTwo",
+        "toSize",
+        "writeConf",
+        "write_log"
+      ],
+      "declared_action_strings": [
+        "bg_process",
+        "get_conf",
+        "get_speed",
+        "status",
+        "step_four",
+        "step_one",
+        "step_three",
+        "step_two"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "mongodb",
+      "title": "MongoDB",
+      "type": 0,
+      "versions": [
+        "4.4",
+        "5.0",
+        "6.0",
+        "7.0",
+        "8.0",
+        "8.2"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "addDb",
+        "checkArgs",
+        "cronAddCheck",
+        "cronDelCheck",
+        "delDb",
+        "delDbTable",
+        "delReplNode",
+        "deleteDbBackup",
+        "getAllRole",
+        "getArgs",
+        "getConf",
+        "getConfAuth",
+        "getConfIp",
+        "getConfKey",
+        "getConfLocalIp",
+        "getConfPort",
+        "getConfTpl",
+        "getConfig",
+        "getConfigData",
+        "getDbAccess",
+        "getDbBackupImportList",
+        "getDbBackupList",
+        "getDbBackupListFunc",
+        "getDbInfo",
+        "getDbList",
+        "getInitDFile",
+        "getInitDTpl",
+        "getListBson",
+        "getPluginDir",
+        "getPluginName",
+        "getReplConfig",
+        "getReplConfigData",
+        "getServerDir",
+        "importDbBackup",
+        "importDbExternal",
+        "initDreplace",
+        "initMgRoot",
+        "initUserRoot",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "installPreInspectionDebainCheck",
+        "mgOp",
+        "mongdbClient",
+        "mongdbClientS",
+        "pSqliteDb",
+        "reload",
+        "replClose",
+        "replInit",
+        "replSetName",
+        "replSetNode",
+        "restart",
+        "rootPwd",
+        "runDocInfo",
+        "runInfo",
+        "runLog",
+        "runReplInfo",
+        "saveConfig",
+        "setConfig",
+        "setConfigAuth",
+        "setDbAccess",
+        "setDbBackup",
+        "setDbPs",
+        "setReplConfigData",
+        "setRootPwd",
+        "setUserPwd",
+        "start",
+        "status",
+        "stop",
+        "syncGetDatabases",
+        "syncToDatabases",
+        "test",
+        "testData",
+        "toDbBase",
+        "uninstallPreInspection"
+      ],
+      "declared_action_strings": [
+        "add_db",
+        "conf",
+        "config_key",
+        "cron_add_check",
+        "cron_del_check",
+        "del_db",
+        "del_db_table",
+        "del_repl_node",
+        "delete_db_backup",
+        "get_all_role",
+        "get_config",
+        "get_db_access",
+        "get_db_backup_import_list",
+        "get_db_backup_list",
+        "get_db_info",
+        "get_db_list",
+        "get_repl_config",
+        "import_db_backup",
+        "import_db_external",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "repl_close",
+        "repl_init",
+        "repl_set_name",
+        "repl_set_node",
+        "restart",
+        "root_pwd",
+        "run_doc_info",
+        "run_info",
+        "run_log",
+        "run_repl_info",
+        "set_config",
+        "set_config_auth",
+        "set_db_access",
+        "set_db_backup",
+        "set_db_ps",
+        "set_root_pwd",
+        "set_user_pwd",
+        "start",
+        "status",
+        "stop",
+        "sync_get_databases",
+        "sync_to_databases",
+        "test",
+        "test_data",
+        "uninstall_pre_inspection"
+      ],
+      "version_directories": [
+        "4.4",
+        "5.0",
+        "6.0",
+        "7.0",
+        "8.0",
+        "8.2"
+      ]
+    },
+    {
+      "name": "mosquitto",
+      "title": "mosquitto",
+      "type": "soft",
+      "versions": [
+        "2.0.18"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "mqttOp",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "msonedrive",
+      "title": "OneDrive",
+      "type": "sort",
+      "versions": "1.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "backupAllFunc",
+        "checkArgs",
+        "clearAuth",
+        "createDir",
+        "deleteDir",
+        "deleteFile",
+        "findPathName",
+        "getArgs",
+        "getConf",
+        "getList",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "in_array",
+        "installPreInspection",
+        "isAuthApi",
+        "setAuthUrl",
+        "status"
+      ],
+      "declared_action_strings": [
+        "clear_auth",
+        "conf",
+        "create_dir",
+        "delete_dir",
+        "delete_file",
+        "get_list",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "set_auth_url",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "mtproxy",
+      "title": "mtproxy",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__delete_port",
+        "__release_port",
+        "delPort",
+        "getArgs",
+        "getConfEnv",
+        "getConfEnvTpl",
+        "getMtproxyPort",
+        "getMtproxyUrl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getServiceFile",
+        "getServiceTpl",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "mtOp",
+        "openPort",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "conf_env",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "url"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "mysql",
+      "title": "MySQL",
+      "type": "运行环境",
+      "versions": [
+        "5.5",
+        "5.6",
+        "5.7",
+        "8.0",
+        "8.2",
+        "8.3",
+        "8.4",
+        "9.0",
+        "9.1",
+        "9.2",
+        "9.3",
+        "9.4"
+      ],
+      "shell": "install.sh",
+      "coexist": false,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__createUser",
+        "addDb",
+        "addMasterRepSlaveUser",
+        "addSlaveSSH",
+        "addSlaveSyncUser",
+        "adjust_password_policy",
+        "alterTable",
+        "appCMD",
+        "asyncTmpfile",
+        "binLog",
+        "binLogList",
+        "checkArgs",
+        "cleanBinLog",
+        "closeSkipGrantTables",
+        "contentReplace",
+        "delDb",
+        "delMasterRepSlaveUser",
+        "delSlaveSSH",
+        "delSlaveSyncUser",
+        "deleteDbBackup",
+        "deleteSlave",
+        "deleteSlaveFunc",
+        "doFullSync",
+        "doFullSyncSSH",
+        "doFullSyncUser",
+        "doFullSyncUserImportContentForChannel",
+        "dumpMysqlData",
+        "findBinlogDoDb",
+        "findBinlogSlaveDoDb",
+        "fixDbAccess",
+        "fullSync",
+        "fullSyncCmd",
+        "getArgs",
+        "getAuthPolicy",
+        "getChannelNameForCmd",
+        "getConf",
+        "getDataDir",
+        "getDbAccess",
+        "getDbBackupImportList",
+        "getDbBackupList",
+        "getDbBackupListFunc",
+        "getDbInfo",
+        "getDbList",
+        "getDbPort",
+        "getDbServerId",
+        "getDbrunMode",
+        "getErrorLog",
+        "getErrorLogsFile",
+        "getInitDFile",
+        "getInitdTpl",
+        "getLogBinName",
+        "getMasterDbList",
+        "getMasterRepSlaveList",
+        "getMasterRepSlaveUserCmd",
+        "getMasterStatus",
+        "getMdb8Ver",
+        "getMyDbPos",
+        "getMyPort",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getSPluginDir",
+        "getServerDir",
+        "getShowLogFile",
+        "getSlaveList",
+        "getSlaveName",
+        "getSlaveSSHByIp",
+        "getSlaveSSHList",
+        "getSlaveSyncCmd",
+        "getSlaveSyncMode",
+        "getSlaveSyncUserByIp",
+        "getSlaveSyncUserList",
+        "getSocketFile",
+        "getSyncModeFile",
+        "getSyncMysqlDB",
+        "getTotalStatistics",
+        "importDbBackup",
+        "importDbBackupProgress",
+        "importDbBackupProgressBar",
+        "importDbExternal",
+        "importDbExternalProgress",
+        "importDbExternalProgressBar",
+        "initDreplace",
+        "initMysql57Data",
+        "initMysql8Data",
+        "initMysql8Pwd",
+        "initMysqlData",
+        "initMysqlPwd",
+        "initSlaveStatus",
+        "initSlaveStatusSSH",
+        "initSlaveStatusSyncUser",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "isSimpleSyncCmd",
+        "isSqlError",
+        "makeInitRsaKey",
+        "makeSyncUsercmd",
+        "my8cmd",
+        "myDbStatus",
+        "myOp",
+        "myPass",
+        "openSkipGrantTables",
+        "optTable",
+        "pGetDbUser",
+        "pMysqlDb",
+        "pSqliteDb",
+        "parseSlaveSyncCmd",
+        "process_status",
+        "recognizeDbMode",
+        "reload",
+        "repairTable",
+        "resetDbRootPwd",
+        "resetMaster",
+        "restart",
+        "rootPwd",
+        "runInfo",
+        "setDbAccess",
+        "setDbBackup",
+        "setDbMaster",
+        "setDbMasterAccess",
+        "setDbPs",
+        "setDbRw",
+        "setDbSlave",
+        "setDbStatus",
+        "setDbrunMode",
+        "setMasterStatus",
+        "setMyDbPos",
+        "setMyPort",
+        "setRootPwd",
+        "setRootPwdForce",
+        "setSlaveStatus",
+        "setSlaveSyncMode",
+        "setUserPwd",
+        "start",
+        "status",
+        "stop",
+        "syncDatabaseRepair",
+        "syncDatabaseRepairLog",
+        "syncDatabaseRepairTempFile",
+        "syncGetDatabases",
+        "syncToDatabases",
+        "toDbBase",
+        "trySlaveSyncBugfix",
+        "uninstallPreInspection",
+        "updateMasterRepSlaveUser",
+        "updateSlaveSSH",
+        "writeDbSyncStatus"
+      ],
+      "declared_action_strings": [
+        "add_db",
+        "add_master_rep_slave_user",
+        "add_slave_ssh",
+        "add_slave_sync_user",
+        "alter_table",
+        "bin_log",
+        "binlog_list",
+        "clean_bin_log",
+        "conf",
+        "db_status",
+        "del_db",
+        "del_master_rep_slave_user",
+        "del_slave_ssh",
+        "del_slave_sync_user",
+        "delete_db_backup",
+        "delete_slave",
+        "do_full_sync",
+        "dump_mysql_data",
+        "error_log",
+        "fix_db_access",
+        "full_sync",
+        "full_sync_cmd",
+        "get_db_access",
+        "get_db_backup_import_list",
+        "get_db_backup_list",
+        "get_db_info",
+        "get_db_list",
+        "get_dbrun_mode",
+        "get_master_rep_slave_list",
+        "get_master_rep_slave_user_cmd",
+        "get_master_status",
+        "get_masterdb_list",
+        "get_slave_list",
+        "get_slave_ssh_by_ip",
+        "get_slave_ssh_list",
+        "get_slave_sync_cmd",
+        "get_slave_sync_mode",
+        "get_slave_sync_user_by_ip",
+        "get_slave_sync_user_list",
+        "get_total_statistics",
+        "import_db_backup",
+        "import_db_backup_progress",
+        "import_db_backup_progress_bar",
+        "import_db_external",
+        "import_db_external_progress",
+        "import_db_external_progress_bar",
+        "init_pwd",
+        "init_slave_status",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "my_db_pos",
+        "my_port",
+        "opt_table",
+        "reload",
+        "repair_table",
+        "reset_master",
+        "restart",
+        "root_pwd",
+        "run_info",
+        "set_db_access",
+        "set_db_backup",
+        "set_db_master",
+        "set_db_pos",
+        "set_db_ps",
+        "set_db_rw",
+        "set_db_slave",
+        "set_db_status",
+        "set_dbmaster_access",
+        "set_dbrun_mode",
+        "set_master_status",
+        "set_my_port",
+        "set_root_pwd",
+        "set_slave_status",
+        "set_slave_sync_mode",
+        "set_user_pwd",
+        "show_log",
+        "start",
+        "status",
+        "stop",
+        "sync_database_repair",
+        "sync_database_repair_log",
+        "sync_get_databases",
+        "sync_to_databases",
+        "try_slave_sync_bugfix",
+        "uninstall_pre_inspection",
+        "update_master_rep_slave_user",
+        "update_slave_ssh"
+      ],
+      "version_directories": [
+        "5.5",
+        "5.6",
+        "5.7",
+        "8.0",
+        "8.2",
+        "8.3",
+        "8.4",
+        "9.0",
+        "9.1",
+        "9.2",
+        "9.3",
+        "9.4"
+      ]
+    },
+    {
+      "name": "mysql-community",
+      "title": "MySQL[Tar]",
+      "type": "运行环境",
+      "versions": [
+        "5.7",
+        "8.0",
+        "8.2",
+        "8.3",
+        "8.4",
+        "9.0",
+        "9.1",
+        "9.2",
+        "9.3"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__createUser",
+        "addDb",
+        "addMasterRepSlaveUser",
+        "addSlaveSSH",
+        "addSlaveSyncUser",
+        "alterTable",
+        "appCMD",
+        "asyncTmpfile",
+        "binLog",
+        "binLogList",
+        "checkArgs",
+        "cleanBinLog",
+        "closeSkipGrantTables",
+        "contentReplace",
+        "delDb",
+        "delMasterRepSlaveUser",
+        "delSlaveSSH",
+        "delSlaveSyncUser",
+        "deleteDbBackup",
+        "deleteSlave",
+        "doFullSync",
+        "doFullSyncSSH",
+        "doFullSyncUser",
+        "doFullSyncUserImportContentForChannel",
+        "dumpMysqlData",
+        "findBinlogDoDb",
+        "findBinlogSlaveDoDb",
+        "fixDbAccess",
+        "fixDbAccess2",
+        "fullSync",
+        "fullSyncCmd",
+        "getArgs",
+        "getAuthPolicy",
+        "getBackupDir",
+        "getChannelNameForCmd",
+        "getConf",
+        "getDataDir",
+        "getDbAccess",
+        "getDbBackupImportList",
+        "getDbBackupList",
+        "getDbBackupListFunc",
+        "getDbInfo",
+        "getDbList",
+        "getDbPort",
+        "getDbServerId",
+        "getDbrunMode",
+        "getErrorLog",
+        "getErrorLogsFile",
+        "getLogBinName",
+        "getMasterDbList",
+        "getMasterRepSlaveList",
+        "getMasterRepSlaveUserCmd",
+        "getMasterStatus",
+        "getMdb8Ver",
+        "getMyDbPos",
+        "getMyPort",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getSPluginDir",
+        "getServerDir",
+        "getShowLogFile",
+        "getSlaveList",
+        "getSlaveName",
+        "getSlaveSSHByIp",
+        "getSlaveSSHList",
+        "getSlaveSyncCmd",
+        "getSlaveSyncMode",
+        "getSlaveSyncUserByIp",
+        "getSlaveSyncUserList",
+        "getSocketFile",
+        "getSyncModeFile",
+        "getSyncMysqlDB",
+        "getTotalStatistics",
+        "importDbBackup",
+        "importDbExternal",
+        "importDbExternalProgress",
+        "importDbExternalProgressBar",
+        "initDreplace",
+        "initMysql57Data",
+        "initMysql8Data",
+        "initMysql8Pwd",
+        "initSlaveStatus",
+        "initSlaveStatusSSH",
+        "initSlaveStatusSyncUser",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "isSimpleSyncCmd",
+        "isSqlError",
+        "is_number",
+        "my8cmd",
+        "myDbStatus",
+        "openSkipGrantTables",
+        "optTable",
+        "pGetDbUser",
+        "pMysqlDb",
+        "pSqliteDb",
+        "parseSlaveSyncCmd",
+        "process_status",
+        "recognizeDbMode",
+        "reload",
+        "repairTable",
+        "resetDbRootPwd",
+        "resetMaster",
+        "restart",
+        "rootPwd",
+        "runInfo",
+        "setDbAccess",
+        "setDbBackup",
+        "setDbMaster",
+        "setDbMasterAccess",
+        "setDbPs",
+        "setDbRw",
+        "setDbSlave",
+        "setDbStatus",
+        "setDbrunMode",
+        "setMasterStatus",
+        "setMyDbPos",
+        "setMyPort",
+        "setRootPwd",
+        "setSkipGrantTables",
+        "setSlaveStatus",
+        "setSlaveSyncMode",
+        "setUserPwd",
+        "start",
+        "status",
+        "stop",
+        "syncDatabaseRepair",
+        "syncDatabaseRepairLog",
+        "syncDatabaseRepairTempFile",
+        "syncGetDatabases",
+        "syncToDatabases",
+        "toDbBase",
+        "trySlaveSyncBugfix",
+        "uninstallPreInspection",
+        "updateMasterRepSlaveUser",
+        "updateSlaveSSH",
+        "writeDbSyncStatus"
+      ],
+      "declared_action_strings": [
+        "add_db",
+        "add_master_rep_slave_user",
+        "add_slave_ssh",
+        "add_slave_sync_user",
+        "alter_table",
+        "bin_log",
+        "binlog_list",
+        "clean_bin_log",
+        "conf",
+        "db_status",
+        "del_db",
+        "del_master_rep_slave_user",
+        "del_slave_ssh",
+        "del_slave_sync_user",
+        "delete_db_backup",
+        "delete_slave",
+        "do_full_sync",
+        "dump_mysql_data",
+        "error_log",
+        "fix_db_access",
+        "fix_db_access2",
+        "full_sync",
+        "full_sync_cmd",
+        "get_db_access",
+        "get_db_backup_import_list",
+        "get_db_backup_list",
+        "get_db_info",
+        "get_db_list",
+        "get_dbrun_mode",
+        "get_master_rep_slave_list",
+        "get_master_rep_slave_user_cmd",
+        "get_master_status",
+        "get_masterdb_list",
+        "get_slave_list",
+        "get_slave_ssh_by_ip",
+        "get_slave_ssh_list",
+        "get_slave_sync_cmd",
+        "get_slave_sync_mode",
+        "get_slave_sync_user_by_ip",
+        "get_slave_sync_user_list",
+        "get_total_statistics",
+        "import_db_backup",
+        "import_db_external",
+        "import_db_external_progress",
+        "import_db_external_progress_bar",
+        "init_pwd",
+        "init_slave_status",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "my_db_pos",
+        "my_port",
+        "opt_table",
+        "reload",
+        "repair_table",
+        "reset_master",
+        "restart",
+        "root_pwd",
+        "run_info",
+        "set_db_access",
+        "set_db_backup",
+        "set_db_master",
+        "set_db_pos",
+        "set_db_ps",
+        "set_db_rw",
+        "set_db_slave",
+        "set_db_status",
+        "set_dbmaster_access",
+        "set_dbrun_mode",
+        "set_master_status",
+        "set_my_port",
+        "set_root_pwd",
+        "set_slave_status",
+        "set_slave_sync_mode",
+        "set_user_pwd",
+        "show_log",
+        "start",
+        "status",
+        "stop",
+        "sync_database_repair",
+        "sync_database_repair_log",
+        "sync_get_databases",
+        "sync_to_databases",
+        "try_slave_sync_bugfix",
+        "uninstall_pre_inspection",
+        "update_master_rep_slave_user",
+        "update_slave_ssh"
+      ],
+      "version_directories": [
+        "5.7",
+        "8.0",
+        "8.2",
+        "8.3",
+        "8.4",
+        "9.0",
+        "9.1",
+        "9.2",
+        "9.3"
+      ]
+    },
+    {
+      "name": "nezha",
+      "title": "哪吒监控",
+      "type": 0,
+      "versions": [
+        "0.15.2"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [],
+      "declared_action_strings": [],
+      "version_directories": [
+        "0.15.2"
+      ]
+    },
+    {
+      "name": "ollama",
+      "title": "ollama",
+      "type": 7,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [],
+      "declared_action_strings": [],
+      "version_directories": [
+        "1.0"
+      ]
+    },
+    {
+      "name": "op_load_balance",
+      "title": "OP负载均衡",
+      "type": "其他插件",
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "add_load_balance",
+        "checkArgs",
+        "checkUrl",
+        "contentReplace",
+        "deleteLoadBalanceAllCfg",
+        "edit_load_balance",
+        "getArgs",
+        "getConf",
+        "getHealthStatus",
+        "getLogs",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "http_get",
+        "initDreplace",
+        "installPreInspection",
+        "loadBalanceConf",
+        "loadBalanceDelete",
+        "loadBalanceList",
+        "makeConfServerList",
+        "makeLoadBalanceAllCfg",
+        "reload",
+        "restart",
+        "restartWeb",
+        "start",
+        "status",
+        "stop",
+        "writeConf"
+      ],
+      "declared_action_strings": [
+        "add_load_balance",
+        "check_url",
+        "get_health_status",
+        "get_logs",
+        "install_pre_inspection",
+        "load_balance_delete",
+        "load_balance_list",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "op_waf",
+      "title": "OP防火墙",
+      "type": "其他插件",
+      "versions": [
+        "0.4.1"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "addAreaLimit",
+        "addIpBlack",
+        "addIpWhite",
+        "addRule",
+        "addSiteCdnHeader",
+        "addSiteRule",
+        "areaLimitSwitch",
+        "autoCpHtml",
+        "autoCpImport",
+        "autoMakeConfig",
+        "autoMakeLuaConf",
+        "autoMakeLuaConfSingle",
+        "autoMakeLuaHtmlSingle",
+        "autoMakeLuaImportSingle",
+        "checkArgs",
+        "cleanDropIp",
+        "contentReplace",
+        "delAreaLimit",
+        "delIpv6Black",
+        "dstWafConfPath",
+        "getAreaLimit",
+        "getArgs",
+        "getConf",
+        "getCountry",
+        "getDefaultSite",
+        "getJsonPath",
+        "getLogsList",
+        "getPluginDir",
+        "getPluginName",
+        "getRule",
+        "getRuleJsonPath",
+        "getSafeLogs",
+        "getServerDir",
+        "getSiteConfig",
+        "getSiteConfigByName",
+        "getSiteListData",
+        "getSiteRule",
+        "getWafConf",
+        "getWafSrceen",
+        "htmlToLuaFile",
+        "importData",
+        "initDefaultInfo",
+        "initDomainInfo",
+        "initDreplace",
+        "initSiteInfo",
+        "initTotalInfo",
+        "installPreInspection",
+        "listToLuaFile",
+        "makeOpDstRunLua",
+        "makeOpDstStopLua",
+        "modifyRule",
+        "outputData",
+        "pSqliteDb",
+        "reload",
+        "reload_hook",
+        "removeIpBlack",
+        "removeIpWhite",
+        "removeRule",
+        "removeSiteCdnHeader",
+        "removeSiteRule",
+        "restart",
+        "restartWeb",
+        "saveScanRule",
+        "setCcConf",
+        "setConfRestartWeb",
+        "setDefaultSite",
+        "setIpv6Black",
+        "setObjOpen",
+        "setObjStatus",
+        "setRetry",
+        "setRuleState",
+        "setSafeVerify",
+        "setSiteCcConf",
+        "setSiteObjOpen",
+        "setSiteRetry",
+        "start",
+        "status",
+        "stop",
+        "testRun"
+      ],
+      "declared_action_strings": [
+        "add_area_limit",
+        "add_ip_black",
+        "add_ip_white",
+        "add_rule",
+        "add_site_cdn_header",
+        "add_site_rule",
+        "area_limit_switch",
+        "clean_drop_ip",
+        "conf",
+        "del_area_limit",
+        "del_ipv6_black",
+        "get_area_limit",
+        "get_country",
+        "get_default_site",
+        "get_logs_list",
+        "get_rule",
+        "get_safe_logs",
+        "get_site_config",
+        "get_site_config_byname",
+        "get_site_rule",
+        "import_data",
+        "install_pre_inspection",
+        "modify_rule",
+        "output_data",
+        "reload",
+        "remove_ip_black",
+        "remove_ip_white",
+        "remove_rule",
+        "remove_site_cdn_header",
+        "remove_site_rule",
+        "restart",
+        "save_scan_rule",
+        "set_cc_conf",
+        "set_ipv6_black",
+        "set_obj_open",
+        "set_obj_status",
+        "set_retry",
+        "set_rule_state",
+        "set_safe_verify",
+        "set_site_cc_conf",
+        "set_site_obj_open",
+        "set_site_retry",
+        "start",
+        "status",
+        "stop",
+        "test_run",
+        "waf_conf",
+        "waf_srceen"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "openresty",
+      "title": "OpenResty",
+      "type": "其他插件",
+      "versions": [
+        "1.17.8",
+        "1.19.3",
+        "1.21.4",
+        "1.25.3",
+        "1.27.1",
+        "rtmp"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "checkAuthEq",
+        "clearTemp",
+        "confReplace",
+        "cronAddCheck",
+        "cronCheck",
+        "cronDelCheck",
+        "errorLogPath",
+        "getArgs",
+        "getCfg",
+        "getConf",
+        "getConfTpl",
+        "getFileOwner",
+        "getInitDFile",
+        "getInitDTpl",
+        "getNgxStatusPort",
+        "getOs",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "makeWorkerCpuAffinity",
+        "op_submit_init_restart",
+        "op_submit_systemctl_restart",
+        "reload",
+        "replaceChar",
+        "restart",
+        "restyOp",
+        "restyOp_restart",
+        "runInfo",
+        "setCfg",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "check",
+        "conf",
+        "cron_add_check",
+        "cron_del_check",
+        "error_log",
+        "get_cfg",
+        "get_os",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_info",
+        "set_cfg",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": [
+        "1.17.8",
+        "1.19.3",
+        "1.21.4",
+        "1.25.3",
+        "1.27.1",
+        "1.29.2",
+        "rtmp"
+      ]
+    },
+    {
+      "name": "pgadmin",
+      "title": "pgadmin",
+      "type": "运行环境",
+      "versions": [
+        "4"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__delete_port",
+        "__release_port",
+        "accessLog",
+        "checkArgs",
+        "cleanNginxLog",
+        "contentReplace",
+        "delPort",
+        "errorLog",
+        "getArgs",
+        "getCfg",
+        "getConf",
+        "getHomePage",
+        "getPgOption",
+        "getPgPort",
+        "getPluginDir",
+        "getPluginName",
+        "getPort",
+        "getPythonName",
+        "getServerDir",
+        "initCfg",
+        "initPgConfFile",
+        "initReplace",
+        "installVersion",
+        "openPort",
+        "pgOp",
+        "reload",
+        "restart",
+        "returnCfg",
+        "setCfg",
+        "setPgPassword",
+        "setPgPort",
+        "setPgUsername",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "access_log",
+        "conf",
+        "error_log",
+        "get_cfg",
+        "get_home_page",
+        "get_pg_option",
+        "get_pg_port",
+        "reload",
+        "restart",
+        "set_pg_password",
+        "set_pg_port",
+        "set_pg_username",
+        "start",
+        "status",
+        "stop",
+        "version"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "php",
+      "title": "PHP",
+      "type": "PHP语言解释器",
+      "versions": [
+        "53",
+        "54",
+        "55",
+        "56",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85"
+      ],
+      "shell": "install.sh",
+      "coexist": true,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "cleanSessionOld",
+        "contentReplace",
+        "fpmLog",
+        "fpmSlowLog",
+        "getArgs",
+        "getConf",
+        "getConfAppStart",
+        "getDisableFunc",
+        "getFpmAddress",
+        "getFpmConfFile",
+        "getFpmConfig",
+        "getFpmFile",
+        "getFpmStatus",
+        "getInitDFile",
+        "getLibConf",
+        "getLimitConf",
+        "getPhpConf",
+        "getPhpSocket",
+        "getPhpinfo",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getSessionConf",
+        "getSessionCount",
+        "getSessionCount_Origin",
+        "get_lib_conf",
+        "get_php_info",
+        "initReplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installLib",
+        "installPreInspection",
+        "libConfCommon",
+        "makeOpenrestyConf",
+        "makePhpIni",
+        "opcacheBlacklistFile",
+        "phpFpmPoolReplace",
+        "phpFpmReplace",
+        "phpOp",
+        "phpPrependFile",
+        "reload",
+        "restart",
+        "setDisableFunc",
+        "setFpmConfig",
+        "setMaxSize",
+        "setMaxTime",
+        "setSessionConf",
+        "start",
+        "status",
+        "status_progress",
+        "stop",
+        "submitPhpConf",
+        "uninstallLib"
+      ],
+      "declared_action_strings": [
+        "app_start",
+        "clean_session_old",
+        "conf",
+        "fpm_log",
+        "fpm_slow_log",
+        "get_disable_func",
+        "get_fpm_conf",
+        "get_fpm_conf_file",
+        "get_fpm_file",
+        "get_fpm_status",
+        "get_lib_conf",
+        "get_limit_conf",
+        "get_php_conf",
+        "get_phpinfo",
+        "get_session_conf",
+        "get_session_count",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_lib",
+        "install_pre_inspection",
+        "opcache_blacklist_file",
+        "reload",
+        "restart",
+        "set_disable_func",
+        "set_fpm_conf",
+        "set_max_size",
+        "set_max_time",
+        "set_session_conf",
+        "start",
+        "status",
+        "stop",
+        "submit_php_conf",
+        "uninstall_lib"
+      ],
+      "version_directories": [
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85",
+        "common"
+      ]
+    },
+    {
+      "name": "php-apt",
+      "title": "PHP[APT]",
+      "type": "PHP语言解释器",
+      "versions": [
+        "56",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85"
+      ],
+      "shell": "install.sh",
+      "coexist": true,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "cleanSessionOld",
+        "contentReplace",
+        "deleteConfList",
+        "fpmLog",
+        "fpmSlowLog",
+        "getAppDir",
+        "getArgs",
+        "getConf",
+        "getConfAppStart",
+        "getDisableFunc",
+        "getDstEnablePHP",
+        "getFpmAddress",
+        "getFpmConfFile",
+        "getFpmConfig",
+        "getFpmFile",
+        "getFpmStatus",
+        "getLibConf",
+        "getLimitConf",
+        "getPhpConf",
+        "getPhpinfo",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getSessionConf",
+        "getSessionCount",
+        "getSessionCount_Origin",
+        "get_php_info",
+        "initReplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installLib",
+        "installPreInspection",
+        "localVersion",
+        "makeOpConf",
+        "opcacheBlacklistFile",
+        "phpFpmReplace",
+        "phpFpmWwwReplace",
+        "phpOp",
+        "phpPrependFile",
+        "reload",
+        "restart",
+        "setDisableFunc",
+        "setFpmConfig",
+        "setMaxSize",
+        "setMaxTime",
+        "setSessionConf",
+        "start",
+        "status",
+        "stop",
+        "submitPhpConf",
+        "uninstallLib"
+      ],
+      "declared_action_strings": [
+        "app_start",
+        "clean_session_old",
+        "conf",
+        "fpm_log",
+        "fpm_slow_log",
+        "get_disable_func",
+        "get_fpm_conf",
+        "get_fpm_conf_file",
+        "get_fpm_file",
+        "get_fpm_status",
+        "get_lib_conf",
+        "get_limit_conf",
+        "get_php_conf",
+        "get_phpinfo",
+        "get_session_conf",
+        "get_session_count",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_lib",
+        "install_pre_inspection",
+        "opcache_blacklist_file",
+        "reload",
+        "restart",
+        "set_disable_func",
+        "set_fpm_conf",
+        "set_max_size",
+        "set_max_time",
+        "set_session_conf",
+        "start",
+        "status",
+        "stop",
+        "submit_php_conf",
+        "uninstall_lib"
+      ],
+      "version_directories": [
+        "56",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85",
+        "common"
+      ]
+    },
+    {
+      "name": "php-guard",
+      "title": "PHP守护",
+      "type": "语言解释器",
+      "versions": "1.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "getArgs",
+        "getInitDFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir"
+      ],
+      "declared_action_strings": [
+        "status"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "php-yum",
+      "title": "PHP[YUM]",
+      "type": "PHP语言解释器",
+      "versions": [
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85"
+      ],
+      "shell": "install.sh",
+      "coexist": true,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "cleanSessionOld",
+        "contentReplace",
+        "deleteConfList",
+        "fpmLog",
+        "fpmSlowLog",
+        "getAppDir",
+        "getArgs",
+        "getConf",
+        "getConfAppStart",
+        "getDisableFunc",
+        "getDstEnablePHP",
+        "getFpmAddress",
+        "getFpmConfFile",
+        "getFpmConfig",
+        "getFpmFile",
+        "getFpmStatus",
+        "getLibConf",
+        "getLimitConf",
+        "getPhpConf",
+        "getPhpinfo",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getSessionConf",
+        "getSessionCount",
+        "getSessionCount_Origin",
+        "get_php_info",
+        "initReplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installLib",
+        "installPreInspection",
+        "makeOpenrestyConf",
+        "opcacheBlacklistFile",
+        "phpFpmReplace",
+        "phpFpmWwwReplace",
+        "phpOp",
+        "phpPrependFile",
+        "reload",
+        "restart",
+        "setDisableFunc",
+        "setFpmConfig",
+        "setMaxSize",
+        "setMaxTime",
+        "setSessionConf",
+        "start",
+        "status",
+        "stop",
+        "submitPhpConf",
+        "uninstallLib"
+      ],
+      "declared_action_strings": [
+        "app_start",
+        "clean_session_old",
+        "conf",
+        "fpm_log",
+        "fpm_slow_log",
+        "get_disable_func",
+        "get_fpm_conf",
+        "get_fpm_conf_file",
+        "get_fpm_file",
+        "get_fpm_status",
+        "get_lib_conf",
+        "get_limit_conf",
+        "get_php_conf",
+        "get_phpinfo",
+        "get_session_conf",
+        "get_session_count",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_lib",
+        "install_pre_inspection",
+        "opcache_blacklist_file",
+        "reload",
+        "restart",
+        "set_disable_func",
+        "set_fpm_conf",
+        "set_max_size",
+        "set_max_time",
+        "set_session_conf",
+        "start",
+        "status",
+        "stop",
+        "submit_php_conf",
+        "uninstall_lib"
+      ],
+      "version_directories": [
+        "74",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85",
+        "common"
+      ]
+    },
+    {
+      "name": "phpldapadmin",
+      "title": "phpLDAPadmin",
+      "type": "运行环境",
+      "versions": [
+        "1.2.6.7"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__delete_port",
+        "__release_port",
+        "accessLog",
+        "checkArgs",
+        "contentReplace",
+        "delPort",
+        "errorLog",
+        "getArgs",
+        "getCachePhpVer",
+        "getCfg",
+        "getConf",
+        "getConfInc",
+        "getHomePage",
+        "getPhpVer",
+        "getPluginDir",
+        "getPluginName",
+        "getPmaOption",
+        "getPmaPort",
+        "getPort",
+        "getServerDir",
+        "getSetPhpVer",
+        "initCfg",
+        "installVersion",
+        "openPort",
+        "reload",
+        "restart",
+        "returnCfg",
+        "setCfg",
+        "setPhpVer",
+        "setPmaPassword",
+        "setPmaPath",
+        "setPmaPort",
+        "setPmaUsername",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "access_log",
+        "conf",
+        "config_inc",
+        "error_log",
+        "get_cfg",
+        "get_home_page",
+        "get_pma_option",
+        "get_pma_port",
+        "get_set_php_ver",
+        "reload",
+        "restart",
+        "set_php_ver",
+        "set_pma_password",
+        "set_pma_path",
+        "set_pma_port",
+        "set_pma_username",
+        "start",
+        "status",
+        "stop",
+        "version"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "phpmyadmin",
+      "title": "phpMyAdmin",
+      "type": "运行环境",
+      "versions": [
+        "4.4.15",
+        "4.9.11",
+        "5.2.1"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__delete_port",
+        "__release_port",
+        "accessLog",
+        "checkArgs",
+        "contentReplace",
+        "delPort",
+        "errorLog",
+        "getArgs",
+        "getCachePhpVer",
+        "getCfg",
+        "getConf",
+        "getConfInc",
+        "getHomePage",
+        "getPhpVer",
+        "getPluginDir",
+        "getPluginName",
+        "getPmaOption",
+        "getPmaPort",
+        "getPort",
+        "getServerDir",
+        "getSetPhpVer",
+        "initCfg",
+        "installPreInspection",
+        "installVersion",
+        "openPort",
+        "pluginsDbSupport",
+        "reload",
+        "restart",
+        "returnCfg",
+        "setCfg",
+        "setPhpVer",
+        "setPmaChoose",
+        "setPmaPassword",
+        "setPmaPath",
+        "setPmaPort",
+        "setPmaUsername",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "access_log",
+        "conf",
+        "config_inc",
+        "error_log",
+        "get_cfg",
+        "get_home_page",
+        "get_pma_option",
+        "get_pma_port",
+        "get_set_php_ver",
+        "install_pre_inspection",
+        "plugins_db_support",
+        "reload",
+        "restart",
+        "set_php_ver",
+        "set_pma_choose",
+        "set_pma_password",
+        "set_pma_path",
+        "set_pma_port",
+        "set_pma_username",
+        "start",
+        "status",
+        "stop",
+        "version"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "postgresql",
+      "title": "PostgreSQL",
+      "type": "运行环境",
+      "versions": [
+        "14",
+        "15",
+        "16",
+        "17"
+      ],
+      "shell": "install.sh",
+      "coexist": false,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "addDb",
+        "addMasterRepSlaveUser",
+        "addSlaveSSH",
+        "appCMD",
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "delDb",
+        "delMasterRepSlaveUser",
+        "delSlaveSSH",
+        "deleteDbBackup",
+        "doFullSync",
+        "execShellPg",
+        "getArgs",
+        "getBackupDir",
+        "getConf",
+        "getDbAccess",
+        "getDbBackupList",
+        "getDbBackupListFunc",
+        "getDbList",
+        "getDbPort",
+        "getInitDFile",
+        "getInitdTpl",
+        "getMasterRepSlaveList",
+        "getMasterRepSlaveUserCmd",
+        "getMasterStatus",
+        "getMyDbPos",
+        "getPgPort",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getSlaveList",
+        "getSlaveSSHByIp",
+        "getSlaveSSHList",
+        "getSlowLog",
+        "getSocketFile",
+        "getUnit",
+        "importDbBackup",
+        "initConfig",
+        "initDreplace",
+        "initPgData",
+        "initPgPwd",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "pGetDbUser",
+        "pSqliteDb",
+        "pgBack",
+        "pgBackList",
+        "pgCmd",
+        "pgDb",
+        "pgDbStatus",
+        "pgHbaConf",
+        "pgOp",
+        "pgSetDbStatus",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "rootPwd",
+        "runInfo",
+        "runLog",
+        "sedConf",
+        "setDbAccess",
+        "setDbBackup",
+        "setDbRw",
+        "setMasterStatus",
+        "setPgPort",
+        "setSlaveStatus",
+        "setUserPwd",
+        "slaveSyncCmd",
+        "start",
+        "status",
+        "stop",
+        "syncGetDatabases",
+        "uninstallPreInspection",
+        "updateSlaveSSH",
+        "writeDbSyncStatus"
+      ],
+      "declared_action_strings": [
+        "add_db",
+        "add_master_rep_slave_user",
+        "add_slave_ssh",
+        "conf",
+        "config_tpl",
+        "db_status",
+        "del_db",
+        "del_master_rep_slave_user",
+        "del_slave_ssh",
+        "delete_db_backup",
+        "do_full_sync",
+        "get_db_access",
+        "get_db_list",
+        "get_master_rep_slave_list",
+        "get_master_rep_slave_user_cmd",
+        "get_master_status",
+        "get_slave_list",
+        "get_slave_ssh_by_ip",
+        "get_slave_ssh_list",
+        "import_db_backup",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "pg_back",
+        "pg_back_list",
+        "pg_hba_conf",
+        "pg_port",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "root_pwd",
+        "run_info",
+        "run_log",
+        "set_db_access",
+        "set_db_rw",
+        "set_db_status",
+        "set_master_status",
+        "set_pg_port",
+        "set_slave_status",
+        "set_user_pwd",
+        "slave_sync_cmd",
+        "slow_log",
+        "start",
+        "status",
+        "stop",
+        "sync_get_databases",
+        "uninstall_pre_inspection",
+        "update_slave_ssh"
+      ],
+      "version_directories": [
+        "14",
+        "15",
+        "16",
+        "17",
+        "18"
+      ]
+    },
+    {
+      "name": "prometheus",
+      "title": "prometheus",
+      "type": 0,
+      "versions": [
+        "3.5.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "contentReplace",
+        "gOp",
+        "getArgs",
+        "getConf",
+        "getInitDFile",
+        "getInitDTpl",
+        "getInstallVerion",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "openPort",
+        "prometheusUrl",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "uninstallPreInspection"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "prometheus_url",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "version_directories": [
+        "3.5.0"
+      ]
+    },
+    {
+      "name": "pureftp",
+      "title": "PureFtpd",
+      "type": null,
+      "versions": "1.0.49",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "addFtp",
+        "checkArgs",
+        "contentReplace",
+        "delFtp",
+        "ftp_release_port",
+        "getArgs",
+        "getConf",
+        "getFtpList",
+        "getFtpPort",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getWwwDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "modFtp",
+        "modFtpPort",
+        "openFtpPort",
+        "pfOp",
+        "pftpAdd",
+        "pftpDB",
+        "pftpMod",
+        "pftpReload",
+        "pftpStart",
+        "pftpStop",
+        "pftpUser",
+        "reload",
+        "restart",
+        "start",
+        "startPort",
+        "status",
+        "stop",
+        "stopPort"
+      ],
+      "declared_action_strings": [
+        "add_ftp",
+        "conf",
+        "del_ftp",
+        "get_ftp_list",
+        "get_www_dir",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "mod_ftp",
+        "mod_ftp_port",
+        "reload",
+        "restart",
+        "start",
+        "start_ftp",
+        "status",
+        "stop",
+        "stop_ftp"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "redis",
+      "title": "Redis",
+      "type": 0,
+      "versions": [
+        "4.0.14",
+        "5.0.14",
+        "6.0.20",
+        "6.2.16",
+        "7.0.15",
+        "7.2.9",
+        "7.4.7",
+        "8.0.5",
+        "8.2.3"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "clusterInfo",
+        "clusterNodes",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getPort",
+        "getRedisCmd",
+        "getRedisConf",
+        "getRedisConfInfo",
+        "getServerDir",
+        "infoReplication",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "readConfigTpl",
+        "redisOp",
+        "reload",
+        "restart",
+        "runInfo",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "submitRedisConf"
+      ],
+      "declared_action_strings": [
+        "cluster_info",
+        "cluster_nodes",
+        "conf",
+        "config_tpl",
+        "get_redis_conf",
+        "info_replication",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_redis_conf"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "rsyncd",
+      "title": "rsyncd",
+      "type": "软件",
+      "versions": "2.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__release_port",
+        "addRec",
+        "appAuthPwd",
+        "appConf",
+        "checkArgs",
+        "cmdRecCmd",
+        "cmdRecSecretKey",
+        "contentReplace",
+        "delRec",
+        "delRecBy",
+        "getArgs",
+        "getDefaultConf",
+        "getInitDFile",
+        "getInitDTpl",
+        "getLog",
+        "getLsyncdLog",
+        "getPluginDir",
+        "getPluginName",
+        "getRec",
+        "getRecList",
+        "getRecListData",
+        "getRecListDataBy",
+        "getServerDir",
+        "initConfigJson",
+        "initDReceive",
+        "initDSend",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "lsyncdAdd",
+        "lsyncdAddExclude",
+        "lsyncdConfLog",
+        "lsyncdDelete",
+        "lsyncdGet",
+        "lsyncdGetExclude",
+        "lsyncdList",
+        "lsyncdListFindIp",
+        "lsyncdListFindName",
+        "lsyncdLog",
+        "lsyncdOp",
+        "lsyncdReload",
+        "lsyncdRemoveExclude",
+        "lsyncdRun",
+        "makeLsyncdConf",
+        "openPort",
+        "reload",
+        "restart",
+        "rsyncOp",
+        "setDefaultConf",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "add_rec",
+        "cmd_rec_cmd",
+        "cmd_rec_secret_key",
+        "conf",
+        "del_rec",
+        "get_rec",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "lsyncd_add",
+        "lsyncd_add_exclude",
+        "lsyncd_conf_log",
+        "lsyncd_delete",
+        "lsyncd_get",
+        "lsyncd_get_exclude",
+        "lsyncd_list",
+        "lsyncd_log",
+        "lsyncd_remove_exclude",
+        "lsyncd_run",
+        "rec_list",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "simpleping",
+      "title": "SimplePing",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "appOp",
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getHomeDir",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getRunUser",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "ipList",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "ip_list",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "sphinx",
+      "title": "sphinx",
+      "type": 0,
+      "versions": [
+        "3.1.1",
+        "3.2.1",
+        "3.3.1",
+        "3.4.1",
+        "3.5.1",
+        "3.6.1",
+        "3.7.1",
+        "3.8.1"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "checkIndexSph",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getPort",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "makeDbToSphinx",
+        "makeDbToSphinxTest",
+        "mkdirAll",
+        "queryLog",
+        "readConfigTpl",
+        "rebuild",
+        "reload",
+        "restart",
+        "runLog",
+        "runStatus",
+        "sphOp",
+        "sphinxCmd",
+        "sphinxConfParse",
+        "start",
+        "status",
+        "stop",
+        "updateAll",
+        "updateDelta"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "db_to_sphinx",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "query_log",
+        "read_config_tpl",
+        "rebuild",
+        "reload",
+        "restart",
+        "run_log",
+        "run_status",
+        "sphinx_cmd",
+        "start",
+        "status",
+        "stop",
+        "update_all",
+        "update_delta"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "supervisor",
+      "title": "supervisor",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "addJob",
+        "checkArgs",
+        "confDList",
+        "confDlistErrorLog",
+        "confDlistTraceLog",
+        "configTpl",
+        "delJob",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDTpl",
+        "getJobInfo",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getSubConfDir",
+        "getSupList",
+        "getUserList",
+        "getUserListData",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "readConfigLogErrorTpl",
+        "readConfigLogTpl",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "restartJob",
+        "runLog",
+        "start",
+        "startJob",
+        "status",
+        "stop",
+        "supClearLog",
+        "supOp",
+        "updateJob"
+      ],
+      "declared_action_strings": [
+        "add_job",
+        "conf",
+        "confd_list",
+        "confd_list_error_log",
+        "confd_list_trace_log",
+        "config_tpl",
+        "del_job",
+        "get_job_info",
+        "get_sup_list",
+        "get_user_list",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_log_error_tpl",
+        "read_config_log_tpl",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "restart_job",
+        "run_log",
+        "start",
+        "start_job",
+        "status",
+        "stop",
+        "sup_clear_log",
+        "update_job"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "swap",
+      "title": "swap",
+      "type": 0,
+      "versions": "1.1",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "changeSwap",
+        "checkArgs",
+        "getArgs",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "swapOp",
+        "swapStatus"
+      ],
+      "declared_action_strings": [
+        "change_swap",
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "swap_status"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "sys-opt",
+      "title": "系统优化",
+      "type": "扩展",
+      "versions": "1.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "cronRunLog",
+        "getArgs",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "msgRunLog",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "secRunLog",
+        "showHosts",
+        "showResolv",
+        "start",
+        "status",
+        "stop",
+        "sysConf",
+        "systemRunLog"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "config_tpl",
+        "cron_run_log",
+        "hosts",
+        "msg_run_log",
+        "read_config_tpl",
+        "reload",
+        "resolv",
+        "restart",
+        "sec_run_log",
+        "start",
+        "status",
+        "stop",
+        "sys_run_log"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "system_safe",
+      "title": "系统加固",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": false,
+      "version_directories": []
+    },
+    {
+      "name": "tamper_proof_py",
+      "title": "网站防篡改程序PY",
+      "type": "soft",
+      "versions": "1.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [],
+      "declared_action_strings": [],
+      "version_directories": []
+    },
+    {
+      "name": "task_manager",
+      "title": "任务管理器",
+      "type": 0,
+      "versions": "1.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "getArgs",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "status"
+      ],
+      "declared_action_strings": [
+        "status"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "tgbot",
+      "title": "tgbot",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "botExtList",
+        "checkArgs",
+        "getArgs",
+        "getBotConf",
+        "getConfigData",
+        "getExtCfg",
+        "getExtCfgByName",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "reload",
+        "restart",
+        "runLog",
+        "setBotConf",
+        "setExtStatus",
+        "start",
+        "status",
+        "stop",
+        "tbOp",
+        "uninstallPreInspection",
+        "writeConf",
+        "writeExtCfg"
+      ],
+      "declared_action_strings": [
+        "bot_ext_list",
+        "get_bot_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_log",
+        "set_bot_conf",
+        "set_ext_status",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "tgclient",
+      "title": "tgclient",
+      "type": 0,
+      "versions": [
+        "1.1"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "clientExtList",
+        "getArgs",
+        "getClientConf",
+        "getConfigData",
+        "getExtCfg",
+        "getExtCfgByName",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "reload",
+        "restart",
+        "runLog",
+        "setClientConf",
+        "setExtStatus",
+        "start",
+        "status",
+        "stop",
+        "tbOp",
+        "uninstallPreInspection",
+        "writeConf",
+        "writeExtCfg"
+      ],
+      "declared_action_strings": [
+        "client_ext_list",
+        "get_client_conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_log",
+        "set_client_conf",
+        "set_ext_status",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "valkey",
+      "title": "valkey",
+      "type": 0,
+      "versions": [
+        "8.0.1",
+        "8.1.3"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "clusterInfo",
+        "clusterNodes",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getConfTpl",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getPort",
+        "getRedisCmd",
+        "getRedisConf",
+        "getRedisConfInfo",
+        "getServerDir",
+        "infoReplication",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runInfo",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "submitRedisConf",
+        "wkOp"
+      ],
+      "declared_action_strings": [
+        "cluster_info",
+        "cluster_nodes",
+        "conf",
+        "config_tpl",
+        "get_redis_conf",
+        "info_replication",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "submit_redis_conf"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "varnish",
+      "title": "varnish",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "confService",
+        "configTpl",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "readConfigTpl",
+        "reload",
+        "restart",
+        "runInfo",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "vaOp"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "conf_service",
+        "config_tpl",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "read_config_tpl",
+        "reload",
+        "restart",
+        "run_info",
+        "run_log",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "webhook",
+      "title": "WebHook",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "addCfg",
+        "addHook",
+        "addHookShell",
+        "checkArgs",
+        "configTpl",
+        "contentReplace",
+        "delHook",
+        "getArgs",
+        "getCfg",
+        "getCfgFilePath",
+        "getList",
+        "getLog",
+        "getLogCb",
+        "getPluginDir",
+        "getPluginName",
+        "getRunShellCmd",
+        "getServerDir",
+        "initCfg",
+        "readConfigTpl",
+        "runShell",
+        "runShellArgs",
+        "status"
+      ],
+      "declared_action_strings": [
+        "add_hook",
+        "config_tpl",
+        "del_hook",
+        "get_list",
+        "get_log",
+        "read_config_tpl",
+        "run_shell",
+        "run_shell_cmd",
+        "status"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "webssh",
+      "title": "SSH终端",
+      "type": "扩展",
+      "versions": "2.0",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [],
+      "declared_action_strings": [],
+      "version_directories": []
+    },
+    {
+      "name": "webstats",
+      "title": "网站统计",
+      "type": 0,
+      "versions": "0.2.5",
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "attacHistoryLogHack",
+        "checkArgs",
+        "closeLuaNeedRequestBody",
+        "getArgs",
+        "getClientStatList",
+        "getConf",
+        "getDateRangeList",
+        "getDefaultSite",
+        "getGlobalConf",
+        "getIpStatList",
+        "getLogsErrorList",
+        "getLogsList",
+        "getLogsRealtimeInfo",
+        "getOverviewList",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getSiteConf",
+        "getSiteList",
+        "getSiteListData",
+        "getSiteStatInfo",
+        "getSpiderStatList",
+        "getUriStatList",
+        "getWebLogCount",
+        "initDreplace",
+        "installPreInspection",
+        "listToLuaFile",
+        "loadConfigFile",
+        "loadDebugLogFile",
+        "loadLuaFile",
+        "loadLuaFileReload",
+        "loadLuaSiteFile",
+        "luaConf",
+        "luaRestart",
+        "makeSiteConfig",
+        "openLuaNeedRequestBody",
+        "pSqliteDb",
+        "reload",
+        "restart",
+        "setDefaultSite",
+        "setGlobalConf",
+        "setSiteConf",
+        "start",
+        "status",
+        "stop",
+        "toSumField",
+        "uninstallPreInspection"
+      ],
+      "declared_action_strings": [
+        "get_client_stat_list",
+        "get_default_site",
+        "get_global_conf",
+        "get_ip_stat_list",
+        "get_logs_error_list",
+        "get_logs_list",
+        "get_logs_realtime_info",
+        "get_overview_list",
+        "get_site_conf",
+        "get_site_list",
+        "get_spider_stat_list",
+        "get_uri_stat_list",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_info",
+        "set_global_conf",
+        "set_site_conf",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "xhprof",
+      "title": "xhprof",
+      "type": "运行环境",
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "contentReplace",
+        "contentReplacePHP",
+        "getArgs",
+        "getCachePhpVer",
+        "getConf",
+        "getConfAppStart",
+        "getHomePage",
+        "getPhpVer",
+        "getPluginDir",
+        "getPluginName",
+        "getPort",
+        "getServerDir",
+        "getSetPhpVer",
+        "getXhPort",
+        "installPreInspection",
+        "phpPrependFile",
+        "reload",
+        "restart",
+        "setPhpVer",
+        "setXhPort",
+        "start",
+        "status",
+        "stop"
+      ],
+      "declared_action_strings": [
+        "app_start",
+        "conf",
+        "get_home_page",
+        "get_set_php_ver",
+        "get_xhprof_port",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "set_php_ver",
+        "set_xhprof_port",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "xui",
+      "title": "xui",
+      "type": 0,
+      "versions": [
+        "1.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "__delete_port",
+        "__release_port",
+        "closePort",
+        "getArgs",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "getServiceFile",
+        "getXuiInfo",
+        "getXuiPort",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "openPort",
+        "pSqliteDb",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop",
+        "xuiOp"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "info",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "start",
+        "status",
+        "stop"
+      ],
+      "version_directories": []
+    },
+    {
+      "name": "zabbix",
+      "title": "Zabbix",
+      "type": 0,
+      "versions": [
+        "6.0",
+        "7.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "checkArgs",
+        "contentReplace",
+        "getArgs",
+        "getConf",
+        "getInitDFile",
+        "getInitDTpl",
+        "getInstallVerion",
+        "getInstalledPhpConfDir",
+        "getMySQLBin",
+        "getMySQLBinLink",
+        "getMySQLConf",
+        "getMySQLPort",
+        "getMySQLSocketFile",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initAgentConf",
+        "initDreplace",
+        "initOpConf",
+        "initPhpConf",
+        "initZsConf",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "isInstalledMySQL",
+        "isInstalledPhp",
+        "openPort",
+        "pMysqlDb",
+        "pSqliteDb",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "uninstallPreInspection",
+        "zOp",
+        "zabbixAgentConf",
+        "zabbixAgentLog",
+        "zabbixImportMySQLData",
+        "zabbixImportMySQLDataFile",
+        "zabbixNginxConf",
+        "zabbixPhpConf",
+        "zabbixServerConf"
+      ],
+      "declared_action_strings": [
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "php_conf",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection",
+        "zabbix_agent_conf",
+        "zabbix_agent_log",
+        "zabbix_server_conf"
+      ],
+      "version_directories": [
+        "6.0",
+        "7.0"
+      ]
+    },
+    {
+      "name": "zabbix_agent",
+      "title": "Zabbix Agent",
+      "type": 0,
+      "versions": [
+        "7.0"
+      ],
+      "shell": "install.sh",
+      "coexist": null,
+      "entrypoint_exists": true,
+      "entry_functions": [
+        "agentdConf",
+        "agentdDefaultConf",
+        "agentdReadConf",
+        "checkArgs",
+        "contentReplace",
+        "getArgs",
+        "getInitDFile",
+        "getInitDTpl",
+        "getPidFile",
+        "getPluginDir",
+        "getPluginName",
+        "getServerDir",
+        "initAgentConf",
+        "initAgentDConf",
+        "initDreplace",
+        "initdInstall",
+        "initdStatus",
+        "initdUinstall",
+        "installPreInspection",
+        "openPort",
+        "reload",
+        "restart",
+        "runLog",
+        "start",
+        "status",
+        "stop",
+        "uninstallPreInspection",
+        "zOp",
+        "zabbixAgentConf"
+      ],
+      "declared_action_strings": [
+        "agentd_conf",
+        "agentd_default_conf",
+        "agentd_read_conf",
+        "conf",
+        "initd_install",
+        "initd_status",
+        "initd_uninstall",
+        "install_pre_inspection",
+        "reload",
+        "restart",
+        "run_log",
+        "start",
+        "status",
+        "stop",
+        "uninstall_pre_inspection",
+        "zabbix_agent_conf"
+      ],
+      "version_directories": [
+        "6.0",
+        "7.0"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 24
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "list",
+      "path": "/list",
+      "methods": [
+        "POST"
+      ],
+      "line": 31
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "logs",
+      "path": "/logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 38
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "crontab_del",
+      "path": "/del",
+      "methods": [
+        "POST"
+      ],
+      "line": 44
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "del_logs",
+      "path": "/del_logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 50
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "set_cron_status",
+      "path": "/set_cron_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 57
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "get_data_list",
+      "path": "/get_data_list",
+      "methods": [
+        "POST"
+      ],
+      "line": 63
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "get_crond_find",
+      "path": "/get_crond_find",
+      "methods": [
+        "POST"
+      ],
+      "line": 71
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "modify_crond",
+      "path": "/modify_crond",
+      "methods": [
+        "POST"
+      ],
+      "line": 79
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "start_task",
+      "path": "/start_task",
+      "methods": [
+        "POST"
+      ],
+      "line": 102
+    },
+    {
+      "file": "web/admin/crontab/__init__.py",
+      "function": "add",
+      "path": "/add",
+      "methods": [
+        "POST"
+      ],
+      "line": 109
+    },
+    {
+      "file": "web/admin/dashboard/dashboard.py",
+      "function": "index",
+      "path": "/",
+      "methods": [
+        "GET"
+      ],
+      "line": 36
+    },
+    {
+      "file": "web/admin/dashboard/dashboard.py",
+      "function": "overview_stats",
+      "path": "/overview_stats",
+      "methods": [
+        "GET"
+      ],
+      "line": 43
+    },
+    {
+      "file": "web/admin/dashboard/dashboard.py",
+      "function": "admin_safe_path",
+      "path": "/<path>",
+      "methods": [
+        "GET"
+      ],
+      "line": 66
+    },
+    {
+      "file": "web/admin/dashboard/dashboard.py",
+      "function": "webhook",
+      "path": "/hook",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "line": 113
+    },
+    {
+      "file": "web/admin/dashboard/login.py",
+      "function": "login",
+      "path": "/login",
+      "methods": [
+        "GET"
+      ],
+      "line": 90
+    },
+    {
+      "file": "web/admin/dashboard/login.py",
+      "function": "close",
+      "path": "/close",
+      "methods": [
+        "GET"
+      ],
+      "line": 115
+    },
+    {
+      "file": "web/admin/dashboard/login.py",
+      "function": "code",
+      "path": "/code",
+      "methods": [
+        "GET"
+      ],
+      "line": 125
+    },
+    {
+      "file": "web/admin/dashboard/login.py",
+      "function": "check_login",
+      "path": "/check_login",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 138
+    },
+    {
+      "file": "web/admin/dashboard/login.py",
+      "function": "verifyLogin",
+      "path": "/verify_login",
+      "methods": [
+        "POST"
+      ],
+      "line": 144
+    },
+    {
+      "file": "web/admin/dashboard/login.py",
+      "function": "do_login",
+      "path": "/do_login",
+      "methods": [
+        "POST"
+      ],
+      "line": 171
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 33
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "check_exists_files",
+      "path": "/check_exists_files",
+      "methods": [
+        "POST"
+      ],
+      "line": 40
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "batch_paste",
+      "path": "/batch_paste",
+      "methods": [
+        "POST"
+      ],
+      "line": 67
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "zip",
+      "path": "/zip",
+      "methods": [
+        "POST"
+      ],
+      "line": 75
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "file_access",
+      "path": "/file_access",
+      "methods": [
+        "POST"
+      ],
+      "line": 85
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "set_file_access",
+      "path": "/set_file_access",
+      "methods": [
+        "POST"
+      ],
+      "line": 94
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "copy_file",
+      "path": "/copy_file",
+      "methods": [
+        "POST"
+      ],
+      "line": 107
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "get_body",
+      "path": "/get_body",
+      "methods": [
+        "POST"
+      ],
+      "line": 115
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "save_body",
+      "path": "/save_body",
+      "methods": [
+        "POST"
+      ],
+      "line": 122
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "get_file_last_body",
+      "path": "/get_last_body",
+      "methods": [
+        "POST"
+      ],
+      "line": 131
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "get_dir",
+      "path": "/get_dir",
+      "methods": [
+        "POST"
+      ],
+      "line": 148
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "unzip",
+      "path": "/unzip",
+      "methods": [
+        "POST"
+      ],
+      "line": 169
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "uncompress",
+      "path": "/uncompress",
+      "methods": [
+        "POST"
+      ],
+      "line": 179
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "set_batch_data",
+      "path": "/set_batch_data",
+      "methods": [
+        "POST"
+      ],
+      "line": 188
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "upload_file",
+      "path": "/upload_file",
+      "methods": [
+        "POST"
+      ],
+      "line": 199
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "upload_segment",
+      "path": "/upload_segment",
+      "methods": [
+        "POST"
+      ],
+      "line": 224
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "mv_file",
+      "path": "/mv_file",
+      "methods": [
+        "POST"
+      ],
+      "line": 239
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "create_file",
+      "path": "/create_file",
+      "methods": [
+        "POST"
+      ],
+      "line": 247
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "create_dir",
+      "path": "/create_dir",
+      "methods": [
+        "POST"
+      ],
+      "line": 255
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "get_dir_size",
+      "path": "/get_dir_size",
+      "methods": [
+        "POST"
+      ],
+      "line": 263
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "delete",
+      "path": "/delete",
+      "methods": [
+        "POST"
+      ],
+      "line": 274
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "delete_dir",
+      "path": "/delete_dir",
+      "methods": [
+        "POST"
+      ],
+      "line": 282
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "download",
+      "path": "/download",
+      "methods": [
+        "GET"
+      ],
+      "line": 289
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "download_file",
+      "path": "/download_file",
+      "methods": [
+        "POST"
+      ],
+      "line": 303
+    },
+    {
+      "file": "web/admin/files/files.py",
+      "function": "close_logs",
+      "path": "/close_logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 320
+    },
+    {
+      "file": "web/admin/files/recycle.py",
+      "function": "get_recycle_bin",
+      "path": "/get_recycle_bin",
+      "methods": [
+        "POST"
+      ],
+      "line": 27
+    },
+    {
+      "file": "web/admin/files/recycle.py",
+      "function": "re_recycle_bin",
+      "path": "/re_recycle_bin",
+      "methods": [
+        "POST"
+      ],
+      "line": 33
+    },
+    {
+      "file": "web/admin/files/recycle.py",
+      "function": "del_recycle_bin",
+      "path": "/del_recycle_bin",
+      "methods": [
+        "POST"
+      ],
+      "line": 39
+    },
+    {
+      "file": "web/admin/files/recycle.py",
+      "function": "recycle_bin",
+      "path": "/recycle_bin",
+      "methods": [
+        "POST"
+      ],
+      "line": 46
+    },
+    {
+      "file": "web/admin/files/recycle.py",
+      "function": "close_recycle_bin",
+      "path": "/close_recycle_bin",
+      "methods": [
+        "POST"
+      ],
+      "line": 52
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 25
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "get_list",
+      "path": "/get_list",
+      "methods": [
+        "POST"
+      ],
+      "line": 33
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "get_www_path",
+      "path": "/get_www_path",
+      "methods": [
+        "POST"
+      ],
+      "line": 41
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "get_ssh_info",
+      "path": "/get_ssh_info",
+      "methods": [
+        "POST"
+      ],
+      "line": 48
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "set_ping",
+      "path": "/set_ping",
+      "methods": [
+        "POST"
+      ],
+      "line": 55
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "set_ssh_port",
+      "path": "/set_ssh_port",
+      "methods": [
+        "POST"
+      ],
+      "line": 62
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "add_accept_port",
+      "path": "/add_accept_port",
+      "methods": [
+        "POST"
+      ],
+      "line": 69
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "del_accept_port",
+      "path": "/del_accept_port",
+      "methods": [
+        "POST"
+      ],
+      "line": 80
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "set_fw",
+      "path": "/set_fw",
+      "methods": [
+        "POST"
+      ],
+      "line": 90
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "set_ssh_root_status",
+      "path": "/set_ssh_root_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 98
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "set_ssh_pass_status",
+      "path": "/set_ssh_pass_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 106
+    },
+    {
+      "file": "web/admin/firewall/__init__.py",
+      "function": "set_ssh_pubkey_status",
+      "path": "/set_ssh_pubkey_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 114
+    },
+    {
+      "file": "web/admin/logs/__init__.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 25
+    },
+    {
+      "file": "web/admin/logs/__init__.py",
+      "function": "get_log_list",
+      "path": "/get_log_list",
+      "methods": [
+        "POST"
+      ],
+      "line": 32
+    },
+    {
+      "file": "web/admin/logs/__init__.py",
+      "function": "del_panel_logs",
+      "path": "/del_panel_logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 47
+    },
+    {
+      "file": "web/admin/logs/__init__.py",
+      "function": "get_audit_logs_files",
+      "path": "/get_audit_logs_files",
+      "methods": [
+        "POST"
+      ],
+      "line": 55
+    },
+    {
+      "file": "web/admin/logs/__init__.py",
+      "function": "get_audit_file",
+      "path": "/get_audit_file",
+      "methods": [
+        "POST"
+      ],
+      "line": 62
+    },
+    {
+      "file": "web/admin/monitor/__init__.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 27
+    },
+    {
+      "file": "web/admin/monitor/__init__.py",
+      "function": "api_overview",
+      "path": "/api/overview",
+      "methods": [
+        "GET"
+      ],
+      "line": 129
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 29
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "init",
+      "path": "/init",
+      "methods": [
+        "POST"
+      ],
+      "line": 36
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "init_install",
+      "path": "/init_install",
+      "methods": [
+        "POST"
+      ],
+      "line": 42
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "index_list",
+      "path": "/index_list",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 49
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "list",
+      "path": "/list",
+      "methods": [
+        "GET"
+      ],
+      "line": 56
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "set_index",
+      "path": "/set_index",
+      "methods": [
+        "POST"
+      ],
+      "line": 73
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "install",
+      "path": "/install",
+      "methods": [
+        "POST"
+      ],
+      "line": 86
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "uninstall",
+      "path": "/uninstall",
+      "methods": [
+        "POST"
+      ],
+      "line": 100
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "menu",
+      "path": "/menu",
+      "methods": [
+        "GET"
+      ],
+      "line": 109
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "file",
+      "path": "/file",
+      "methods": [
+        "GET"
+      ],
+      "line": 128
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "update_zip",
+      "path": "/update_zip",
+      "methods": [
+        "POST"
+      ],
+      "line": 155
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "input_zip",
+      "path": "/input_zip",
+      "methods": [
+        "POST"
+      ],
+      "line": 162
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "setting",
+      "path": "/setting",
+      "methods": [
+        "GET"
+      ],
+      "line": 171
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "run",
+      "path": "/run",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 180
+    },
+    {
+      "file": "web/admin/plugins/__init__.py",
+      "function": "callback",
+      "path": "/callback",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 199
+    },
+    {
+      "file": "web/admin/setting/app.py",
+      "function": "set_panel_api",
+      "path": "/set_panel_api",
+      "methods": [
+        "POST"
+      ],
+      "line": 31
+    },
+    {
+      "file": "web/admin/setting/app.py",
+      "function": "get_app_list",
+      "path": "/get_app_list",
+      "methods": [
+        "POST"
+      ],
+      "line": 46
+    },
+    {
+      "file": "web/admin/setting/app.py",
+      "function": "add_app",
+      "path": "/add_app",
+      "methods": [
+        "POST"
+      ],
+      "line": 61
+    },
+    {
+      "file": "web/admin/setting/app.py",
+      "function": "toggle_app_status",
+      "path": "/toggle_app_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 76
+    },
+    {
+      "file": "web/admin/setting/app.py",
+      "function": "delete_app",
+      "path": "/delete_app",
+      "methods": [
+        "POST"
+      ],
+      "line": 87
+    },
+    {
+      "file": "web/admin/setting/notify_email.py",
+      "function": "get_notify_email",
+      "path": "/get_notify_email",
+      "methods": [
+        "POST"
+      ],
+      "line": 31
+    },
+    {
+      "file": "web/admin/setting/notify_email.py",
+      "function": "set_notify_email",
+      "path": "/set_notify_email",
+      "methods": [
+        "POST"
+      ],
+      "line": 46
+    },
+    {
+      "file": "web/admin/setting/notify_email.py",
+      "function": "set_notify_email_test",
+      "path": "/set_notify_email_test",
+      "methods": [
+        "POST"
+      ],
+      "line": 62
+    },
+    {
+      "file": "web/admin/setting/notify_email.py",
+      "function": "set_notify_email_enable",
+      "path": "/set_notify_email_enable",
+      "methods": [
+        "POST"
+      ],
+      "line": 75
+    },
+    {
+      "file": "web/admin/setting/notify_tgbot.py",
+      "function": "get_notify_tgbot",
+      "path": "/get_notify_tgbot",
+      "methods": [
+        "POST"
+      ],
+      "line": 31
+    },
+    {
+      "file": "web/admin/setting/notify_tgbot.py",
+      "function": "set_notify_tgbot",
+      "path": "/set_notify_tgbot",
+      "methods": [
+        "POST"
+      ],
+      "line": 44
+    },
+    {
+      "file": "web/admin/setting/notify_tgbot.py",
+      "function": "set_notify_tgbot_test",
+      "path": "/set_notify_tgbot_test",
+      "methods": [
+        "POST"
+      ],
+      "line": 59
+    },
+    {
+      "file": "web/admin/setting/notify_tgbot.py",
+      "function": "set_notify_tgbot_enable",
+      "path": "/set_notify_tgbot_enable",
+      "methods": [
+        "POST"
+      ],
+      "line": 71
+    },
+    {
+      "file": "web/admin/setting/panel_bookmark.py",
+      "function": "add_panel_info",
+      "path": "/add_panel_info",
+      "methods": [
+        "POST"
+      ],
+      "line": 33
+    },
+    {
+      "file": "web/admin/setting/panel_bookmark.py",
+      "function": "get_panel_list",
+      "path": "/get_panel_list",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 52
+    },
+    {
+      "file": "web/admin/setting/panel_bookmark.py",
+      "function": "del_panel_info",
+      "path": "/del_panel_info",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 60
+    },
+    {
+      "file": "web/admin/setting/panel_bookmark.py",
+      "function": "set_panel_info",
+      "path": "/set_panel_info",
+      "methods": [
+        "POST"
+      ],
+      "line": 72
+    },
+    {
+      "file": "web/admin/setting/panel_ssl.py",
+      "function": "get_panel_ssl",
+      "path": "/get_panel_ssl",
+      "methods": [
+        "POST"
+      ],
+      "line": 33
+    },
+    {
+      "file": "web/admin/setting/panel_ssl.py",
+      "function": "save_panel_ssl",
+      "path": "/save_panel_ssl",
+      "methods": [
+        "POST"
+      ],
+      "line": 40
+    },
+    {
+      "file": "web/admin/setting/panel_ssl.py",
+      "function": "del_panel_ssl",
+      "path": "/del_panel_ssl",
+      "methods": [
+        "POST"
+      ],
+      "line": 49
+    },
+    {
+      "file": "web/admin/setting/panel_ssl.py",
+      "function": "set_panel_local_ssl",
+      "path": "/set_panel_local_ssl",
+      "methods": [
+        "POST"
+      ],
+      "line": 56
+    },
+    {
+      "file": "web/admin/setting/panel_ssl.py",
+      "function": "close_panel_ssl",
+      "path": "/close_panel_ssl",
+      "methods": [
+        "POST"
+      ],
+      "line": 63
+    },
+    {
+      "file": "web/admin/setting/panel_ssl.py",
+      "function": "set_panel_domain",
+      "path": "/set_panel_domain",
+      "methods": [
+        "POST"
+      ],
+      "line": 69
+    },
+    {
+      "file": "web/admin/setting/secondary_verifiy.py",
+      "function": "get_auth_secret",
+      "path": "/get_auth_secret",
+      "methods": [
+        "POST"
+      ],
+      "line": 31
+    },
+    {
+      "file": "web/admin/setting/secondary_verifiy.py",
+      "function": "set_auth_secret",
+      "path": "/set_auth_secret",
+      "methods": [
+        "POST"
+      ],
+      "line": 58
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 32
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_webname",
+      "path": "/set_webname",
+      "methods": [
+        "POST"
+      ],
+      "line": 39
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_ip",
+      "path": "/set_ip",
+      "methods": [
+        "POST"
+      ],
+      "line": 49
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_backup_dir",
+      "path": "/set_backup_dir",
+      "methods": [
+        "POST"
+      ],
+      "line": 59
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_footer_text",
+      "path": "/set_footer_text",
+      "methods": [
+        "POST"
+      ],
+      "line": 69
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_www_dir",
+      "path": "/set_www_dir",
+      "methods": [
+        "POST"
+      ],
+      "line": 79
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_admin_path",
+      "path": "/set_admin_path",
+      "methods": [
+        "POST"
+      ],
+      "line": 90
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_basic_auth",
+      "path": "/set_basic_auth",
+      "methods": [
+        "POST"
+      ],
+      "line": 122
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_status_code",
+      "path": "/set_status_code",
+      "methods": [
+        "POST"
+      ],
+      "line": 157
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "open_debug",
+      "path": "/open_debug",
+      "methods": [
+        "POST"
+      ],
+      "line": 175
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "close_panel",
+      "path": "/close_panel",
+      "methods": [
+        "POST"
+      ],
+      "line": 187
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_ipv6_status",
+      "path": "/set_ipv6_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 198
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_name",
+      "path": "/set_name",
+      "methods": [
+        "POST"
+      ],
+      "line": 214
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_password",
+      "path": "/set_password",
+      "methods": [
+        "POST"
+      ],
+      "line": 228
+    },
+    {
+      "file": "web/admin/setting/setting.py",
+      "function": "set_port",
+      "path": "/set_port",
+      "methods": [
+        "POST"
+      ],
+      "line": 242
+    },
+    {
+      "file": "web/admin/setting/temp_login.py",
+      "function": "get_temp_login",
+      "path": "/get_temp_login",
+      "methods": [
+        "POST"
+      ],
+      "line": 31
+    },
+    {
+      "file": "web/admin/setting/temp_login.py",
+      "function": "set_temp_login",
+      "path": "/set_temp_login",
+      "methods": [
+        "POST"
+      ],
+      "line": 45
+    },
+    {
+      "file": "web/admin/setting/temp_login.py",
+      "function": "remove_temp_login",
+      "path": "/remove_temp_login",
+      "methods": [
+        "POST"
+      ],
+      "line": 66
+    },
+    {
+      "file": "web/admin/setting/temp_login.py",
+      "function": "get_temp_login_logs",
+      "path": "/get_temp_login_logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 77
+    },
+    {
+      "file": "web/admin/setting/timezone.py",
+      "function": "get_timezone_list",
+      "path": "/get_timezone_list",
+      "methods": [
+        "POST"
+      ],
+      "line": 28
+    },
+    {
+      "file": "web/admin/setting/timezone.py",
+      "function": "sync_date",
+      "path": "/sync_date",
+      "methods": [
+        "POST"
+      ],
+      "line": 37
+    },
+    {
+      "file": "web/admin/setting/timezone.py",
+      "function": "set_timezone",
+      "path": "/set_timezone",
+      "methods": [
+        "POST"
+      ],
+      "line": 47
+    },
+    {
+      "file": "web/admin/site/backup.py",
+      "function": "get_backup",
+      "path": "/get_backup",
+      "methods": [
+        "POST"
+      ],
+      "line": 29
+    },
+    {
+      "file": "web/admin/site/backup.py",
+      "function": "to_backup",
+      "path": "/to_backup",
+      "methods": [
+        "POST"
+      ],
+      "line": 38
+    },
+    {
+      "file": "web/admin/site/backup.py",
+      "function": "del_backup",
+      "path": "/del_backup",
+      "methods": [
+        "POST"
+      ],
+      "line": 45
+    },
+    {
+      "file": "web/admin/site/dir.py",
+      "function": "get_dir_user_ini",
+      "path": "/get_dir_user_ini",
+      "methods": [
+        "POST"
+      ],
+      "line": 28
+    },
+    {
+      "file": "web/admin/site/dir.py",
+      "function": "set_dir_user_ini",
+      "path": "/set_dir_user_ini",
+      "methods": [
+        "POST"
+      ],
+      "line": 35
+    },
+    {
+      "file": "web/admin/site/dir.py",
+      "function": "get_dir_binding",
+      "path": "/get_dir_binding",
+      "methods": [
+        "POST"
+      ],
+      "line": 43
+    },
+    {
+      "file": "web/admin/site/dir.py",
+      "function": "add_dir_bind",
+      "path": "/add_dir_bind",
+      "methods": [
+        "POST"
+      ],
+      "line": 51
+    },
+    {
+      "file": "web/admin/site/dir.py",
+      "function": "get_dir_bind_rewrite",
+      "path": "/get_dir_bind_rewrite",
+      "methods": [
+        "POST"
+      ],
+      "line": 61
+    },
+    {
+      "file": "web/admin/site/dir.py",
+      "function": "del_dir_bind",
+      "path": "/del_dir_bind",
+      "methods": [
+        "POST"
+      ],
+      "line": 70
+    },
+    {
+      "file": "web/admin/site/logs.py",
+      "function": "get_logs",
+      "path": "/get_logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 29
+    },
+    {
+      "file": "web/admin/site/logs.py",
+      "function": "get_error_logs",
+      "path": "/get_error_logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 36
+    },
+    {
+      "file": "web/admin/site/php.py",
+      "function": "get_cli_php_version",
+      "path": "/get_cli_php_version",
+      "methods": [
+        "POST"
+      ],
+      "line": 29
+    },
+    {
+      "file": "web/admin/site/php.py",
+      "function": "set_cli_php_version",
+      "path": "/set_cli_php_version",
+      "methods": [
+        "POST"
+      ],
+      "line": 52
+    },
+    {
+      "file": "web/admin/site/proxy.py",
+      "function": "get_proxy_list",
+      "path": "/get_proxy_list",
+      "methods": [
+        "POST"
+      ],
+      "line": 31
+    },
+    {
+      "file": "web/admin/site/proxy.py",
+      "function": "set_proxy",
+      "path": "/set_proxy",
+      "methods": [
+        "POST"
+      ],
+      "line": 38
+    },
+    {
+      "file": "web/admin/site/proxy.py",
+      "function": "set_proxy_status",
+      "path": "/set_proxy_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 54
+    },
+    {
+      "file": "web/admin/site/proxy.py",
+      "function": "get_proxy_conf",
+      "path": "/get_proxy_conf",
+      "methods": [
+        "POST"
+      ],
+      "line": 64
+    },
+    {
+      "file": "web/admin/site/proxy.py",
+      "function": "save_proxy_conf",
+      "path": "/save_proxy_conf",
+      "methods": [
+        "POST"
+      ],
+      "line": 72
+    },
+    {
+      "file": "web/admin/site/proxy.py",
+      "function": "del_proxy",
+      "path": "/del_proxy",
+      "methods": [
+        "POST"
+      ],
+      "line": 82
+    },
+    {
+      "file": "web/admin/site/redirect.py",
+      "function": "get_redirect",
+      "path": "/get_redirect",
+      "methods": [
+        "POST"
+      ],
+      "line": 30
+    },
+    {
+      "file": "web/admin/site/redirect.py",
+      "function": "set_redirect",
+      "path": "/set_redirect",
+      "methods": [
+        "POST"
+      ],
+      "line": 37
+    },
+    {
+      "file": "web/admin/site/redirect.py",
+      "function": "set_redirect_status",
+      "path": "/set_redirect_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 50
+    },
+    {
+      "file": "web/admin/site/redirect.py",
+      "function": "get_redirect_conf",
+      "path": "/get_redirect_conf",
+      "methods": [
+        "POST"
+      ],
+      "line": 59
+    },
+    {
+      "file": "web/admin/site/redirect.py",
+      "function": "save_redirect_conf",
+      "path": "/save_redirect_conf",
+      "methods": [
+        "POST"
+      ],
+      "line": 67
+    },
+    {
+      "file": "web/admin/site/redirect.py",
+      "function": "del_redirect",
+      "path": "/del_redirect",
+      "methods": [
+        "POST"
+      ],
+      "line": 79
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 26
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "list",
+      "path": "/list",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 32
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "add",
+      "path": "/add",
+      "methods": [
+        "POST"
+      ],
+      "line": 49
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "stop",
+      "path": "/stop",
+      "methods": [
+        "POST"
+      ],
+      "line": 60
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "start",
+      "path": "/start",
+      "methods": [
+        "POST"
+      ],
+      "line": 67
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "add_domain",
+      "path": "/add_domain",
+      "methods": [
+        "POST"
+      ],
+      "line": 74
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "del_domain",
+      "path": "/del_domain",
+      "methods": [
+        "POST"
+      ],
+      "line": 83
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "delete",
+      "path": "/delete",
+      "methods": [
+        "POST"
+      ],
+      "line": 93
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_root_dir",
+      "path": "/get_root_dir",
+      "methods": [
+        "POST"
+      ],
+      "line": 101
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_index",
+      "path": "/get_index",
+      "methods": [
+        "POST"
+      ],
+      "line": 109
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_index",
+      "path": "/set_index",
+      "methods": [
+        "POST"
+      ],
+      "line": 119
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_limit_net",
+      "path": "/get_limit_net",
+      "methods": [
+        "POST"
+      ],
+      "line": 127
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_limit_net",
+      "path": "/set_limit_net",
+      "methods": [
+        "POST"
+      ],
+      "line": 134
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "close_limit_net",
+      "path": "/close_limit_net",
+      "methods": [
+        "POST"
+      ],
+      "line": 144
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_host_conf",
+      "path": "/get_host_conf",
+      "methods": [
+        "POST"
+      ],
+      "line": 151
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "save_host_conf",
+      "path": "/save_host_conf",
+      "methods": [
+        "POST"
+      ],
+      "line": 159
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_site_php_version",
+      "path": "/get_site_php_version",
+      "methods": [
+        "POST"
+      ],
+      "line": 168
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_site_domains",
+      "path": "/get_site_domains",
+      "methods": [
+        "POST"
+      ],
+      "line": 175
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_php_version",
+      "path": "/set_php_version",
+      "methods": [
+        "POST"
+      ],
+      "line": 183
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "check_web_status",
+      "path": "/check_web_status",
+      "methods": [
+        "POST"
+      ],
+      "line": 191
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_php_version",
+      "path": "/get_php_version",
+      "methods": [
+        "POST"
+      ],
+      "line": 207
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_end_date",
+      "path": "/set_end_date",
+      "methods": [
+        "POST"
+      ],
+      "line": 213
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_ps",
+      "path": "/set_ps",
+      "methods": [
+        "POST"
+      ],
+      "line": 222
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_domain",
+      "path": "/get_domain",
+      "methods": [
+        "POST"
+      ],
+      "line": 230
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_rewrite_list",
+      "path": "/get_rewrite_list",
+      "methods": [
+        "POST"
+      ],
+      "line": 237
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_rewrite_conf",
+      "path": "/get_rewrite_conf",
+      "methods": [
+        "POST"
+      ],
+      "line": 243
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_rewrite_tpl",
+      "path": "/get_rewrite_tpl",
+      "methods": [
+        "POST"
+      ],
+      "line": 251
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_rewrite",
+      "path": "/set_rewrite",
+      "methods": [
+        "POST"
+      ],
+      "line": 258
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_rewrite_tpl",
+      "path": "/set_rewrite_tpl",
+      "methods": [
+        "POST"
+      ],
+      "line": 268
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "logs_open",
+      "path": "/logs_open",
+      "methods": [
+        "POST"
+      ],
+      "line": 276
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_path",
+      "path": "/set_path",
+      "methods": [
+        "POST"
+      ],
+      "line": 283
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_site_run_path",
+      "path": "/set_site_run_path",
+      "methods": [
+        "POST"
+      ],
+      "line": 292
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_has_pwd",
+      "path": "/set_has_pwd",
+      "methods": [
+        "POST"
+      ],
+      "line": 301
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "close_has_pwd",
+      "path": "/close_has_pwd",
+      "methods": [
+        "POST"
+      ],
+      "line": 310
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_security",
+      "path": "/get_security",
+      "methods": [
+        "POST"
+      ],
+      "line": 317
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_security",
+      "path": "/set_security",
+      "methods": [
+        "POST"
+      ],
+      "line": 324
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "get_default_site",
+      "path": "/get_default_site",
+      "methods": [
+        "POST"
+      ],
+      "line": 337
+    },
+    {
+      "file": "web/admin/site/site.py",
+      "function": "set_default_site",
+      "path": "/set_default_site",
+      "methods": [
+        "POST"
+      ],
+      "line": 343
+    },
+    {
+      "file": "web/admin/site/site_default.py",
+      "function": "get_site_doc",
+      "path": "/get_site_doc",
+      "methods": [
+        "POST"
+      ],
+      "line": 27
+    },
+    {
+      "file": "web/admin/site/site_types.py",
+      "function": "get_site_types",
+      "path": "/get_site_types",
+      "methods": [
+        "POST"
+      ],
+      "line": 29
+    },
+    {
+      "file": "web/admin/site/site_types.py",
+      "function": "add_site_type",
+      "path": "/add_site_type",
+      "methods": [
+        "POST"
+      ],
+      "line": 38
+    },
+    {
+      "file": "web/admin/site/site_types.py",
+      "function": "remove_site_type",
+      "path": "/remove_site_type",
+      "methods": [
+        "POST"
+      ],
+      "line": 46
+    },
+    {
+      "file": "web/admin/site/site_types.py",
+      "function": "modify_site_type_name",
+      "path": "/modify_site_type_name",
+      "methods": [
+        "POST"
+      ],
+      "line": 57
+    },
+    {
+      "file": "web/admin/site/site_types.py",
+      "function": "set_site_type",
+      "path": "/set_site_type",
+      "methods": [
+        "POST"
+      ],
+      "line": 72
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "get_ssl",
+      "path": "/get_ssl",
+      "methods": [
+        "POST"
+      ],
+      "line": 30
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "set_ssl",
+      "path": "/set_ssl",
+      "methods": [
+        "POST"
+      ],
+      "line": 38
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "close_ssl_conf",
+      "path": "/close_ssl_conf",
+      "methods": [
+        "POST"
+      ],
+      "line": 48
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "delete_ssl",
+      "path": "/delete_ssl",
+      "methods": [
+        "POST"
+      ],
+      "line": 57
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "get_cert_list",
+      "path": "/get_cert_list",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 66
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "get_dnsapi",
+      "path": "/get_dnsapi",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 73
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "set_dnsapi",
+      "path": "/set_dnsapi",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 79
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "set_cert_to_site",
+      "path": "/set_cert_to_site",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 87
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "remove_cert",
+      "path": "/remove_cert",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 95
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "http_to_https",
+      "path": "/http_to_https",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 102
+    },
+    {
+      "file": "web/admin/site/ssl.py",
+      "function": "close_to_https",
+      "path": "/close_to_https",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 109
+    },
+    {
+      "file": "web/admin/site/ssl_acme.py",
+      "function": "get_acme_logs",
+      "path": "/get_acme_logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 31
+    },
+    {
+      "file": "web/admin/site/ssl_acme.py",
+      "function": "create_acme",
+      "path": "/create_acme",
+      "methods": [
+        "POST"
+      ],
+      "line": 40
+    },
+    {
+      "file": "web/admin/site/ssl_let.py",
+      "function": "get_let_logs",
+      "path": "/get_let_logs",
+      "methods": [
+        "POST"
+      ],
+      "line": 30
+    },
+    {
+      "file": "web/admin/site/ssl_let.py",
+      "function": "create_let",
+      "path": "/create_let",
+      "methods": [
+        "POST"
+      ],
+      "line": 39
+    },
+    {
+      "file": "web/admin/soft/__init__.py",
+      "function": "index",
+      "path": "/index",
+      "methods": [
+        "GET"
+      ],
+      "line": 21
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "system_total",
+      "path": "/system_total",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 28
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "get_env_info",
+      "path": "/get_env_info",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 41
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "network",
+      "path": "/network",
+      "methods": [
+        "GET"
+      ],
+      "line": 47
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "disk_info",
+      "path": "/disk_info",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 59
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "get_load_average",
+      "path": "/get_load_average",
+      "methods": [
+        "GET"
+      ],
+      "line": 66
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "get_disk_io",
+      "path": "/get_disk_io",
+      "methods": [
+        "GET"
+      ],
+      "line": 75
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "get_cpu_io",
+      "path": "/get_cpu_io",
+      "methods": [
+        "GET"
+      ],
+      "line": 84
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "get_network_io",
+      "path": "/get_network_io",
+      "methods": [
+        "GET"
+      ],
+      "line": 93
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "restart",
+      "path": "/restart",
+      "methods": [
+        "POST"
+      ],
+      "line": 102
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "restart_server",
+      "path": "/restart_server",
+      "methods": [
+        "POST"
+      ],
+      "line": 109
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "shutdown_server",
+      "path": "/shutdown_server",
+      "methods": [
+        "POST"
+      ],
+      "line": 118
+    },
+    {
+      "file": "web/admin/system/system.py",
+      "function": "set_control",
+      "path": "/set_control",
+      "methods": [
+        "POST"
+      ],
+      "line": 127
+    },
+    {
+      "file": "web/admin/system/upgrade.py",
+      "function": "update_server",
+      "path": "/update_server",
+      "methods": [
+        "GET"
+      ],
+      "line": 25
+    },
+    {
+      "file": "web/admin/task/__init__.py",
+      "function": "task_count",
+      "path": "/count",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "line": 28
+    },
+    {
+      "file": "web/admin/task/__init__.py",
+      "function": "list",
+      "path": "/list",
+      "methods": [
+        "POST"
+      ],
+      "line": 33
+    },
+    {
+      "file": "web/admin/task/__init__.py",
+      "function": "get_exec_log",
+      "path": "/get_exec_log",
+      "methods": [
+        "POST"
+      ],
+      "line": 41
+    },
+    {
+      "file": "web/admin/task/__init__.py",
+      "function": "get_task_speed",
+      "path": "/get_task_speed",
+      "methods": [
+        "POST"
+      ],
+      "line": 48
+    },
+    {
+      "file": "web/admin/task/__init__.py",
+      "function": "remove_task",
+      "path": "/remove_task",
+      "methods": [
+        "POST"
+      ],
+      "line": 85
+    }
+  ],
+  "parse_errors": []
+}

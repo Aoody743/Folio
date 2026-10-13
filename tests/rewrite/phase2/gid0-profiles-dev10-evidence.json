@@ -1,0 +1,27 @@
+{
+  "binary_artifacts": [
+    {
+      "path": "/workspace/powerlinux/test-artifacts/terminal-kernel-profile-dev10-amd64.test",
+      "sha256": "448ceb53d6ec4c49f6271b5cdd1de27740d9f297dafac7b1798df0451c22d40c"
+    },
+    {
+      "path": "/workspace/.cache/rewrite-release/policy-tests/sysops-profile-dev10-amd64.test",
+      "sha256": "1ba94bee1496004c9e367e9de983d1b8b5e0853121b6420ca9f62da1eabe6e80"
+    }
+  ],
+  "fixture_user": "plqa_gid0_1781bdd3f243",
+  "execution_exit": 0,
+  "cleanup_verified": true,
+  "log": {
+    "path": "/workspace/powerlinux/test-artifacts/gid0-shared-profiles-dev10-debian-20261013-r1.log",
+    "sha256": "54a576d1e88e0dfc77bc4fcb02de3ce2600f9a9cbed8bfe82e1df33cf5fdaf26"
+  },
+  "scope": "actual Debianroot temporary nonzeroUID primaryGID0 no-login/no-child; pure terminal andscript validator/constructor negatives; no production privilege bypass or nativeARM claim",
+  "stage": 2,
+  "result": "ALL2 actual root Debian nonzeroUID/primaryGID0 validator and constructor groups PASS",
+  "case_names": [
+    "TestKernelTerminalNonRootPrimaryGroupZeroRejected",
+    "TestOwnedVMRejectsUnprivilegedScriptPrivilegedGroup"
+  ],
+  "source_scope": "Exact verified development test binaries; not immutable production package acceptance"
+}
