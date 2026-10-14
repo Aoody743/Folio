@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/agent"
 	"github.com/Aoody743/PowerLinux/internal/jobs"
@@ -48,6 +49,14 @@ type SecretStore interface {
 	Put(context.Context, Actor, string, string, []byte) (string, error)
 	Get(context.Context, Actor, string, string) ([]byte, error)
 	Delete(context.Context, Actor, string, string) error
+}
+
+// ExpiringSecretStore supports task-only credentials with an immutable expiry.
+// Expired values cannot be resolved; the service removes them independently of
+// the caller's current grants, including after cancellation or revocation.
+type ExpiringSecretStore interface {
+	SecretStore
+	PutExpiring(context.Context, Actor, string, string, []byte, time.Time) (string, error)
 }
 type TaskSubmitter interface {
 	Submit(context.Context, Actor, string, json.RawMessage, []string) (map[string]any, error)

@@ -36,6 +36,7 @@ type Service struct {
 	cancelLifetime     context.CancelFunc
 	closeOnce          sync.Once
 	closeErr           error
+	secretJanitorDone  chan struct{}
 	status             *statusSampler
 	jobs               *jobs.Manager
 	filesystem         *agent.Filesystem
@@ -99,6 +100,10 @@ func New(dataDir string) (*Service, error) {
 		db.Close()
 		return nil, err
 	}
+	if err = s.expireProviderSecrets(context.Background(), time.Now()); err != nil {
+		db.Close()
+		return nil, err
+	}
 	if err = os.Chmod(dbpath, 0600); err != nil {
 		db.Close()
 		return nil, err
@@ -144,6 +149,8 @@ func New(dataDir string) (*Service, error) {
 		s.Close()
 		return nil, err
 	}
+	s.secretJanitorDone = make(chan struct{})
+	go s.runSecretJanitor()
 	return s, nil
 }
 
@@ -212,6 +219,8 @@ CREATE INDEX IF NOT EXISTS notes_target ON notes(target_id,archived,pinned,updat
 CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY,actor TEXT NOT NULL,resource TEXT NOT NULL,state TEXT NOT NULL,payload TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS provider_state(namespace TEXT NOT NULL,kind TEXT NOT NULL,id TEXT NOT NULL,payload TEXT NOT NULL,revision INTEGER NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(namespace,kind,id));
 CREATE TABLE IF NOT EXISTS provider_secrets(ref TEXT PRIMARY KEY,namespace TEXT NOT NULL,resource TEXT NOT NULL,name TEXT NOT NULL,ciphertext TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS provider_secret_expiry(ref TEXT PRIMARY KEY REFERENCES provider_secrets(ref) ON DELETE CASCADE,expires_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS provider_secret_expiry_time ON provider_secret_expiry(expires_at);
 CREATE TABLE IF NOT EXISTS task_metadata(id TEXT PRIMARY KEY REFERENCES tasks(id),actor TEXT NOT NULL,resources TEXT NOT NULL,action TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS idempotency(id TEXT PRIMARY KEY,actor_id TEXT NOT NULL,action TEXT NOT NULL,input_hash TEXT NOT NULL,state TEXT NOT NULL,resources TEXT NOT NULL,result TEXT NOT NULL DEFAULT '',error TEXT NOT NULL DEFAULT '',task_id TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS identity_settings(id TEXT PRIMARY KEY,payload TEXT NOT NULL,revision INTEGER NOT NULL);
@@ -290,6 +299,9 @@ func (s *Service) Close() error {
 	s.closeOnce.Do(func() {
 		if s.cancelLifetime != nil {
 			s.cancelLifetime()
+		}
+		if s.secretJanitorDone != nil {
+			<-s.secretJanitorDone
 		}
 		if s.jobs != nil {
 			_ = s.jobs.Close()

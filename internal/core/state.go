@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -150,6 +151,7 @@ type secretEnvelope struct {
 	Namespace string `json:"namespace"`
 	Resource  string `json:"resource"`
 	Value     []byte `json:"value"`
+	ExpiresAt int64  `json:"expires_at,omitempty"`
 }
 
 func (store boundSecrets) actor(ctx context.Context, prior Actor, resource string) (Actor, error) {
@@ -163,6 +165,18 @@ func (store boundSecrets) actor(ctx context.Context, prior Actor, resource strin
 	return a, nil
 }
 func (store boundSecrets) Put(ctx context.Context, prior Actor, resource, name string, value []byte) (string, error) {
+	return store.put(ctx, prior, resource, name, value, time.Time{})
+}
+
+func (store boundSecrets) PutExpiring(ctx context.Context, prior Actor, resource, name string, value []byte, expires time.Time) (string, error) {
+	now := time.Now()
+	if !expires.After(now) || expires.After(now.Add(24*time.Hour)) {
+		return "", invalid("Task credential expiry must be within the next 24 hours")
+	}
+	return store.put(ctx, prior, resource, name, value, expires)
+}
+
+func (store boundSecrets) put(ctx context.Context, prior Actor, resource, name string, value []byte, expires time.Time) (string, error) {
 	a, err := store.actor(ctx, prior, resource)
 	if err != nil {
 		return "", err
@@ -171,12 +185,28 @@ func (store boundSecrets) Put(ctx context.Context, prior Actor, resource, name s
 		return "", invalid("Secret label/value exceeds limits")
 	}
 	ref := randomID("sec_")
-	plain, _ := json.Marshal(secretEnvelope{store.namespace, resource, value})
+	envelope := secretEnvelope{Namespace: store.namespace, Resource: resource, Value: value}
+	if !expires.IsZero() {
+		envelope.ExpiresAt = expires.UnixMilli()
+	}
+	plain, _ := json.Marshal(envelope)
+	defer clear(plain)
 	ciphertext, err := store.s.encrypt(plain)
 	if err != nil {
 		return "", internal()
 	}
-	_, err = store.s.db.ExecContext(ctx, "INSERT INTO provider_secrets(ref,namespace,resource,name,ciphertext,created_at) VALUES(?,?,?,?,?,?)", ref, store.namespace, resource, name, ciphertext, nowString())
+	tx, err := store.s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", internal()
+	}
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, "INSERT INTO provider_secrets(ref,namespace,resource,name,ciphertext,created_at) VALUES(?,?,?,?,?,?)", ref, store.namespace, resource, name, ciphertext, nowString())
+	if err == nil && envelope.ExpiresAt != 0 {
+		_, err = tx.ExecContext(ctx, "INSERT INTO provider_secret_expiry(ref,expires_at) VALUES(?,?)", ref, envelope.ExpiresAt)
+	}
+	if err == nil {
+		err = tx.Commit()
+	}
 	if err != nil {
 		return "", internal()
 	}
@@ -203,9 +233,14 @@ func (store boundSecrets) Get(ctx context.Context, prior Actor, resource, ref st
 	if err != nil {
 		return nil, internal()
 	}
+	defer clear(raw)
 	var envelope secretEnvelope
 	if json.Unmarshal(raw, &envelope) != nil || envelope.Namespace != store.namespace || envelope.Resource != resource {
 		return nil, internal()
+	}
+	if envelope.ExpiresAt != 0 && time.Now().UnixMilli() >= envelope.ExpiresAt {
+		clear(envelope.Value)
+		return nil, missing("Expired secret reference")
 	}
 	store.s.recordAudit(ctx, a, "credentials_resolve", resource, nil, map[string]any{"secret_ref": ref})
 	return envelope.Value, nil

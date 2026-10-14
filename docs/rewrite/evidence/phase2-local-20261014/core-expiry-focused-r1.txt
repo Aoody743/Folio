@@ -1,0 +1,9 @@
+=== RUN   TestBoundSecretsNamespaceResourceAndRevocation
+--- PASS: TestBoundSecretsNamespaceResourceAndRevocation (0.05s)
+=== RUN   TestTaskSecretExpiryBoundAndRevokedActorCleanup
+--- PASS: TestTaskSecretExpiryBoundAndRevokedActorCleanup (0.04s)
+=== RUN   TestTaskSecretExpiryIsEncryptedAndImmediateWithoutJanitor
+--- PASS: TestTaskSecretExpiryIsEncryptedAndImmediateWithoutJanitor (0.04s)
+=== RUN   TestTaskSecretExpiryStartupRemovesCanceledTaskCredential
+--- PASS: TestTaskSecretExpiryStartupRemovesCanceledTaskCredential (0.04s)
+PASS

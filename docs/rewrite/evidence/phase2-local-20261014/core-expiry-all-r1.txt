@@ -1,0 +1,109 @@
+=== RUN   TestCertificateProviderAuditCannotExportPrivateMaterial
+--- PASS: TestCertificateProviderAuditCannotExportPrivateMaterial (0.05s)
+=== RUN   TestBootstrapIsLocalSecretAndSingleUse
+--- PASS: TestBootstrapIsLocalSecretAndSingleUse (0.05s)
+=== RUN   TestSessionExpiryDoesNotRenewAndBadLoginDoesNotDisableServer
+--- PASS: TestSessionExpiryDoesNotRenewAndBadLoginDoesNotDisableServer (0.36s)
+=== RUN   TestTOTPIsRequiredAndReplayIsRejected
+--- PASS: TestTOTPIsRequiredAndReplayIsRejected (0.26s)
+=== RUN   TestScopedTokensAndRevocation
+--- PASS: TestScopedTokensAndRevocation (0.04s)
+=== RUN   TestAudienceBoundTokensAndOwnRevocation
+--- PASS: TestAudienceBoundTokensAndOwnRevocation (0.04s)
+=== RUN   TestNotesConcurrencyHistoryRestoreAndScopedLists
+--- PASS: TestNotesConcurrencyHistoryRestoreAndScopedLists (0.04s)
+=== RUN   TestDurableRealFileJobsAndCrossRootDenial
+--- PASS: TestDurableRealFileJobsAndCrossRootDenial (0.05s)
+=== RUN   TestMaliciousHTMLIsStoredOnlyAsPlainJSONData
+--- PASS: TestMaliciousHTMLIsStoredOnlyAsPlainJSONData (0.05s)
+=== RUN   TestNoteMutationRollsBackWhenAuditCannotBeWritten
+--- PASS: TestNoteMutationRollsBackWhenAuditCannotBeWritten (0.08s)
+=== RUN   TestDelegatedTokenLeaseAudienceAndCascadingRevocation
+--- PASS: TestDelegatedTokenLeaseAudienceAndCascadingRevocation (0.08s)
+=== RUN   TestMixedWildcardResourcePaginationAndSchemaNullReject
+--- PASS: TestMixedWildcardResourcePaginationAndSchemaNullReject (0.07s)
+=== RUN   TestReadPollingDoesNotWriteAuditAndTokenLastUsedIsThrottled
+--- PASS: TestReadPollingDoesNotWriteAuditAndTokenLastUsedIsThrottled (0.07s)
+=== RUN   TestRuntimeWorkspaceCannotBeRedirectedOutsideDataDirectory
+--- PASS: TestRuntimeWorkspaceCannotBeRedirectedOutsideDataDirectory (0.00s)
+=== RUN   TestGatewayCredentialCookieRevocationCASAndLocalRecovery
+--- PASS: TestGatewayCredentialCookieRevocationCASAndLocalRecovery (0.63s)
+=== RUN   TestWrongEntryUsesConfiguredStatusWithoutChangingAuthentication
+--- PASS: TestWrongEntryUsesConfiguredStatusWithoutChangingAuthentication (0.12s)
+=== RUN   TestIdempotencyPasswordFingerprintIsKeyedAndLegacyReplayDoesNotRepeat
+--- PASS: TestIdempotencyPasswordFingerprintIsKeyedAndLegacyReplayDoesNotRepeat (0.05s)
+=== RUN   TestPanelBrandingCASAndAccountRenamePreserveIdentity
+--- PASS: TestPanelBrandingCASAndAccountRenamePreserveIdentity (0.19s)
+=== RUN   TestApplicationPeerScopesRevocationAndEncryptedRetry
+--- PASS: TestApplicationPeerScopesRevocationAndEncryptedRetry (0.12s)
+=== RUN   TestAPISwitchImmediatelyDeniesBothTokenChannelsKeepsHumanRecovery
+--- PASS: TestAPISwitchImmediatelyDeniesBothTokenChannelsKeepsHumanRecovery (0.15s)
+=== RUN   TestTemporarySingleUseScopedSessionRefreshLogsAndRevoke
+--- PASS: TestTemporarySingleUseScopedSessionRefreshLogsAndRevoke (0.08s)
+=== RUN   TestCAPTCHAImagePeerExpiryReplayAndCustomEntry
+--- PASS: TestCAPTCHAImagePeerExpiryReplayAndCustomEntry (0.12s)
+=== RUN   TestPreparedEnqueueRetriesRealSQLiteStoreLockAndExecutesExactlyOnce
+--- PASS: TestPreparedEnqueueRetriesRealSQLiteStoreLockAndExecutesExactlyOnce (0.08s)
+=== RUN   TestPreparedEnqueueServiceCloseCancelsBoundedRetry
+--- PASS: TestPreparedEnqueueServiceCloseCancelsBoundedRetry (0.04s)
+=== RUN   TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors
+=== RUN   TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors/manager_closed
+=== RUN   TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors/identity_mismatch
+=== RUN   TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors/executor_validation
+=== RUN   TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors/unknown_io
+--- PASS: TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors (0.00s)
+    --- PASS: TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors/manager_closed (0.00s)
+    --- PASS: TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors/identity_mismatch (0.00s)
+    --- PASS: TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors/executor_validation (0.00s)
+    --- PASS: TestPreparedEnqueueDoesNotRetryPermanentOrUnknownErrors/unknown_io (0.00s)
+=== RUN   TestPreparedPostCommitWALHookErrorReturnsDurableIDWithoutReplay
+--- PASS: TestPreparedPostCommitWALHookErrorReturnsDurableIDWithoutReplay (0.05s)
+=== RUN   TestPreparedPermanentEnqueueFailureKeepsRecoveryViewAndIdempotentID
+--- PASS: TestPreparedPermanentEnqueueFailureKeepsRecoveryViewAndIdempotentID (0.04s)
+=== RUN   TestServicePreparedTransactionsUseFullSynchronousAndSurviveReopen
+--- PASS: TestServicePreparedTransactionsUseFullSynchronousAndSurviveReopen (0.05s)
+=== RUN   TestPreparedTaskCommitStoresProviderStateJobAndFullAuthorizationBeforeRealWrite
+--- PASS: TestPreparedTaskCommitStoresProviderStateJobAndFullAuthorizationBeforeRealWrite (0.05s)
+=== RUN   TestPreparedRequestCanceledByActualWALCommitStillStartsCommittedTask
+--- PASS: TestPreparedRequestCanceledByActualWALCommitStillStartsCommittedTask (0.05s)
+=== RUN   TestPreparedTaskCannotForgeResourcesOrBypassItsOriginatingAction
+--- PASS: TestPreparedTaskCannotForgeResourcesOrBypassItsOriginatingAction (0.04s)
+=== RUN   TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing
+=== RUN   TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/callback
+=== RUN   TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/task_metadata_insert
+=== RUN   TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/provider_insert
+=== RUN   TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/deferred_commit
+=== RUN   TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/context_canceled
+--- PASS: TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing (0.25s)
+    --- PASS: TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/callback (0.04s)
+    --- PASS: TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/task_metadata_insert (0.04s)
+    --- PASS: TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/provider_insert (0.04s)
+    --- PASS: TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/deferred_commit (0.04s)
+    --- PASS: TestPreparedTaskRealSQLiteFaultsRollbackAllRowsAndExecuteNothing/context_canceled (0.09s)
+=== RUN   TestPreparedConcurrentMetadataCASAllowsExactlyOneDurableRealTask
+--- PASS: TestPreparedConcurrentMetadataCASAllowsExactlyOneDurableRealTask (0.05s)
+=== RUN   TestPreparedCommittedQueuedJobSurvivesManagerCloseAndRestartsInterrupted
+--- PASS: TestPreparedCommittedQueuedJobSurvivesManagerCloseAndRestartsInterrupted (0.04s)
+=== RUN   TestRegisteredRunningTaskStopsAfterTokenRevocation
+--- PASS: TestRegisteredRunningTaskStopsAfterTokenRevocation (1.04s)
+=== RUN   TestProviderRegistryNestedSchemaAndDynamicScope
+--- PASS: TestProviderRegistryNestedSchemaAndDynamicScope (0.08s)
+=== RUN   TestProviderResourcesAuthorizeBeforeEffectAndValidateResult
+--- PASS: TestProviderResourcesAuthorizeBeforeEffectAndValidateResult (0.09s)
+=== RUN   TestNamespaceMetadataCASAndTransactionRollback
+--- PASS: TestNamespaceMetadataCASAndTransactionRollback (0.08s)
+=== RUN   TestBoundSecretsNamespaceResourceAndRevocation
+--- PASS: TestBoundSecretsNamespaceResourceAndRevocation (0.07s)
+=== RUN   TestProviderIdempotencyConcurrentInputBindingAndRestart
+--- PASS: TestProviderIdempotencyConcurrentInputBindingAndRestart (0.10s)
+=== RUN   TestProviderTaskResourcesPersistAndFileAliasAudit
+--- PASS: TestProviderTaskResourcesPersistAndFileAliasAudit (0.08s)
+=== RUN   TestInterruptedIdempotencyNeverReexecutesAfterRestart
+--- PASS: TestInterruptedIdempotencyNeverReexecutesAfterRestart (0.07s)
+=== RUN   TestTaskSecretExpiryBoundAndRevokedActorCleanup
+--- PASS: TestTaskSecretExpiryBoundAndRevokedActorCleanup (0.05s)
+=== RUN   TestTaskSecretExpiryIsEncryptedAndImmediateWithoutJanitor
+--- PASS: TestTaskSecretExpiryIsEncryptedAndImmediateWithoutJanitor (0.04s)
+=== RUN   TestTaskSecretExpiryStartupRemovesCanceledTaskCredential
+--- PASS: TestTaskSecretExpiryStartupRemovesCanceledTaskCredential (0.04s)
+PASS

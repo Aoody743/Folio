@@ -18,6 +18,8 @@
 
 - 网站监听交接补充：正常迁移按源 Web、PHP、目标 Web 顺序发布，WAL 回滚先释放目标，再恢复原 Web，锁仍按 ID 排序。正向、反向与 late-probe 失败回滚，以及原有 SIGKILL/归属/CAS 定向检查通过；这是根文件系统和监听协议模型证据，真实固定包服务验收继续进行。见 [监听交接证据](evidence/phase2-local-20261014/web-listener-checks.json)。新增真实网站迁移验收脚本，目前仅语法检查，尚未运行。
 
+- 临时任务凭据增加不可变加密 TTL、原子索引与独立启动/周期清理；排队取消或撤权不再依赖下一次调用清理，过期值即时拒绝读取。普通 Debian UID 的 4 项 secrets 定向检查及 45 项 Core 顶层源码测试通过；统一 race 与真实私仓仍待本批集成。见 [凭据到期证据](evidence/phase2-local-20261014/credential-expiry-checks.json)。
+
 本机临时 VM、工具链、缓存和专用 SSH key 集中于 `.cache/rewrite`。用户要求开发结束可清理：验收后先 poweroff 并确认 launcher 停止，保留代码、脱敏证据和发行包，再清除本次临时环境。源码、真实服务、固定安装包和浏览器证据分别记录。
 
 ## 云端第二阶段过程记录（历史批次）
