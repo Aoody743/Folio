@@ -45,25 +45,34 @@ type PrivilegedOptions struct {
 	HTTPClient *http.Client
 }
 type PrivilegedExecutor struct {
-	config             PrivilegedConfig
-	catalog            *Catalog
-	artifacts          *artifactStore
-	packages           *packageBackend
-	uid, gid           uint32
-	buildUID, buildGID uint32
-	buildSlot          chan struct{}
-	mu                 sync.Mutex
-	locks              map[string]*instanceMutex
-	healthMu           sync.Mutex
-	healthCache        map[string]cachedHealth
-	privateCipher      cipher.AEAD
-	profileControl     func(context.Context, Instance, string) error // private trusted test dependency
+	config                 PrivilegedConfig
+	catalog                *Catalog
+	artifacts              *artifactStore
+	packages               *packageBackend
+	unitDir                string
+	receiptSaveHook        func(string, Instance) error
+	installJournalSaveHook func(context.Context, installJournal, int64) error
+	installProofHook       func(context.Context, installJournal) error
+	installHealthHook      func(context.Context, Instance) Health
+	installEnableHook      func(context.Context, *installJournal) error
+	installControlHook     func(context.Context, ServiceInput, Instance) (map[string]any, error)
+	installUnitCreateHook  func(string, string, []byte) error
+	systemdReloadHook      func(context.Context) error
+	uid, gid               uint32
+	buildUID, buildGID     uint32
+	buildSlot              chan struct{}
+	mu                     sync.Mutex
+	locks                  map[string]*instanceMutex
+	healthMu               sync.Mutex
+	healthCache            map[string]cachedHealth
+	privateCipher          cipher.AEAD
+	profileControl         func(context.Context, Instance, string) error // private trusted test dependency
 }
 
 var validAccount = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}\$?$`)
 
 func Operations() []string {
-	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "php_action", "utility_action", "docker_action", "backup_artifact", "database_action", "database_artifact"}
+	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "utility_action", "docker_action", "backup_artifact", "database_action", "database_artifact"}
 }
 
 // ValidatePrivilegedConfig performs read-only policy validation. In particular
@@ -263,7 +272,7 @@ func NewPrivilegedExecutorWithOptions(config PrivilegedConfig, options Privilege
 	if err != nil {
 		return nil, err
 	}
-	e := &PrivilegedExecutor{config: config, catalog: catalog, artifacts: artifacts, uid: uint32(uid64), gid: uint32(gid64), locks: map[string]*instanceMutex{}, healthCache: map[string]cachedHealth{}}
+	e := &PrivilegedExecutor{config: config, catalog: catalog, artifacts: artifacts, unitDir: "/etc/systemd/system", uid: uint32(uid64), gid: uint32(gid64), locks: map[string]*instanceMutex{}, healthCache: map[string]cachedHealth{}}
 	e.packages = newPackageBackend(config.EnableSystemPackages, config.StateDir)
 	e.privateCipher, err = loadPrivateCipher(config.StateDir)
 	if err != nil {
@@ -327,6 +336,22 @@ func (e *PrivilegedExecutor) Validate(request agent.Request) error {
 		}
 		if !validPlanID(input.PlanID) || input.ExpectedRevision < 0 || len(input.IdempotencyKey) < 8 || len(input.IdempotencyKey) > 128 {
 			return failure("invalid_input", "Invalid plan revision/idempotency parameters", 400)
+		}
+	case "plugin_recovery_inspect":
+		var input installRecoveryInspectInput
+		if err := parse(request.Input, &input); err != nil {
+			return err
+		}
+		if !validInstanceID(input.ID) {
+			return failure("invalid_input", "Invalid software instance ID", 400)
+		}
+	case "plugin_recovery_action":
+		var input installRecoveryActionInput
+		if err := parse(request.Input, &input); err != nil {
+			return err
+		}
+		if !validInstanceID(input.ID) || input.ExpectedJournalRevision < 1 || (input.Command != "continue" && input.Command != "stop_preserve") {
+			return failure("invalid_input", "Invalid install recovery command or journal revision", 400)
 		}
 	case "plugin_service_control":
 		var input ServiceInput
@@ -410,6 +435,14 @@ func (e *PrivilegedExecutor) Run(ctx context.Context, request agent.Request) (re
 		var input ApplyInput
 		_ = json.Unmarshal(request.Input, &input)
 		output, err = e.apply(ctx, input)
+	case "plugin_recovery_inspect":
+		var input installRecoveryInspectInput
+		_ = json.Unmarshal(request.Input, &input)
+		output, err = e.installRecoveryInspect(ctx, input.ID)
+	case "plugin_recovery_action":
+		var input installRecoveryActionInput
+		_ = json.Unmarshal(request.Input, &input)
+		output, err = e.installRecoveryAction(ctx, input)
 	case "plugin_service_control":
 		var input ServiceInput
 		_ = json.Unmarshal(request.Input, &input)

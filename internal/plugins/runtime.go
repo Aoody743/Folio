@@ -140,6 +140,10 @@ func (e *PrivilegedExecutor) workerDirs(instance Instance) error {
 }
 
 func (e *PrivilegedExecutor) configure(ctx context.Context, instance *Instance, manifest Manifest) error {
+	return e.configureWithInstallJournal(ctx, instance, manifest, "")
+}
+
+func (e *PrivilegedExecutor) configureWithInstallJournal(ctx context.Context, instance *Instance, manifest Manifest, installNonce string) error {
 	if err := validateConfiguration(instance.PluginID, instance.Config); err != nil {
 		return err
 	}
@@ -248,6 +252,9 @@ func (e *PrivilegedExecutor) configure(ctx context.Context, instance *Instance, 
 		return failure("recipe_unavailable", "No reviewed native configuration recipe exists for this software", 412)
 	}
 	if e.config.UseSystemd && instance.Service.Program != "" && instance.Service.Kind != "cli" {
+		if installNonce != "" {
+			return e.writeInstallUnit(ctx, instance, installNonce)
+		}
 		return e.writeUnit(ctx, *instance)
 	}
 	return nil
@@ -685,7 +692,8 @@ func (e *PrivilegedExecutor) writeUnit(ctx context.Context, instance Instance) e
 	if !ownedUnit(instance) {
 		return failure("ownership_invalid", "Managed unit name is not trusted", 412)
 	}
-	name := filepath.Join("/etc/systemd/system", instance.Service.Unit)
+	dir := e.systemdUnitDir()
+	name := filepath.Join(dir, instance.Service.Unit)
 	if _, err := os.Lstat(name); err == nil {
 		var receipt Instance
 		if e.load("receipts", instance.ID, &receipt) != nil || receipt.Service.Unit != instance.Service.Unit {
@@ -695,56 +703,11 @@ func (e *PrivilegedExecutor) writeUnit(ctx context.Context, instance Instance) e
 			return err
 		}
 	}
-	args, err := e.serviceArgs(instance, "start")
+	unit, err := systemdUnitBytes(e, instance, "")
 	if err != nil {
 		return err
 	}
-	switch instance.PluginID {
-	case "openresty":
-		args = append(args, "-g", "daemon off;")
-	case "php", "php-apt", "php-yum":
-		args[len(args)-1] = "-F"
-	case "redis", "valkey":
-		args = append(args, "--daemonize", "no")
-	case "memcached":
-		args = args[1:]
-	case "pureftp":
-		args = args[1:]
-	case "rsyncd":
-		args = append(args, "--no-detach")
-	case "supervisor":
-		args = append(args, "-n")
-	}
-	command := unitQuote(instance.Service.Program)
-	for _, arg := range args {
-		command += " " + unitQuote(arg)
-	}
-	identity := ""
-	if instance.PluginID != "openresty" && !isPHPRuntime(instance.PluginID) && instance.PluginID != "pureftp" && instance.PluginID != "docker" {
-		group := e.config.RunGroup
-		if group == "" {
-			group = e.config.RunUser
-		}
-		identity = "User=" + e.config.RunUser + "\nGroup=" + group + "\n"
-	}
-	reload := ""
-	if instance.PluginID == "openresty" {
-		reload = "ExecReload=" + unitQuote(instance.Service.Program)
-		reloadArgs, _ := e.serviceArgs(instance, "reload")
-		for _, arg := range reloadArgs {
-			reload += " " + unitQuote(arg)
-		}
-		reload += "\n"
-	}
-	if isPHPRuntime(instance.PluginID) {
-		reload = "ExecReload=/bin/kill -USR2 $MAINPID\n"
-	}
-	environment := ""
-	for _, variable := range runtimeEnvironment(instance) {
-		environment += "Environment=" + unitQuote(variable) + "\n"
-	}
-	unit := "[Unit]\nDescription=PowerLinux managed " + instance.ID + "\nAfter=network.target\n[Service]\nType=simple\n" + identity + environment + "ExecStart=" + command + "\n" + reload + "Restart=on-failure\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(instance.Paths.Root) + " -/srv/powerlinux-sites\n[Install]\nWantedBy=multi-user.target\n"
-	if err = writeAtomicRoot("/etc/systemd/system", instance.Service.Unit, []byte(unit), 0644, 0); err != nil {
+	if err = writeAtomicRoot(dir, instance.Service.Unit, unit, 0644, 0); err != nil {
 		return err
 	}
 	_, err = runFixed(ctx, "/usr/bin/systemctl", []string{"daemon-reload"}, 20*time.Second, nil)

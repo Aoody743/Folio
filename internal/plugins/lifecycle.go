@@ -170,6 +170,14 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 		return instance, err
 	}
 	defer unlock()
+	var processUnlock func()
+	if plan.Operation == "install" {
+		processUnlock, err = e.installRecoveryLock(ctx, plan.InstanceID)
+		if err != nil {
+			return instance, err
+		}
+		defer processUnlock()
+	}
 	var durable struct {
 		Plan Plan   `json:"plan"`
 		Key  string `json:"key"`
@@ -188,6 +196,7 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	} else if core.ErrorCode(err) != "not_found" {
 		return instance, err
 	}
+	installJournalRevision := int64(0)
 	if plan.State != "planned" || time.Now().After(plan.ExpiresAt) {
 		return instance, failure("plan_expired", "Software plan is expired or already consumed", 412)
 	}
@@ -201,6 +210,16 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	}
 	if revision != input.ExpectedRevision || revision != plan.ExpectedRevision {
 		return instance, failure("revision_conflict", "Software state changed after planning", 412)
+	}
+	if plan.Operation == "install" {
+		if priorJournal, journalErr := e.loadInstallJournal(plan.InstanceID); journalErr == nil {
+			if priorJournal.Phase != "completed" || loadErr != nil || current.Status != "uninstalled" {
+				return instance, failure("operation_recovery_required", "A protected install journal already exists; inspect it before any recovery action", 409)
+			}
+			installJournalRevision = priorJournal.Revision
+		} else if core.ErrorCode(journalErr) != "not_found" {
+			return instance, journalErr
+		}
 	}
 	manifest, err := e.catalog.Get(plan.PluginID)
 	if err != nil {
@@ -228,6 +247,31 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 		if err := e.validateInstallTarget(current, loadErr, plan.PluginID, label); err != nil {
 			return instance, err
 		}
+	}
+	var install *installJournal
+	if plan.Operation == "install" {
+		instance = Instance{ID: plan.InstanceID, PluginID: plan.PluginID, InstanceID: label, Version: plan.Version.Version, SourceVersion: plan.Version.ID, Revision: revision + 1, Status: "configured", Paths: paths, Config: cloneConfig(plan.Config), UpdatedAt: time.Now().UTC(), Ownership: "managed", Packages: plan.Packages}
+		if loadErr == nil {
+			instance.Extensions = maps.Clone(current.Extensions)
+		}
+		instance.Service = ServiceProfile{ID: instance.ID, PluginID: instance.PluginID, InstanceID: label, Unit: "powerlinux-plugin-" + instance.ID + ".service", ConfigPath: paths.ConfigDir, DataPath: paths.DataDir, Ownership: "managed"}
+		instance.Service.Kind = "daemon"
+		if manifest.Service.Health == "cli" {
+			instance.Service.Kind = "cli"
+		}
+		if plan.Version.Source.Kind == "integration" {
+			instance.Service.Kind = "integration"
+		}
+		var previous *Instance
+		if loadErr == nil {
+			prior := current
+			previous = &prior
+		}
+		created, createErr := e.newInstallJournal(ctx, plan, input, instance, previous, desiredAutostart, installJournalRevision)
+		if createErr != nil {
+			return instance, createErr
+		}
+		install = &created
 	}
 	plan.State = "running"
 	durable.Plan = plan
@@ -281,25 +325,36 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	if plan.Operation == "rollback" {
 		return e.rollback(ctx, current)
 	}
+	if install != nil {
+		if err = e.saveNextInstallJournal(ctx, install, "directories_starting"); err != nil {
+			return instance, err
+		}
+	}
 	if err = e.prepareInstanceDirectories(paths); err != nil {
 		return instance, err
+	}
+	if install != nil {
+		install.Instance = instance
+		if err = e.saveNextInstallJournal(ctx, install, "directories_ready"); err != nil {
+			return instance, err
+		}
 	}
 	if plan.Operation != "install" {
 		if err = e.takeSnapshot(ctx, current); err != nil {
 			return instance, err
 		}
-	}
-	instance = Instance{ID: plan.InstanceID, PluginID: plan.PluginID, InstanceID: label, Version: plan.Version.Version, SourceVersion: plan.Version.ID, Revision: revision + 1, Status: "configured", Paths: paths, Config: cloneConfig(plan.Config), UpdatedAt: time.Now().UTC(), Ownership: "managed", Packages: plan.Packages}
-	if loadErr == nil {
-		instance.Extensions = maps.Clone(current.Extensions)
-	}
-	instance.Service = ServiceProfile{ID: instance.ID, PluginID: instance.PluginID, InstanceID: label, Unit: "powerlinux-plugin-" + instance.ID + ".service", ConfigPath: paths.ConfigDir, DataPath: paths.DataDir, Ownership: "managed"}
-	instance.Service.Kind = "daemon"
-	if manifest.Service.Health == "cli" {
-		instance.Service.Kind = "cli"
-	}
-	if plan.Version.Source.Kind == "integration" {
-		instance.Service.Kind = "integration"
+		instance = Instance{ID: plan.InstanceID, PluginID: plan.PluginID, InstanceID: label, Version: plan.Version.Version, SourceVersion: plan.Version.ID, Revision: revision + 1, Status: "configured", Paths: paths, Config: cloneConfig(plan.Config), UpdatedAt: time.Now().UTC(), Ownership: "managed", Packages: plan.Packages}
+		if loadErr == nil {
+			instance.Extensions = maps.Clone(current.Extensions)
+		}
+		instance.Service = ServiceProfile{ID: instance.ID, PluginID: instance.PluginID, InstanceID: label, Unit: "powerlinux-plugin-" + instance.ID + ".service", ConfigPath: paths.ConfigDir, DataPath: paths.DataDir, Ownership: "managed"}
+		instance.Service.Kind = "daemon"
+		if manifest.Service.Health == "cli" {
+			instance.Service.Kind = "cli"
+		}
+		if plan.Version.Source.Kind == "integration" {
+			instance.Service.Kind = "integration"
+		}
 	}
 	if plan.Operation == "config" {
 		instance = current
@@ -310,6 +365,11 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	if plan.Operation == "install" || plan.Operation == "upgrade" {
 		switch plan.Version.Source.Kind {
 		case "verified_archive", "verified_source":
+			if install != nil {
+				if err = e.saveNextInstallJournal(ctx, install, "artifact_fetch_started"); err != nil {
+					return instance, err
+				}
+			}
 			artifact, err := e.artifacts.fetch(ctx, plan.Version.Source)
 			if err != nil {
 				return instance, err
@@ -317,7 +377,22 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 			stage := ""
 			if plan.Version.Source.Kind == "verified_source" {
 				if len(plan.Packages) > 0 {
+					if install != nil {
+						if err = e.saveNextInstallJournal(ctx, install, "package_install_started"); err != nil {
+							return instance, err
+						}
+					}
 					if err = e.packages.install(ctx, plan.Packages); err != nil {
+						return instance, err
+					}
+					if install != nil {
+						if err = e.saveNextInstallJournal(ctx, install, "package_install_completed"); err != nil {
+							return instance, err
+						}
+					}
+				}
+				if install != nil {
+					if err = e.saveNextInstallJournal(ctx, install, "source_build_started"); err != nil {
 						return instance, err
 					}
 				}
@@ -326,6 +401,11 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 					return instance, err
 				}
 			} else {
+				if install != nil {
+					if err = e.saveNextInstallJournal(ctx, install, "archive_staging_started"); err != nil {
+						return instance, err
+					}
+				}
 				stage, err = os.MkdirTemp(paths.Root, ".staging-*")
 				if err != nil {
 					return instance, err
@@ -351,6 +431,11 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 				}
 			}
 			runtimeDir := filepath.Join(paths.Root, "runtime")
+			if install != nil {
+				if err = e.saveNextInstallJournal(ctx, install, "runtime_promotion_pending"); err != nil {
+					return instance, err
+				}
+			}
 			if _, err = os.Stat(runtimeDir); err == nil {
 				if err = removeOwnedDirectory(paths.Root, runtimeDir); err != nil {
 					return instance, err
@@ -361,9 +446,25 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 			}
 			instance.Service.Program = filepath.Join(runtimeDir, relative)
 			instance.ArtifactSHA256 = plan.Version.Source.SHA256
+			if install != nil {
+				install.Instance = instance
+				if err = e.saveNextInstallJournal(ctx, install, "candidate_runtime_ready"); err != nil {
+					return instance, err
+				}
+			}
 		case "signed_package":
+			if install != nil {
+				if err = e.saveNextInstallJournal(ctx, install, "package_install_started"); err != nil {
+					return instance, err
+				}
+			}
 			if err = e.packages.install(ctx, plan.Packages); err != nil {
 				return instance, err
+			}
+			if install != nil {
+				if err = e.saveNextInstallJournal(ctx, install, "package_install_completed"); err != nil {
+					return instance, err
+				}
 			}
 			program, err := resolvePackageProgram(manifest, plan.Version, plan.Packages)
 			if err != nil {
@@ -373,27 +474,90 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 			if len(plan.Packages) > 0 {
 				instance.Version = plan.Packages[0].Version
 			}
+			if install != nil {
+				install.Instance = instance
+				if err = e.saveNextInstallJournal(ctx, install, "candidate_runtime_ready"); err != nil {
+					return instance, err
+				}
+			}
 		case "integration":
 			instance.Status = "enabled"
 		default:
 			return instance, failure("artifact_unavailable", "No trusted native installation recipe is available", 412)
 		}
 	}
-	if err = e.configure(ctx, &instance, manifest); err != nil {
-		e.restoreSnapshot(ctx, current)
+	if install != nil {
+		install.Instance = instance
+		if err = e.saveNextInstallJournal(ctx, install, "configure_started"); err != nil {
+			return instance, err
+		}
+	}
+	if install != nil {
+		err = e.configureWithInstallJournal(ctx, &instance, manifest, install.Nonce)
+	} else {
+		err = e.configure(ctx, &instance, manifest)
+	}
+	if err != nil {
+		if plan.Operation != "install" {
+			e.restoreSnapshot(ctx, current)
+		}
 		return instance, err
 	}
+	if install != nil {
+		if e.config.UseSystemd && instance.Service.Program != "" && instance.Service.Kind != "cli" {
+			stored, loadErr := e.loadInstallJournal(instance.ID)
+			if loadErr != nil {
+				return instance, loadErr
+			}
+			*install = stored
+			instance.Service.UnitSHA256 = stored.UnitSHA256
+			install.Instance = instance
+		} else {
+			if err = e.recordInstallCandidate(ctx, install, instance); err != nil {
+				return instance, err
+			}
+		}
+	}
 	if e.config.UseSystemd && instance.Service.Program != "" && instance.Service.Kind != "cli" {
-		unit, err := os.ReadFile(filepath.Join("/etc/systemd/system", instance.Service.Unit))
+		unit, err := os.ReadFile(filepath.Join(e.systemdUnitDir(), instance.Service.Unit))
 		if err != nil {
 			return instance, err
 		}
 		digest := sha256.Sum256(unit)
-		instance.Service.UnitSHA256 = hex.EncodeToString(digest[:])
+		actualUnitSHA := hex.EncodeToString(digest[:])
+		if install != nil && (actualUnitSHA != install.UnitSHA256 || !strings.Contains(string(unit), "# PowerLinux install journal nonce: "+install.Nonce+"\n")) {
+			return instance, failure("ownership_conflict", "The new service unit changed after its create-only write; it was preserved", 409)
+		}
+		instance.Service.UnitSHA256 = actualUnitSHA
+	}
+	if install != nil {
+		install.Instance = instance
+		if err = e.verifyInstallJournalProofs(ctx, *install); err != nil {
+			return instance, err
+		}
 	}
 	if instance.Service.Program != "" && instance.Service.Kind != "cli" {
-		if _, err = e.controlLocked(ctx, ServiceInput{ID: instance.ID, Command: "check"}, instance); err != nil {
-			e.restoreSnapshot(ctx, current)
+		control := func(input ServiceInput) (map[string]any, error) {
+			if install != nil && e.installControlHook != nil {
+				return e.installControlHook(ctx, input, instance)
+			}
+			return e.controlLocked(ctx, input, instance)
+		}
+		if install != nil {
+			install.Instance = instance
+			if err = e.saveNextInstallJournal(ctx, install, "service_starting"); err != nil {
+				return instance, err
+			}
+		}
+		if _, err = control(ServiceInput{ID: instance.ID, Command: "check"}); err != nil {
+			if install != nil {
+				install.Instance = instance
+				install.FailureCode = "service_check_failed"
+				_ = e.saveNextInstallJournal(ctx, install, "health_failed")
+			}
+			if plan.Operation != "install" {
+				e.restoreSnapshot(ctx, current)
+			}
 			return instance, err
 		}
 		command := "start"
@@ -405,30 +569,89 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 				}
 			}
 		}
-		if _, err = e.controlLocked(ctx, ServiceInput{ID: instance.ID, Command: command}, instance); err != nil {
-			e.restoreSnapshot(ctx, current)
+		if _, err = control(ServiceInput{ID: instance.ID, Command: command}); err != nil {
+			if install != nil {
+				install.Instance = instance
+				install.FailureCode = "service_start_failed"
+				_ = e.saveNextInstallJournal(ctx, install, "health_failed")
+			}
+			if plan.Operation != "install" {
+				e.restoreSnapshot(ctx, current)
+			}
 			return instance, err
 		}
 		instance.Status = "running"
 	}
-	instance.Health = e.probe(ctx, instance)
-	if instance.Health.Status == "unhealthy" {
-		e.restoreSnapshot(ctx, current)
-		return instance, failure("health_check_failed", "Managed software did not pass its real health check; previous state restoration was attempted", 502)
+	if install != nil && e.installHealthHook != nil {
+		instance.Health = e.installHealthHook(ctx, instance)
+	} else {
+		instance.Health = e.probe(ctx, instance)
 	}
-	if desiredAutostart != nil && instance.Service.Kind == "daemon" && instance.Service.Program != "" {
-		if err := e.setBootState(ctx, &instance, *desiredAutostart); err != nil {
+	if instance.Health.Status == "unhealthy" {
+		if install != nil {
+			install.Instance = instance
+			install.FailureCode = "health_check_failed"
+			_ = e.saveNextInstallJournal(ctx, install, "health_failed")
+		}
+		if plan.Operation != "install" {
 			e.restoreSnapshot(ctx, current)
+		}
+		return instance, failure("health_check_failed", "Managed software did not pass its health check; its protected install state was preserved for inspection", 502)
+	}
+	if install != nil {
+		install.Instance = instance
+		install.FailureCode = ""
+		if err = e.saveNextInstallJournal(ctx, install, "health_verified"); err != nil {
 			return instance, err
 		}
 	}
-	if err = e.save("receipts", instance.ID, instance); err != nil {
-		if plan.Operation == "install" && desiredAutostart != nil && instance.Service.Kind == "daemon" && instance.Service.Program != "" {
-			recovery, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
-			defer cancel()
-			_, _ = runFixed(recovery, "/usr/bin/systemctl", []string{"disable", instance.Service.Unit}, 15*time.Second, nil)
+	if desiredAutostart != nil && instance.Service.Kind == "daemon" && instance.Service.Program != "" {
+		var bootErr error
+		if install != nil && e.installEnableHook != nil {
+			bootErr = e.installEnableHook(ctx, install)
+		} else {
+			bootErr = e.setBootState(ctx, &instance, *desiredAutostart)
 		}
+		if bootErr != nil {
+			if plan.Operation != "install" {
+				e.restoreSnapshot(ctx, current)
+			}
+			return instance, bootErr
+		}
+		if install != nil && e.installEnableHook != nil {
+			value := *desiredAutostart
+			instance.Service.Autostart = &value
+		}
+		if install != nil {
+			install.Instance = instance
+			if err = e.saveNextInstallJournal(ctx, install, "boot_verified"); err != nil {
+				return instance, err
+			}
+		}
+	}
+	if install != nil {
+		install.Instance = instance
+		if install.Phase != "boot_verified" {
+			if err = e.saveNextInstallJournal(ctx, install, "receipt_pending"); err != nil {
+				return instance, err
+			}
+		} else if err = e.saveNextInstallJournal(ctx, install, "receipt_pending"); err != nil {
+			return instance, err
+		}
+	}
+	if plan.Operation == "install" {
+		err = e.saveReceipt(instance.ID, instance)
+	} else {
+		err = e.save("receipts", instance.ID, instance)
+	}
+	if err != nil {
 		return instance, err
+	}
+	if install != nil {
+		install.Instance = instance
+		if err = e.saveNextInstallJournal(ctx, install, "completed"); err != nil {
+			return instance, failure("operation_recovery_required", "Install receipt committed but journal completion needs protected recovery", 409)
+		}
 	}
 	return instance, nil
 }

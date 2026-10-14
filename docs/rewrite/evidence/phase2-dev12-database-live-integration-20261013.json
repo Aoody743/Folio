@@ -1,0 +1,136 @@
+{
+  "evidence_id": "phase2-dev12-database-live-integration-20261013",
+  "date_utc": "2026-10-13",
+  "guest": {
+    "os": "Debian 13",
+    "architecture": "amd64",
+    "virtualization": "QEMU TCG",
+    "init": "systemd"
+  },
+  "release": {
+    "version": "0.1.0-dev.12",
+    "release_tar_sha256": "458ff3fe060bbb65446eb9338fc95c2d05d3807396ae55a6524a349315a75a6c",
+    "installed_binary_sha256": "f1af45186da4e6f6a2467d7445cdc5ceb940682f937ea2ab553a0269c1634556",
+    "policy_sha256": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+    "server_config_sha256": "709c70f7e4f7ba198e4d41da6372c8d45a2779b8d929ee189c67a1e92d43a36c"
+  },
+  "verification_scope": {
+    "kind": "installed production API and root Agent against actual managed database daemons",
+    "source_test_binary_used": false,
+    "release_installer_used": true,
+    "api_health_after": "ready dev.12",
+    "agent_health_after": "ready dev.12",
+    "credentials_included": false,
+    "database_passwords_included": false,
+    "backup_payloads_included": false,
+    "private_fixture_paths_included": false
+  },
+  "managed_database_runs": [
+    {
+      "engine": "mariadb",
+      "instance_id": "mariadb-luna-dev12qa",
+      "port": 13307,
+      "signed_packages": [
+        {
+          "name": "mariadb-server",
+          "version": "1:11.8.6-0+deb13u1",
+          "sha256": "b62235159df3ad6dd4e82b1ff586e76a395063def855ea341252584ab61fb1b0"
+        },
+        {
+          "name": "mariadb-client",
+          "version": "1:11.8.6-0+deb13u1",
+          "sha256": "1ce40c794aa660d6bb57b0b6ab8903367b68a010abc766fd03202251ee836c9b"
+        }
+      ],
+      "result": "PASS",
+      "operations": [
+        "new owned instance installed and healthy",
+        "managed database created and public receipt verified",
+        "SQL table created; BLOB 00ff02 and BIGINT 9007199254740993 inserted",
+        "actual managed dump completed; 2362 bytes",
+        "restore recovered exact BLOB and BIGINT values",
+        "read permission denied writes; data_write permission denied DDL; read_write permission allowed DDL",
+        "keep-data uninstall and reinstall retained the row and exact values",
+        "backup and managed database deleted; final keep_data=false uninstall completed"
+      ],
+      "backup_sha256": "cc1a39fcfd49294b4505e04bfb6bced77c0d39ddfe0ea00b917721a1176e1859",
+      "final_receipt": {
+        "ownership": "managed",
+        "status": "uninstalled",
+        "revision": 4
+      },
+      "database_receipt": {
+        "state": "deleted",
+        "revision": 5
+      },
+      "final_unit": "absent",
+      "final_port_listener": "absent",
+      "private_log_sha256": "bf5076a7d3954c237e497f4cf837c9299c97c14db4de99b4e066732b2a73098d",
+      "final_api_summary_sha256": "9a6cb16b6232ea8d1e92b71324422056e41e9597fcc04ce3069e84f471525f5b"
+    },
+    {
+      "engine": "postgresql",
+      "instance_id": "postgresql-luna-dev12qa",
+      "port": 15433,
+      "signed_packages": [
+        {
+          "name": "postgresql",
+          "version": "17+278",
+          "sha256": "bc217b42b9d598101cf8cdffa3dd35548cf3f96b0a75e2ef7e13591f6148c670"
+        },
+        {
+          "name": "postgresql-client",
+          "version": "17+278",
+          "sha256": "a9d221057df5629c5ec00dcf6a9cc068916d387f0587cf8bb0274d842ac38057"
+        }
+      ],
+      "result": "PASS",
+      "operations": [
+        "new owned instance installed and healthy",
+        "managed database created and public receipt verified",
+        "SQL table created; BYTEA 00ff02 and BIGINT 9007199254740993 inserted",
+        "actual managed dump completed; 1908 bytes",
+        "restore recovered exact BYTEA and BIGINT values",
+        "read permission denied writes; data_write permission denied DDL; read_write permission allowed DDL",
+        "keep-data uninstall and reinstall retained the row and exact values",
+        "backup and managed database deleted; final keep_data=false uninstall completed"
+      ],
+      "backup_sha256": "7ae3fde2ea3049c765c4e9622fc128b7bedd6b8249baf55bb62bd1dbf7eb4f5c",
+      "final_receipt": {
+        "ownership": "managed",
+        "status": "uninstalled",
+        "revision": 4
+      },
+      "database_receipt": {
+        "state": "deleted",
+        "revision": 5
+      },
+      "final_unit": "absent",
+      "final_port_listener": "absent",
+      "private_event_log_sha256": "59a128d6c6e7b8082d2dd543a6a6b48928d21079aab45c95e0c4faa9ad85bd77",
+      "private_resume_log_sha256": "ad425bce201a3f4c3c8be770bd29a93279e5f64d6622b9eaa5a2cfb79088c36c",
+      "final_api_summary_sha256": "cb7513b3f0c203c1ca364ed2dbc79cac998c88c8bce1f4ea7377cdb1aea049ff"
+    }
+  ],
+  "continuity_and_isolation": {
+    "mariadb_system_unit": "active/running; unchanged unit hash 0deb84a06e205a1f26607166f8075df7f8cd21d2f8e0d819b21a59b7c2254f04",
+    "postgresql_system_cluster": "PostgreSQL 17 main remained online on port 5432; postgresql.service hash unchanged 3670a6eba171d9402075bb0a56a0a52cf2f5be652b43486db744defa7cdb0be3",
+    "existing_dev11_mariadb": "legacy unit remained active/running/disabled with unchanged unit hash 23d461df1848c604fd91ba077a1481702eb82bdd0b4b2b8b5cf5337c27571191 and listener 127.0.0.1:13306; it was not adopted, changed, or removed",
+    "agent_ledger": {
+      "before_postgresql_count": 53,
+      "after_postgresql_count": 65,
+      "new_entries": 12,
+      "preexisting_entries_changed": 0,
+      "preexisting_entries_removed": 0,
+      "new_entries_are": "owned plans/apply receipts/database tombstone and instance metadata for the QA PostgreSQL instance"
+    },
+    "post_postgresql_guest_snapshot_sha256": "c218ce5de32483bc1c0a45153f9b438af6d6207b8bc7d063f22909310592d41d",
+    "post_postgresql_units_and_ports_sha256": "90c738e010fefa46887c3d2aac8c4ddc7e13315a46816d42d8a1155496203572"
+  },
+  "harness_note": "The custom host harness initially expected id/port fields in managed_database_create's response. The actual API returned its ManagedDatabase receipt shape; after each one-time create, read-only public list/receipt confirmed active revision 1 and the test continued from that receipt without replaying install or create. This was a harness assertion mismatch, not a product failure.",
+  "scope_limits": [
+    "This is actual dev.12 package and installed API/Agent evidence, not a source testbinary result.",
+    "Both database daemons used unique QA-owned instance IDs and ports; the pre-existing system services and legacy MariaDB listener were preserved.",
+    "Private credentials, fixture contents, SQL passwords, and backup payloads are excluded."
+  ]
+}

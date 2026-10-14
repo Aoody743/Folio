@@ -1,0 +1,155 @@
+{
+  "evidence_id": "phase2-sites-journal-dev12-native-r1",
+  "date_utc": "2026-10-13",
+  "guest_scope": {
+    "os": "Debian 13",
+    "architecture": "amd64",
+    "virtualization": "QEMU TCG",
+    "pid1": "systemd",
+    "test_user": "root"
+  },
+  "release_context": {
+    "installed_version_before_and_after": "0.1.0-dev.12",
+    "installed_binary_sha256_before_and_after": "f1af45186da4e6f6a2467d7445cdc5ceb940682f937ea2ab553a0269c1634556",
+    "release_tar_sha256": "458ff3fe060bbb65446eb9338fc95c2d05d3807396ae55a6524a349315a75a6c",
+    "policy_sha256_before_and_after": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+    "server_config_sha256_before_and_after": "709c70f7e4f7ba198e4d41da6372c8d45a2779b8d929ee189c67a1e92d43a36c"
+  },
+  "production_continuity": {
+    "api_health_before_and_after": "healthy dev.12",
+    "agent_health_before_and_after": "ready dev.12",
+    "core_database_sha256_before_and_after": "20bdb872f6182336c6486a540ca5e8efd7a5ddf6fd7771925563525a8fb207be",
+    "agent_ledger_before_and_after": {
+      "count": 40,
+      "entries_sha256": "aa10fce731d17d5de661f4b65c3519a21418dfebf96efe82568b113f34411c6e"
+    },
+    "agent_ledger_unchanged": true,
+    "system_and_database_unit_states_and_hashes_unchanged": true,
+    "units_before_and_after": [
+      "powerlinux.service|4394|success|0|powerlinux.service|active|running|enabled|95a23bfbca0dcaa2909840e25e8c991109cfb983f6f8c52fe5852c9e9f56e7ba",
+      "powerlinux-agent.service|4449|success|0|powerlinux-agent.service|active|running|enabled|72da8be525db385eb15a2451bb9701cb0ad2590a6a3402a7f372b7f23b30aaa5",
+      "mariadb.service|362|success|0|mariadb.service|active|running|enabled|0deb84a06e205a1f26607166f8075df7f8cd21d2f8e0d819b21a59b7c2254f04",
+      "postgresql.service|0|success|0|postgresql.service|active|exited|enabled|3670a6eba171d9402075bb0a56a0a52cf2f5be652b43486db744defa7cdb0be3",
+      "redis-server.service|321|success|0|redis-server.service|active|running|enabled|638211a92bf860f096003559005d7f54d51b16ebd1036d76c408c6ac3e081e8a",
+      "memcached.service|309|success|0|memcached.service|active|running|enabled|ca6edb184282efa8f0e3b32af868fdae616386408b9edafec871e282797c9e64"
+    ]
+  },
+  "test_run": {
+    "artifact_kind": "fixed source-built Go test binary; package installer was already installed separately",
+    "binary_path": "/workspace/powerlinux/test-artifacts/luna-sites-dev12-r1.test",
+    "binary_sha256": "2d6f5f4831a583baef67da28684694b1bcfe5556df4f909477a9a5f63b20e332",
+    "command": "POWERLINUX_QA_OWNED_VM=1 POWERLINUX_QA_PHP_CLI=/usr/bin/php GOMAXPROCS=2 /root/luna-sites-dev12-r1.test -test.v -test.timeout=3m -test.run '^(TestWebsiteJournalRootOwnedSubprocessSIGKILL|TestQARoot.*|TestQAPHPCLI.*)$'",
+    "exit_code": 0,
+    "result": "PASS",
+    "top_level_case_count": 24,
+    "top_level_cases": [
+      {
+        "name": "TestQARootNativeDNSAlreadyIssuedOrderRecoversWithoutRefinalizing",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootNativeDNSACMERealHTTPSAndSignedTXTThenPrivateImport",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootNativeDNSCancellationCleansUsingIndependentContext",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootNativeDNSLostCleanupRetainsOrderAndRecoversAfterRestart",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootVMACMEHTTPRealJWSCSRAndConcurrentWebsiteRead",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootVMACMEManualDNSPendingSurvivesRestartConfirmsAndCancels",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootWebsiteAdvancedBackupRestoreRestoresExactWebAndPHPConfiguration",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootWebsiteBackupRestorePreservesGroupReadUnderPrivateUmask",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootWebsiteArchiveStreamIntegrityAndUnsafeFiles",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootWebsiteArchiveActualUnixHTTPAndMCPChunks",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootCertificateRenewalRollsBackOnProbeFailureAndKeepsConfigGeneration",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootAdvancedConfigRequiresExplicitResetForTypedSettings",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootDefaultSwitchRequiresBothRevisionsAndRollsBackTogether",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootDeleteLateMetadataFailureRestoresConfigurationInsideCancelledTransaction",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootInterruptedRetainedPurgeCanRestartAndFinishOwnershipCleanup",
+        "status": "PASS"
+      },
+      {
+        "name": "TestWebsiteJournalRootOwnedSubprocessSIGKILL",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootPendingIdentitySIGKILLRecoveryAndUnmarkedRefusal",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQAPHPCLIPublicSelectionActuallyRunsAsOrdinaryUID",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQAPHPCLIRejectsForeignDirectoryAndEntryPoint",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQAPHPCLINativeBinaryAccessKeepsSiblingStatePrivate",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQAPHPCLIExtensionStateUsesItsOwnPublicConfiguration",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootVMWebsiteFailureRestoresActualConfigAuthAndReceipt",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootRetainedWebsiteContentSurvivesRestartAndRejectsImplicitAdoption",
+        "status": "PASS"
+      },
+      {
+        "name": "TestQARootFailedWebsiteCreationCleansOnlyItsNewContentAndCanRetry",
+        "status": "PASS"
+      }
+    ],
+    "skipped_case_count": 0,
+    "failed_case_count": 0,
+    "log_sha256": "d0b86514bf43eccd4a20535da200526f0bd7a512ea8c2f957518aa500d96b1a5",
+    "log_artifact": "/workspace/tools/luna-dev12-20261013-r1/debian/luna-sites-dev12-r1.log"
+  },
+  "scope_limits": [
+    "Root-owned test cases ran in the actual Debian 13 systemd QEMU guest with real filesystem and process/user APIs.",
+    "PHP CLI tests used the actual /usr/bin/php8.4 (PHP 8.4.24) binary under ordinary-UID scenarios.",
+    "Website check/reload in AgentExecutor QA tests uses an isolated fixture runtime; the advanced backup restore case verifies exact temporary Web/PHP configuration bytes and permissions, but does not run the installed OpenResty or PHP-FPM lifecycle.",
+    "This source test binary is not the dev.12 package and does not count as a production plugin installer or actual web-server integration test."
+  ],
+  "secrets_included": false
+}

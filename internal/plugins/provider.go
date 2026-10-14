@@ -89,9 +89,11 @@ func (m *Manager) Bindings() []core.Binding {
 		m.binding("software_plan", "Prepare a bounded trusted install/upgrade/config/uninstall/rollback plan without modifying unrelated system settings", "software:manage", true, obj(map[string]any{"operation": enumSchema("install", "upgrade", "config", "uninstall", "rollback"), "plugin_id": idSchema(), "instance_id": idSchema(), "version": textSchema(), "config": map[string]any{"type": "object", "maxProperties": 32}, "keep_data": map[string]any{"type": "boolean"}}, "operation", "plugin_id"), m.planResources, m.planAction),
 		m.binding("software_apply", "Queue a durable trusted plan; inspect task and health before claiming success", "software:manage", false, obj(map[string]any{"plan_id": textSchema(), "expected_revision": revisionSchema(), "idempotency_key": map[string]any{"type": "string", "minLength": 8, "maxLength": 128}}, "plan_id", "expected_revision", "idempotency_key"), m.applyResources, m.applyAction),
 		m.binding("software_service_control", "Start/stop/restart/reload/check only the instance's root-owned service profile", "software:manage", false, obj(map[string]any{"id": idSchema(), "command": enumSchema("start", "stop", "restart", "reload", "check")}, "id", "command"), idResource, m.serviceAction),
+		m.binding("software_recovery_inspect", "Read the protected checkpoint for an interrupted install without exposing its private plan or proofs", "software:read", true, obj(map[string]any{"id": idSchema()}, "id"), idResource, m.recoveryInspectAction),
+		m.binding("software_recovery", "Explicitly continue only a health-verified install checkpoint or stop and preserve an exactly proven owned service", "software:manage", false, obj(map[string]any{"id": idSchema(), "command": enumSchema("continue", "stop_preserve"), "expected_journal_revision": map[string]any{"type": "integer", "minimum": 1}}, "id", "command", "expected_journal_revision"), idResource, m.recoveryAction),
 	}
 	for i := range bindings {
-		bindings[i].Action.Task = bindings[i].Action.Name == "software_apply" || bindings[i].Action.Name == "software_service_control"
+		bindings[i].Action.Task = bindings[i].Action.Name == "software_apply" || bindings[i].Action.Name == "software_service_control" || bindings[i].Action.Name == "software_recovery"
 	}
 	bindings = append(bindings, m.databaseBindings()...)
 	bindings = append(bindings, m.autostartBindings()...)
@@ -327,6 +329,48 @@ func (m *Manager) serviceAction(ctx context.Context, actor core.Actor, raw json.
 	}
 	id, _ := job["id"].(string)
 	return core.ActionResult{Data: job, Resources: resources, TaskID: id}, nil
+}
+
+func (m *Manager) recoveryInspectAction(ctx context.Context, _ core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+	var input installRecoveryInspectInput
+	if err := parse(raw, &input); err != nil {
+		return core.ActionResult{}, err
+	}
+	var view installRecoveryView
+	if err := m.agentJSON(ctx, "plugin_recovery_inspect", raw, &view); err != nil {
+		return core.ActionResult{}, err
+	}
+	return core.ActionResult{Data: view, Resources: []string{InstanceResource(input.ID)}}, nil
+}
+
+func (m *Manager) recoveryAction(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+	var input installRecoveryActionInput
+	if err := parse(raw, &input); err != nil {
+		return core.ActionResult{}, err
+	}
+	if !validInstanceID(input.ID) || input.ExpectedJournalRevision < 1 || (input.Command != "continue" && input.Command != "stop_preserve") {
+		return core.ActionResult{}, failure("invalid_input", "Invalid install recovery command or journal revision", 400)
+	}
+	resources := []string{InstanceResource(input.ID)}
+	if m.deps.ResolveActor != nil {
+		current, err := m.deps.ResolveActor(ctx, actor)
+		if err != nil {
+			return core.ActionResult{}, err
+		}
+		actor = current
+	}
+	if !m.deps.Authorize(actor, "software:manage", resources[0]) {
+		return core.ActionResult{}, failure("forbidden", "Install recovery requires current software management authorization for this instance", 403)
+	}
+	job, err := m.deps.Tasks.Submit(ctx, actor, "plugin_recovery_action", raw, resources)
+	if err != nil {
+		return core.ActionResult{}, err
+	}
+	id, _ := job["id"].(string)
+	if id == "" {
+		id, _ = job["task_id"].(string)
+	}
+	return core.ActionResult{Data: job, Resources: resources, TaskID: id, AuditSummary: map[string]any{"instance_id": input.ID, "command": input.Command}}, nil
 }
 
 func (m *Manager) agentJSON(ctx context.Context, operation string, input json.RawMessage, output any) error {
