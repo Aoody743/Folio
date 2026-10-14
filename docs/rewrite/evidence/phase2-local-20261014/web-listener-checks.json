@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-14",
+  "phase2_status": "in_progress",
+  "phase3_status": "not_started",
+  "baseline": "b893eef2fd1a1dd3ecc9937d931ac08ef4b2eb73",
+  "checks": {
+    "linux_arm64_compile": "passed",
+    "root_debian_focused": "7 top-level tests passed, 1 subprocess helper skipped",
+    "browser_native_script": "syntax check only; actual package/service execution pending"
+  },
+  "kind": "source-built test binary; root filesystem and protected runtime/listener model, including real child SIGKILL; not actual OpenResty/FPM service",
+  "fix": "Release source listener before acquiring target; WAL rollback releases target before recovering source. Sorted runtime locking unchanged.",
+  "log": "web-listener-tests.txt",
+  "failures_retained": "r1 fixture only recognized web-target and expected old sorted recovery order; adjusted to validate current listener ownership and new publication order, r2 passed",
+  "source_files": [
+    {
+      "path": "internal/sites/migration.go",
+      "sha256": "62f23c9cb3959d9ec242c14dc1258bc2c630f0b3c4857acf60cd133d4a208443"
+    },
+    {
+      "path": "internal/sites/journal.go",
+      "sha256": "18fd9028ea05b596805b046f8fd05c59c58496e9ddf9454911a44fa74d5d8f22"
+    },
+    {
+      "path": "internal/sites/migration_test.go",
+      "sha256": "72c028c273c12d161819ae2c0bb5ae8b8202a4af044bc7fb61ec0207b92e6e0a"
+    },
+    {
+      "path": "tests/rewrite/phase2/test_sites_migration_vm.py",
+      "sha256": "b579c58fbf6bd06d6e0dc97db0a495b675380461f5a73d9f7112393c700e84af"
+    }
+  ],
+  "secrets_included": false
+}

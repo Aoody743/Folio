@@ -1,0 +1,34 @@
+=== RUN   TestWebMigrationPlanApplyPreservesContentWorkerPHPAndJournalRefs
+--- PASS: TestWebMigrationPlanApplyPreservesContentWorkerPHPAndJournalRefs (0.00s)
+=== RUN   TestWebMigrationListenerTransferAndRollbackIgnoreLexicalOrder
+=== RUN   TestWebMigrationListenerTransferAndRollbackIgnoreLexicalOrder/rollback=false
+=== RUN   TestWebMigrationListenerTransferAndRollbackIgnoreLexicalOrder/rollback=true
+--- PASS: TestWebMigrationListenerTransferAndRollbackIgnoreLexicalOrder (0.00s)
+    --- PASS: TestWebMigrationListenerTransferAndRollbackIgnoreLexicalOrder/rollback=false (0.00s)
+    --- PASS: TestWebMigrationListenerTransferAndRollbackIgnoreLexicalOrder/rollback=true (0.00s)
+=== RUN   TestWebMigrationAdvancedResetKeepsPrivateOriginalAndRollbackRestoresConfig
+--- PASS: TestWebMigrationAdvancedResetKeepsPrivateOriginalAndRollbackRestoresConfig (0.00s)
+=== RUN   TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback
+=== RUN   TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback/uncommitted
+=== RUN   TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback/committed-before-cleanup
+--- PASS: TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback (0.05s)
+    --- PASS: TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback/uncommitted (0.03s)
+    --- PASS: TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback/committed-before-cleanup (0.03s)
+=== RUN   TestWebMigrationFixtureWALCrashChild
+    migration_test.go:577: subprocess helper
+--- SKIP: TestWebMigrationFixtureWALCrashChild (0.00s)
+=== RUN   TestWebMigrationRejectsRuntimeConfigAndTargetConflicts
+=== RUN   TestWebMigrationRejectsRuntimeConfigAndTargetConflicts/identity-proof
+=== RUN   TestWebMigrationRejectsRuntimeConfigAndTargetConflicts/source-config-proof
+=== RUN   TestWebMigrationRejectsRuntimeConfigAndTargetConflicts/domain-conflict
+=== RUN   TestWebMigrationRejectsRuntimeConfigAndTargetConflicts/default-conflict
+--- PASS: TestWebMigrationRejectsRuntimeConfigAndTargetConflicts (0.00s)
+    --- PASS: TestWebMigrationRejectsRuntimeConfigAndTargetConflicts/identity-proof (0.00s)
+    --- PASS: TestWebMigrationRejectsRuntimeConfigAndTargetConflicts/source-config-proof (0.00s)
+    --- PASS: TestWebMigrationRejectsRuntimeConfigAndTargetConflicts/domain-conflict (0.00s)
+    --- PASS: TestWebMigrationRejectsRuntimeConfigAndTargetConflicts/default-conflict (0.00s)
+=== RUN   TestWebMigrationResourceAuthorizationCoversSiteSourceTargetAndPHP
+--- PASS: TestWebMigrationResourceAuthorizationCoversSiteSourceTargetAndPHP (0.00s)
+=== RUN   TestWebMigrationTaskRechecksAllResourcesBeforeAgentApply
+--- PASS: TestWebMigrationTaskRechecksAllResourcesBeforeAgentApply (0.00s)
+PASS

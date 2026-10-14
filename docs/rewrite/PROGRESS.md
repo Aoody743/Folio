@@ -14,9 +14,11 @@
 - Debian 13 **原生 arm64** 可丢弃 VM 已建立，宿主未全局安装 Go/插件或修改 SSH/防火墙。真实 Redis/systemd 源测试的 continue/stop_preserve、外部 drop-in 拒绝和 missing-unit 拒绝通过。迁移 root 文件系统 fixture 的两种真实子进程 SIGKILL 检查通过；其 Web check/reload 为协议 fixture，不能当作 OpenResty/PHP 服务验收。
 - 普通 UID、umask 077 的全量 Go race 13 包通过、2 包无测试，387 项顶层测试通过、55 项环境或 helper 用例跳过；对应源码快照与逐项跳过记录见 [源码证据](evidence/phase2-local-20261014/source-checks.json)。前端 43 项源码测试、类型检查及静态导出通过。最后安全修复的插件定向 race、全量 vet 和依赖校验通过；固定包验收随后补入，未执行前不宣称可部署或阶段完成。
 
+- 网站监听交接补充：正常迁移按源 Web、PHP、目标 Web 顺序发布，WAL 回滚先释放目标，再恢复原 Web，锁仍按 ID 排序。正向、反向与 late-probe 失败回滚，以及原有 SIGKILL/归属/CAS 定向检查通过；这是根文件系统和监听协议模型证据，真实固定包服务验收继续进行。见 [监听交接证据](evidence/phase2-local-20261014/web-listener-checks.json)。新增真实网站迁移验收脚本，目前仅语法检查，尚未运行。
+
 本机临时 VM、工具链、缓存和专用 SSH key 集中于 `.cache/rewrite`。用户要求开发结束可清理：验收后先 poweroff 并确认 launcher 停止，保留代码、脱敏证据和发行包，再清除本次临时环境。源码、真实服务、固定安装包和浏览器证据分别记录。
 
-## 当前执行状态（优先于历史交接与下方旧批次）
+## 云端第二阶段过程记录（历史批次）
 
 用户已恢复云端开发，要求使用 GPT-6 Luna max 按小批次继续完成第二阶段。首批源码闭环已完成，但第二阶段仍未达到退出标准，第三阶段未开始。
 

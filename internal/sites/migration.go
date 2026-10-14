@@ -658,7 +658,7 @@ func (e *AgentExecutor) applyMigration(ctx context.Context, in request) (site Si
 		recovery, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
 		defer cancel()
 		restoreErr := rollbackConfigs([]changedFile{targetSnapshot, sourceSnapshot})
-		for _, id := range migrationRuntimeIDs(copy, source.ID) {
+		for _, id := range migrationReloadIDs(copy.WebInstance, source.ID, copy.PHPInstance) {
 			restoreErr = errors.Join(restoreErr, e.runtimes.Reload(recovery, id))
 		}
 		if restoreErr != nil {
@@ -684,7 +684,9 @@ func (e *AgentExecutor) applyMigration(ctx context.Context, in request) (site Si
 			return site, failure("configuration_rejected", "Source, target Web or PHP rejected the staged migration configuration", 409)
 		}
 	}
-	for _, id := range ids {
+	// Release the old listener before publishing it in the target master. Lock
+	// acquisition remains sorted; publication order follows socket ownership.
+	for _, id := range migrationReloadIDs(source.ID, copy.WebInstance, copy.PHPInstance) {
 		if err = e.runtimes.Reload(ctx, id); err != nil {
 			return site, failure("reload_failed", "Source, target Web or PHP did not accept the migration reload", 500)
 		}
@@ -699,6 +701,14 @@ func (e *AgentExecutor) applyMigration(ctx context.Context, in request) (site Si
 		return site, err
 	}
 	return copy, nil
+}
+
+func migrationReloadIDs(releaseWeb, acquireWeb, php string) []string {
+	ids := []string{releaseWeb}
+	if php != "" {
+		ids = append(ids, php)
+	}
+	return append(ids, acquireWeb)
 }
 
 func migrationRuntimeIDs(site Site, sourceWeb string) []string {

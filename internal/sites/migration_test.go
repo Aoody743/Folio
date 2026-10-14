@@ -30,6 +30,8 @@ type migrationTestRuntime struct {
 	recoveries   []string
 	verified     []Site
 	transactions [][]string
+	listeningWeb string
+	listenerSite string
 }
 
 type migrationProviderAgent struct {
@@ -82,6 +84,28 @@ func (r *migrationTestRuntime) Reload(_ context.Context, id string) error {
 		r.failReload = ""
 		return errors.New("injected reload failure")
 	}
+	return r.publishListener(id)
+}
+
+func (r *migrationTestRuntime) publishListener(id string) error {
+	web, ok := r.webs[id]
+	if !ok || r.listenerSite == "" {
+		return nil
+	}
+	_, err := os.Stat(filepath.Join(web.SnippetsDir, r.listenerSite+".conf"))
+	if errors.Is(err, fs.ErrNotExist) {
+		if r.listeningWeb == id {
+			r.listeningWeb = ""
+		}
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if r.listeningWeb != "" && r.listeningWeb != id {
+		return errors.New("address already in use by another Web master")
+	}
+	r.listeningWeb = id
 	return nil
 }
 
@@ -92,7 +116,7 @@ func (r *migrationTestRuntime) WithRuntimeTransaction(ctx context.Context, ids [
 
 func (r *migrationTestRuntime) RecoverRuntime(_ context.Context, id string) error {
 	r.recoveries = append(r.recoveries, id)
-	return nil
+	return r.publishListener(id)
 }
 
 func (r *migrationTestRuntime) VerifySite(_ context.Context, site Site) error {
@@ -100,7 +124,7 @@ func (r *migrationTestRuntime) VerifySite(_ context.Context, site Site) error {
 	if r.failVerify {
 		return errors.New("injected target verification failure")
 	}
-	if site.WebInstance != "web-target" {
+	if _, ok := r.webs[site.WebInstance]; !ok || r.listenerSite != "" && r.listeningWeb != site.WebInstance {
 		return errors.New("migration verified the wrong Web instance")
 	}
 	return nil
@@ -346,7 +370,7 @@ func TestWebMigrationPlanApplyPreservesContentWorkerPHPAndJournalRefs(t *testing
 	if !slices.Equal(contentBefore, contentAfter) || !slices.Equal(workerBefore, workerAfter) || !slices.Equal(phpConfigBefore, phpConfigAfter) {
 		t.Fatal("migration changed content, worker ownership or PHP configuration")
 	}
-	if !slices.Equal(runtime.checks, []string{"php-shared", "web-source", "web-target"}) || !slices.Equal(runtime.reloads, []string{"php-shared", "web-source", "web-target"}) {
+	if !slices.Equal(runtime.checks, []string{"php-shared", "web-source", "web-target"}) || !slices.Equal(runtime.reloads, []string{"web-source", "php-shared", "web-target"}) {
 		t.Fatal("migration did not validate and reload PHP plus both Web instances", runtime.checks, runtime.reloads)
 	}
 	if len(runtime.verified) != 1 || runtime.verified[0].WebInstance != "web-target" {
@@ -365,6 +389,45 @@ func TestWebMigrationPlanApplyPreservesContentWorkerPHPAndJournalRefs(t *testing
 	legacy.WebInstance = "web-source"
 	if _, err = runMigrationAgent(t, e, "site_apply", request{ID: migrated.ID, ExpectedRevision: migrated.Revision, Site: &legacy}); err == nil || !strings.Contains(err.Error(), "explicit migration plan") {
 		t.Fatal("sites_update/site_apply bypassed the explicit Web migration plan", err)
+	}
+}
+
+func TestWebMigrationListenerTransferAndRollbackIgnoreLexicalOrder(t *testing.T) {
+	for _, rollback := range []bool{false, true} {
+		t.Run(fmt.Sprintf("rollback=%t", rollback), func(t *testing.T) {
+			e, runtime, site, _ := newMigrationTestExecutor(t, false)
+			runtime.listenerSite, runtime.listeningWeb = site.ID, site.WebInstance
+			view := createMigrationTestPlan(t, e, site, false)
+			if _, err := runMigrationAgent(t, e, "site_migration_apply", request{PlanID: view.ID, ExpectedRevision: site.Revision}); err != nil {
+				t.Fatal(err)
+			}
+			current, err := e.get(site.ID)
+			if err != nil || runtime.listeningWeb != "web-target" {
+				t.Fatal("forward migration failed to move listener", err, runtime.listeningWeb)
+			}
+			result, err := runMigrationAgent(t, e, "site_migration_plan", request{ID: current.ID, ExpectedRevision: current.Revision, TargetWebInstance: "web-source"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = json.Unmarshal(result.Data, &view); err != nil {
+				t.Fatal(err)
+			}
+			runtime.failVerify = rollback
+			_, err = runMigrationAgent(t, e, "site_migration_apply", request{PlanID: view.ID, ExpectedRevision: current.Revision})
+			want := "web-source"
+			if rollback {
+				want = "web-target"
+				if core.ErrorCode(err) != "runtime_not_applied" {
+					t.Fatal("expected late probe failure", err)
+				}
+			} else if err != nil {
+				t.Fatal("reverse migration tried acquiring before releasing listener", err)
+			}
+			after, getErr := e.get(site.ID)
+			if getErr != nil || after.WebInstance != want || runtime.listeningWeb != want {
+				t.Fatal("website metadata and listener disagree", getErr, after.WebInstance, runtime.listeningWeb)
+			}
+		})
 	}
 }
 
@@ -410,7 +473,7 @@ func TestWebMigrationAdvancedResetKeepsPrivateOriginalAndRollbackRestoresConfig(
 	if err != nil || current.Revision != site2.Revision || current.WebInstance != site2.WebInstance || current.ConfigurationMode != "advanced" {
 		t.Fatal("failed migration did not restore protected website metadata", current, err)
 	}
-	if !slices.Equal(runtime2.recoveries, []string{"php-shared", "web-source", "web-target"}) {
+	if !slices.Equal(runtime2.recoveries, []string{"web-target", "php-shared", "web-source"}) {
 		t.Fatal("migration rollback did not recover each journaled runtime", runtime2.recoveries)
 	}
 }
@@ -483,7 +546,7 @@ func TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback(t *tes
 				if _, readErr := os.Stat(targetPath); !errors.Is(readErr, fs.ErrNotExist) {
 					t.Fatal("uncommitted migration left a target vhost behind", readErr)
 				}
-				if !slices.Equal(runtime.recoveries, []string{"php-shared", "web-source", "web-target"}) {
+				if !slices.Equal(runtime.recoveries, []string{"web-target", "php-shared", "web-source"}) {
 					t.Fatal("rollback did not recover every journaled runtime", runtime.recoveries)
 				}
 			} else {

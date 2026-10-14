@@ -777,7 +777,13 @@ func (e *AgentExecutor) rollbackJournal(ctx context.Context, j websiteJournal) e
 	if j.NewContent != nil {
 		result = errors.Join(result, e.removeNewContent(ctx, j.NewContent))
 	}
-	for _, id := range j.RuntimeIDs {
+	recoveryIDs := j.RuntimeIDs
+	if j.Operation == "site_migration_apply" && len(j.Sites) == 2 {
+		// Before images put the site back in the original Web instance. Release
+		// the target master's listener before recovering the original master.
+		recoveryIDs = migrationReloadIDs(j.Sites[1].WebRuntime, j.Sites[0].WebRuntime, j.Sites[0].PHPRuntime)
+	}
+	for _, id := range recoveryIDs {
 		if recovery, ok := e.runtimes.(RuntimeRecovery); ok {
 			result = errors.Join(result, recovery.RecoverRuntime(ctx, id))
 		} else {
