@@ -20,6 +20,8 @@
 
 - 临时任务凭据增加不可变加密 TTL、原子索引与独立启动/周期清理；排队取消或撤权不再依赖下一次调用清理，过期值即时拒绝读取。普通 Debian UID 的 4 项 secrets 定向检查及 45 项 Core 顶层源码测试通过；统一 race 与真实私仓仍待本批集成。见 [凭据到期证据](evidence/phase2-local-20261014/credential-expiry-checks.json)。
 
+- dev.13 固定包（源码 `b893eef`、clean、Go 1.27.2）双架构构建通过，arm64 包实际全新安装并验证 API/Agent。实际签名 Redis 安装因收据目录只读到达 receipt_pending，解除故障并重启 Agent 后 REST continue 成功，已有系统 Redis 保持正常。真正 OpenResty 1.27.1.2 与 Debian PHP8.4/FPM 链及正向迁移通过；反向迁移在旧 dev.13 复现 reload_failed，后续固定包需复验监听顺序修复。详见 [固定包证据](evidence/phase2-local-20261014/fixed-package-checks.json)。
+
 本机临时 VM、工具链、缓存和专用 SSH key 集中于 `.cache/rewrite`。用户要求开发结束可清理：验收后先 poweroff 并确认 launcher 停止，保留代码、脱敏证据和发行包，再清除本次临时环境。源码、真实服务、固定安装包和浏览器证据分别记录。
 
 ## 云端第二阶段过程记录（历史批次）

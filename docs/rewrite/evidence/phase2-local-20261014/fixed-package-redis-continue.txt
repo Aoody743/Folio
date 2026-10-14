@@ -1,0 +1,7 @@
+checkpoint_before=receipt_pending state=in_progress revision=13 receipt_present=False available=continue,stop_preserve
+readonly_apply_state=failed failure=software_operation_failed: Software operation failed; inspect its prerequisites and task
+task=4952d67a176d197823e17ca0d3ced98b state=succeeded
+recovery_state=completed checkpoint=completed receipt_present=True available=
+managed_status=running health=healthy managed_redis_ping=PONG
+system_redis_active=active system_redis_ping=PONG
+REDIS_RECEIPT_RECOVERY=PASS

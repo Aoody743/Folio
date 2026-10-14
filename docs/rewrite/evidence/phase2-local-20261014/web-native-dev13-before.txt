@@ -1,0 +1,13 @@
+Native PHP/FPM response verified
+Native migration target: openresty-qa-target-5230c07e
+Native migration target: openresty-qa-source-5230c07e
+Traceback (most recent call last):
+  File "/home/qa/powerlinux-build/source-b893eef/tests/rewrite/phase2/test_sites_migration_vm.py", line 194, in <module>
+    main()
+    ~~~~^^
+  File "/home/qa/powerlinux-build/source-b893eef/tests/rewrite/phase2/test_sites_migration_vm.py", line 138, in main
+    wait(api, first)
+    ~~~~^^^^^^^^^^^^
+  File "/home/qa/powerlinux-build/source-b893eef/tests/rewrite/phase2/test_sites_migration_vm.py", line 55, in wait
+    raise AssertionError(f'task ended in {state}; private diagnostic retained')
+AssertionError: task ended in failed; private diagnostic retained

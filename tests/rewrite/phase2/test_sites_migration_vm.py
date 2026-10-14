@@ -25,12 +25,18 @@ from http_client import APIClient
 from mcp_client import HTTPMCPClient, tool_data
 
 
+class ActionFailure(AssertionError):
+    def __init__(self, name, status, code):
+        super().__init__(f'{name}: HTTP {status}, code={code}')
+        self.code = code
+
+
 def action(api, name, body, key=None):
     status, payload, _ = api.post('/api/v1/actions/' + name, body,
                                  headers={'Idempotency-Key': key} if key else None)
     if status != 200 or not isinstance(payload, dict) or 'data' not in payload:
         code = payload.get('error', {}).get('code', 'unknown') if isinstance(payload, dict) else 'unknown'
-        raise AssertionError(f'{name}: HTTP {status}, code={code}')
+        raise ActionFailure(name, status, code)
     return payload['data']
 
 
@@ -42,7 +48,11 @@ def wait(api, task):
         if state in ('succeeded', 'completed'):
             return item
         if state in ('failed', 'canceled', 'cancelled', 'interrupted'):
-            raise AssertionError(f'task ended in {state}')
+            if os.geteuid() == 0:
+                diagnostic = Path('/root/powerlinux-qa/native-site-task-failure.json')
+                diagnostic.write_text(json.dumps(item))
+                diagnostic.chmod(0o600)
+            raise AssertionError(f'task ended in {state}; private diagnostic retained')
         time.sleep(.4)
     raise AssertionError('task timeout')
 
@@ -84,15 +94,22 @@ def main():
         assert instance['plugin_id'] == plugin and instance['status'] == 'running', 'Wrong native runtime fixture'
     site_id = 'migration-' + secrets.token_hex(6)
     domain = site_id + '.example.test'
-    created = False
+    creation_task = None
     token_id = None
     checks = []
     marker = 'PowerLinux-' + secrets.token_hex(12)
     try:
-        wait(api, action(api, 'sites_create', {'id': site_id, 'name': site_id,
+        try:
+            action(api, 'sites_get', {'id': site_id})
+        except ActionFailure as error:
+            if error.code != 'not_found':
+                raise
+        else:
+            raise RuntimeError('Random QA site ID is already in use')
+        creation_task = action(api, 'sites_create', {'id': site_id, 'name': site_id,
             'domains': [domain], 'web_instance': fixture['source_web'],
-            'php_instance': fixture['php_instance'], 'index': ['index.php', 'index.html']}, site_id + '-create'))
-        created = True
+            'php_instance': fixture['php_instance'], 'index': ['index.php', 'index.html']}, site_id + '-create')
+        wait(api, creation_task)
         site = action(api, 'sites_get', {'id': site_id})
         root, php = site['document_root'], site['php_instance']
         worker = Path(root).stat().st_uid
@@ -105,7 +122,9 @@ def main():
         data = json.loads(raw)
         assert status == 200 and data['marker'] == marker and data['sapi'] == 'fpm-fcgi', 'Native PHP response mismatch'
         checks.append('actual source OpenResty/FPM response')
+        print('Native PHP/FPM response verified', flush=True)
         for target in (fixture['target_web'], fixture['source_web']):
+            print('Native migration target: ' + target, flush=True)
             site = action(api, 'sites_get', {'id': site_id})
             plan = action(api, 'sites_migration_plan', {'id': site_id, 'expected_revision': site['revision'],
                 'target_web_instance': target, 'reset_advanced_config': False})
@@ -140,12 +159,35 @@ def main():
         print(json.dumps({'version': health['version'], 'scope': 'actual installed native OpenResty/PHP-FPM and REST/HTTP MCP',
                           'checks': checks, 'php_version': data['version'], 'content_sha256': hashlib.sha256(body.encode()).hexdigest()}, ensure_ascii=False))
     finally:
+        cleanup_errors = []
         if token_id:
-            status, _, _ = api.delete('/api/v1/tokens/' + token_id)
-            assert status == 200, 'QA token cleanup failed'
-        if created:
-            current = action(api, 'sites_get', {'id': site_id})
-            wait(api, action(api, 'sites_delete', {'id': site_id, 'expected_revision': current['revision'], 'keep_data': False}, site_id + '-delete'))
+            try:
+                status, _, _ = api.delete('/api/v1/tokens/' + token_id)
+                assert status == 200, 'QA token cleanup failed'
+            except Exception as error:
+                cleanup_errors.append(type(error).__name__ + ': token cleanup failed')
+        if creation_task:
+            try:
+                job = action(api, 'tasks_get', {'id': creation_task['id']})
+                if job.get('status', job.get('state')) not in ('succeeded', 'completed', 'failed', 'canceled', 'cancelled', 'interrupted'):
+                    action(api, 'tasks_cancel', {'id': creation_task['id']})
+                    try:
+                        wait(api, creation_task)
+                    except AssertionError:
+                        pass
+                    job = action(api, 'tasks_get', {'id': creation_task['id']})
+                    assert job.get('status', job.get('state')) in ('succeeded', 'completed', 'failed', 'canceled', 'cancelled', 'interrupted'), 'QA creation task still running'
+                try:
+                    current = action(api, 'sites_get', {'id': site_id})
+                except ActionFailure as error:
+                    if error.code != 'not_found':
+                        raise
+                else:
+                    wait(api, action(api, 'sites_delete', {'id': site_id, 'expected_revision': current['revision'], 'keep_data': False}, site_id + '-delete'))
+            except Exception as error:
+                cleanup_errors.append(type(error).__name__ + ': site cleanup failed for ' + site_id)
+        if cleanup_errors:
+            raise RuntimeError('; '.join(cleanup_errors))
 
 
 if __name__ == '__main__':

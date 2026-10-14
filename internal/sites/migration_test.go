@@ -431,6 +431,26 @@ func TestWebMigrationListenerTransferAndRollbackIgnoreLexicalOrder(t *testing.T)
 	}
 }
 
+func TestWebMigrationJournalRejectsSwappedSourceAndTarget(t *testing.T) {
+	e, _, site, _ := newMigrationTestExecutor(t, false)
+	view := createMigrationTestPlan(t, e, site, false)
+	ctx, finish, err := e.beginWebsiteJournal(context.Background(), "site_migration_apply", request{PlanID: view.ID, ExpectedRevision: site.Revision})
+	if err != nil {
+		t.Fatal(err)
+	}
+	operationErr := errors.New("fixture cancellation before any mutation")
+	defer finish(&operationErr)
+	j := ctx.Value(websiteJournalKey{}).(*activeWebsiteJournal).record
+	if err = e.validateJournal(ctx, j, j.ID+".json"); err != nil {
+		t.Fatal("producer journal rejected", err)
+	}
+	j.Sites = append([]journalSite(nil), j.Sites...)
+	j.Sites[0], j.Sites[1] = j.Sites[1], j.Sites[0]
+	if err = e.validateJournal(ctx, j, j.ID+".json"); err == nil || !strings.Contains(err.Error(), "source and target order") {
+		t.Fatal("swapped listener recovery direction accepted", err)
+	}
+}
+
 func TestWebMigrationAdvancedResetKeepsPrivateOriginalAndRollbackRestoresConfig(t *testing.T) {
 	e, _, site, original := newMigrationTestExecutor(t, true)
 	if _, err := runMigrationAgent(t, e, "site_migration_plan", request{ID: site.ID, ExpectedRevision: site.Revision, TargetWebInstance: "web-target"}); core.ErrorCode(err) != "advanced_migration_choice_required" {

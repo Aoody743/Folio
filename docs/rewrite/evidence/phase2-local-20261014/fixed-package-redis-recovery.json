@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0-dev.13",
+  "instance_id": "redis-qa-recovery-20261014-f9efece5",
+  "port": 18437,
+  "apply_state": "failed",
+  "checkpoint_after_failure": "receipt_pending",
+  "recovery_state": "completed",
+  "receipt_present": true,
+  "health": "healthy",
+  "managed_redis_ping": "PONG",
+  "system_redis_active": "active",
+  "system_redis_ping": "PONG",
+  "read_only_mount_removed": true,
+  "package_pins": [
+    {
+      "name": "redis-server",
+      "version": "5:8.0.2-3+deb13u3",
+      "repository": "https://deb.debian.org",
+      "sha256": "e638c371d228c1893508bc3dfc07c370e50df08d1f2b1b64ed40f15b4cf767c0"
+    },
+    {
+      "name": "redis-tools",
+      "version": "5:8.0.2-3+deb13u3",
+      "repository": "https://deb.debian.org",
+      "sha256": "830bfd0aa739a4cfb1524df0958583eff395bfe2b7458fa06d0eef2fcdf5d272"
+    }
+  ]
+}

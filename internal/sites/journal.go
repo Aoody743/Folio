@@ -1157,6 +1157,16 @@ func (e *AgentExecutor) validateJournal(ctx context.Context, j websiteJournal, n
 		if !validMigrationPlanID(j.MigrationPlanID) || len(j.Sites) != 2 || j.Sites[0].ID != j.Sites[1].ID || j.Sites[0].WebRuntime == j.Sites[1].WebRuntime || j.Sites[0].PHPRuntime != j.Sites[1].PHPRuntime {
 			return errors.New("website migration journal does not bind both Web runtimes and the same PHP runtime")
 		}
+		plan, err := e.loadMigrationPlan(j.MigrationPlanID)
+		if err != nil {
+			return errors.New("website migration journal has no protected plan authority")
+		}
+		source := journalSiteRef(plan.Site)
+		target := source
+		target.WebRuntime = plan.TargetWebInstance
+		if j.Sites[0] != source || j.Sites[1] != target {
+			return errors.New("website migration journal source and target order changed")
+		}
 	} else if j.MigrationPlanID != "" {
 		return errors.New("non-migration journal contains a migration plan identity")
 	}

@@ -1,0 +1,3 @@
+task=ea4d3b23158000bb00254b22084483de state=failed error_code=
+agent_receipt_mount=ro,relatime,discard,errors=remount-ro
+apply_state=failed checkpoint=receipt_pending recovery_state=in_progress revision=13 receipt_present=False available=continue,stop_preserve

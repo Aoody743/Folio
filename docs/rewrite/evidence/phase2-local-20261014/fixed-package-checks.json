@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-14",
+  "version": "0.1.0-dev.13",
+  "commit": "b893eef2fd1a1dd3ecc9937d931ac08ef4b2eb73",
+  "working_tree_dirty": false,
+  "toolchain": "Go 1.27.2",
+  "packages": {
+    "arm64": {
+      "sha256": "344789136d380b10d8bbdd2a9712eb4cd3725f23f2d4ede2b853678438e6fb17",
+      "built": true,
+      "actually_installed": true
+    },
+    "amd64": {
+      "sha256": "e125b8014ed28a061edf57e8e5165155adc2a17fb73aba78bd183e6f5ce0f1c6",
+      "built": true,
+      "actually_installed": false
+    }
+  },
+  "phase2_status": "in_progress",
+  "phase3_status": "not_started",
+  "fixed_package_recovery": "actual signed Debian Redis install fails receipt write in Agent-private read-only mount, then Agent restart + explicit REST continue completes; no test-only hook",
+  "mount_removed": true,
+  "recovery_evidence": "fixed-package-redis-recovery.json",
+  "web_native_before_fix": {
+    "OpenResty": "two native 1.27.1.2 builds through actual Agent source recipe; official SHA256 pin",
+    "PHP": "Debian signed php8.4 FPM; real fpm-fcgi response",
+    "forward_migration": "passed",
+    "reverse_migration": "failed reload_failed in dev.13; source listener ordering fix needs newer fixed package",
+    "log": "web-native-dev13-before.txt",
+    "qa_site_cleanup": "completed"
+  },
+  "review": {
+    "model": "GPT-6 Luna max",
+    "journal_source_target_order": "root-private WAL now binds ordered identities to protected migration plan",
+    "qa_cleanup": "creation task tracked before waiting; token/site cleanup independent"
+  },
+  "source_checks": "8 top-level migration tests passed, 1 subprocess helper skipped on root native Debian; runtime/listener fixture tests include real SIGKILL but are not native Web proof",
+  "not_yet_verified": [
+    "new fixed package reverse migration",
+    "browser categories/system workflow",
+    "all 23 plugins"
+  ],
+  "environment_adjustments": [
+    "guest-only official signed Debian HTTPS sources replace generic cloud mirror+file transport; original retained",
+    "read-only mount is applied after Agent starts in its private mount namespace; mount gone after restart"
+  ],
+  "secrets_included": false
+}
