@@ -8924,5 +8924,21 @@
         "terminal.shared_transports"
       ]
     }
-  ]
+  ],
+  "release_scope": {
+    "decision_date": "2026-10-14",
+    "authority": "explicit user instruction",
+    "distribution": "fresh release with future updates",
+    "old_panel_compatibility": "not_required",
+    "old_panel_downgrade": "not_required",
+    "old_panel_automatic_migration": "not_required",
+    "preserved_requirements": [
+      "all valid user capabilities",
+      "managed software version scope",
+      "configuration failure recovery",
+      "installation interruption recovery",
+      "backup and restore",
+      "data continuity and ownership proof"
+    ]
+  }
 }
