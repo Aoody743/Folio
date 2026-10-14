@@ -4,18 +4,23 @@ import (
 	"archive/tar"
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -385,6 +390,372 @@ func TestInstallRecoveryUnknownAndLegacyCheckpointsFailClosed(t *testing.T) {
 	legacy, err := e.installRecoveryInspect(context.Background(), "redis-legacy")
 	if err != nil || legacy.State != "journal_missing" || len(legacy.Available) != 0 {
 		t.Fatal("legacy/no-journal state was adopted", legacy, err)
+	}
+}
+
+func TestInstallRecoveryInspectAndContinueRejectChangedConfiguration(t *testing.T) {
+	e, j := installRecoveryFixture(t, "integration", false)
+	path := filepath.Join(j.Instance.Paths.ConfigDir, "fixture.conf")
+	changed := []byte("externally changed configuration\n")
+	if err := os.WriteFile(path, changed, 0600); err != nil {
+		t.Fatal(err)
+	}
+	view, err := e.installRecoveryInspect(context.Background(), j.ID)
+	if err != nil || len(view.Available) != 0 {
+		t.Fatal("inspect advertised recovery without current ownership proof", view, err)
+	}
+	_, err = e.installRecoveryAction(context.Background(), installRecoveryActionInput{ID: j.ID, Command: "continue", ExpectedJournalRevision: j.Revision})
+	if core.ErrorCode(err) != "ownership_conflict" {
+		t.Fatal("continue accepted changed configuration", err)
+	}
+	if _, err = e.get(context.Background(), j.ID, false); core.ErrorCode(err) != "not_found" {
+		t.Fatal("unproven candidate was committed", err)
+	}
+	stored, err := e.loadInstallJournal(j.ID)
+	if err != nil || stored.Revision != j.Revision || stored.Phase != j.Phase {
+		t.Fatal("rejected recovery changed the protected checkpoint", stored.Phase, err)
+	}
+	actual, err := os.ReadFile(path)
+	if err != nil || !bytes.Equal(actual, changed) {
+		t.Fatal("recovery overwrote externally changed configuration", err)
+	}
+}
+
+func TestInstallRecoveryCommittedReceiptOnlyFinalizesJournal(t *testing.T) {
+	e, j := installRecoveryFixture(t, "verified_archive", true)
+	if err := e.saveNextInstallJournal(context.Background(), &j, "receipt_pending"); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.saveReceipt(j.ID, j.Instance); err != nil {
+		t.Fatal(err)
+	}
+	// Simulate a reboot/stop after receipt commit but before journal completion.
+	// Finalization cannot enable the unit or run any program/package phase again.
+	e.installHealthHook = func(context.Context, Instance) Health {
+		t.Fatal("journal finalization re-probed a committed service")
+		return Health{Status: "unhealthy"}
+	}
+	e.installEnableHook = func(context.Context, *installJournal) error {
+		t.Fatal("journal finalization changed a committed service's boot state")
+		return nil
+	}
+	e.installProofHook = func(context.Context, installJournal) error {
+		t.Fatal("journal finalization treated a completed install as an interrupted mutation")
+		return nil
+	}
+	view, err := e.installRecoveryAction(context.Background(), installRecoveryActionInput{ID: j.ID, Command: "continue", ExpectedJournalRevision: j.Revision})
+	if err != nil || view.State != "completed" || len(view.Available) != 0 {
+		t.Fatal("committed receipt could not finalize without replay", view, err)
+	}
+}
+
+func TestInstallRecoveryRevisionCASAcrossExecutors(t *testing.T) {
+	e, j := installRecoveryFixture(t, "integration", false)
+	other, err := NewPrivilegedExecutor(e.config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	other.catalog = e.catalog
+	results := make(chan error, 2)
+	start := make(chan struct{})
+	for _, executor := range []*PrivilegedExecutor{e, other} {
+		go func(executor *PrivilegedExecutor) {
+			<-start
+			_, err := executor.installRecoveryAction(context.Background(), installRecoveryActionInput{ID: j.ID, Command: "continue", ExpectedJournalRevision: j.Revision})
+			results <- err
+		}(executor)
+	}
+	close(start)
+	first, second := <-results, <-results
+	if first == nil && core.ErrorCode(second) == "revision_conflict" || second == nil && core.ErrorCode(first) == "revision_conflict" {
+		return
+	}
+	t.Fatal("independent Agent executors bypassed the journal lock/CAS", first, second)
+}
+
+func TestInstallRecoveryLockAlsoSerializesReceiptWriters(t *testing.T) {
+	e := testAgent(t)
+	ctx := context.Background()
+	plan, err := e.plan(ctx, PlanInput{Operation: "install", PluginID: "webssh", InstanceID: "sharedlock"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	instance, err := e.apply(ctx, ApplyInput{PlanID: plan.ID, IdempotencyKey: "shared-lock-install"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	change, err := e.plan(ctx, PlanInput{Operation: "config", PluginID: "webssh", InstanceID: "sharedlock"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := NewPrivilegedExecutor(e.config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := ApplyInput{PlanID: change.ID, ExpectedRevision: instance.Revision, IdempotencyKey: "shared-lock-config"}
+	unlock, err := e.lockContext(ctx, instance.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitCtx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+	_, err = other.apply(waitCtx, input)
+	cancel()
+	unlock()
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatal("config writer bypassed the cross-process recovery lock", err)
+	}
+	current, err := e.get(ctx, instance.ID, false)
+	if err != nil || current.Revision != instance.Revision {
+		t.Fatal("blocked config writer changed the receipt", current.Revision, err)
+	}
+	current, err = other.apply(ctx, input)
+	if err != nil || current.Revision != instance.Revision+1 {
+		t.Fatal("canceled lock waiter consumed the plan or kept the lock", current.Revision, err)
+	}
+	view, err := e.installRecoveryInspect(ctx, instance.ID)
+	if err != nil || view.State != "completed" || len(view.Available) != 0 {
+		t.Fatal("ordinary receipt evolution reopened a completed install", view, err)
+	}
+}
+
+// This is a source-test integration with a real daemon and systemd, not an
+// installed release or a signed-package installer acceptance. Its prerequisite
+// binary must be prepared inside a disposable Linux VM, never on the host.
+func TestQAInstallRecoveryActualSystemd(t *testing.T) {
+	if os.Getenv("POWERLINUX_QA_OWNED_VM") != "1" || os.Geteuid() != 0 {
+		t.Skip("requires an explicitly disposable root Linux VM")
+	}
+	marker, err := os.OpenFile("/run/powerlinux-qa-disposable", os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		t.Fatal("disposable VM provision marker is required", err)
+	}
+	info, statErr := marker.Stat()
+	mark, readErr := io.ReadAll(io.LimitReader(marker, 128))
+	marker.Close()
+	if statErr != nil || readErr != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 || strings.TrimSpace(string(mark)) != "powerlinux-local-qa-20261014" {
+		t.Fatal("disposable VM provision marker is invalid")
+	}
+	if owner, ok := info.Sys().(*syscall.Stat_t); !ok || owner.Uid != 0 {
+		t.Fatal("disposable VM provision marker must belong to root")
+	}
+	if _, err = os.Stat("/run/systemd/system"); err != nil {
+		t.Fatal("disposable VM must run systemd", err)
+	}
+	program, err := os.ReadFile("/usr/bin/redis-server")
+	if err != nil {
+		t.Fatal("prepare a real Redis binary in the disposable VM", err)
+	}
+	var compressed bytes.Buffer
+	gz := gzip.NewWriter(&compressed)
+	tarWriter := tar.NewWriter(gz)
+	if err = tarWriter.WriteHeader(&tar.Header{Name: "bin/redis-server", Mode: 0755, Size: int64(len(program)), Typeflag: tar.TypeReg}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tarWriter.Write(program); err != nil {
+		t.Fatal(err)
+	}
+	if err = tarWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err = gz.Close(); err != nil {
+		t.Fatal(err)
+	}
+	archive := compressed.Bytes()
+	digest := sha256.Sum256(archive)
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write(archive) }))
+	defer server.Close()
+	for _, command := range []string{"continue", "stop_preserve"} {
+		t.Run(command, func(t *testing.T) {
+			e := testAgent(t)
+			// PrivateTmp hides /tmp and /run is commonly mounted noexec. Keep the
+			// actual runtime in a unique guest /opt prefix, as in production, while
+			// preserving the Agent's separate 0700 private directory.
+			base, err := os.MkdirTemp("/opt", "powerlinux-install-recovery-qa-")
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if err := os.RemoveAll(base); err != nil {
+					t.Error(err)
+				}
+			})
+			if err = os.Chmod(base, 0711); err != nil {
+				t.Fatal(err)
+			}
+			config := e.config
+			config.RootDir = filepath.Join(base, "software")
+			config.StateDir = filepath.Join(base, "private")
+			e, err = NewPrivilegedExecutor(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			e.config.UseSystemd = true
+			e.artifacts.client = server.Client()
+			manifest := Manifest{ID: "redis", Name: "Actual systemd recovery QA", IntegrationVersion: "1",
+				Service:  ServiceDefinition{Programs: []string{"redis-server"}, Health: "tcp"},
+				Versions: []Version{{ID: "qa-native", Version: "qa-native", Default: true, Source: Source{Kind: "verified_archive", URL: server.URL, SHA256: hex.EncodeToString(digest[:]), ArchiveFormat: "tar.gz", Trust: "pinned_sha256"}}}}
+			e.catalog = &Catalog{Items: []Manifest{manifest}, byID: map[string]int{"redis": 0}}
+			listener, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil {
+				t.Fatal(err)
+			}
+			port := listener.Addr().(*net.TCPAddr).Port
+			listener.Close()
+			nonce, err := newInstallNonce()
+			if err != nil {
+				t.Fatal(err)
+			}
+			label := "qa-" + nonce[:12]
+			plan, err := e.plan(context.Background(), PlanInput{Operation: "install", PluginID: "redis", InstanceID: label, Config: map[string]any{"bind": "127.0.0.1", "port": port}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				journal, loadErr := e.loadInstallJournal(plan.InstanceID)
+				if core.ErrorCode(loadErr) == "not_found" {
+					return
+				}
+				if loadErr != nil {
+					t.Error("QA cleanup cannot prove install state", loadErr)
+					return
+				}
+				if _, unitErr := os.Lstat(filepath.Join(e.systemdUnitDir(), journal.Instance.Service.Unit)); os.IsNotExist(unitErr) {
+					return
+				}
+				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				defer cancel()
+				if verifyErr := e.verifyJournalUnit(journal); verifyErr != nil {
+					t.Error("QA cleanup refused an unproven unit", verifyErr)
+					return
+				}
+				if _, stopErr := runFixed(ctx, "/usr/bin/systemctl", []string{"disable", "--now", journal.Instance.Service.Unit}, 15*time.Second, nil); stopErr != nil {
+					t.Error("QA owned service cleanup failed", stopErr)
+					return
+				}
+				if removeErr := e.removeUnit(ctx, journal.Instance); removeErr != nil {
+					t.Error("QA owned unit cleanup failed", removeErr)
+				}
+			})
+			// Inject only the late failure; configuration/start/protocol health and
+			// recovery execute production paths against the actual system manager.
+			e.installEnableHook = func(context.Context, *installJournal) error {
+				return failure("autostart_check_failed", "QA late boot interruption", 502)
+			}
+			input := ApplyInput{PlanID: plan.ID, IdempotencyKey: "qa-native-" + nonce}
+			_, err = e.apply(context.Background(), input)
+			journal, journalErr := e.loadInstallJournal(plan.InstanceID)
+			if journalErr != nil {
+				t.Fatal("install did not retain its journal", journalErr, err)
+			}
+
+			if core.ErrorCode(err) != "autostart_check_failed" || journal.Phase != "health_verified" || e.probe(context.Background(), journal.Instance).Status != "healthy" {
+				check := exec.Command(journal.Instance.Service.Program, "--version")
+				check.SysProcAttr = &syscall.SysProcAttr{Credential: e.credential(journal.Instance)}
+				checkOutput, checkErr := check.CombinedOutput()
+				t.Logf("actual isolated Redis check: %v, %s", checkErr, checkOutput)
+				unitOutput, _ := exec.Command("/usr/bin/journalctl", "--unit", journal.Instance.Service.Unit, "--no-pager", "-n", "12").CombinedOutput()
+				t.Logf("actual isolated unit diagnostics: %s", unitOutput)
+				t.Fatal("real service did not reach the late boot failure checkpoint", journal.Phase, err)
+			}
+			if _, err = e.apply(context.Background(), input); core.ErrorCode(err) != "operation_recovery_required" {
+				t.Fatal("interrupted installation replayed", err)
+			}
+			dataFile := filepath.Join(journal.Instance.Paths.DataDir, "qa-preserve")
+			if err = os.WriteFile(dataFile, []byte("preserve real data "+strconv.Itoa(port)), 0600); err != nil {
+				t.Fatal(err)
+			}
+			e.installEnableHook = nil
+			if command == "continue" {
+				// Exact base-file bytes must not authorize a unit with an external
+				// systemd override, whether pending reload or already merged.
+				dropDir := filepath.Join(e.systemdUnitDir(), journal.Instance.Service.Unit+".d")
+				if err := os.Mkdir(dropDir, 0755); err != nil {
+					t.Fatal(err)
+				}
+				dropFile := filepath.Join(dropDir, "qa-override.conf")
+				if err := os.WriteFile(dropFile, []byte("[Service]\nEnvironment=POWERLINUX_QA_OVERRIDE=1\n"), 0644); err != nil {
+					t.Fatal(err)
+				}
+				removeDrop := func() {
+					if err := os.Remove(dropFile); err != nil && !os.IsNotExist(err) {
+						t.Error(err)
+					}
+					if err := os.Remove(dropDir); err != nil && !os.IsNotExist(err) {
+						t.Error(err)
+					}
+					if _, err := runFixed(context.Background(), "/usr/bin/systemctl", []string{"daemon-reload"}, 20*time.Second, nil); err != nil {
+						t.Error(err)
+					}
+				}
+				t.Cleanup(removeDrop)
+				if _, err := runFixed(context.Background(), "/usr/bin/systemctl", []string{"daemon-reload"}, 20*time.Second, nil); err != nil {
+					t.Fatal(err)
+				}
+				view, err := e.installRecoveryInspect(context.Background(), journal.ID)
+				if err != nil || len(view.Available) != 0 {
+					t.Fatal("external effective override advertised recovery", view, err)
+				}
+				if _, err := e.installRecoveryAction(context.Background(), installRecoveryActionInput{ID: journal.ID, Command: "stop_preserve", ExpectedJournalRevision: journal.Revision}); core.ErrorCode(err) != "ownership_conflict" {
+					t.Fatal("recovery acted on an overridden unit", err)
+				}
+				if active, err := systemdUnitActive(context.Background(), journal.Instance.Service.Unit); err != nil || !active {
+					t.Fatal("denied recovery altered the running service", active, err)
+				}
+				removeDrop()
+			}
+			// Reopen Agent private state as after a process crash, retaining the
+			// exact trusted fixture catalog but no fault hooks.
+			restarted, err := NewPrivilegedExecutor(e.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			restarted.catalog = e.catalog
+			view, err := restarted.installRecoveryAction(context.Background(), installRecoveryActionInput{ID: journal.ID, Command: command, ExpectedJournalRevision: journal.Revision})
+			if err != nil {
+				t.Fatal("actual systemd recovery failed", command, err)
+			}
+			active, activeErr := systemdUnitActive(context.Background(), journal.Instance.Service.Unit)
+			enabled, state, bootErr := restarted.journalBootState(context.Background(), journal)
+			if activeErr != nil || bootErr != nil {
+				t.Fatal(activeErr, bootErr)
+			}
+			if command == "continue" {
+				if view.State != "completed" || !view.ReceiptPresent || !active || !enabled || state != "enabled" {
+					t.Fatal("continue did not commit a healthy enabled real service", view, active, state)
+				}
+				unitPath := filepath.Join(e.systemdUnitDir(), journal.Instance.Service.Unit)
+				heldPath := filepath.Join(base, "held-unit")
+				if err := os.Rename(unitPath, heldPath); err != nil {
+					t.Fatal(err)
+				}
+				restoreUnit := func() {
+					if _, err := os.Stat(heldPath); err == nil {
+						if err := os.Rename(heldPath, unitPath); err != nil {
+							t.Error(err)
+						}
+					}
+					if _, err := runFixed(context.Background(), "/usr/bin/systemctl", []string{"daemon-reload"}, 20*time.Second, nil); err != nil {
+						t.Error(err)
+					}
+				}
+				t.Cleanup(restoreUnit)
+				if err := e.removeUnit(context.Background(), journal.Instance); core.ErrorCode(err) != "ownership_conflict" {
+					t.Fatal("missing disk unit was treated as an inactive unloaded service", err)
+				}
+				if active, err := systemdUnitActive(context.Background(), journal.Instance.Service.Unit); err != nil || !active {
+					t.Fatal("missing-unit refusal altered the service", active, err)
+				}
+				restoreUnit()
+			} else if view.State != "preserved_stopped" || view.ReceiptPresent || active || enabled || state != "disabled" {
+				t.Fatal("stop_preserve did not stop and disable the real service", view, active, state)
+			}
+			if actual, err := os.ReadFile(dataFile); err != nil || string(actual) != "preserve real data "+strconv.Itoa(port) {
+				t.Fatal("recovery did not preserve data", err)
+			}
+			if err := restarted.verifyInstallJournalProofs(context.Background(), journal); err != nil {
+				t.Fatal("recovery changed the exact config/runtime/unit", err)
+			}
+		})
 	}
 }
 

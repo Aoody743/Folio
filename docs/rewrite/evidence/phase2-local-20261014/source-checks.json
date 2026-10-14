@@ -1,0 +1,174 @@
+{
+  "evidence_id": "phase2-local-source-20261014",
+  "date": "2026-10-14",
+  "timezone": "Asia/Singapore",
+  "phase2_status": "in_progress",
+  "phase3_status": "not_started",
+  "host": "macOS arm64; no global service/plugin/SSH/firewall changes",
+  "guest": {
+    "os": "Debian 13",
+    "architecture": "arm64 native Apple Virtualization.framework",
+    "init": "systemd",
+    "cpu": 2,
+    "memory_gib": 2,
+    "disk_virtual_gib": 8,
+    "image_build": "20261001-2618",
+    "source_archive_sha512": "e5db094f06e3b60ccb747df6a136b72ad2c215c5fe6b810eb1f0219e022bdeb0533937a6259e17610988ecde466613817b7abeb8b9db3a45f0d316be4bdbaf39",
+    "qa_compile_swap_gib": 1
+  },
+  "checks": {
+    "go_race": {
+      "packages": {
+        "pass": 13,
+        "skip": 2
+      },
+      "top_level_tests": {
+        "pass": 387,
+        "skip": 55
+      },
+      "skipped_tests": [
+        "github.com/Aoody743/PowerLinux/internal/agentconfig:TestFilePolicyRequiresExplicitHostAccess",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveRedisDecimalCursorContinuationRetainsEveryMember",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveCacheStatusRealServiceFixtures",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveNativeDumpHTTPRevocationInterruptsBackpressureWithinLease",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveNativeDumpHTTPFullRangeBoundsAndScopes",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveNativeDumpMCPChunkHasBoundedBytesAndRevocation",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveSQLScopedProfilesCRUDAndAdminDenial",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLivePostgreSQLDangerousMembershipDenied",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLivePostgreSQLQuotedBackslashPasswordAuthenticatesAndCleansRole",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveMariaDBWildcardGrantDenied",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveCacheNamespaceAliasAndConcurrentOverlapDenied",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveMongoScopedCRUDAndGlobalRoleDenied",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveRedisMemcachedNamespacesAndCollections",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveManagedMongoCreatePermissionsBSONRestoreAndDelete",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveManagedPostgresPermissionOwnershipAndCleanup",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveManagedMariaPermissionRevokesAutomaticRoutineGrants",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestNativeReleaseSQLDaemonDumpRestorePermissionsAndRetainedUninstall",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestDatabaseToolMismatchRejectedBeforeDumpAndPasswordFileCleaned",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestLiveSQLExactBIGINTAndDecimalParameters",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestQAInstallRecoveryActualSystemd",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestQANativeManagedWebGenerationAndFPMProfile",
+        "github.com/Aoody743/PowerLinux/internal/plugins:TestValidateTrustedProgramPathRejectsWritableAncestors",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestReviewedLegoActualCredentialSurface",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootNativeDNSAlreadyIssuedOrderRecoversWithoutRefinalizing",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootNativeDNSCancellationCleansUsingIndependentContext",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootNativeDNSLostCleanupRetainsOrderAndRecoversAfterRestart",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootVMACMEHTTPRealJWSCSRAndConcurrentWebsiteRead",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootVMACMEManualDNSPendingSurvivesRestartConfirmsAndCancels",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootWebsiteAdvancedBackupRestoreRestoresExactWebAndPHPConfiguration",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebsiteBackupPendingArtifactsSIGKILLChild",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootWebsiteBackupRestorePreservesGroupReadUnderPrivateUmask",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootWebsiteArchiveStreamIntegrityAndUnsafeFiles",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootWebsiteArchiveActualUnixHTTPAndMCPChunks",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootCertificateRenewalRollsBackOnProbeFailureAndKeepsConfigGeneration",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootAdvancedConfigRequiresExplicitResetForTypedSettings",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootDefaultSwitchRequiresBothRevisionsAndRollsBackTogether",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootDeleteLateMetadataFailureRestoresConfigurationInsideCancelledTransaction",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootInterruptedRetainedPurgeCanRestartAndFinishOwnershipCleanup",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebsiteJournalCrashChild",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebsiteJournalRestoreSwapCrashChild",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebsiteJournalRootOwnedSubprocessSIGKILL",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebsiteJournalPendingIdentityCrashChild",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootPendingIdentitySIGKILLRecoveryAndUnmarkedRefusal",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebMigrationPlanApplyPreservesContentWorkerPHPAndJournalRefs",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebMigrationAdvancedResetKeepsPrivateOriginalAndRollbackRestoresConfig",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestWebMigrationFixtureWALCrashChild",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQAPHPCLIPublicSelectionActuallyRunsAsOrdinaryUID",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQAPHPCLIRejectsForeignDirectoryAndEntryPoint",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQAPHPCLINativeBinaryAccessKeepsSiblingStatePrivate",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQAPHPCLIExtensionStateUsesItsOwnPublicConfiguration",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootVMWebsiteFailureRestoresActualConfigAuthAndReceipt",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootRetainedWebsiteContentSurvivesRestartAndRejectsImplicitAdoption",
+        "github.com/Aoody743/PowerLinux/internal/sites:TestQARootFailedWebsiteCreationCleansOnlyItsNewContentAndCanRetry",
+        "github.com/Aoody743/PowerLinux/internal/systemops:TestOwnedVMRejectsUnprivilegedScriptPrivilegedGroup"
+      ],
+      "failures": [],
+      "raw_log_sha256": "cb8ba7ebeca3956603002cf96ce540f20e8a07e50717ffd888350e9374861999"
+    },
+    "frontend_tests": {
+      "pass": 43,
+      "fail": 0,
+      "kind": "Node source tests"
+    },
+    "typecheck": "passed",
+    "static_export": "passed",
+    "real_systemd_recovery": {
+      "result": "passed",
+      "log_sha256": "50367e64902d20440a2823b82fd1cfadf99b97f274a957440f38ea5eb25bca1e",
+      "test": "TestQAInstallRecoveryActualSystemd",
+      "checks": [
+        "actual Redis start and protocol health",
+        "late boot failure leaves health_verified; original install task cannot replay",
+        "Agent reconstruction and bounded continue enables service and commits receipt",
+        "stop_preserve disables and stops service; package/config/data/runtime retained",
+        "external systemd drop-in denies inspect/actions without stopping service",
+        "missing disk unit with still-active manager denies removal"
+      ],
+      "kind": "source-built test binary using a real Redis binary and real systemd; not installed package evidence"
+    },
+    "web_migration": {
+      "result": "passed",
+      "log_sha256": "0ab9cf0f0c9562c76db0303c82c61f4fb2f8df1281ea1cac6b5e5bc83da12232",
+      "kind": "root filesystem + protected runtime protocol fixtures, including real child SIGKILL; Web check/reload is simulated",
+      "checks": [
+        "source/target/PHP/worker/config proof and CAS",
+        "target domain/default conflicts",
+        "site/source/target/PHP authorization; execution-time revocation",
+        "content, PHP pool, worker and site metadata preserved",
+        "advanced reset explicit and original configuration privately retained",
+        "uncommitted SIGKILL restores before images; committed SIGKILL preserves target generation"
+      ]
+    },
+    "final_plugin_race": {
+      "passed": true,
+      "top_level_tests": {
+        "pass": 98,
+        "skip": 21
+      },
+      "raw_log_sha256": "552bb4e8c9808f74d536290fbd3e0bdf85eb8361005971d9b4120b058098372c",
+      "note": "Go cache validated; includes final code changes after the full suite snapshot"
+    },
+    "go_vet": "passed",
+    "go_mod_verify": "all modules verified"
+  },
+  "independent_reviews": {
+    "model": "GPT-6 Luna",
+    "reasoning": "max",
+    "count": 2,
+    "resolved": [
+      "partial final-unit write",
+      "directory entry durability",
+      "candidate receipt finalization replay",
+      "common process lock for other receipt writers",
+      "unfinished install mutation guard",
+      "effective systemd fragment/drop-in/reload identity",
+      "inactive exit code 3 lost by command wrapper",
+      "missing-unit removal with still-running manager"
+    ]
+  },
+  "failures_retained": {
+    "macOS_focused": "Linux-only Agent Executor cannot run on Darwin",
+    "first_full_race": "incorrect root/umask test setup, missing bzip2, compiler memory pressure; corrected ordinary UID/umask 077 and VM-only prerequisites",
+    "systemd_r1_r4": "fixture traversal, PrivateTmp hiding /tmp, and /run noexec; corrected VM-only /opt prefix",
+    "systemd_r5": "product lost expected inactive exit code 3; fixed and r6/r7 passed",
+    "migration_r1": "no matching tests; excluded",
+    "migration_r2": "fixture domain disagreed with assertion/conflict target; fixed without reducing assertions",
+    "final_check_transport": "Initial final-check attempt hit transient proxy.golang.org EOF before verification; retry succeeded."
+  },
+  "not_yet_verified": [
+    "installed fixed package failure recovery",
+    "actual OpenResty/PHP cross-instance web chain",
+    "workflow browser script",
+    "all supported versions/platforms and all 23 plugin specific capabilities",
+    "external DNS/CA and other provider credentials"
+  ],
+  "cleanup": {
+    "temporary_root": ".cache/rewrite",
+    "vm_root": ".cache/rewrite/qa",
+    "host_global_dependencies_installed": false,
+    "credentials_committed": false,
+    "plan": "power off VM, confirm launcher stopped, preserve code/public evidence/packages, remove this session temporary VM/toolchain/cache/key artifacts"
+  },
+  "secrets_included": false
+}

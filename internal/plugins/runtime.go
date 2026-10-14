@@ -71,6 +71,9 @@ func (e *PrivilegedExecutor) RecoverRuntime(ctx context.Context, id string) erro
 		return err
 	}
 	defer unlock()
+	if err := e.ensureInstallFinalized(ctx, id); err != nil {
+		return err
+	}
 	instance, err := e.get(ctx, id, false)
 	if err != nil {
 		return err
@@ -366,6 +369,11 @@ func (e *PrivilegedExecutor) control(ctx context.Context, input ServiceInput) (m
 		return nil, err
 	}
 	defer unlock()
+	if input.Command != "check" {
+		if err := e.ensureInstallFinalized(ctx, input.ID); err != nil {
+			return nil, err
+		}
+	}
 	instance, err := e.get(ctx, input.ID, false)
 	if err != nil {
 		return nil, err
@@ -404,6 +412,11 @@ func (e *PrivilegedExecutor) controlLocked(ctx context.Context, input ServiceInp
 			return nil, err
 		}
 		return map[string]any{"id": instance.ID, "version": strings.TrimSpace(version), "kind": "cli"}, nil
+	}
+	if e.config.UseSystemd && input.Command != "check" {
+		if err := e.checkSystemdIdentity(ctx, instance.Service.Unit, false); err != nil {
+			return nil, err
+		}
 	}
 	if input.Command == "restart" {
 		if _, err := e.controlLocked(ctx, ServiceInput{ID: input.ID, Command: "stop"}, instance); err != nil {
@@ -702,6 +715,11 @@ func (e *PrivilegedExecutor) writeUnit(ctx context.Context, instance Instance) e
 		if err := checkOwnedUnit(receipt); err != nil {
 			return err
 		}
+		if err := e.checkSystemdIdentity(ctx, instance.Service.Unit, false); err != nil {
+			return err
+		}
+	} else if err := e.checkSystemdIdentity(ctx, instance.Service.Unit, true); err != nil {
+		return err
 	}
 	unit, err := systemdUnitBytes(e, instance, "")
 	if err != nil {
@@ -711,7 +729,10 @@ func (e *PrivilegedExecutor) writeUnit(ctx context.Context, instance Instance) e
 		return err
 	}
 	_, err = runFixed(ctx, "/usr/bin/systemctl", []string{"daemon-reload"}, 20*time.Second, nil)
-	return err
+	if err != nil {
+		return err
+	}
+	return e.checkSystemdIdentity(ctx, instance.Service.Unit, false)
 }
 func (e *PrivilegedExecutor) removeUnit(ctx context.Context, instance Instance) error {
 	if !e.config.UseSystemd || instance.Service.Program == "" || instance.Service.Kind == "cli" {
@@ -723,9 +744,20 @@ func (e *PrivilegedExecutor) removeUnit(ctx context.Context, instance Instance) 
 	name := filepath.Join("/etc/systemd/system", instance.Service.Unit)
 	file, err := os.OpenFile(name, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
 	if os.IsNotExist(err) {
+		if err := e.checkSystemdIdentity(ctx, instance.Service.Unit, true); err != nil {
+			return err
+		}
+		active, stateErr := systemdUnitActive(ctx, instance.Service.Unit)
+		if stateErr != nil || active {
+			return failure("ownership_conflict", "The missing service unit is not confirmed absent and inactive; its runtime and data were preserved", 409)
+		}
 		return nil
 	}
 	if err != nil {
+		return err
+	}
+	if err := e.checkSystemdIdentity(ctx, instance.Service.Unit, false); err != nil {
+		file.Close()
 		return err
 	}
 	body, readErr := io.ReadAll(io.LimitReader(file, 64<<10))
@@ -749,7 +781,10 @@ func (e *PrivilegedExecutor) removeUnit(ctx context.Context, instance Instance) 
 		return err
 	}
 	_, err = runFixed(ctx, "/usr/bin/systemctl", []string{"daemon-reload"}, 20*time.Second, nil)
-	return err
+	if err != nil {
+		return err
+	}
+	return e.checkSystemdIdentity(ctx, instance.Service.Unit, true)
 }
 func checkOwnedUnit(instance Instance) error {
 	file, err := os.OpenFile(filepath.Join("/etc/systemd/system", instance.Service.Unit), os.O_RDONLY|syscall.O_NOFOLLOW, 0)

@@ -38,6 +38,8 @@ import {
 import { Icon } from "./icon";
 import { ActionForm, ActionBrowser, References } from "./actions";
 import { SiteCategoriesManager } from "./site-categories";
+import { SiteMigration } from "./site-migration";
+import { isDedicatedSiteMigrationAction } from "@/lib/site-migration";
 import {
   Pager,
   ResourceActions,
@@ -54,6 +56,7 @@ const groups = [
   { id: "backup", label: "备份" },
   { id: "logs", label: "日志" },
   { id: "config", label: "配置" },
+  { id: "migration", label: "迁移" },
 ];
 const inGroup = (name: string, group: string) =>
   group === "domains"
@@ -485,29 +488,36 @@ export function SitesView({
             role="tablist"
             aria-label="网站详情分类"
           >
-            {groups.map((tab) => (
-              <button
-                role="tab"
-                aria-selected={group === tab.id}
-                key={tab.id}
-                onClick={() => {
-                  setGroup(tab.id);
-                  setOperation(undefined);
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {groups
+              .filter(
+                (tab) =>
+                  tab.id !== "migration" ||
+                  capabilities.some((c) => c.name === "sites_migration_plan"),
+              )
+              .map((tab) => (
+                <button
+                  role="tab"
+                  aria-selected={group === tab.id}
+                  key={tab.id}
+                  onClick={() => {
+                    setGroup(tab.id);
+                    setOperation(undefined);
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
           </div>
           {detail.error && <div className="notice danger">{detail.error}</div>}
-          {current.configuration_mode === "advanced" && (
-            <div className="notice warning">
-              <strong>此网站使用手工配置。</strong>
-              <p>
-                修改域名、PHP或路由前，确认是否放弃手工配置并重新生成。原配置不会因切换详情分类而修改。
-              </p>
-            </div>
-          )}
+          {current.configuration_mode === "advanced" &&
+            group !== "migration" && (
+              <div className="notice warning">
+                <strong>此网站使用手工配置。</strong>
+                <p>
+                  修改域名、PHP或路由前，确认是否放弃手工配置并重新生成。原配置不会因切换详情分类而修改。
+                </p>
+              </div>
+            )}
           {group === "overview" ? (
             <>
               <div className="detail-grid">
@@ -554,6 +564,23 @@ export function SitesView({
               onExecuted={refresh}
               active={active && open}
             />
+          ) : group === "migration" ? (
+            <SiteMigration
+              key={current.id}
+              site={current}
+              siteFresh={!!detail.data}
+              siteError={detail.error || undefined}
+              webInstances={list(instances.data)}
+              webInstancesLoaded={
+                !!instances.data ||
+                !capabilities.some((c) => c.name === "plugins_list")
+              }
+              webInstancesLoading={instances.loading}
+              webInstancesError={instances.error || undefined}
+              capabilities={capabilities}
+              active={active && open && group === "migration"}
+              onExecuted={refresh}
+            />
           ) : (
             <>
               {group === "config" &&
@@ -572,6 +599,7 @@ export function SitesView({
                 names={(name) =>
                   /^(sites|tls)_/.test(name) &&
                   !/^sites_(retained|categor)/.test(name) &&
+                  !isDedicatedSiteMigrationAction(name) &&
                   ![
                     "sites_list",
                     "sites_get",
@@ -630,7 +658,9 @@ export function SitesView({
       <details className="advanced-actions">
         <summary>其他已授权的网站操作</summary>
         <ActionBrowser
-          capabilities={capabilities}
+          capabilities={capabilities.filter(
+            (capability) => !isDedicatedSiteMigrationAction(capability.name),
+          )}
           category="sites"
           selected={other}
           onSelect={setOther}

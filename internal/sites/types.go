@@ -173,6 +173,8 @@ type request struct {
 	OrderRef            string            `json:"order_ref,omitempty"`
 	Actor               core.Actor        `json:"actor"`
 	ID                  string            `json:"id,omitempty"`
+	PlanID              string            `json:"plan_id,omitempty"`
+	TargetWebInstance   string            `json:"target_web_instance,omitempty"`
 	ExpectedRevision    int64             `json:"expected_revision,omitempty"`
 	Site                *Site             `json:"site,omitempty"`
 	Certificate         *Certificate      `json:"certificate,omitempty"`
@@ -193,6 +195,26 @@ type request struct {
 	ResetAdvancedConfig bool              `json:"reset_advanced_config,omitempty"`
 	PreviousSiteID      string            `json:"previous_site_id,omitempty"`
 	PreviousRevision    int64             `json:"previous_revision,omitempty"`
+}
+
+// MigrationPlanView contains only information safe to show in the Web UI.
+// Runtime paths, protected receipts, and website secrets stay inside Agent state.
+type MigrationPlanView struct {
+	ID                  string    `json:"id"`
+	SiteID              string    `json:"site_id"`
+	SiteName            string    `json:"site_name"`
+	ExpectedRevision    int64     `json:"expected_revision"`
+	SourceWebInstance   string    `json:"source_web_instance"`
+	TargetWebInstance   string    `json:"target_web_instance"`
+	PHPInstance         string    `json:"php_instance,omitempty"`
+	TLSCertificateID    string    `json:"tls_certificate_id,omitempty"`
+	TLSCertificateRev   int64     `json:"tls_certificate_revision,omitempty"`
+	Domains             []string  `json:"domains"`
+	Default             bool      `json:"default"`
+	TLSEnabled          bool      `json:"tls_enabled"`
+	ConfigurationMode   string    `json:"configuration_mode"`
+	ResetAdvancedConfig bool      `json:"reset_advanced_config"`
+	ExpiresAt           time.Time `json:"expires_at"`
 }
 type ACMEInput struct {
 	ID                 string   `json:"id"`

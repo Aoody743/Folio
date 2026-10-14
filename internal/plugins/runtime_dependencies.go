@@ -13,7 +13,16 @@ import (
 
 // Retained application data may only be reused through the same protected
 // uninstall receipt. A directory without that exact receipt is never adopted.
-func (e *PrivilegedExecutor) validateInstallTarget(current Instance, loadErr error, plugin, label string) error {
+func (e *PrivilegedExecutor) validateInstallTarget(ctx context.Context, current Instance, loadErr error, plugin, label string) error {
+	manifest, err := e.catalog.Get(plugin)
+	if err != nil {
+		return err
+	}
+	if e.config.UseSystemd && len(manifest.Service.Programs) > 0 && manifest.Service.Health != "cli" {
+		if err := e.checkSystemdIdentity(ctx, "powerlinux-plugin-"+plugin+"-"+label+".service", true); err != nil {
+			return err
+		}
+	}
 	paths := e.instancePaths(plugin, label)
 	info, err := os.Lstat(paths.Root)
 	if os.IsNotExist(err) {

@@ -234,7 +234,11 @@ func (e *PrivilegedExecutor) writeSupervisor(instance Instance) error {
 		if !ok {
 			return failure("program_not_trusted", "Supervisor program profile is absent from root policy", 412)
 		}
-		command := supervisorQuote(profile.Program)
+		canonical, err := validateTrustedProgramPath(profile.Program)
+		if err != nil {
+			return failure("program_not_trusted", "Supervisor program path is no longer protected by root policy", 412)
+		}
+		command := supervisorQuote(canonical)
 		for _, arg := range profile.Arguments {
 			command += " " + supervisorQuote(arg)
 		}
@@ -295,6 +299,11 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 		return nil, err
 	}
 	defer unlock()
+	if input.Command != "list" && input.Command != "status" {
+		if err := e.ensureInstallFinalized(ctx, input.ID); err != nil {
+			return nil, err
+		}
+	}
 	instance, err := e.get(ctx, input.ID, false)
 	if err != nil {
 		return nil, err

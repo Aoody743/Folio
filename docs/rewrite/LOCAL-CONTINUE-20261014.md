@@ -4,6 +4,10 @@
 
 仓库：https://github.com/Aoody743/PowerLinux ，分支 `refine`。不要修改 `main`，不要覆盖本地已有工作。建议从远端 `refine` 建立 `refine-local` 工作分支。
 
+## 本地接续批次补充
+
+本地 `refine-local` 已继续修复安装恢复并实现跨 Web 实例迁移。最新实现、独立审查及验证边界见 [PROGRESS 本地批次](PROGRESS.md#本地第二阶段接续2026-10-14) 和 [本地源码证据](evidence/phase2-local-20261014/source-checks.json)。下方 `92752b9` 草稿描述保留为交接时快照；固定包与浏览器仍按实际后续证据确认，不由源码测试推断。
+
 ## 已交付与验证
 
 - `0552448` 是安装恢复草稿之前的源码检查点。该批全量 Go race（13 个测试包）、Go vet、36 项前端测试、TypeScript、Next.js 静态导出、Linux amd64/arm64 构建和实际 amd64 私有 prefix 安装检查通过。

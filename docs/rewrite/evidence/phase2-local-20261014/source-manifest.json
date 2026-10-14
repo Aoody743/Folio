@@ -1,0 +1,146 @@
+{
+  "baseline_commit": "92752b9d9dddfce259b0faa2a7ba68fe95fd1d40",
+  "branch": "refine-local",
+  "files": [
+    {
+      "path": "frontend/src/components/sites.tsx",
+      "sha256": "a01e6eea7fa07d46c8b53d7f7cc24e7d2cc5579acccd8b21b20f317ee7066a5e"
+    },
+    {
+      "path": "frontend/src/components/software.tsx",
+      "sha256": "6648ea2d2b84d8bf90ef3ed6f50c4be44d80f331e1eadd277772913af533e23c"
+    },
+    {
+      "path": "frontend/src/lib/labels.ts",
+      "sha256": "3c98a497d4b168db160531d16e62a4a72b7f68b996acafdaa34a8ec001f4a407"
+    },
+    {
+      "path": "internal/plugins/autostart.go",
+      "sha256": "acf311d53bc05be72fca4cb4d177e67ae3212c3d40612d2a7683797e2c299bdb"
+    },
+    {
+      "path": "internal/plugins/database_managed.go",
+      "sha256": "206c7a4eea186c0ec975a2f04366f933aabd2cd149d1ae8c0cd2678b26ebdec5"
+    },
+    {
+      "path": "internal/plugins/docker.go",
+      "sha256": "1f72b5a5d92258517e6d756fc1773fdd3e901e900359c7463b08d81f64e507a2"
+    },
+    {
+      "path": "internal/plugins/install_journal.go",
+      "sha256": "f52487066d55859159ac5cd15cb7eb0043b9a653533d180e2a5eb6055b6d7787"
+    },
+    {
+      "path": "internal/plugins/install_journal_test.go",
+      "sha256": "0a13ac5feb66a1bbf3a4d587ae79385cfc955bddbaddda72a0801ae670f4fc8f"
+    },
+    {
+      "path": "internal/plugins/lifecycle.go",
+      "sha256": "fb4f309c9a5744e7fab66b279924573a1a76431bbbf878fd68c8ba738c846fb2"
+    },
+    {
+      "path": "internal/plugins/php.go",
+      "sha256": "ed57ba5d17091a5e9606bf24e1423e5d05d4affc78ffcb2246b8f83c3f5adce0"
+    },
+    {
+      "path": "internal/plugins/php_profile_migration.go",
+      "sha256": "7de797530acbcc78d0dd017605bf4c195cfb70cab504bae464e837234c1810a9"
+    },
+    {
+      "path": "internal/plugins/privileged.go",
+      "sha256": "787224a3ad6a51aa9d14e60da6a01aa8c8fd9f4bbc5486388c4fb6ff58a62457"
+    },
+    {
+      "path": "internal/plugins/runtime.go",
+      "sha256": "dc85d59ee88774c800e45aa45a9668846d858f445345ce23cf7b4eacd2018963"
+    },
+    {
+      "path": "internal/plugins/runtime_dependencies.go",
+      "sha256": "4d5de81ab8835a1130591b67f67dc65e5aaec93ce74e3235c63d6bc1987a46e2"
+    },
+    {
+      "path": "internal/plugins/runtime_transaction.go",
+      "sha256": "9f0da74ef0ee66bf7fbd52a84dde13094b83e429dd5d3a17b14b05677d661bfc"
+    },
+    {
+      "path": "internal/plugins/utility.go",
+      "sha256": "0d5d6eaf90be9830b5b3347e6771c152ac029292b2279d2a2316004f9ed7ea22"
+    },
+    {
+      "path": "internal/sites/agent.go",
+      "sha256": "ee137541f1fa87c8ecc86afba02b1adf193d54c5cdbc42ef9084fb01733fda8c"
+    },
+    {
+      "path": "internal/sites/journal.go",
+      "sha256": "d499a1952c92ee1c540b3073368c6f0c6ec80748974dd856588b47b4a2e343df"
+    },
+    {
+      "path": "internal/sites/provider.go",
+      "sha256": "c20234799ca6d0577cefd69a9ca1039fd666fbc7c9e0ff973756b51287777763"
+    },
+    {
+      "path": "internal/sites/runtime_transaction.go",
+      "sha256": "f769bdcc1637036f789ab39860253b8261c4ded10b38f6a721b06f82d218e896"
+    },
+    {
+      "path": "internal/sites/types.go",
+      "sha256": "f58f9b8f644dc3668b281d21253b907896c93e9e5952f82bab101cf3ea2740b8"
+    },
+    {
+      "path": "frontend/src/components/site-migration.tsx",
+      "sha256": "22716a966d6a23e02a4b7285805f2bbbc47c97545c981c09b3c51da4ddf4e46e"
+    },
+    {
+      "path": "frontend/src/components/software-recovery.tsx",
+      "sha256": "23c3cda83fdb340ed162e1671e4a0816101f7c25ebcd242d09c6ba47962e15e0"
+    },
+    {
+      "path": "frontend/src/lib/site-migration.ts",
+      "sha256": "3f6d91cdd20fa487a30e7298f37114055842212ff15c469170effbbd37bd560b"
+    },
+    {
+      "path": "frontend/src/lib/software-recovery.ts",
+      "sha256": "b8ad243fc07f8f1edce61a0eda91e9fffd80596abbd534c317b987c443d7bbf4"
+    },
+    {
+      "path": "frontend/tests/site-migration.test.mjs",
+      "sha256": "7e9fdeb9f04ecc7c63cf48aebac55549c25a2217e3803a1dc6a1eb3c7250e51c"
+    },
+    {
+      "path": "frontend/tests/software-recovery.test.mjs",
+      "sha256": "ffc5ad5de3877bcc3ed39864bf3c99d6b0b8170dd18e804062437885af26be58"
+    },
+    {
+      "path": "internal/plugins/install_mutation_guard.go",
+      "sha256": "4f8d6552bafc22d227a95242774f0d59e46af19dc4e7158c21c5872dff5926aa"
+    },
+    {
+      "path": "internal/plugins/install_mutation_guard_test.go",
+      "sha256": "6d76dd951cb177bb9a621778d48c4d438fcf3d3b8d277a5b960e3ca357486eee"
+    },
+    {
+      "path": "internal/plugins/systemd_identity.go",
+      "sha256": "c2b1a5413737ca07b9dd243812cb938d9897ee56659993907ae8efcde6641d04"
+    },
+    {
+      "path": "internal/plugins/systemd_identity_test.go",
+      "sha256": "b0ac7e8d050625cce3cd812f8d1b7a3ff8d699b78a7a1a691b356fee843a30bb"
+    },
+    {
+      "path": "internal/plugins/trusted_program_path.go",
+      "sha256": "9fb34198527b0654eeeb31e3500060a5ab1b3fd9d8358cd36cafdd1525a2ba8e"
+    },
+    {
+      "path": "internal/plugins/trusted_program_path_test.go",
+      "sha256": "1c2517df9005eb1afa8e5044289f2177253406c8854a0a5f20a4209a153ccd58"
+    },
+    {
+      "path": "internal/sites/migration.go",
+      "sha256": "cfb0e76ff4be97ecb374c51b77ec0cc526a81e9e876a739099f11edc46250f43"
+    },
+    {
+      "path": "internal/sites/migration_test.go",
+      "sha256": "881e3e6d1abdeb1ee61c366cd5f66dc2b421591e30dd14ed40a688cdea978def"
+    }
+  ]
+}

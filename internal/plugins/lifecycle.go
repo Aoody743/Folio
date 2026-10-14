@@ -41,6 +41,11 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 		return Plan{}, err
 	}
 	defer unlock()
+	if input.Operation != "install" {
+		if err := e.ensureInstallFinalized(ctx, id); err != nil {
+			return Plan{}, err
+		}
+	}
 	current, loadErr := e.get(ctx, id, false)
 	if loadErr != nil && core.ErrorCode(loadErr) != "not_found" {
 		return Plan{}, loadErr
@@ -107,7 +112,7 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 	switch input.Operation {
 	case "install", "upgrade":
 		if input.Operation == "install" {
-			if err := e.validateInstallTarget(current, loadErr, manifest.ID, label); err != nil {
+			if err := e.validateInstallTarget(ctx, current, loadErr, manifest.ID, label); err != nil {
 				return Plan{}, err
 			}
 		}
@@ -170,13 +175,10 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 		return instance, err
 	}
 	defer unlock()
-	var processUnlock func()
-	if plan.Operation == "install" {
-		processUnlock, err = e.installRecoveryLock(ctx, plan.InstanceID)
-		if err != nil {
+	if plan.Operation != "install" {
+		if err := e.ensureInstallFinalized(ctx, plan.InstanceID); err != nil {
 			return instance, err
 		}
-		defer processUnlock()
 	}
 	var durable struct {
 		Plan Plan   `json:"plan"`
@@ -244,7 +246,7 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	label := strings.TrimPrefix(plan.InstanceID, plan.PluginID+"-")
 	paths := e.instancePaths(plan.PluginID, label)
 	if plan.Operation == "install" {
-		if err := e.validateInstallTarget(current, loadErr, plan.PluginID, label); err != nil {
+		if err := e.validateInstallTarget(ctx, current, loadErr, plan.PluginID, label); err != nil {
 			return instance, err
 		}
 	}

@@ -23,6 +23,7 @@ import { useResource } from "@/lib/resource-hook";
 import { ActionBrowser, ActionForm } from "./actions";
 import { Icon } from "./icon";
 import { TaskResult } from "./task-result";
+import { SoftwareRecovery } from "./software-recovery";
 import {
   ResourceActions,
   ResourceDrawer,
@@ -61,6 +62,10 @@ export function SoftwareView({
   const [planError, setPlanError] = useState("");
   const [applying, setApplying] = useState(false);
   const [submittedTask, setSubmittedTask] = useState<unknown>();
+  const [submittedRecoveryID, setSubmittedRecoveryID] = useState<string>();
+  const [recoverySeed, setRecoverySeed] = useState<
+    { id: string; source: string } | undefined
+  >();
   const planIntent = useRef<{ id: string; key: string } | undefined>(undefined);
   const catalog = useResource<Page<CatalogItem>>(
     "plugins_catalog",
@@ -119,6 +124,13 @@ export function SoftwareView({
   const apply = async () => {
     if (!plan) return;
     const id = String(plan.plan_id ?? plan.id);
+    setSubmittedRecoveryID(
+      plan.operation === "install" && typeof plan.instance_id === "string"
+        ? plan.instance_id
+        : undefined,
+    );
+    setSubmittedTask(undefined);
+    setRecoverySeed(undefined);
     if (planIntent.current?.id !== id)
       planIntent.current = { id, key: intentKey() };
     const key = planIntent.current.key;
@@ -139,10 +151,25 @@ export function SoftwareView({
       planIntent.current = undefined;
       refresh();
     } catch (e) {
+      setSubmittedRecoveryID(undefined);
       setPlanError((e as Error).message);
     } finally {
       setApplying(false);
     }
+  };
+  const receivePlan = (value: unknown) => {
+    const next = value as Record<string, unknown>;
+    setPlan(next);
+    const failed =
+      ["failed", "recovery_required"].includes(String(next.state ?? "")) ||
+      !!next.failure ||
+      !!next.error;
+    if (
+      failed &&
+      next.operation === "install" &&
+      typeof next.instance_id === "string"
+    )
+      setRecoverySeed({ id: next.instance_id, source: "失败的软件计划" });
   };
   return (
     <div className="stack">
@@ -287,6 +314,10 @@ export function SoftwareView({
           )}
         </Card>
       )}
+      {resourcePage === "catalog" &&
+        capabilities.some((c) => c.name === "software_recovery_inspect") && (
+          <SoftwareRecovery capabilities={capabilities} seed={recoverySeed} />
+        )}
       {selected && (
         <ResourceDrawer
           open={open}
@@ -365,7 +396,7 @@ export function SoftwareView({
                 <ActionForm
                   capability={planAction}
                   preset={{ plugin_id: selected.id, operation: "install" }}
-                  onExecuted={(r) => setPlan(r as Record<string, unknown>)}
+                  onExecuted={receivePlan}
                 />
               )}
             </>
@@ -473,18 +504,50 @@ export function SoftwareView({
                       plugin_id: selected.id,
                       instance_id: instance?.instance_id,
                     }}
-                    onExecuted={(r) => setPlan(r as Record<string, unknown>)}
+                    onExecuted={receivePlan}
                   />
                 </details>
               )}
             </>
           )}
           {submittedTask !== undefined && (
-            <TaskResult
-              submitted={submittedTask}
-              capabilities={capabilities}
-              onFinished={refresh}
-            />
+            <>
+              <TaskResult
+                submitted={submittedTask}
+                capabilities={capabilities}
+                onFinished={(task) => {
+                  refresh();
+                  const state = task.status ?? task.state ?? "";
+                  if (
+                    ["failed", "interrupted", "canceled", "cancelled"].includes(
+                      state,
+                    ) &&
+                    submittedRecoveryID
+                  )
+                    setRecoverySeed({
+                      id: submittedRecoveryID,
+                      source: "未完成的软件安装任务",
+                    });
+                  setSubmittedRecoveryID(undefined);
+                }}
+              />
+              {recoverySeed?.source === "未完成的软件安装任务" && (
+                <div className="notice warning">
+                  未完成任务的实例 <code>{recoverySeed.id}</code>
+                  已填入安装恢复检查。
+                  <Button
+                    label="前往恢复检查"
+                    variant="ghost"
+                    onClick={() => {
+                      setOpen(false);
+                      document
+                        .getElementById("software-install-recovery")
+                        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }}
+                  />
+                </div>
+              )}
+            </>
           )}
           {plan && (
             <section className="plan-review" aria-label="软件变更计划">
@@ -494,6 +557,24 @@ export function SoftwareView({
               </p>
               <pre className="json-result">{JSON.stringify(plan, null, 2)}</pre>
               {planError && <div className="notice danger">{planError}</div>}
+              {typeof plan.instance_id === "string" &&
+                (["failed", "recovery_required"].includes(
+                  String(plan.state ?? ""),
+                ) ||
+                  !!plan.failure ||
+                  !!plan.error ||
+                  !!planError) && (
+                  <Button
+                    label="将此失败计划的实例 ID 填入恢复检查"
+                    variant="ghost"
+                    onClick={() =>
+                      setRecoverySeed({
+                        id: String(plan.instance_id),
+                        source: "失败的软件计划",
+                      })
+                    }
+                  />
+                )}
               {applyAction &&
               typeof (plan.plan_id ?? plan.id) === "string" &&
               typeof plan.expected_revision === "number" ? (

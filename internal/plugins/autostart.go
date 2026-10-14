@@ -80,6 +80,9 @@ func (e *PrivilegedExecutor) bootState(ctx context.Context, instance Instance) (
 	if err := checkOwnedUnit(instance); err != nil {
 		return false, "", err
 	}
+	if err := e.checkSystemdIdentity(ctx, instance.Service.Unit, false); err != nil {
+		return false, "", err
+	}
 	runner, err := agent.NewRunner(agent.Options{Operations: []agent.Operation{{Name: "plugin_boot_state", Program: "/usr/bin/systemctl", Timeout: 15 * time.Second,
 		BuildArgs: func(json.RawMessage) ([]string, error) { return []string{"is-enabled", instance.Service.Unit}, nil }}}, MaxOutputBytes: 1024, MaxConcurrent: 1})
 	if err != nil {
@@ -120,6 +123,11 @@ func (e *PrivilegedExecutor) autostart(ctx context.Context, raw json.RawMessage)
 		return nil, err
 	}
 	defer unlock()
+	if in.Enabled != nil {
+		if err := e.ensureInstallFinalized(ctx, in.ID); err != nil {
+			return nil, err
+		}
+	}
 	instance, err := e.get(ctx, in.ID, false)
 	if err != nil {
 		return nil, err

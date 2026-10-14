@@ -110,6 +110,11 @@ func (e *PrivilegedExecutor) database(ctx context.Context, raw json.RawMessage) 
 		return nil, err
 	}
 	defer unlock()
+	if in.Command != "receipt" && in.Command != "list" && in.Command != "diagnostics" && in.Command != "replication_status" && in.Command != "backup_stat" {
+		if err := e.ensureInstallFinalized(ctx, in.InstanceID); err != nil {
+			return nil, err
+		}
+	}
 	instance, err := e.get(ctx, in.InstanceID, false)
 	if err != nil {
 		return nil, err

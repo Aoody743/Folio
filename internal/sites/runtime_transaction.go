@@ -38,6 +38,24 @@ func (e *AgentExecutor) mutationRuntimes(operation string, in request) ([]string
 		}
 		return ids, nil
 	}
+	if operation == "site_migration_plan" {
+		current, err := e.get(in.ID)
+		if err != nil {
+			return nil, err
+		}
+		appendSite(current)
+		ids = append(ids, in.TargetWebInstance)
+		return ids, nil
+	}
+	if operation == "site_migration_apply" {
+		plan, err := e.loadMigrationPlan(in.PlanID)
+		if err != nil {
+			return nil, err
+		}
+		appendSite(plan.Site)
+		ids = append(ids, plan.TargetWebInstance)
+		return ids, nil
+	}
 	switch operation {
 	case "site_apply", "site_delete", "site_config_set", "site_default_set", "site_backup_restore", "site_backup_create":
 	default:
@@ -89,7 +107,7 @@ func (e *AgentExecutor) withMutationRuntimes(ctx context.Context, operation stri
 
 func websiteJournalOperation(operation string) bool {
 	switch operation {
-	case "site_apply", "site_delete", "site_config_set", "site_default_set", "site_backup_restore", "certificate_import", "certificate_delete":
+	case "site_apply", "site_migration_apply", "site_delete", "site_config_set", "site_default_set", "site_backup_restore", "certificate_import", "certificate_delete":
 		return true
 	default:
 		return false

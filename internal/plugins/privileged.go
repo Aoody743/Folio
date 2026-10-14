@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"maps"
 	"net/http"
 	"os"
 	"os/user"
@@ -98,12 +99,8 @@ func ValidatePrivilegedConfig(config PrivilegedConfig) error {
 				return errors.New("invalid trusted program argument")
 			}
 		}
-		info, err := os.Stat(profile.Program)
-		if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0111 == 0 || info.Mode().Perm()&0022 != 0 {
-			return errors.New("trusted program must exist and not be group/world writable")
-		}
-		if stat, ok := info.Sys().(*syscall.Stat_t); !ok || stat.Uid != 0 {
-			return errors.New("trusted program must be root owned")
+		if _, err := validateTrustedProgramPath(profile.Program); err != nil {
+			return err
 		}
 	}
 	if config.RunUser == "" || config.APIUser == "" || config.RunUser == config.APIUser {
@@ -177,6 +174,15 @@ func NewPrivilegedExecutor(config PrivilegedConfig) (*PrivilegedExecutor, error)
 func NewPrivilegedExecutorWithOptions(config PrivilegedConfig, options PrivilegedOptions) (*PrivilegedExecutor, error) {
 	if err := ValidatePrivilegedConfig(config); err != nil {
 		return nil, err
+	}
+	config.Programs = maps.Clone(config.Programs)
+	for id, profile := range config.Programs {
+		canonical, err := validateTrustedProgramPath(profile.Program)
+		if err != nil {
+			return nil, err
+		}
+		profile.Program = canonical
+		config.Programs[id] = profile
 	}
 	if !filepath.IsAbs(config.RootDir) || !filepath.IsAbs(config.StateDir) || filepath.Clean(config.RootDir) == "/" || filepath.Clean(config.StateDir) == "/" {
 		return nil, errors.New("software and private Agent state need explicit absolute non-root directories")
@@ -532,7 +538,18 @@ func (e *PrivilegedExecutor) lockContext(ctx context.Context, id string) (func()
 		unlock()
 		return nil, err
 	}
-	return unlock, nil
+	// Every receipt writer and runtime mutation shares this process lock.
+	// Recovery CAS must serialize with config, uninstall, service control and
+	// boot changes even when independent Agent executors use the same state.
+	processUnlock, err := e.installRecoveryLock(ctx, id)
+	if err != nil {
+		unlock()
+		return nil, err
+	}
+	return func() {
+		processUnlock()
+		unlock()
+	}, nil
 }
 
 type instanceMutex struct {
@@ -580,7 +597,21 @@ func (e *PrivilegedExecutor) save(kind, id string, value any) error {
 	if err != nil {
 		return err
 	}
-	return os.Rename(temp, filepath.Join(dir, id+".json"))
+	if err = os.Rename(temp, filepath.Join(dir, id+".json")); err != nil {
+		return err
+	}
+	// A later durable install checkpoint must never outrun its receipt or plan.
+	// Sync the directory entry as well as the record's contents before success.
+	directory, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	err = directory.Sync()
+	closeErr = directory.Close()
+	if err == nil {
+		err = closeErr
+	}
+	return err
 }
 func (e *PrivilegedExecutor) load(kind, id string, value any) error {
 	if !validInstanceID(id) && !validPlanID(id) {

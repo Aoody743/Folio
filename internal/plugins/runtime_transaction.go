@@ -54,6 +54,9 @@ func (e *PrivilegedExecutor) WithRuntimeTransaction(ctx context.Context, ids []s
 			return err
 		}
 		unlock = append(unlock, release)
+		if err := e.ensureInstallFinalized(ctx, id); err != nil {
+			return err
+		}
 		transaction.ids[id] = true
 	}
 	if err := ctx.Err(); err != nil {

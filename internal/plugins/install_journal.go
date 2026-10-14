@@ -144,6 +144,9 @@ func (e *PrivilegedExecutor) writeInstallUnit(ctx context.Context, instance *Ins
 	if err != nil {
 		return err
 	}
+	if err = e.checkSystemdIdentity(ctx, instance.Service.Unit, true); err != nil {
+		return err
+	}
 	digest := sha256.Sum256(unit)
 	proof, err := hashManagedExecutable(instance.Service.Program)
 	if err != nil {
@@ -468,18 +471,38 @@ func (e *PrivilegedExecutor) installRecoveryInspect(ctx context.Context, id stri
 	view.Revision = j.Revision
 	view.UpdatedAt = j.UpdatedAt
 	view.Reason = "The protected install journal proves this attempt; recovery is limited to its verified checkpoint."
+	if j.Phase == "completed" {
+		// Normal service/config/uninstall operations may advance or update the
+		// receipt after installation. A completed journal grants no recovery and
+		// must not describe that ordinary evolution as an interrupted install.
+		current, currentErr := e.get(ctx, id, false)
+		if currentErr == nil && current.Ownership == "managed" && current.Paths == j.Instance.Paths && current.Revision >= j.Instance.Revision {
+			view.State = "completed"
+			view.Reason = "The install receipt is committed."
+		} else {
+			view.State = "journal_conflict"
+			view.Reason = "The completed journal has no current software receipt; automatic recovery is denied."
+		}
+		return view, nil
+	}
 	receiptConflict := receiptState == "conflict" || receiptState == "candidate" && j.Phase != "receipt_pending" && j.Phase != "completed"
 	if receiptConflict {
 		view.State = "journal_conflict"
 		view.Reason = "The protected install journal and current receipt do not prove a safe recovery state."
 		return view, nil
 	}
-	if j.Phase == "health_verified" || j.Phase == "boot_verified" || j.Phase == "receipt_pending" {
+	// A committed candidate needs only journal finalization. Otherwise every
+	// advertised mutation requires current ownership proof, just like execution.
+	proofValid := receiptState == "candidate"
+	if !proofValid && (j.Phase == "health_verified" || j.Phase == "boot_verified" || j.Phase == "receipt_pending" || e.installStopPreserveAllowed(j)) {
+		proofValid = e.verifyInstallJournalProofs(ctx, j) == nil
+	}
+	if proofValid && (j.Phase == "health_verified" || j.Phase == "boot_verified" || j.Phase == "receipt_pending") {
 		view.Available = append(view.Available, "continue")
 	}
-	if receiptState != "candidate" && e.installStopPreserveAllowed(j) && e.verifyInstallJournalProofs(ctx, j) == nil {
+	if receiptState != "candidate" && e.installStopPreserveAllowed(j) && proofValid {
 		view.Available = append(view.Available, "stop_preserve")
-	} else if receiptState != "candidate" && e.installStopPreserveAllowed(j) {
+	} else if !proofValid {
 		view.Reason = "The journal exists, but current ownership proofs do not permit a recovery action."
 	} else if receiptState == "candidate" {
 		view.Reason = "The install receipt is committed; continue only to finalize its journal checkpoint."
@@ -489,15 +512,9 @@ func (e *PrivilegedExecutor) installRecoveryInspect(ctx context.Context, id stri
 		view.Available = []string{}
 		view.Reason = "The verified owned service is stopped and disabled; its package, data, configuration, and runtime were preserved."
 	}
-	if j.Phase == "completed" {
-		view.Available = []string{}
-		if receiptState == "candidate" {
-			view.State = "completed"
-			view.Reason = "The install receipt is committed."
-		} else {
-			view.State = "journal_conflict"
-			view.Reason = "The completed journal has no current software receipt; automatic recovery is denied."
-		}
+	if j.Phase != "preserved_stopped" && j.Phase != "health_verified" && j.Phase != "boot_verified" && j.Phase != "receipt_pending" && !e.installStopPreserveAllowed(j) {
+		view.State = "inspection_only"
+		view.Reason = "This checkpoint has no verified running-service proof. Automatic recovery is unavailable; preserve existing state for operator review."
 	}
 	return view, nil
 }
@@ -532,11 +549,6 @@ func (e *PrivilegedExecutor) installRecoveryAction(ctx context.Context, input in
 		return installRecoveryView{}, err
 	}
 	defer unlock()
-	processUnlock, err := e.installRecoveryLock(ctx, input.ID)
-	if err != nil {
-		return installRecoveryView{}, err
-	}
-	defer processUnlock()
 	j, err := e.loadInstallJournal(input.ID)
 	if err != nil {
 		return installRecoveryView{}, err
@@ -567,6 +579,11 @@ func (e *PrivilegedExecutor) continueInstallRecovery(ctx context.Context, j *ins
 	}
 	if receiptState == "conflict" || receiptState == "candidate" && j.Phase != "receipt_pending" {
 		return failure("ownership_conflict", "The current receipt no longer matches the protected install checkpoint; no recovery action was taken", 409)
+	}
+	if receiptState == "candidate" {
+		// The receipt has already committed. Do not probe or change a running
+		// service again: it may have been deliberately stopped since that commit.
+		return e.saveNextInstallJournal(ctx, j, "completed")
 	}
 	if err := e.verifyInstallJournalProofs(ctx, *j); err != nil {
 		return err
@@ -690,18 +707,36 @@ func (e *PrivilegedExecutor) stopPreserveInstallRecovery(ctx context.Context, j 
 }
 
 func systemdUnitActive(ctx context.Context, unit string) (bool, error) {
-	output, err := runFixed(ctx, "/usr/bin/systemctl", []string{"is-active", unit}, 15*time.Second, nil)
-	state := strings.TrimSpace(output)
-	if err == nil && state == "active" {
+	runner, err := agent.NewRunner(agent.Options{Operations: []agent.Operation{{Name: "plugin_active_state", Program: "/usr/bin/systemctl", Timeout: 15 * time.Second,
+		BuildArgs: func(json.RawMessage) ([]string, error) { return []string{"is-active", unit}, nil }}}, MaxOutputBytes: 1024, MaxConcurrent: 1})
+	if err != nil {
+		return false, err
+	}
+	result, err := runner.Run(ctx, agent.Request{Operation: "plugin_active_state", Input: json.RawMessage(`{}`)})
+	return decodeSystemdActiveState(result, err)
+}
+
+func decodeSystemdActiveState(result agent.Result, runErr error) (bool, error) {
+	unknown := failure("install_recovery_state_unknown", "The owned service active state is unknown", 502)
+	if result.Operation != "plugin_active_state" || result.Truncated || result.Canceled || result.TimedOut || result.Stderr != "" {
+		return false, unknown
+	}
+	if runErr != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(runErr, &exitErr) || exitErr.ExitCode() != result.ExitCode {
+			return false, unknown
+		}
+	} else if result.ExitCode != 0 {
+		return false, unknown
+	}
+	state := strings.TrimSpace(result.Stdout)
+	if state == "active" && runErr == nil && result.ExitCode == 0 {
 		return true, nil
 	}
-	if state == "inactive" || state == "failed" {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) && exitErr.ExitCode() == 3 {
-			return false, nil
-		}
+	if (state == "inactive" || state == "failed") && result.ExitCode == 3 {
+		return false, nil
 	}
-	return false, failure("install_recovery_state_unknown", "The owned service active state is unknown", 502)
+	return false, unknown
 }
 
 func (e *PrivilegedExecutor) enableJournalOwnedUnit(ctx context.Context, j *installJournal) error {
@@ -744,6 +779,9 @@ func (e *PrivilegedExecutor) journalBootState(ctx context.Context, j installJour
 		return false, "", failure("autostart_unavailable", "Install recovery requires a verified owned systemd unit", 412)
 	}
 	if err := e.verifyJournalUnit(j); err != nil {
+		return false, "", err
+	}
+	if err := e.checkSystemdIdentity(ctx, j.Instance.Service.Unit, false); err != nil {
 		return false, "", err
 	}
 	runner, err := agent.NewRunner(agent.Options{Operations: []agent.Operation{{Name: "plugin_boot_state", Program: "/usr/bin/systemctl", Timeout: 15 * time.Second,
@@ -820,6 +858,9 @@ func (e *PrivilegedExecutor) verifyInstallJournalProofs(ctx context.Context, j i
 	}
 	if e.config.UseSystemd && j.Instance.Service.Kind != "cli" {
 		if err := e.verifyJournalUnit(j); err != nil {
+			return err
+		}
+		if err := e.checkSystemdIdentity(ctx, j.Instance.Service.Unit, false); err != nil {
 			return err
 		}
 	} else if j.UnitSHA256 != "" {
@@ -1028,22 +1069,25 @@ func createOnlyUnitFile(dir, name string, data []byte) error {
 		return err
 	}
 	defer root.Close()
-	file, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL|syscall.O_NOFOLLOW, 0644)
+	nonce, err := newInstallNonce()
 	if err != nil {
-		if os.IsExist(err) {
-			return failure("ownership_conflict", "An existing service unit is not owned by this install journal; it was preserved", 409)
-		}
 		return err
 	}
-	_, writeErr := file.Write(data)
-	if writeErr == nil {
-		writeErr = file.Sync()
+	temporary := ".powerlinux-unit-" + nonce
+	file, err := root.OpenFile(temporary, os.O_WRONLY|os.O_CREATE|os.O_EXCL|syscall.O_NOFOLLOW, 0600)
+	if err != nil {
+		return err
 	}
+	defer root.Remove(temporary)
+	_, writeErr := file.Write(data)
 	if writeErr == nil && os.Geteuid() == 0 {
 		writeErr = file.Chown(0, 0)
 	}
 	if writeErr == nil {
 		writeErr = file.Chmod(0644)
+	}
+	if writeErr == nil {
+		writeErr = file.Sync()
 	}
 	closeErr := file.Close()
 	if writeErr == nil {
@@ -1051,6 +1095,18 @@ func createOnlyUnitFile(dir, name string, data []byte) error {
 	}
 	if writeErr != nil {
 		return writeErr
+	}
+	// Link publishes the complete synced inode atomically and refuses an
+	// existing name. A crash during the write leaves only an ignored temporary
+	// file, never a partial service unit or an overwritten foreign unit.
+	if err = root.Link(temporary, name); err != nil {
+		if os.IsExist(err) {
+			return failure("ownership_conflict", "An existing service unit is not owned by this install journal; it was preserved", 409)
+		}
+		return err
+	}
+	if err = root.Remove(temporary); err != nil {
+		return err
 	}
 	directory, err := os.Open(dir)
 	if err != nil {

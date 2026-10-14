@@ -175,6 +175,11 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 		return nil, err
 	}
 	defer unlock()
+	if input.Command != "status" && !strings.HasSuffix(input.Command, "_list") && input.Command != "image_inspect" && input.Command != "container_logs" && input.Command != "container_get" {
+		if err := e.ensureInstallFinalized(ctx, input.ID); err != nil {
+			return nil, err
+		}
+	}
 	instance, err := e.get(ctx, input.ID, false)
 	if err != nil {
 		return nil, err

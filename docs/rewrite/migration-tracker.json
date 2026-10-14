@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-13",
+  "updated": "2026-10-14",
   "timezone": "Asia/Singapore",
   "baseline_commit": "a0b700753f6242d40dd60b40a4533960b58a3632",
   "description": "实施台账：保留所有旧条目，按实际依赖调整阶段。implemented表示有真实实现，verified还要求对应验收证据；静态动作数量不是验收数。",
@@ -1238,7 +1238,7 @@
     {
       "id": "CORE-073",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old": {
         "file": "web/admin/plugins/__init__.py",
         "function": "init_install",
@@ -1248,9 +1248,9 @@
         ],
         "line": 42
       },
-      "new_action": null,
-      "acceptance_case": null,
-      "evidence": null
+      "new_action": "software_plan / software_apply / software_recovery_inspect / software_recovery",
+      "acceptance_case": "software.lifecycle",
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json"
     },
     {
       "id": "CORE-074",
@@ -1307,7 +1307,7 @@
     {
       "id": "CORE-077",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old": {
         "file": "web/admin/plugins/__init__.py",
         "function": "install",
@@ -1317,14 +1317,14 @@
         ],
         "line": 86
       },
-      "new_action": null,
-      "acceptance_case": null,
-      "evidence": null
+      "new_action": "software_plan / software_apply / software_recovery_inspect / software_recovery",
+      "acceptance_case": "software.lifecycle",
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json"
     },
     {
       "id": "CORE-078",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old": {
         "file": "web/admin/plugins/__init__.py",
         "function": "uninstall",
@@ -1334,9 +1334,9 @@
         ],
         "line": 100
       },
-      "new_action": null,
-      "acceptance_case": null,
-      "evidence": null
+      "new_action": "software_plan / software_apply / software_recovery_inspect / software_recovery",
+      "acceptance_case": "software.lifecycle",
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json"
     },
     {
       "id": "CORE-079",
@@ -4043,7 +4043,7 @@
       "name": "acme_pandominassl_apply",
       "title": "ACME泛域名SSL",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "conf",
         "config_tpl",
@@ -4079,9 +4079,12 @@
         "1.0"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#acme_pandominassl_apply",
+      "acceptance_cases": [
+        "software.acme_pandominassl_apply.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-alist",
@@ -4120,7 +4123,7 @@
       "name": "backup_ftp",
       "title": "FTP存储空间",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "conf",
         "create_dir",
@@ -4139,9 +4142,12 @@
         "1.0"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#backup_ftp",
+      "acceptance_cases": [
+        "software.backup_ftp.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-clean",
@@ -4229,7 +4235,7 @@
       "name": "data_query",
       "title": "数据管理",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "reload",
         "restart",
@@ -4239,16 +4245,19 @@
       ],
       "old_metadata_versions": "1.0",
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#data_query",
+      "acceptance_cases": [
+        "software.data_query.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-docker",
       "name": "docker",
       "title": "Docker",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "con_list",
         "conf",
@@ -4287,9 +4296,12 @@
         "1.0"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#docker",
+      "acceptance_cases": [
+        "software.docker.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-doh",
@@ -4852,7 +4864,7 @@
       "name": "mariadb",
       "title": "MariaDB",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "add_db",
         "add_master_rep_slave_user",
@@ -4978,16 +4990,19 @@
         "12.0",
         "12.1"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#mariadb",
+      "acceptance_cases": [
+        "software.mariadb.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-memcached",
       "name": "memcached",
       "title": "Memcached",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "conf_env",
         "initd_install",
@@ -5005,9 +5020,12 @@
         "1.6"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#memcached",
+      "acceptance_cases": [
+        "software.memcached.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-migration_api",
@@ -5038,7 +5056,7 @@
       "name": "mongodb",
       "title": "MongoDB",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "add_db",
         "conf",
@@ -5106,9 +5124,12 @@
         "8.0",
         "8.2"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#mongodb",
+      "acceptance_cases": [
+        "software.mongodb.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-mosquitto",
@@ -5195,7 +5216,7 @@
       "name": "mysql",
       "title": "MySQL",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "add_db",
         "add_master_rep_slave_user",
@@ -5315,16 +5336,19 @@
         "9.3",
         "9.4"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#mysql",
+      "acceptance_cases": [
+        "software.mysql.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-mysql-community",
       "name": "mysql-community",
       "title": "MySQL[Tar]",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "add_db",
         "add_master_rep_slave_user",
@@ -5437,9 +5461,12 @@
         "9.2",
         "9.3"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#mysql-community",
+      "acceptance_cases": [
+        "software.mysql-community.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-nezha",
@@ -5572,7 +5599,7 @@
       "name": "openresty",
       "title": "OpenResty",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "check",
         "conf",
@@ -5610,16 +5637,19 @@
         "1.29.2",
         "rtmp"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#openresty",
+      "acceptance_cases": [
+        "software.openresty.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-pgadmin",
       "name": "pgadmin",
       "title": "pgadmin",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "access_log",
         "conf",
@@ -5642,16 +5672,19 @@
         "4"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#pgadmin",
+      "acceptance_cases": [
+        "software.pgadmin.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-php",
       "name": "php",
       "title": "PHP",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "app_start",
         "clean_session_old",
@@ -5724,16 +5757,19 @@
         "85",
         "common"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#php",
+      "acceptance_cases": [
+        "software.php.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-php-apt",
       "name": "php-apt",
       "title": "PHP[APT]",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "app_start",
         "clean_session_old",
@@ -5799,31 +5835,37 @@
         "85",
         "common"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#php-apt",
+      "acceptance_cases": [
+        "software.php-apt.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-php-guard",
       "name": "php-guard",
       "title": "PHP守护",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "status"
       ],
       "old_metadata_versions": "1.0",
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#php-guard",
+      "acceptance_cases": [
+        "software.php-guard.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-php-yum",
       "name": "php-yum",
       "title": "PHP[YUM]",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "app_start",
         "clean_session_old",
@@ -5879,9 +5921,12 @@
         "85",
         "common"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#php-yum",
+      "acceptance_cases": [
+        "software.php-yum.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-phpldapadmin",
@@ -5924,7 +5969,7 @@
       "name": "phpmyadmin",
       "title": "phpMyAdmin",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "access_log",
         "conf",
@@ -5956,16 +6001,19 @@
         "5.2.1"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#phpmyadmin",
+      "acceptance_cases": [
+        "software.phpmyadmin.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-postgresql",
       "name": "postgresql",
       "title": "PostgreSQL",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "add_db",
         "add_master_rep_slave_user",
@@ -6030,9 +6078,12 @@
         "17",
         "18"
       ],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#postgresql",
+      "acceptance_cases": [
+        "software.postgresql.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-prometheus",
@@ -6069,7 +6120,7 @@
       "name": "pureftp",
       "title": "PureFtpd",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "add_ftp",
         "conf",
@@ -6091,16 +6142,19 @@
       ],
       "old_metadata_versions": "1.0.49",
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#pureftp",
+      "acceptance_cases": [
+        "software.pureftp.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-redis",
       "name": "redis",
       "title": "Redis",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "cluster_info",
         "cluster_nodes",
@@ -6133,16 +6187,19 @@
         "8.2.3"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#redis",
+      "acceptance_cases": [
+        "software.redis.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-rsyncd",
       "name": "rsyncd",
       "title": "rsyncd",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "add_rec",
         "cmd_rec_cmd",
@@ -6173,9 +6230,12 @@
       ],
       "old_metadata_versions": "2.0",
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#rsyncd",
+      "acceptance_cases": [
+        "software.rsyncd.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-simpleping",
@@ -6251,7 +6311,7 @@
       "name": "supervisor",
       "title": "supervisor",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "add_job",
         "conf",
@@ -6284,9 +6344,12 @@
         "1.0"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#supervisor",
+      "acceptance_cases": [
+        "software.supervisor.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-swap",
@@ -6451,7 +6514,7 @@
       "name": "valkey",
       "title": "valkey",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [
         "cluster_info",
         "cluster_nodes",
@@ -6477,9 +6540,12 @@
         "8.1.3"
       ],
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#valkey",
+      "acceptance_cases": [
+        "software.valkey.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-varnish",
@@ -6541,13 +6607,16 @@
       "name": "webssh",
       "title": "SSH终端",
       "phase": 2,
-      "status": "planned",
+      "status": "in_progress",
       "old_declared_actions": [],
       "old_metadata_versions": "2.0",
       "old_version_directories": [],
-      "new_manifest": null,
-      "acceptance_cases": [],
-      "evidence": null
+      "new_manifest": "internal/plugins/catalog/core.json#webssh",
+      "acceptance_cases": [
+        "software.webssh.lifecycle"
+      ],
+      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
+      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
     },
     {
       "id": "PLUGIN-webstats",

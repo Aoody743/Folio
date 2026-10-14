@@ -322,7 +322,7 @@
     {
       "id": "sites.lifecycle",
       "behavior": "站点列表、创建、启停、删除与运行状态",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [],
       "old_sources": [
         "web/admin/site/site.py"
@@ -337,14 +337,23 @@
         "CORE-165",
         "CORE-177"
       ],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "sites_create",
+        "sites_update",
+        "sites_delete",
+        "sites_migration_plan",
+        "sites_migration_get",
+        "sites_migration_apply"
+      ],
+      "ui_entry": "Website detail / migration",
       "acceptance_checks": [
         "Real OpenResty HTTP serves only active sites",
         "Owned config validated/reloaded; failed config restores prior site",
         "Deletion preserves requested data"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-local-20261014/source-checks.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
@@ -1299,7 +1308,7 @@
     {
       "id": "software.lifecycle",
       "behavior": "软件安装、卸载与预检查",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [],
       "old_sources": [
         "web/admin/plugins/__init__.py"
@@ -1310,14 +1319,21 @@
         "CORE-077",
         "CORE-078"
       ],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "software_plan",
+        "software_apply",
+        "software_recovery_inspect",
+        "software_recovery"
+      ],
+      "ui_entry": "Software catalog / install recovery",
       "acceptance_checks": [
         "Trusted recipe+signature/checksum verify; real health",
         "Plan/lock/commit/failure rollback/upgrade/uninstall data retention",
         "Only explicitly selected software changes system"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-local-20261014/source-checks.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",

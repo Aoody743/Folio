@@ -4,6 +4,18 @@
 
 日期：2026-10-13（Asia/Singapore）。所有检查只代表记录的环境与当前代码，不代表尚未运行的发行版或第三方服务已经兼容。
 
+## 本地第二阶段接续：2026-10-14
+
+本批从远端 `refine` 的 `92752b9` 建立 `refine-local`；旁边旧工作区的未提交改动未修改。使用 GPT-6 Luna max 分模块实现并独立审查。第二阶段仍在进行中，第三阶段未开始。
+
+- 安装恢复：修复 unit 原子不覆盖发布、receipt/plan 目录同步、已提交 receipt 仅完成 journal、普通管理动作与恢复共用跨进程锁、未完成安装写操作守卫，以及 systemd 实际 FragmentPath/drop-in/待 reload 归属证明。`is-active` 正常退出码 3 不再被错误包装丢失；unit 文件缺失但仍运行时拒绝卸载。早期无可靠服务证明的 checkpoint 只允许检查，不能自动重放包安装/DDL/密码初始化。
+- 软件界面增加按实例 ID 检查安装恢复、显示后端可执行动作和 CAS 版本、显式提交恢复任务；重试保持幂等标识。
+- 网站跨 Web 实例迁移增加 Agent 私有冻结计划、源/目标/PHP/worker/配置/TLS 证明、两端资源授权与执行期重验，复用现有 WAL 做失败和崩溃恢复。内容与 PHP 配置保留；高级配置需显式转为托管配置并保存原文。网站详情增加专门规划、复核、应用入口。
+- Debian 13 **原生 arm64** 可丢弃 VM 已建立，宿主未全局安装 Go/插件或修改 SSH/防火墙。真实 Redis/systemd 源测试的 continue/stop_preserve、外部 drop-in 拒绝和 missing-unit 拒绝通过。迁移 root 文件系统 fixture 的两种真实子进程 SIGKILL 检查通过；其 Web check/reload 为协议 fixture，不能当作 OpenResty/PHP 服务验收。
+- 普通 UID、umask 077 的全量 Go race 13 包通过、2 包无测试，387 项顶层测试通过、55 项环境或 helper 用例跳过；对应源码快照与逐项跳过记录见 [源码证据](evidence/phase2-local-20261014/source-checks.json)。前端 43 项源码测试、类型检查及静态导出通过。最后安全修复的插件定向 race、全量 vet 和依赖校验通过；固定包验收随后补入，未执行前不宣称可部署或阶段完成。
+
+本机临时 VM、工具链、缓存和专用 SSH key 集中于 `.cache/rewrite`。用户要求开发结束可清理：验收后先 poweroff 并确认 launcher 停止，保留代码、脱敏证据和发行包，再清除本次临时环境。源码、真实服务、固定安装包和浏览器证据分别记录。
+
 ## 当前执行状态（优先于历史交接与下方旧批次）
 
 用户已恢复云端开发，要求使用 GPT-6 Luna max 按小批次继续完成第二阶段。首批源码闭环已完成，但第二阶段仍未达到退出标准，第三阶段未开始。

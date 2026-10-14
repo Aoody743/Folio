@@ -140,6 +140,9 @@ func (p *Provider) Bindings() []core.Binding {
 		p.binding("sites_get", "Read one actual website, configuration revision and runtime status", "sites:read", "site_get", true, false, object(map[string]any{"id": idField()}, "id"), siteResource),
 		p.binding("sites_create", "Create an isolated website, validate Web/PHP config and reload with rollback", "sites:write", "site_apply", false, true, object(fields, "id", "name", "domains", "web_instance"), p.applyResources),
 		p.binding("sites_update", "Update typed website settings using its expected revision", "sites:write", "site_apply", false, true, object(fields, "id", "expected_revision"), p.applyResources),
+		p.binding("sites_migration_plan", "Review a protected plan to move a website between Web instances", "sites:write", "site_migration_plan", false, false, object(map[string]any{"id": idField(), "expected_revision": revision, "target_web_instance": idField(), "reset_advanced_config": boolean()}, "id", "expected_revision", "target_web_instance", "reset_advanced_config"), p.migrationPlanResources),
+		p.binding("sites_migration_get", "Read a protected Web migration plan before applying it", "sites:read", "site_migration_get", true, false, object(map[string]any{"plan_id": text(34)}, "plan_id"), p.migrationGetResources),
+		p.binding("sites_migration_apply", "Apply a reviewed Web migration plan using its website revision", "sites:write", "site_migration_apply", false, true, object(map[string]any{"plan_id": text(34), "expected_revision": revision}, "plan_id", "expected_revision"), p.migrationApplyResources),
 		p.binding("sites_delete", "Remove only the owned website configuration; retain content by default", "sites:write", "site_delete", false, true, object(map[string]any{"id": idField(), "expected_revision": revision, "keep_data": boolean()}, "id", "expected_revision"), siteResource),
 		p.binding("sites_retained_list", "List owned content retained after website deletion, including its file root and revision", "sites:read", "site_retained_list", true, false, object(map[string]any{}), noResources),
 		p.binding("sites_retained_purge", "Permanently remove selected retained website content after draining file operations", "sites:write", "site_retained_purge", false, true, object(common, "id", "expected_revision"), siteResource),
@@ -200,6 +203,99 @@ func (p *Provider) get(ctx context.Context, actor core.Actor, id string) (Site, 
 	err := p.call(ctx, actor, "site_get", request{ID: id}, &site)
 	return site, err
 }
+
+func (p *Provider) migrationView(ctx context.Context, actor core.Actor, planID string) (MigrationPlanView, error) {
+	var view MigrationPlanView
+	if !validMigrationPlanID(planID) {
+		return view, invalid("Invalid website migration plan")
+	}
+	err := p.call(ctx, actor, "site_migration_get", request{PlanID: planID}, &view)
+	if err == nil && (view.ID != planID || view.ExpectedRevision < 1) {
+		return MigrationPlanView{}, failure("migration_plan_invalid", "Website migration plan identity is invalid", 409)
+	}
+	return view, err
+}
+
+func (p *Provider) authorizeMigrationView(actor core.Actor, view MigrationPlanView, write bool) ([]string, error) {
+	sitePermission := "sites:read"
+	if write {
+		sitePermission = "sites:write"
+	}
+	resources := []string{Resource(view.SiteID)}
+	if !safeID.MatchString(view.SiteID) || !safeID.MatchString(view.SourceWebInstance) || !safeID.MatchString(view.TargetWebInstance) || view.SourceWebInstance == view.TargetWebInstance || view.PHPInstance != "" && !safeID.MatchString(view.PHPInstance) {
+		return nil, failure("migration_plan_invalid", "Website migration plan identity is invalid", 409)
+	}
+	if !p.deps.Authorize(actor, sitePermission, resources[0]) {
+		return nil, denied()
+	}
+	for _, instance := range []string{view.SourceWebInstance, view.TargetWebInstance, view.PHPInstance} {
+		if instance == "" {
+			continue
+		}
+		resource := "software:" + instance
+		if !p.deps.Authorize(actor, "software:read", resource) {
+			return nil, denied()
+		}
+		resources = appendResource(resources, resource)
+	}
+	return resources, nil
+}
+
+func (p *Provider) migrationPlanResources(ctx context.Context, actor core.Actor, raw json.RawMessage) ([]string, error) {
+	var in struct {
+		ID        string `json:"id"`
+		Revision  int64  `json:"expected_revision"`
+		TargetWeb string `json:"target_web_instance"`
+	}
+	if json.Unmarshal(raw, &in) != nil || !safeID.MatchString(in.ID) || !safeID.MatchString(in.TargetWeb) || in.Revision < 1 {
+		return nil, invalid("A website, current revision and target Web instance are required")
+	}
+	if !p.deps.Authorize(actor, "sites:write", Resource(in.ID)) {
+		return nil, denied()
+	}
+	current, err := p.get(ctx, actor, in.ID)
+	if err != nil {
+		return nil, err
+	}
+	if current.Revision != in.Revision {
+		return nil, failure("conflict", "Website revision changed; reload before planning migration", 409)
+	}
+	view := MigrationPlanView{SiteID: current.ID, SourceWebInstance: current.WebInstance, TargetWebInstance: in.TargetWeb, PHPInstance: current.PHPInstance}
+	return p.authorizeMigrationView(actor, view, true)
+}
+
+func (p *Provider) migrationGetResources(ctx context.Context, actor core.Actor, raw json.RawMessage) ([]string, error) {
+	var in struct {
+		PlanID string `json:"plan_id"`
+	}
+	if json.Unmarshal(raw, &in) != nil || !validMigrationPlanID(in.PlanID) {
+		return nil, invalid("A website migration plan is required")
+	}
+	view, err := p.migrationView(ctx, actor, in.PlanID)
+	if err != nil {
+		return nil, err
+	}
+	return p.authorizeMigrationView(actor, view, false)
+}
+
+func (p *Provider) migrationApplyResources(ctx context.Context, actor core.Actor, raw json.RawMessage) ([]string, error) {
+	var in struct {
+		PlanID   string `json:"plan_id"`
+		Revision int64  `json:"expected_revision"`
+	}
+	if json.Unmarshal(raw, &in) != nil || !validMigrationPlanID(in.PlanID) || in.Revision < 1 {
+		return nil, invalid("A reviewed website migration plan and revision are required")
+	}
+	view, err := p.migrationView(ctx, actor, in.PlanID)
+	if err != nil {
+		return nil, err
+	}
+	if view.ExpectedRevision != in.Revision {
+		return nil, failure("conflict", "Website revision differs from the reviewed migration plan", 409)
+	}
+	return p.authorizeMigrationView(actor, view, true)
+}
+
 func (p *Provider) applyResources(ctx context.Context, actor core.Actor, raw json.RawMessage) ([]string, error) {
 	var in struct {
 		ID       string `json:"id"`
@@ -357,6 +453,8 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 	_ = json.Unmarshal(raw, &fields)
 	in := request{Actor: actor.Public(), KeepData: true}
 	_ = json.Unmarshal(fields["id"], &in.ID)
+	_ = json.Unmarshal(fields["plan_id"], &in.PlanID)
+	_ = json.Unmarshal(fields["target_web_instance"], &in.TargetWebInstance)
 	_ = json.Unmarshal(fields["expected_revision"], &in.ExpectedRevision)
 	_ = json.Unmarshal(fields["kind"], &in.Kind)
 	_ = json.Unmarshal(fields["offset"], &in.Offset)
@@ -370,6 +468,27 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 		_ = json.Unmarshal(keep, &in.KeepData)
 	}
 	resources := []string{Resource(in.ID)}
+	if name == "sites_migration_plan" {
+		var err error
+		resources, err = p.migrationPlanResources(ctx, actor, raw)
+		if err != nil {
+			return core.ActionResult{}, err
+		}
+	}
+	if name == "sites_migration_get" {
+		var err error
+		resources, err = p.migrationGetResources(ctx, actor, raw)
+		if err != nil {
+			return core.ActionResult{}, err
+		}
+	}
+	if name == "sites_migration_apply" {
+		var err error
+		resources, err = p.migrationApplyResources(ctx, actor, raw)
+		if err != nil {
+			return core.ActionResult{}, err
+		}
+	}
 	if name == "sites_default_set" {
 		var err error
 		resources, err = p.defaultResources(ctx, actor, raw)
@@ -493,12 +612,12 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 	}
 	var data any
 	err := p.call(ctx, actor, operation, in, &data)
-	return core.ActionResult{Data: data, Resources: resources, AuditSummary: map[string]any{"website_id": in.ID}}, err
+	return core.ActionResult{Data: data, Resources: resources, AuditSummary: map[string]any{"website_id": in.ID, "migration_plan_id": in.PlanID}}, err
 }
 
 // All slow website mutations use the shared durable four-slot manager.
 func JobOperationNames() []string {
-	return []string{"site_apply", "site_delete", "site_retained_purge", "site_default_set", "site_config_set", "site_backup_create", "site_backup_restore", "certificate_acme_issue", "certificate_acme_order"}
+	return []string{"site_apply", "site_migration_apply", "site_delete", "site_retained_purge", "site_default_set", "site_config_set", "site_backup_create", "site_backup_restore", "certificate_acme_issue", "certificate_acme_order"}
 }
 func (p *Provider) Validate(job agent.Request) error {
 	known := false
@@ -514,7 +633,14 @@ func (p *Provider) Validate(job agent.Request) error {
 	if err := strict(job.Input, &in); err != nil {
 		return err
 	}
-	if !safeID.MatchString(in.ID) || in.Actor.ID == "" {
+	if in.Actor.ID == "" {
+		return agent.ErrInvalidInput
+	}
+	if job.Operation == "site_migration_apply" {
+		if !validMigrationPlanID(in.PlanID) || in.ExpectedRevision < 1 || in.ID != "" {
+			return agent.ErrInvalidInput
+		}
+	} else if !safeID.MatchString(in.ID) {
 		return agent.ErrInvalidInput
 	}
 	return nil
@@ -560,6 +686,18 @@ func (p *Provider) Run(ctx context.Context, job agent.Request) (agent.Result, er
 	}
 	if in.Actor.ID != actor.ID {
 		return agent.Result{}, denied()
+	}
+	if job.Operation == "site_migration_apply" {
+		view, viewErr := p.migrationView(ctx, actor, in.PlanID)
+		if viewErr != nil {
+			return agent.Result{}, viewErr
+		}
+		if view.ExpectedRevision != in.ExpectedRevision {
+			return agent.Result{}, failure("revision_conflict", "Website revision differs from the reviewed migration plan", 409)
+		}
+		if _, viewErr = p.authorizeMigrationView(actor, view, true); viewErr != nil {
+			return agent.Result{}, viewErr
+		}
 	}
 	var restoreSettings *backupManifest
 	if categoryMutationOperation(job.Operation) {

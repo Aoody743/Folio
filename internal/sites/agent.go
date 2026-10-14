@@ -43,7 +43,7 @@ type AgentExecutor struct {
 }
 
 func AgentOperationNames() []string {
-	return []string{"site_list", "site_get", "site_apply", "site_delete", "site_retained_list", "site_retained_purge", "site_default_set", "site_default_get", "site_logs", "site_config_get", "site_config_set", "site_backups_list", "site_backup_get", "site_backup_stat", "site_backup_artifact", "site_backup_create", "site_backup_restore", "site_backup_delete", "certificate_list", "certificate_get", "certificate_import", "certificate_delete", "certificate_export", "certificate_acme_issue", "certificate_acme_order", "site_php_cli_get", "site_php_cli_set"}
+	return []string{"site_list", "site_get", "site_apply", "site_migration_plan", "site_migration_get", "site_migration_apply", "site_delete", "site_retained_list", "site_retained_purge", "site_default_set", "site_default_get", "site_logs", "site_config_get", "site_config_set", "site_backups_list", "site_backup_get", "site_backup_stat", "site_backup_artifact", "site_backup_create", "site_backup_restore", "site_backup_delete", "certificate_list", "certificate_get", "certificate_import", "certificate_delete", "certificate_export", "certificate_acme_issue", "certificate_acme_order", "site_php_cli_get", "site_php_cli_set"}
 }
 
 func NewAgentExecutor(config AgentConfig, runtimes Runtimes) (*AgentExecutor, error) {
@@ -87,7 +87,7 @@ func NewAgentExecutorWithFiles(config AgentConfig, runtimes Runtimes, sharedFile
 		return nil, err
 	}
 	e := &AgentExecutor{config: config, runtimes: runtimes, state: state, content: content, lockFile: lockFile}
-	for _, directory := range []string{"sites", "retained", "certificates", "workers", "backups", "transactions", "acme"} {
+	for _, directory := range []string{"sites", "retained", "certificates", "workers", "backups", "transactions", "migration-plans", "acme"} {
 		if err = state.MkdirAll(directory, 0700); err != nil {
 			e.Close()
 			return nil, err
@@ -103,6 +103,9 @@ func NewAgentExecutorWithFiles(config AgentConfig, runtimes Runtimes, sharedFile
 		return nil, err
 	}
 	if err = e.verifyJournalDirectory(); err == nil {
+		err = e.verifyMigrationPlanDirectory()
+	}
+	if err == nil {
 		err = e.recoverWebsiteJournals(context.Background())
 	}
 	if err == nil {
@@ -188,6 +191,23 @@ func (e *AgentExecutor) Validate(job agent.Request) error {
 	if in.Actor.ID != job.ActorID {
 		return denied()
 	}
+	switch job.Operation {
+	case "site_migration_get":
+		if !validMigrationPlanID(in.PlanID) || in.ID != "" || in.Site != nil || in.TargetWebInstance != "" || in.ExpectedRevision != 0 {
+			return agent.ErrInvalidInput
+		}
+		return nil
+	case "site_migration_apply":
+		if !validMigrationPlanID(in.PlanID) || in.ID != "" || in.Site != nil || in.TargetWebInstance != "" || in.ExpectedRevision < 1 || in.ResetAdvancedConfig {
+			return agent.ErrInvalidInput
+		}
+		return nil
+	case "site_migration_plan":
+		if !safeID.MatchString(in.ID) || !safeID.MatchString(in.TargetWebInstance) || in.TargetWebInstance == "" || in.ExpectedRevision < 1 || in.PlanID != "" || in.Site != nil {
+			return agent.ErrInvalidInput
+		}
+		return nil
+	}
 	if job.Operation == "site_list" || job.Operation == "site_retained_list" || job.Operation == "certificate_list" || job.Operation == "site_php_cli_get" {
 		if in.ID != "" || in.Site != nil || in.Certificate != nil || in.KeyPEM != "" || in.Password != "" {
 			return agent.ErrInvalidInput
@@ -266,6 +286,12 @@ func (e *AgentExecutor) executeOperation(ctx context.Context, operation string, 
 		data, err = e.get(in.ID)
 	case "site_apply":
 		data, err = e.apply(ctx, in)
+	case "site_migration_plan":
+		data, err = e.createMigrationPlan(ctx, in)
+	case "site_migration_get":
+		data, err = e.getMigrationPlanView(in.PlanID)
+	case "site_migration_apply":
+		data, err = e.applyMigration(ctx, in)
 	case "site_delete":
 		data, err = e.remove(ctx, in)
 	case "site_retained_list":
@@ -322,7 +348,7 @@ func (e *AgentExecutor) executeOperation(ctx context.Context, operation string, 
 
 func readOperation(operation string) bool {
 	switch operation {
-	case "site_list", "site_retained_list", "site_get", "site_default_get", "site_logs", "site_config_get", "site_backups_list", "site_backup_get", "site_backup_stat", "site_backup_artifact", "certificate_list", "certificate_get", "site_php_cli_get":
+	case "site_list", "site_retained_list", "site_get", "site_migration_get", "site_default_get", "site_logs", "site_config_get", "site_backups_list", "site_backup_get", "site_backup_stat", "site_backup_artifact", "certificate_list", "certificate_get", "site_php_cli_get":
 		return true
 	}
 	return false

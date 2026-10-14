@@ -162,6 +162,14 @@ func (e *PrivilegedExecutor) migratePHPProfile(ctx context.Context, instance Ins
 		return false, err
 	}
 	defer unlock()
+	if err := e.ensureInstallFinalized(ctx, instance.ID); err != nil {
+		// An interrupted install must stay inspectable after Agent restart.
+		// Never rewrite its proven configuration during constructor migration.
+		if core.ErrorCode(err) == "operation_recovery_required" {
+			return false, nil
+		}
+		return false, err
+	}
 	key := "profile_" + instance.ID
 	var prior profileMigration
 	if err := e.load("private", key, &prior); err == nil && prior.State == "prepared" {

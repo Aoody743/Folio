@@ -1,0 +1,55 @@
+
+> powerlinux-ui@0.1.0 test
+> node --test tests/*.test.mjs
+
+✔ cookie write uses same origin credentials and session CSRF, preserving revision (19.65675ms)
+✔ 412 retains structured current note so UI cannot silently overwrite (0.475ms)
+✔ invalid or failed transport cannot be reported as operation success (0.293333ms)
+✔ identity source distinguishes human, MCP, API and unknown actors (0.127ms)
+✔ action retry preserves caller intent and file stream keeps raw body with session CSRF (0.459833ms)
+✔ login credentials are consumed only from fragment and removed from remaining URL (0.940791ms)
+✔ post authentication return accepts only a local authorization path (0.128291ms)
+✔ only active receipts expose account and backup controls (0.51ms)
+✔ receipt parsing keeps only public fields and validates the exact target (1.011417ms)
+✔ creation presets use the exact tombstone revision or zero for a fresh name (0.170666ms)
+✔ locked form values preserve the checked target and revision in JSON mode (0.10425ms)
+✔ only the known missing-metadata 404 is fresh and API errors use the formatter (0.25475ms)
+✔ nested resource schema keeps optional omission and preserves intentional empty file content (1.288584ms)
+✔ map schemas reject invalid values and enforce limits without prototype mutation (0.190584ms)
+✔ union schemas distinguish exactly one branch and allow declared null (0.123458ms)
+✔ resource presets discard server-only metadata and nested credential references (0.13125ms)
+✔ container CPU bounds reject zero and non-finite values while allowing fractional limits (0.122ms)
+✔ accepts matching backup metadata and returns the fixed same-origin route (0.669625ms)
+✔ rejects mismatched metadata and unsafe or non-fixed download URLs (0.390208ms)
+✔ category actions and server filter are gated by current capability schemas (0.916959ms)
+✔ site assignment choices contain only visible categories and a clear option (0.129417ms)
+✔ generated IDs fit the website category identity contract (0.355084ms)
+✔ save and delete payloads are normalized against the live action schema (0.762708ms)
+✔ permission and revision errors preserve the draft, refetch, and explain backend rejection (0.208709ms)
+✔ a migration plan can apply only to its original site revision before expiry (0.61225ms)
+✔ the fetched protected plan must still match the exact reviewed snapshot (0.158416ms)
+✔ plan parsing rejects malformed identities and projects only review-safe fields (0.083166ms)
+✔ migration actions stay behind the dedicated review flow while other site actions remain visible (0.074875ms)
+✔ recovery capabilities must advertise the expected schemas and task semantics (0.527125ms)
+✔ inspection parser supports missing receipts but rejects mismatched or unsafe state (0.501417ms)
+✔ recovery input uses the current CAS revision and only a fresh advertised action (0.116833ms)
+✔ system workflow validates current capability schemas before constructing inputs (0.912208ms)
+✔ recovery key isolates host and actor and persists only plan/task intent identifiers (0.216834ms)
+✔ failed browser storage probe blocks recovery-dependent mutation setup (0.096041ms)
+✔ plan actions require a fresh plan and backend-supported state/deadline (0.140083ms)
+✔ task submissions and terminal states are read from actual response envelopes (0.09225ms)
+✔ plan preview parser rejects incomplete service responses instead of inventing state (0.100083ms)
+✔ recovery intents clear only after a matching backend state transition (0.085417ms)
+✔ SQL signed and unsigned integers display original decimal text; rounded or malformed values fail closed (1.068625ms)
+✔ binary SQL values preserve bytes rather than attempting UTF-8 decoding (0.299625ms)
+✔ Redis continuation strings retain all uint64 digits and reject overflow, non-decimal and rounded legacy numbers (0.500083ms)
+✔ SQL parameter normalization keeps decimal strings and typed integer objects; unsafe JSON numbers cannot be submitted (0.179791ms)
+✔ HTTP API round trip preserves tagged integers and posts exact SQL parameters and Redis cursor strings (11.654042ms)
+ℹ tests 43
+ℹ suites 0
+ℹ pass 43
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 548.308875

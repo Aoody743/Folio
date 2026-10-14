@@ -85,18 +85,19 @@ type journalWorker struct {
 // the commit marker; an uncommitted record always means restore its before
 // image, while a committed record only permits idempotent cleanup.
 type websiteJournal struct {
-	Version       int               `json:"version"`
-	ID            string            `json:"id"`
-	Operation     string            `json:"operation"`
-	Sites         []journalSite     `json:"sites"`
-	Certificate   string            `json:"certificate,omitempty"`
-	RuntimeIDs    []string          `json:"runtime_ids"`
-	Files         []journalFile     `json:"files"`
-	Directories   []journalDirState `json:"directories,omitempty"`
-	NewContent    *journalContent   `json:"new_content,omitempty"`
-	PendingWorker *journalWorker    `json:"pending_worker,omitempty"`
-	Swap          *journalSwap      `json:"swap,omitempty"`
-	Committed     bool              `json:"committed"`
+	Version         int               `json:"version"`
+	ID              string            `json:"id"`
+	Operation       string            `json:"operation"`
+	MigrationPlanID string            `json:"migration_plan_id,omitempty"`
+	Sites           []journalSite     `json:"sites"`
+	Certificate     string            `json:"certificate,omitempty"`
+	RuntimeIDs      []string          `json:"runtime_ids"`
+	Files           []journalFile     `json:"files"`
+	Directories     []journalDirState `json:"directories,omitempty"`
+	NewContent      *journalContent   `json:"new_content,omitempty"`
+	PendingWorker   *journalWorker    `json:"pending_worker,omitempty"`
+	Swap            *journalSwap      `json:"swap,omitempty"`
+	Committed       bool              `json:"committed"`
 }
 
 type websiteJournalKey struct{}
@@ -157,6 +158,12 @@ func (e *AgentExecutor) journalPaths(ctx context.Context, j websiteJournal) ([]j
 			}
 			add(journalFile{Kind: "php", RuntimeID: site.PHPRuntime, Path: site.ID + ".conf"})
 		}
+	}
+	if j.Operation == "site_migration_apply" {
+		if !validMigrationPlanID(j.MigrationPlanID) {
+			return nil, nil, errors.New("invalid website migration plan identity in journal")
+		}
+		add(journalFile{Kind: "state", Path: filepath.Join("migration-plans", j.MigrationPlanID+".original")})
 	}
 	if j.Certificate != "" {
 		if !safeID.MatchString(j.Certificate) {
@@ -246,7 +253,25 @@ func (e *AgentExecutor) journalSites(ctx context.Context, operation string, in r
 	var newContent *journalContent
 	var swap *journalSwap
 	switch operation {
-	case "site_apply", "site_delete", "site_config_set", "site_default_set", "site_backup_restore":
+	case "site_apply", "site_migration_apply", "site_delete", "site_config_set", "site_default_set", "site_backup_restore":
+		if operation == "site_migration_apply" {
+			plan, err := e.loadMigrationPlan(in.PlanID)
+			if err != nil {
+				return nil, "", nil, nil, err
+			}
+			current, err := e.get(plan.Site.ID)
+			if err != nil {
+				return nil, "", nil, nil, err
+			}
+			if current.Revision != in.ExpectedRevision {
+				return nil, "", nil, nil, failure("revision_conflict", "Website revision changed", 412)
+			}
+			add(current)
+			target := current
+			target.WebInstance = plan.TargetWebInstance
+			add(target)
+			break
+		}
 		current, err := e.get(in.ID)
 		if err == nil {
 			add(current)
@@ -503,6 +528,9 @@ func (e *AgentExecutor) beginWebsiteJournal(ctx context.Context, operation strin
 		return ctx, nil, err
 	}
 	j := websiteJournal{Version: 1, Operation: operation, Sites: sites, Certificate: certificate, NewContent: newContent, Swap: swap}
+	if operation == "site_migration_apply" {
+		j.MigrationPlanID = in.PlanID
+	}
 	files, ids, err := e.journalPaths(ctx, j)
 	if err != nil {
 		return ctx, nil, err
@@ -1105,7 +1133,7 @@ func (e *AgentExecutor) validateJournal(ctx context.Context, j websiteJournal, n
 		return err
 	}
 	switch j.Operation {
-	case "site_apply", "site_delete", "site_config_set", "site_default_set", "site_backup_restore", "certificate_import", "certificate_delete":
+	case "site_apply", "site_migration_apply", "site_delete", "site_config_set", "site_default_set", "site_backup_restore", "certificate_import", "certificate_delete":
 	default:
 		return errors.New("unknown protected website journal operation")
 	}
@@ -1116,8 +1144,15 @@ func (e *AgentExecutor) validateJournal(ctx context.Context, j websiteJournal, n
 	if (j.Operation == "site_backup_restore") != (j.Swap != nil) {
 		return errors.New("website restore journal is missing its directory swap ownership")
 	}
-	if (j.Operation == "site_apply" || j.Operation == "site_delete" || j.Operation == "site_config_set" || j.Operation == "site_default_set" || j.Operation == "site_backup_restore") && len(j.Sites) == 0 {
+	if (j.Operation == "site_apply" || j.Operation == "site_migration_apply" || j.Operation == "site_delete" || j.Operation == "site_config_set" || j.Operation == "site_default_set" || j.Operation == "site_backup_restore") && len(j.Sites) == 0 {
 		return errors.New("website journal has no protected site identity")
+	}
+	if j.Operation == "site_migration_apply" {
+		if !validMigrationPlanID(j.MigrationPlanID) || len(j.Sites) != 2 || j.Sites[0].ID != j.Sites[1].ID || j.Sites[0].WebRuntime == j.Sites[1].WebRuntime || j.Sites[0].PHPRuntime != j.Sites[1].PHPRuntime {
+			return errors.New("website migration journal does not bind both Web runtimes and the same PHP runtime")
+		}
+	} else if j.MigrationPlanID != "" {
+		return errors.New("non-migration journal contains a migration plan identity")
 	}
 	allowed, ids, err := e.journalPaths(ctx, j)
 	if err != nil {

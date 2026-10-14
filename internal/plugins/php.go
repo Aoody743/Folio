@@ -154,6 +154,11 @@ func (e *PrivilegedExecutor) php(ctx context.Context, raw json.RawMessage) (any,
 		return nil, err
 	}
 	defer unlock()
+	if input.Command == "configure" || input.Command == "guard_configure" || input.Command == "extension_toggle" {
+		if err := e.ensureInstallFinalized(ctx, input.ID); err != nil {
+			return nil, err
+		}
+	}
 	instance, err := e.get(ctx, input.ID, false)
 	if err != nil {
 		return nil, err
