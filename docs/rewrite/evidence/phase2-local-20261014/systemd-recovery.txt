@@ -1,0 +1,7 @@
+=== RUN   TestQAInstallRecoveryActualSystemd
+=== RUN   TestQAInstallRecoveryActualSystemd/continue
+=== RUN   TestQAInstallRecoveryActualSystemd/stop_preserve
+--- PASS: TestQAInstallRecoveryActualSystemd (3.59s)
+    --- PASS: TestQAInstallRecoveryActualSystemd/continue (2.16s)
+    --- PASS: TestQAInstallRecoveryActualSystemd/stop_preserve (1.38s)
+PASS

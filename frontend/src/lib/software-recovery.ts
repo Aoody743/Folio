@@ -136,4 +136,3 @@ export function softwareRecoveryActionInput(
     expected_journal_revision: inspection.revision!,
   };
 }
-

@@ -105,7 +105,8 @@
         "external systemd drop-in denies inspect/actions without stopping service",
         "missing disk unit with still-active manager denies removal"
       ],
-      "kind": "source-built test binary using a real Redis binary and real systemd; not installed package evidence"
+      "kind": "source-built test binary using a real Redis binary and real systemd; not installed package evidence",
+      "log_file": "systemd-recovery.txt"
     },
     "web_migration": {
       "result": "passed",
@@ -118,7 +119,8 @@
         "content, PHP pool, worker and site metadata preserved",
         "advanced reset explicit and original configuration privately retained",
         "uncommitted SIGKILL restores before images; committed SIGKILL preserves target generation"
-      ]
+      ],
+      "log_file": "web-migration.txt"
     },
     "final_plugin_race": {
       "passed": true,

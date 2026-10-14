@@ -92,7 +92,7 @@
     },
     {
       "path": "frontend/src/components/software-recovery.tsx",
-      "sha256": "23c3cda83fdb340ed162e1671e4a0816101f7c25ebcd242d09c6ba47962e15e0"
+      "sha256": "589b7ba57a444b4784d0596d6396bd44b1d6bd04a51ccc1ceaf3307707965053"
     },
     {
       "path": "frontend/src/lib/site-migration.ts",
@@ -100,7 +100,7 @@
     },
     {
       "path": "frontend/src/lib/software-recovery.ts",
-      "sha256": "b8ad243fc07f8f1edce61a0eda91e9fffd80596abbd534c317b987c443d7bbf4"
+      "sha256": "14fbd64f5aa1fdf725e3b29a39578e2fb0cea85718c91dec463045b46f063f7d"
     },
     {
       "path": "frontend/tests/site-migration.test.mjs",
