@@ -23,6 +23,13 @@ func supervisorProgramPathFixture(t *testing.T) (*PrivilegedExecutor, Instance) 
 		t.Fatal(err)
 	}
 	e.config.RootDir = filepath.Join(base, "software")
+	// Root startup establishes the software root's service group and traversal
+	// mode. Re-run that real setup after changing the fixture root, rather than
+	// testing a layout that the production constructor never creates.
+	e, err = NewPrivilegedExecutor(e.config)
+	if err != nil {
+		t.Fatal(err)
+	}
 	instance := Instance{
 		ID:         "supervisor-path-fixture",
 		PluginID:   "supervisor",
@@ -63,7 +70,7 @@ func TestSupervisorWriteRepairsProgramAncestorAndWorkerCanTraverse(t *testing.T)
 			t.Fatal(err)
 		}
 	}
-	if err := os.Chmod(programs, 0750); err != nil {
+	if err := os.Chmod(programs, 0700); err != nil {
 		t.Fatal(err)
 	}
 	oldUmask := syscall.Umask(0077)

@@ -140,6 +140,8 @@ func validatePHPInput(raw json.RawMessage) error {
 		if input.ExpectedRevision < 1 || !validPlanID(input.PlanID) || !phpExtensionIdempotencyKey.MatchString(input.IdempotencyKey) {
 			return failure("invalid_input", "PHP extension plan revision or idempotency key is invalid", 400)
 		}
+	case "extension_recovery_inspect":
+		return validatePHPExtensionRecoveryInspectionInput(input)
 	default:
 		return failure("invalid_input", "Unknown PHP action", 400)
 	}
@@ -255,6 +257,8 @@ func (e *PrivilegedExecutor) php(ctx context.Context, raw json.RawMessage) (any,
 		return e.planPHPExtension(ctx, instance, input)
 	case "extension_apply":
 		return e.applyPHPExtension(ctx, instance, input)
+	case "extension_recovery_inspect":
+		return e.inspectPHPExtensionRecovery(instance)
 	}
 	return nil, failure("invalid_input", "Unknown PHP action", 400)
 }

@@ -253,16 +253,11 @@ func TestPHPExtensionPendingJournalAllowsOnlyExactReplayContext(t *testing.T) {
 	e := testAgent(t)
 	id := "php-journal-test"
 	planID := "plan_" + strings.Repeat("c", 48)
-	instance := Instance{ID: id, PluginID: "php-apt", Revision: 7, Ownership: "managed"}
+	instance := phpExtensionRecoveryTestInstance(e, id, "journal-test", 7)
 	if err := e.save("receipts", id, instance); err != nil {
 		t.Fatal(err)
 	}
-	intent := phpExtensionIntent{
-		PlanID: planID, Phase: "package_installed",
-		Plan:     phpExtensionPlanRecord{Public: PHPModulePlan{PlanID: planID, ID: id, Operation: "install", ModuleID: "curl", ExpectedRevision: 7}},
-		Previous: instance, Desired: Instance{ID: id, PluginID: "php-apt", Revision: 8, Ownership: "managed"},
-		StartedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
-	}
+	intent := phpExtensionRecoveryTestIntent(instance, planID, "install", "curl", "package_installed")
 	state := phpExtensionState{Version: 1, InstanceID: id, References: map[string][]string{}, Pending: &intent}
 	if err := e.savePHPExtensionState(state); err != nil {
 		t.Fatal(err)

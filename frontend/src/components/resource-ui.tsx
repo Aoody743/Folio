@@ -14,6 +14,12 @@ export function State({ value, reason }: { value?: string; reason?: string }) {
     updating: "更新中",
     running: "运行中",
     stopped: "已停止",
+    configuring: "配置中",
+    seeding: "初始化数据",
+    degraded: "复制异常",
+    removing: "移除中",
+    removed: "已移除",
+    recovery_required: "需要恢复",
     not_installed: "未安装",
     healthy: "健康",
     unhealthy: "异常",
@@ -46,6 +52,14 @@ export function State({ value, reason }: { value?: string; reason?: string }) {
     unconfigured: "尚未配置",
     unmanaged: "未受管理",
     restored: "已恢复",
+    ready: "预览待执行",
+    expired: "预览已过期",
+    partial: "部分完成",
+    completed: "已完成",
+    outcome_unknown: "结果待核实",
+    not_started: "未执行",
+    checking: "校验中",
+    executing: "执行中",
   };
   return (
     <span

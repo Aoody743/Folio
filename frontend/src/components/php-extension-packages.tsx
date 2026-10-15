@@ -6,8 +6,11 @@ import { action, apiErrorMessage, Capability, intentKey } from "@/lib/api";
 import {
   phpExtensionActions,
   phpExtensionApplyInput,
+  phpExtensionRecoveryApplyInput,
   PHPExtensionOperation,
   PHPExtensionPlan,
+  PHPExtensionRecovery,
+  parsePHPExtensionRecovery,
   parsePHPExtensionPlan,
 } from "@/lib/php-extension-packages";
 import { TaskResult } from "./task-result";
@@ -42,15 +45,20 @@ export function PHPExtensionPackages({
   const [error, setError] = useState("");
   const [applyKey, setApplyKey] = useState("");
   const [task, setTask] = useState<unknown>();
+  const [recovery, setRecovery] = useState<PHPExtensionRecovery>();
+  const [recoveryError, setRecoveryError] = useState("");
+  const [recoveryKey, setRecoveryKey] = useState("");
+  const [taskIsRecovery, setTaskIsRecovery] = useState(false);
 
   useEffect(() => {
     if (!actions.modules.includes(moduleID as (typeof actions.modules)[number]))
       setModuleID(actions.modules[0] ?? "");
   }, [actions.modules, moduleID]);
 
-  if (!capabilities.some((capability) => capability.name === "php_extension_plan"))
+  const hasPlanAction = capabilities.some((capability) => capability.name === "php_extension_plan");
+  if (!hasPlanAction && !actions.recoveryInspect)
     return null;
-  const schemaMismatch = !actions.plan || !actions.apply || !actions.modules.length;
+  const schemaMismatch = hasPlanAction && (!actions.plan || !actions.apply || !actions.modules.length);
   const revision = Number.isSafeInteger(currentRevision) && (currentRevision ?? 0) > 0
     ? currentRevision
     : undefined;
@@ -108,6 +116,7 @@ export function PHPExtensionPackages({
       });
       setTask(submitted);
       setTaskActive(isTaskPending(submitted));
+      setTaskIsRecovery(false);
       setPlan(undefined);
       setApplyKey("");
       onExecuted();
@@ -116,6 +125,53 @@ export function PHPExtensionPackages({
       // response was lost. The task action and HTTP header share the key.
       setApplyKey(key);
       setError(apiErrorMessage(cause));
+      onExecuted();
+    } finally {
+      setBusy(false);
+    }
+  };
+  const inspectRecovery = async (afterTask = false) => {
+    if (!actions.recoveryInspect || !active || busy || (taskActive && !afterTask)) return;
+    setBusy(true);
+    setRecoveryError("");
+    setRecovery(undefined);
+    setRecoveryKey("");
+    try {
+      const response = await action<unknown>(actions.recoveryInspect.name, { id });
+      const next = parsePHPExtensionRecovery(response, id);
+      if (!next) throw new Error("PHP扩展恢复检查结果与当前实例不匹配。");
+      setRecovery(next);
+    } catch (cause) {
+      setRecoveryError(apiErrorMessage(cause));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const applyRecovery = async () => {
+    if (!actions.apply || !recovery || busy || taskActive) return;
+    const key = recoveryKey || intentKey();
+    const input = phpExtensionRecoveryApplyInput(recovery, id, key);
+    if (!input) {
+      setRecoveryError("当前检查没有可继续的精确事务，或主机软件包权限已不可用。请重新检查状态。");
+      return;
+    }
+    const operationLabel = recovery.operation === "install" ? "安装" : "停用";
+    if (!window.confirm(
+      `确认继续原来的 PHP 扩展${operationLabel}计划：${recovery.module_id}（计划 ${recovery.plan_id}，修订 ${recovery.expected_revision}）？后端会重新核对这条受保护事务和当前权限；不会生成新计划或自动重试。`,
+    )) return;
+    setBusy(true);
+    setRecoveryError("");
+    try {
+      const submitted = await action<unknown>(actions.apply.name, input, { idempotencyKey: key });
+      setTask(submitted);
+      setTaskActive(isTaskPending(submitted));
+      setTaskIsRecovery(true);
+      setRecoveryKey("");
+      onExecuted();
+    } catch (cause) {
+      // Reuse the same key only if the submit response may have been lost.
+      setRecoveryKey(key);
+      setRecoveryError(`${apiErrorMessage(cause)} 未自动重试；若提交结果不确定，请使用同一请求编号检查或继续。`);
       onExecuted();
     } finally {
       setBusy(false);
@@ -131,7 +187,7 @@ export function PHPExtensionPackages({
         </div>
       </div>
       {error && <div className="notice danger" role="alert">{error}</div>}
-      {schemaMismatch ? (
+      {hasPlanAction && (schemaMismatch ? (
         <Unavailable title="扩展包计划能力或模块清单尚不可用" detail="未推测运行时支持范围；请等待管理服务公布真实计划能力。" />
       ) : !revision ? (
         <Unavailable title="没有当前 PHP 版本号" detail="先读取该实例的扩展状态和配置修订，再生成包计划。" />
@@ -211,8 +267,51 @@ export function PHPExtensionPackages({
             </div>
           )}
         </>
+      ))}
+      {actions.recoveryInspect && (
+        <details className="advanced-actions">
+          <summary>检查中断的 PHP 扩展事务</summary>
+          <div className="stack">
+            <p className="muted">只读检查仅需当前 PHP 实例管理权限。继续操作还需要主机软件包权限，并且会使用后端保存的原计划和修订。</p>
+            <Button
+              label={busy ? "正在检查…" : "检查受保护事务"}
+              isDisabled={!active || busy || taskActive}
+              onClick={() => void inspectRecovery()}
+            />
+            {recoveryError && <div className="notice danger" role="alert">{recoveryError}</div>}
+            {recovery && !recovery.pending && <p role="status">没有待恢复的 PHP 扩展事务。</p>}
+            {recovery?.pending && (
+              <div className="stack">
+                <div className="notice warning">
+                  找到受保护的待处理计划：{recovery.operation === "install" ? "安装" : "停用"} {recovery.module_id}；阶段 {recovery.phase}；原计划修订 {recovery.expected_revision}。
+                  {recovery.started_at && <> 开始于 {new Date(recovery.started_at).toLocaleString()}。</>}
+                </div>
+                {!recovery.replay_available ? (
+                  <Unavailable title="后端未开放继续此事务" detail="请先检查 PHP 配置和扩展状态；界面不会重新生成或重放不同计划。" />
+                ) : !recovery.can_apply_package_grant ? (
+                  <Unavailable title="当前账号没有主机软件包授权" detail="你仍可只读检查事务；继续原计划需要 host:packages 权限，且后端会在任务执行时再次核验。" />
+                ) : !actions.apply ? (
+                  <Unavailable title="原计划继续能力暂不可用" detail="未找到符合当前任务契约的扩展应用能力；不会构造替代请求。" />
+                ) : (
+                  <Button
+                    label={recoveryKey ? "使用同一请求编号继续" : "确认继续原计划"}
+                    isDisabled={!active || busy || taskActive}
+                    onClick={() => void applyRecovery()}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </details>
       )}
-      {task !== undefined && <TaskResult key={JSON.stringify(task)} submitted={task} capabilities={capabilities} onFinished={() => { setTaskActive(false); onExecuted(); }} />}
+      {task !== undefined && <TaskResult key={JSON.stringify(task)} submitted={task} capabilities={capabilities} onFinished={() => {
+        setTaskActive(false);
+        onExecuted();
+        if (taskIsRecovery) {
+          setTaskIsRecovery(false);
+          void inspectRecovery(true);
+        }
+      }} />}
     </Card>
   );
 }

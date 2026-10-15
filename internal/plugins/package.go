@@ -302,8 +302,9 @@ func (p *packageBackend) install(ctx context.Context, pins []PackagePin) (return
 			returned = failure("package_recovery_required", "Package transaction could not restore its owned service startup policy; inspect state before retry", 500)
 		}
 	}()
-	if _, err := runFixed(ctx, "/usr/bin/apt-get", args, 30*time.Minute, nil); err != nil {
-		return failure("package_install_failed", "Exact signed package installation failed; existing application data was preserved", 502)
+	installResult, installErr := runFixedResult(ctx, "/usr/bin/apt-get", args, 30*time.Minute, nil, nil)
+	if installErr != nil || installResult.ExitCode != 0 || installResult.Truncated {
+		return packageInstallFailure(installResult, installErr)
 	}
 	for _, pin := range pins {
 		result, err := runFixed(ctx, "/usr/bin/dpkg-query", []string{"-W", "-f=${Version}", pin.Name}, time.Minute, nil)
@@ -416,15 +417,10 @@ func runFixed(ctx context.Context, program string, args []string, timeout time.D
 	return runFixedEnvironment(ctx, program, args, timeout, credential, nil)
 }
 func runFixedEnvironment(ctx context.Context, program string, args []string, timeout time.Duration, credential *syscall.Credential, environment []string) (string, error) {
-	operation := agent.Operation{Name: "plugin_fixed_command", Program: program, Timeout: timeout, Environment: append([]string{"DEBIAN_FRONTEND=noninteractive"}, environment...), BuildArgs: func(json.RawMessage) ([]string, error) { return append([]string(nil), args...), nil }}
-	if credential != nil {
-		operation.Credential = credential
-	}
-	runner, err := agent.NewRunner(agent.Options{Operations: []agent.Operation{operation}, MaxConcurrent: 1, MaxOutputBytes: 1 << 20})
-	if err != nil {
+	result, err := runFixedResult(ctx, program, args, timeout, credential, environment)
+	if err != nil && result.Operation == "" {
 		return "", err
 	}
-	result, err := runner.Run(ctx, agent.Request{Operation: operation.Name, Input: json.RawMessage(`{}`)})
 	if err != nil || result.ExitCode != 0 {
 		return "", failure("software_command_failed", "A trusted software command failed; inspect service prerequisites", 502)
 	}
@@ -432,4 +428,16 @@ func runFixedEnvironment(ctx context.Context, program string, args []string, tim
 		return "", failure("result_too_large", "Trusted command output exceeded its limit", 413)
 	}
 	return result.Stdout, nil
+}
+
+func runFixedResult(ctx context.Context, program string, args []string, timeout time.Duration, credential *syscall.Credential, environment []string) (agent.Result, error) {
+	operation := agent.Operation{Name: "plugin_fixed_command", Program: program, Timeout: timeout, Environment: append([]string{"DEBIAN_FRONTEND=noninteractive"}, environment...), BuildArgs: func(json.RawMessage) ([]string, error) { return append([]string(nil), args...), nil }}
+	if credential != nil {
+		operation.Credential = credential
+	}
+	runner, err := agent.NewRunner(agent.Options{Operations: []agent.Operation{operation}, MaxConcurrent: 1, MaxOutputBytes: 1 << 20})
+	if err != nil {
+		return agent.Result{}, err
+	}
+	return runner.Run(ctx, agent.Request{Operation: operation.Name, Input: json.RawMessage(`{}`)})
 }

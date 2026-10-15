@@ -26,6 +26,7 @@ import (
 )
 
 const phpExtensionPlanTTL = 30 * time.Minute
+const phpExtensionPlanTTLTolerance = time.Second
 const phpExtensionApplyJobOperation = "php_extension_apply_job"
 
 type phpExtensionRecoveryMarkerKey struct{}
@@ -249,6 +250,13 @@ func (e *PrivilegedExecutor) ensurePHPExtensionFinalized(ctx context.Context, id
 	var instance Instance
 	err := e.load("receipts", id, &instance)
 	if core.ErrorCode(err) == "not_found" {
+		state, stateErr := e.loadPHPExtensionState(id)
+		if stateErr != nil {
+			return stateErr
+		}
+		if state.Pending != nil {
+			return failure("extension_state_invalid", "Protected PHP extension intent has no matching managed software receipt", 412)
+		}
 		return nil
 	}
 	if err != nil {
@@ -262,6 +270,9 @@ func (e *PrivilegedExecutor) ensurePHPExtensionFinalized(ctx context.Context, id
 	}
 	state, err := e.loadPHPExtensionState(id)
 	if err != nil || state.Pending == nil {
+		return err
+	}
+	if _, err = e.validatePHPExtensionPendingIntent(ctx, id, *state.Pending); err != nil {
 		return err
 	}
 	marker, ok := ctx.Value(phpExtensionRecoveryMarkerKey{}).(phpExtensionRecoveryMarker)
@@ -708,7 +719,7 @@ func (e *PrivilegedExecutor) loadPHPExtensionPlan(planID string) (phpExtensionPl
 		return record, err
 	}
 	created := record.Public.CreatedAt
-	if record.Public.PlanID != planID || !validInstanceID(record.Public.ID) || (record.Public.Operation != "install" && record.Public.Operation != "uninstall") || !supportedPHPModuleID(record.Public.ModuleID) || record.Public.PackageRemovable || !packageName.MatchString(record.PackageName) || !artifactHash.MatchString(record.ExtensionDirSHA256) || record.Public.ExpectedRevision < 1 || created.IsZero() || record.Public.ExpiresAt.IsZero() || record.Public.ExpiresAt.Before(created) || record.Public.ExpiresAt.Sub(created) > phpExtensionPlanTTL || len(record.Public.PackagePins) > 128 || len(record.Public.Resources) != 2 {
+	if record.Public.PlanID != planID || !validInstanceID(record.Public.ID) || (record.Public.Operation != "install" && record.Public.Operation != "uninstall") || !supportedPHPModuleID(record.Public.ModuleID) || record.Public.PackageRemovable || !packageName.MatchString(record.PackageName) || !artifactHash.MatchString(record.ExtensionDirSHA256) || record.Public.ExpectedRevision < 1 || !validPHPModulePlanWindow(created, record.Public.ExpiresAt) || len(record.Public.PackagePins) > 128 || len(record.Public.Resources) != 2 {
 		return record, failure("extension_plan_invalid", "Protected PHP extension plan is invalid", 412)
 	}
 	if record.Public.Resources[0] != InstanceResource(record.Public.ID) || record.Public.Resources[1] != "host:packages" {
@@ -790,11 +801,12 @@ func (e *PrivilegedExecutor) planPHPExtension(ctx context.Context, instance Inst
 	if hasPackageReceipt && packageReceipt.InstalledByAgent && packageReceipt.Installed && (!packageInstalled || packageReceipt.Pin.Version != installedVersion) {
 		return nil, failure("extension_state_invalid", "The protected Agent package receipt disagrees with dpkg; resolve package ownership before planning", 412)
 	}
+	createdAt, expiresAt := phpModulePlanWindow(time.Now())
 	plan := PHPModulePlan{
 		ID: instance.ID, Operation: input.Operation, ModuleID: input.ModuleID,
 		PHPVersion: abi.Version, PHPModuleAPI: abi.ModuleAPI, Platform: platform,
 		ExpectedRevision: instance.Revision, Resources: []string{InstanceResource(instance.ID), "host:packages"},
-		CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(phpExtensionPlanTTL),
+		CreatedAt: createdAt, ExpiresAt: expiresAt,
 		AlreadyInstalled: packageInstalled, AlreadyEnabled: instance.Extensions[input.ModuleID],
 		AffectedProfiles: []phpExtensionAffectedProfile{},
 	}
@@ -1346,8 +1358,30 @@ func (m *Manager) phpExtensionBindings() []core.Binding {
 		jobID, _ := job["id"].(string)
 		return core.ActionResult{Data: job, TaskID: jobID, Resources: resources}, nil
 	})
+	recoverySchema := obj(map[string]any{"id": idSchema()}, "id")
+	recoveryBinding := m.binding("php_extension_recovery_inspect", "Inspect a pending PHP extension transaction so its exact plan can be explicitly resumed", "php:manage", true, recoverySchema, idResource, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+		var input struct {
+			ID string `json:"id"`
+		}
+		if err := parse(raw, &input); err != nil {
+			return core.ActionResult{}, err
+		}
+		forward, _ := json.Marshal(PHPInput{ID: input.ID, Command: "extension_recovery_inspect"})
+		var inspection PHPExtensionRecoveryInspection
+		if err := m.agentJSON(ctx, "php_action", forward, &inspection); err != nil {
+			return core.ActionResult{}, err
+		}
+		response := struct {
+			PHPExtensionRecoveryInspection
+			CanApplyPackageGrant bool `json:"can_apply_package_grant"`
+		}{
+			PHPExtensionRecoveryInspection: inspection,
+			CanApplyPackageGrant:           m.deps.Authorize(actor, "host:packages", "host:packages"),
+		}
+		return core.ActionResult{Data: response, Resources: []string{InstanceResource(input.ID)}}, nil
+	})
 	applyBinding.Action.Task = true
-	return []core.Binding{planBinding, applyBinding}
+	return []core.Binding{planBinding, applyBinding, recoveryBinding}
 }
 
 func PHPExtensionJobOperations() []string { return []string{phpExtensionApplyJobOperation} }

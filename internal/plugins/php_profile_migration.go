@@ -165,7 +165,12 @@ func (e *PrivilegedExecutor) migratePHPProfile(ctx context.Context, instance Ins
 	if err := e.ensureInstallFinalized(ctx, instance.ID); err != nil {
 		// An interrupted install must stay inspectable after Agent restart.
 		// Never rewrite its proven configuration during constructor migration.
-		if core.ErrorCode(err) == "operation_recovery_required" {
+		// A valid PHP extension intent has the same property: startup migration
+		// must not make a second config edit while its exact typed replay is
+		// required. ensurePHPExtensionFinalized only returns this code after it
+		// has authenticated and validated the encrypted pending state; corrupt
+		// state and ownership/system errors still fail startup.
+		if code := core.ErrorCode(err); code == "operation_recovery_required" || code == "extension_recovery_required" {
 			return false, nil
 		}
 		return false, err

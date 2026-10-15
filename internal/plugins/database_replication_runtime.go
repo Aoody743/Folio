@@ -241,6 +241,7 @@ func validateReplicationPairInput(record databaseReplicationRecord, input Databa
 func replicationStatusFromRecord(record databaseReplicationRecord) DatabaseReplicationStatus {
 	return DatabaseReplicationStatus{
 		PairID: record.PairID, PairRevision: record.Revision, State: record.State, Phase: record.Phase,
+		Operation: record.Operation, AllowedRecoveryChoices: databaseReplicationRecoveryChoices(record),
 		Engine: record.Engine, SourceInstanceID: record.SourceInstanceID, TargetInstanceID: record.TargetInstanceID,
 		Database: record.Database, Channel: record.Channel, SourceServerID: record.SourceServerID, TargetServerID: record.TargetServerID,
 		SourceLogFile: record.SourceLogFile, SourceLogPosition: record.SourceLogPosition,

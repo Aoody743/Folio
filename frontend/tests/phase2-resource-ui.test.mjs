@@ -42,6 +42,7 @@ const phpPackages = await loadTypeScript("../src/lib/php-extension-packages.ts")
 const ftpAccount = await loadTypeScript("../src/lib/ftp-account-state.ts", {
   phase2Capability: binlog.phase2Capability,
 });
+const replication = await loadTypeScript("../src/lib/database-replication.ts");
 
 const digest = "a".repeat(64);
 const image = `registry.example/team/app@sha256:${digest}`;
@@ -209,6 +210,253 @@ test("Docker exec input enforces server bounds and recovery stays tied to the re
     execution_state: "unknown",
   });
   assert.equal(exec.dockerExecRecovery({ data: { execution_id: "", execution_state: "running" } }), undefined);
+});
+
+test("database replication requires exact capability schemas, managed endpoint pins, and all three configure acknowledgments", () => {
+  const sourceID = "mysql-source";
+  const targetID = "mysql-target";
+  const database = "app_db";
+  const endpoint = (id, plugin_id = "mysql") => ({
+    id,
+    plugin_id,
+    ownership: "managed",
+    status: "running",
+    revision: 12,
+  });
+  const source = replication.parseReplicationEndpoint(endpoint(sourceID), sourceID, "mysql");
+  const target = replication.parseReplicationEndpoint(endpoint(targetID), targetID, "mysql");
+  assert.equal(source.revision, 12);
+  assert.equal(replication.parseReplicationEndpoint({ ...endpoint(sourceID), ownership: "adopted" }, sourceID, "mysql"), undefined);
+  assert.equal(replication.parseReplicationEndpoint({ ...endpoint(sourceID), status: "uninstalled" }, sourceID, "mysql"), undefined);
+  assert.deepEqual(replication.replicationInstanceCandidates({ items: [
+    endpoint(sourceID), endpoint(targetID),
+    { ...endpoint("external"), ownership: "adopted" },
+    { ...endpoint("other-engine", "mariadb") },
+    { ...endpoint("uninstalled"), status: "uninstalled" },
+  ] }, sourceID, "mysql"), [{ id: targetID, plugin_id: "mysql" }]);
+
+  const sourceDatabase = replication.parseReplicationDatabaseReceipt({
+    instance_id: sourceID, database, engine: "mysql", revision: 4, state: "active",
+  }, sourceID, database, "mysql");
+  const targetDatabase = replication.parseReplicationDatabaseReceipt({
+    instance_id: targetID, database, engine: "mysql-community", revision: 9, state: "active",
+  }, targetID, database, "mysql");
+  assert.equal(sourceDatabase.revision, 4);
+  assert.equal(replication.parseReplicationDatabaseReceipt({
+    instance_id: targetID, database, engine: "mysql", revision: 9, state: "deleted",
+  }, targetID, database, "mysql"), undefined);
+
+  const capability = (name, scope, required, properties, task, read_only) => ({
+    name, scope, task, read_only,
+    input_schema: { required, properties },
+  });
+  const previewRequired = [
+    "source_instance_id", "target_instance_id", "database",
+    "expected_source_instance_revision", "expected_target_instance_revision",
+    "expected_source_database_revision", "expected_target_database_revision",
+  ];
+  const previewFields = Object.fromEntries(previewRequired.map((field) => [
+    field,
+    field.startsWith("expected_")
+      ? { type: "integer", minimum: 1 }
+      : { type: "string" },
+  ]));
+  const configureFields = {
+    ...previewFields,
+    pair_id: { type: "string" }, preview_id: { type: "string" }, snapshot_sha256: { type: "string" },
+    confirm_empty_target: { type: "boolean", const: true },
+    confirm_replica_history_loss: { type: "boolean", const: true },
+    confirm_target_read_only: { type: "boolean", const: true },
+  };
+  const configureRequired = Object.keys(configureFields);
+  const previewCap = capability("managed_database_replication_preview", "databases:admin", previewRequired, previewFields, false, true);
+  const configureCap = capability("managed_database_replication_configure", "databases:admin", configureRequired, configureFields, true, false);
+  assert.ok(replication.databaseReplicationCapability(
+    [previewCap], previewCap.name, "databases:admin", previewRequired, false, true,
+  ));
+  assert.equal(replication.databaseReplicationCapability(
+    [{ ...previewCap, scope: "databases:read" }], previewCap.name, "databases:admin", previewRequired, false, true,
+  ), undefined);
+  assert.equal(replication.databaseReplicationCapability(
+    [{ ...previewCap, input_schema: { properties: previewFields } }], previewCap.name, "databases:admin", previewRequired, false, true,
+  ), undefined);
+  assert.equal(replication.databaseReplicationConfirmCapability(configureCap), true);
+  assert.equal(replication.databaseReplicationConfirmCapability({
+    ...configureCap,
+    input_schema: { ...configureCap.input_schema, properties: { ...configureFields, confirm_target_read_only: {} } },
+  }), false);
+
+  const previewWire = {
+    pair_id: "a".repeat(32), preview_id: "b".repeat(32),
+    expires_at: new Date(now + 60_000).toISOString(),
+    source_instance_id: sourceID, target_instance_id: targetID,
+    database, engine: "mysql",
+    source_instance_revision: 12, target_instance_revision: 12,
+    source_database_revision: 4, target_database_revision: 9,
+    source_config_revision: "c".repeat(64), target_config_revision: "d".repeat(64),
+    source_server_id: 101, target_server_id: 102,
+    estimated_seed_bytes: 2048, table_count: 3,
+    schema_sha256: "e".repeat(64), snapshot_sha256: "f".repeat(64),
+    confirm_empty_target_required: true,
+    confirm_replica_history_loss_required: true,
+    confirm_target_read_only_required: true,
+    target_will_be_read_only: true,
+  };
+  const parsedPreview = replication.parseDatabaseReplicationPreview(previewWire, {
+    source, target, database, sourceDatabase, targetDatabase,
+  });
+  assert.ok(parsedPreview);
+  const acknowledged = { emptyTarget: true, replicaHistory: true, targetReadOnly: true };
+  assert.deepEqual(replication.databaseReplicationPreviewInput(parsedPreview, acknowledged, now), {
+    pair_id: previewWire.pair_id,
+    preview_id: previewWire.preview_id,
+    snapshot_sha256: previewWire.snapshot_sha256,
+    source_instance_id: sourceID,
+    target_instance_id: targetID,
+    database,
+    expected_source_instance_revision: 12,
+    expected_target_instance_revision: 12,
+    expected_source_database_revision: 4,
+    expected_target_database_revision: 9,
+    confirm_empty_target: true,
+    confirm_replica_history_loss: true,
+    confirm_target_read_only: true,
+  });
+  assert.equal(replication.databaseReplicationPreviewInput(parsedPreview, acknowledged, now + 60_000), undefined);
+  assert.equal(replication.databaseReplicationPreviewInput(parsedPreview, { ...acknowledged, targetReadOnly: false }, now), undefined);
+  assert.equal(replication.parseDatabaseReplicationPreview({
+    ...previewWire,
+    target_will_be_read_only: false,
+  }, { source, target, database, sourceDatabase, targetDatabase }), undefined);
+  assert.equal(replication.parseDatabaseReplicationPreview({
+    ...previewWire,
+    target_database_revision: 8,
+  }, { source, target, database, sourceDatabase, targetDatabase }), undefined);
+});
+
+test("database replication status mutations use listed CAS revision and only published recovery choices", () => {
+  const pairID = "1".repeat(32);
+  const pair = {
+    pair_id: pairID,
+    pair_revision: 7,
+    state: "running",
+    engine: "mysql",
+    source_instance_id: "mysql-source",
+    target_instance_id: "mysql-target",
+    database: "app_db",
+  };
+  const pairs = replication.parseDatabaseReplicationPairs({ items: [pair], total: 1 }, pair.source_instance_id);
+  assert.equal(pairs.items[0].pair_revision, 7);
+  assert.equal(replication.parseDatabaseReplicationPairs({ items: [pair], total: 2 }, pair.source_instance_id), undefined);
+  assert.equal(replication.parseDatabaseReplicationPairs({ items: [{ ...pair, source_instance_id: "other", target_instance_id: "else" }], total: 1 }, pair.source_instance_id), undefined);
+  assert.deepEqual(replication.databaseReplicationPairStatusInput(pairs.items[0]), {
+    pair_id: pairID,
+    source_instance_id: pair.source_instance_id,
+    target_instance_id: pair.target_instance_id,
+    database: pair.database,
+    expected_pair_revision: 7,
+  });
+
+  const statusWire = {
+    ...pair,
+    pair_revision: 8,
+    phase: "settled",
+    channel: `pl_${pairID}`,
+    source_server_id: 101,
+    target_server_id: 102,
+    source_log_file: "mysql-bin.000010",
+    source_log_position: 100,
+    seed_bytes: 2048,
+    seed_sha256: "a".repeat(64),
+    target_read_only: true,
+    target_super_read_only: true,
+    target_protection_verified: true,
+    io_thread_running: true,
+    sql_thread_running: true,
+    seconds_behind_source: 0,
+    recovery_required: false,
+  };
+  const currentPair = { ...pairs.items[0], pair_revision: 8 };
+  const status = replication.parseDatabaseReplicationStatus(statusWire, currentPair);
+  assert.ok(status);
+  assert.equal(replication.databaseReplicationTargetProtectionVerified(status), true);
+  const stop = replication.databaseReplicationLifecycleInput(status, "stop");
+  assert.deepEqual(stop, {
+    pair_id: pairID,
+    source_instance_id: pair.source_instance_id,
+    target_instance_id: pair.target_instance_id,
+    database: pair.database,
+    expected_pair_revision: 8,
+  });
+  assert.equal(replication.databaseReplicationLifecycleInput(status, "start"), undefined);
+  assert.equal(replication.databaseReplicationLifecycleInput(status, "remove"), undefined);
+  assert.deepEqual(replication.databaseReplicationLifecycleInput(status, "remove", true), {
+    pair_id: pairID,
+    source_instance_id: pair.source_instance_id,
+    target_instance_id: pair.target_instance_id,
+    database: pair.database,
+    expected_pair_revision: 8,
+    confirm_remove: true,
+    confirm_replica_history_loss: true,
+  });
+  assert.equal(replication.parseDatabaseReplicationStatus({ ...statusWire, pair_revision: 7 }, currentPair), undefined);
+  assert.equal(replication.parseDatabaseReplicationStatus({ ...statusWire, channel: "other" }, currentPair), undefined);
+  assert.equal(replication.databaseReplicationTargetProtectionVerified({ ...status, target_read_only: false }), false);
+  assert.equal(replication.databaseReplicationLifecycleInput({ ...status, target_super_read_only: false }, "start"), undefined);
+
+  const pendingStatus = replication.parseDatabaseReplicationStatus({
+    ...statusWire,
+    state: "configuring",
+    phase: "target_config_pending",
+    recovery_required: true,
+    operation: "configure",
+    allowed_recovery_choices: ["apply_pending"],
+  }, currentPair);
+  assert.ok(pendingStatus);
+  assert.equal(replication.databaseReplicationRecoveryInput(pendingStatus), undefined);
+  assert.deepEqual(replication.databaseReplicationRecoveryInput(pendingStatus, "apply_pending"), {
+    pair_id: pairID,
+    source_instance_id: pair.source_instance_id,
+    target_instance_id: pair.target_instance_id,
+    database: pair.database,
+    expected_pair_revision: 8,
+    recovery_choice: "apply_pending",
+  });
+  const configureRollbackSafe = replication.parseDatabaseReplicationStatus({
+    ...statusWire,
+    state: "recovery_required",
+    phase: "restore_target_config_pending",
+    recovery_required: true,
+    operation: "recover",
+    allowed_recovery_choices: ["restore_previous"],
+  }, currentPair);
+  assert.deepEqual(replication.databaseReplicationRecoveryInput(configureRollbackSafe, "restore_previous"), {
+    pair_id: pairID,
+    source_instance_id: pair.source_instance_id,
+    target_instance_id: pair.target_instance_id,
+    database: pair.database,
+    expected_pair_revision: 8,
+    recovery_choice: "restore_previous",
+  });
+  const ambiguousRemove = replication.parseDatabaseReplicationStatus({
+    ...statusWire,
+    state: "recovery_required",
+    phase: "restore_target_config_pending",
+    recovery_required: true,
+    operation: "remove",
+    allowed_recovery_choices: ["apply_pending"],
+  }, currentPair);
+  assert.ok(ambiguousRemove);
+  assert.equal(replication.databaseReplicationRecoveryInput(ambiguousRemove, "restore_previous"), undefined);
+  assert.equal(replication.databaseReplicationRecoveryInput(ambiguousRemove), undefined);
+  assert.deepEqual(replication.databaseReplicationRecoveryInput(ambiguousRemove, "apply_pending"), {
+    pair_id: pairID,
+    source_instance_id: pair.source_instance_id,
+    target_instance_id: pair.target_instance_id,
+    database: pair.database,
+    expected_pair_revision: 8,
+    recovery_choice: "apply_pending",
+  });
 });
 
 test("Docker archive receipts and chunk cursors are exact-digest and checksum bound", () => {
@@ -548,8 +796,9 @@ test("trusted PHP extension plans require pinned resources, ABI revision, expiry
     input_schema: {
       required: ["id", "plan_id", "expected_revision", "idempotency_key"],
       properties: {
-        id: { type: "string" }, plan_id: { type: "string" },
-        expected_revision: { type: "integer" }, idempotency_key: { type: "string" },
+        id: { type: "string" }, plan_id: { type: "string", pattern: "^plan_[a-f0-9]{48}$" },
+        expected_revision: { type: "integer", minimum: 1 },
+        idempotency_key: { type: "string", minLength: 8, maxLength: 128, pattern: "^[A-Za-z0-9_.:-]{8,128}$" },
       },
     },
   };
@@ -603,6 +852,70 @@ test("trusted PHP extension plans require pinned resources, ABI revision, expiry
   assert.equal(phpPackages.parsePHPExtensionPlan({ ...uninstallPlan, package_removable: true }, {
     id: "php-main", operation: "uninstall", module_id: "curl", expected_revision: 9,
   }), undefined);
+});
+
+test("PHP extension recovery inspects with php management and resumes only the exact authorized pending plan", () => {
+  const inspectionCapability = {
+    name: "php_extension_recovery_inspect",
+    scope: "php:manage",
+    task: false,
+    read_only: true,
+    input_schema: {
+      required: ["id"],
+      properties: { id: { type: "string" } },
+    },
+  };
+  const actions = phpPackages.phpExtensionActions([inspectionCapability]);
+  assert.equal(actions.recoveryInspect.name, "php_extension_recovery_inspect");
+  assert.equal(actions.plan, undefined);
+  assert.equal(phpPackages.phpExtensionActions([{
+    ...inspectionCapability,
+    scope: "host:packages",
+  }]).recoveryInspect, undefined);
+
+  const pending = {
+    id: "php-main",
+    pending: true,
+    plan_id: `plan_${"f".repeat(48)}`,
+    operation: "install",
+    module_id: "curl",
+    expected_revision: 9,
+    phase: "package_installed",
+    started_at: new Date(now - 60000).toISOString(),
+    updated_at: new Date(now).toISOString(),
+    replay_available: true,
+    can_apply_package_grant: false,
+  };
+  const parsedWithoutPackageGrant = phpPackages.parsePHPExtensionRecovery(pending, "php-main");
+  assert.equal(parsedWithoutPackageGrant.expected_revision, 9);
+  assert.equal(phpPackages.phpExtensionRecoveryApplyInput(parsedWithoutPackageGrant, "php-main", "recover-key-1234"), undefined);
+
+  const parsed = phpPackages.parsePHPExtensionRecovery({
+    ...pending,
+    can_apply_package_grant: true,
+  }, "php-main");
+  assert.deepEqual(phpPackages.phpExtensionRecoveryApplyInput(parsed, "php-main", "recover-key-1234"), {
+    id: "php-main",
+    plan_id: pending.plan_id,
+    expected_revision: 9,
+    idempotency_key: "recover-key-1234",
+  });
+  assert.equal(phpPackages.phpExtensionRecoveryApplyInput(parsed, "php-other", "recover-key-1234"), undefined);
+  assert.equal(phpPackages.phpExtensionRecoveryApplyInput(parsed, "php-main", "short"), undefined);
+  assert.equal(phpPackages.parsePHPExtensionRecovery({ ...pending, id: "php-other" }, "php-main"), undefined);
+  assert.equal(phpPackages.parsePHPExtensionRecovery({ ...pending, phase: "unknown" }, "php-main"), undefined);
+  assert.equal(phpPackages.parsePHPExtensionRecovery({
+    ...pending,
+    pending: false,
+    replay_available: false,
+    plan_id: undefined,
+    operation: undefined,
+    module_id: undefined,
+    expected_revision: undefined,
+    phase: undefined,
+    started_at: new Date(0).toISOString(),
+    updated_at: new Date(0).toISOString(),
+  }, "php-main").pending, false);
 });
 
 test("FTP legacy recovery requires the current recovery phase and never claims prior login blocking", () => {

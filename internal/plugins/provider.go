@@ -99,6 +99,7 @@ func (m *Manager) Bindings() []core.Binding {
 	bindings = append(bindings, m.databaseAdminBindings()...)
 	bindings = append(bindings, m.databaseBinlogBindings()...)
 	bindings = append(bindings, m.databaseReplicationBindings()...)
+	bindings = append(bindings, m.databaseTableMaintenanceBindings()...)
 	bindings = append(bindings, m.autostartBindings()...)
 	bindings = append(bindings, m.cacheBindings()...)
 	bindings = append(bindings, m.cacheClusterBindings()...)

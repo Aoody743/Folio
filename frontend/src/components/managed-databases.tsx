@@ -18,6 +18,14 @@ const PostgreSQLMaintenance = dynamic(
   () => import("./postgresql-maintenance").then((m) => m.PostgreSQLMaintenance),
   { ssr: false },
 );
+const DatabaseReplicationManagement = dynamic(
+  () => import("./database-replication").then((m) => m.DatabaseReplicationManagement),
+  { ssr: false },
+);
+const DatabaseTableMaintenance = dynamic(
+  () => import("./database-table-maintenance").then((m) => m.DatabaseTableMaintenance),
+  { ssr: false },
+);
 type Database = {
   database: string;
   username: string;
@@ -281,6 +289,28 @@ export function ManagedDatabaseResources({
             key={`${instanceID}:${current.database}`}
             instanceID={instanceID}
             database={current.database}
+            capabilities={capabilities}
+            onExecuted={onExecuted}
+            active={active}
+          />
+        )}
+        {group === "diagnostics" && (
+          <DatabaseReplicationManagement
+            key={`database-replication:${instanceID}:${current.database}`}
+            instanceID={instanceID}
+            database={current.database}
+            engine={current.engine}
+            capabilities={capabilities}
+            onExecuted={onExecuted}
+            active={active}
+          />
+        )}
+        {group === "diagnostics" && (
+          <DatabaseTableMaintenance
+            key={`database-table-maintenance:${instanceID}:${current.database}`}
+            instanceID={instanceID}
+            database={current.database}
+            engine={current.engine}
             capabilities={capabilities}
             onExecuted={onExecuted}
             active={active}

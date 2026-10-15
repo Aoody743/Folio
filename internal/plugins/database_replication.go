@@ -86,29 +86,31 @@ type DatabaseReplicationPreview struct {
 }
 
 type DatabaseReplicationStatus struct {
-	PairID                   string  `json:"pair_id"`
-	PairRevision             int64   `json:"pair_revision"`
-	State                    string  `json:"state"`
-	Phase                    string  `json:"phase,omitempty"`
-	Engine                   string  `json:"engine"`
-	SourceInstanceID         string  `json:"source_instance_id"`
-	TargetInstanceID         string  `json:"target_instance_id"`
-	Database                 string  `json:"database"`
-	Channel                  string  `json:"channel"`
-	SourceServerID           uint32  `json:"source_server_id"`
-	TargetServerID           uint32  `json:"target_server_id"`
-	SourceLogFile            string  `json:"source_log_file,omitempty"`
-	SourceLogPosition        uint64  `json:"source_log_position,omitempty"`
-	SeedBytes                int64   `json:"seed_bytes,omitempty"`
-	SeedSHA256               string  `json:"seed_sha256,omitempty"`
-	TargetReadOnly           bool    `json:"target_read_only"`
-	TargetSuperReadOnly      bool    `json:"target_super_read_only"`
-	TargetProtectionVerified bool    `json:"target_protection_verified"`
-	IOThreadRunning          bool    `json:"io_thread_running"`
-	SQLThreadRunning         bool    `json:"sql_thread_running"`
-	SecondsBehindSource      *uint64 `json:"seconds_behind_source,omitempty"`
-	ErrorClass               string  `json:"error_class,omitempty"`
-	RecoveryRequired         bool    `json:"recovery_required"`
+	PairID                   string   `json:"pair_id"`
+	PairRevision             int64    `json:"pair_revision"`
+	State                    string   `json:"state"`
+	Phase                    string   `json:"phase,omitempty"`
+	Operation                string   `json:"operation"`
+	AllowedRecoveryChoices   []string `json:"allowed_recovery_choices"`
+	Engine                   string   `json:"engine"`
+	SourceInstanceID         string   `json:"source_instance_id"`
+	TargetInstanceID         string   `json:"target_instance_id"`
+	Database                 string   `json:"database"`
+	Channel                  string   `json:"channel"`
+	SourceServerID           uint32   `json:"source_server_id"`
+	TargetServerID           uint32   `json:"target_server_id"`
+	SourceLogFile            string   `json:"source_log_file,omitempty"`
+	SourceLogPosition        uint64   `json:"source_log_position,omitempty"`
+	SeedBytes                int64    `json:"seed_bytes,omitempty"`
+	SeedSHA256               string   `json:"seed_sha256,omitempty"`
+	TargetReadOnly           bool     `json:"target_read_only"`
+	TargetSuperReadOnly      bool     `json:"target_super_read_only"`
+	TargetProtectionVerified bool     `json:"target_protection_verified"`
+	IOThreadRunning          bool     `json:"io_thread_running"`
+	SQLThreadRunning         bool     `json:"sql_thread_running"`
+	SecondsBehindSource      *uint64  `json:"seconds_behind_source,omitempty"`
+	ErrorClass               string   `json:"error_class,omitempty"`
+	RecoveryRequired         bool     `json:"recovery_required"`
 }
 
 // DatabaseReplicationPairSummary contains only protected pair metadata that
