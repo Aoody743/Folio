@@ -1,0 +1,247 @@
+{
+  "captured_at_utc": "2026-10-15T14:01:28Z",
+  "coverage_not_run_or_deferred": {
+    "browser_ui_for_dev23": "unrun",
+    "docker_and_pureftp_dev23": "unrun",
+    "external_http01_tls": "deferred by user; no production SSH or BaoTa mutations",
+    "post_block_database_query_probe": "not run per closeout direction",
+    "ubuntu_dev23_upgrade": "not run; Ubuntu remains dev21"
+  },
+  "debian13": {
+    "postflight": {
+      "active_tasks_after_final_cleanup": 0,
+      "agent_health": "passed after upgrade",
+      "agent_policy_sha256_unchanged": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+      "api_health": "passed at 0.1.0-dev.23",
+      "previous_release_rollback_target_retained": true,
+      "server_config_sha256_unchanged": "709c70f7e4f7ba198e4d41da6372c8d45a2779b8d929ee189c67a1e92d43a36c"
+    },
+    "upgrade": {
+      "actual_binary_sha256": "10550fcd51cc0181a4f589280e700dde80d4ff075c715f3d63f6df8a3b578b5f",
+      "actual_install_log": "/workspace/tools/sol-native-20261015/dev23-upgrade-actual.log",
+      "actual_install_log_sha256": "41f3ad1826544e92b84ef04970cb4bd833b38070e59c22e9acb7d3fcd8c165a4",
+      "archive_sha256_verified": true,
+      "from": "0.1.0-dev.21",
+      "owned_guest_package_staging_removed": true,
+      "previous_release_retained_for_rollback": true,
+      "result": "passed",
+      "to": "0.1.0-dev.23"
+    }
+  },
+  "dev23_root_fixture_tests": {
+    "binary_sha256": "fa54d58b8de807a1405ef4946f693893f759449875c0fe4a22cf9ebceb391c61",
+    "exit_code": 0,
+    "filter": "^(TestPostgreSQL.*|TestFreshInstallCannotBypassOrphanPHPExtensionJournal|TestPHPModulePlanWindow.*|TestPendingPHPExtensionIntentWithoutReceiptBlocksSameIDMutation|TestPrivilegedStartupWithPendingPHPExtensionRemainsAvailable|TestPHPProfileMigration.*|TestPHPExtensionRecoveryInspection.*|TestPHPExtensionPendingJournalAllowsOnlyExactReplayContext|TestSupervisorWriteRepairsProgramAncestorAndWorkerCanTraverse)$",
+    "guest_binary_removed_after_hash_verification": true,
+    "log": "/workspace/tools/sol-native-20261015/plugins-dev23-root-fixtures.log",
+    "log_sha256": "60ccde57828315197aba1f2a0db83fd5a1c0c0849bfc91cb624fe4a317ceaf76",
+    "run_as": "root in an isolated temporary fixture binary; installed product was not replaced",
+    "top_level_failed": 0,
+    "top_level_passed": 26
+  },
+  "postgresql_actual_api_mcp": {
+    "baseline_live_settings_after_recovery": {
+      "client_address": "127.0.0.1/32",
+      "database": "p2qa_dev21_e7e07933c4cf",
+      "loopback_assertion": "passed after parsing the reported CIDR; the initial exact-string check was corrected",
+      "read_via": "actual MCP database_query against the owned QA database",
+      "settings": {
+        "log_line_prefix": {
+          "setting": "%m [%p] ",
+          "source": "default"
+        },
+        "log_min_duration_statement": {
+          "setting": "-1",
+          "source": "default"
+        },
+        "log_parameter_max_length": {
+          "setting": "-1",
+          "source": "default"
+        },
+        "log_statement": {
+          "setting": "none",
+          "source": "default"
+        }
+      },
+      "username": "p2u_dev21_e7e07933c4cf"
+    },
+    "final_state": {
+      "active_tasks": 0,
+      "all_scoped_tokens_created_for_this_sequence_revoked": true,
+      "pg_hba_conf_sha256": "325abdcaa3ff98d6cb5b41f1fa38e3196781b14d278b96ae00e0ff41eb304691",
+      "postgresql_conf_sha256": "7e9dec46a16d22b93dd01813861ae2adcbb958affb7e5c7f9590145fe1bc94f5",
+      "qa_database_and_role": "deleted through managed API; deleted receipt tombstone revision 2 remains",
+      "qa_hba_rule": "blocked; owned entry remains in typed HBA file",
+      "slowlog_last_observed_before_database_delete": "settled, disabled, reload applied; no pending recovery state"
+    },
+    "hba_block": {
+      "hba_sha256": "325abdcaa3ff98d6cb5b41f1fa38e3196781b14d278b96ae00e0ff41eb304691",
+      "protected_local_admin_preserved": true,
+      "rule": {
+        "cidr": "127.0.0.1/32",
+        "database": "p2qa_dev21_e7e07933c4cf",
+        "role": "p2u_dev21_e7e07933c4cf",
+        "state": "blocked"
+      },
+      "rule_id": "pga_572c00409728222c9ba26ce4210bae90",
+      "task_id": "19e03f49121e0d8127718c016c3898b6",
+      "task_state": "succeeded",
+      "token_revoked": true
+    },
+    "instance_id": "postgresql-p2adminqa",
+    "instance_port": 16432,
+    "legacy_pending_recovery": {
+      "config_revision_and_sha256_restored": "5d9534b7e58adb3ac3b20e53d3b6e04d5c7aeb622e9e6a6a88c00eacaa633fbe",
+      "post_recovery_state": {
+        "configuration_state": "unconfigured",
+        "enabled": false,
+        "minimum_duration_ms": 0,
+        "reload_applied": false
+      },
+      "restore_previous_task_id": "7823559cc5de30a9ea3344e31fc46314",
+      "source_state": "dev21 typed slowlog journal was pending recovery; main config hash remained the original baseline",
+      "task_state": "succeeded",
+      "token_revoked": true
+    },
+    "owned_database_delete": {
+      "managed_list_after_delete": "one deleted tombstone remains by product contract; no active QA DB receipt remains",
+      "no_other_managed_database_or_backup_preflight": true,
+      "postflight_receipt": {
+        "database": "p2qa_dev21_e7e07933c4cf",
+        "revision": 2,
+        "state": "deleted",
+        "username": "p2u_dev21_e7e07933c4cf"
+      },
+      "role_and_database_drop_acknowledged_by_successful_managed_task": true,
+      "scope": "databases:delete on db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf only, plus tasks:read",
+      "task_id": "ba2872fd19161e61963d52a1c98735c2",
+      "task_state": "succeeded",
+      "token_revoked": true
+    },
+    "owned_qa_database_preflight": {
+      "backup_count": 0,
+      "database": "p2qa_dev21_e7e07933c4cf",
+      "only_managed_database_receipt_on_this_instance": true,
+      "permission": "read",
+      "revision_before_cleanup": 1,
+      "role": "p2u_dev21_e7e07933c4cf",
+      "test_data_writes": false
+    },
+    "platform": "Debian 13, installed dev23 package",
+    "slowlog_disable": {
+      "config_sha256_after_typed_disable": "7e9dec46a16d22b93dd01813861ae2adcbb958affb7e5c7f9590145fe1bc94f5",
+      "final_observed_status": {
+        "config_revision": "7e9dec46a16d22b93dd01813861ae2adcbb958affb7e5c7f9590145fe1bc94f5",
+        "configuration_state": "settled",
+        "enabled": false,
+        "minimum_duration_ms": 1,
+        "reload_applied": true
+      },
+      "note": "The typed disabled block remains in postgresql.conf; the file no longer has the pre-QA baseline hash.",
+      "task_id": "7cf3c5374f9d67c2b85e4c0757596314",
+      "task_state": "succeeded"
+    },
+    "slowlog_enable_and_actual_settings": {
+      "actual_database_query": "read-only query via MCP; includes a bounded pg_sleep for the log test",
+      "configure_task_id": "476177d503b3ba96851d2927082c8ad0",
+      "live_settings_via_database_query": {
+        "client_address": "127.0.0.1/32",
+        "log_line_prefix": {
+          "setting": "%m [%p] %u@%d ",
+          "source": "configuration file"
+        },
+        "log_min_duration_statement": {
+          "setting": "1",
+          "source": "configuration file"
+        },
+        "log_parameter_max_length": {
+          "setting": "0",
+          "source": "configuration file"
+        },
+        "log_statement": {
+          "setting": "none",
+          "source": "configuration file"
+        }
+      },
+      "settled_enabled_status": {
+        "config_revision": "e1725d3c3724698e1c196fcbdabd94bcbc7a09b8e382d71b9019e11eb5393b7a",
+        "configuration_state": "settled",
+        "enabled": true,
+        "minimum_duration_ms": 1,
+        "reload_applied": true
+      },
+      "task_state": "succeeded",
+      "token_revoked": true
+    },
+    "slowlog_read": {
+      "authorization_attempts": {
+        "all_tokens_revoked": true,
+        "first": {
+          "resources": [
+            "db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf",
+            "db:postgresql-p2adminqa"
+          ],
+          "result": "denied",
+          "scopes": [
+            "databases:read"
+          ]
+        },
+        "minimum_scope_or_resource_cause_isolated": false,
+        "retry": {
+          "resources": [
+            "software:postgresql-p2adminqa",
+            "db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf",
+            "db:postgresql-p2adminqa"
+          ],
+          "result": "allowed",
+          "scopes": [
+            "databases:read",
+            "software:manage"
+          ]
+        }
+      },
+      "configuration_state": "settled",
+      "enabled": true,
+      "entry_count": 0,
+      "log_available": true,
+      "native_log_file_diagnostics": {
+        "bytes": 26302,
+        "classification": "real parser format gap: PostgreSQL extended-protocol parse records from the native query path are not accepted by the current slowlog record parser",
+        "duration_records": 68,
+        "pg_sleep_lines": 3,
+        "product_reader_matches": 0,
+        "qa_database_lines": 7,
+        "reader_expected_shape": "... LOG: duration: <ms> ms statement: ...",
+        "sanitized_observed_shape": "YYYY-MM-DD HH:MM:SS.mmm GMT [PID] <role>@<database> LOG: duration: <ms> ms parse stmtcache_<ID>: [SQL redacted]"
+      },
+      "qa_role_entry_present": false,
+      "result": "read capability allowed on retry but returned zero parsed entries",
+      "statement_text_recorded": false
+    },
+    "system_cluster_5432_and_mariadb_16306_touched": false
+  },
+  "private_harness_results": {
+    "baseline_settings": "/workspace/tools/sol-native-20261015/postgresql-dev23-baseline-settings-private.json",
+    "configure": "/workspace/tools/sol-native-20261015/postgresql-dev23-configure-private.json",
+    "database_delete": "/workspace/tools/sol-native-20261015/postgresql-dev23-delete-qa-private.json",
+    "disable": "/workspace/tools/sol-native-20261015/postgresql-dev23-slowlog-disable-private.json",
+    "hba_block": "/workspace/tools/sol-native-20261015/postgresql-dev23-hba-block-private.json",
+    "legacy_recovery": "/workspace/tools/sol-native-20261015/postgresql-dev23-recovery-private.json",
+    "live_query": "/workspace/tools/sol-native-20261015/postgresql-dev23-live-query-private.json",
+    "slowlog_read_retry": "/workspace/tools/sol-native-20261015/postgresql-dev23-slowlog-read-retry-private.json",
+    "upgrade": "/workspace/tools/sol-native-20261015/dev23-upgrade-actual.log"
+  },
+  "release_under_test": {
+    "archive": "powerlinux-0.1.0-dev.23-linux-amd64.tar.gz",
+    "archive_sha256": "af130436835adbc693eb3d89789a290f7e46c3d33287ca64b2c4416aeaeadf51",
+    "binary_sha256": "10550fcd51cc0181a4f589280e700dde80d4ff075c715f3d63f6df8a3b578b5f",
+    "buildinfo_epoch": 1792071416,
+    "buildinfo_working_tree_dirty": false,
+    "package_smoke": "clean dual-architecture build and actual amd64 package smoke passed in the release lane",
+    "source_commit": "3e74660d6fb4da2c5300619e8dd0c3cada7a2992",
+    "version": "0.1.0-dev.23"
+  },
+  "schema_version": 1,
+  "scope": "Actual-package/native QA on the owned Debian 13 VM. No production SSH, BaoTa, external database, or source changes were made by this QA. Ubuntu remains on dev21.",
+  "status": "partial_with_known_slowlog_read_gap"
+}

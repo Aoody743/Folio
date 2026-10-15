@@ -10,9 +10,9 @@
 
 源码 `3e74660d6` 从干净工作区构建 dev.23，优先修复原生验收发现的 PostgreSQL 慢日志问题：先校验文件并重载，再用新连接有界轮询实际设置；新事务先保存原始四项设置及来源，旧待恢复记录从受保护的 Before 配置推导恢复目标，无法证明时继续保持 pending。支持恢复原来未配置的默认状态，保留日志前缀尾部空格；新增延迟生效、延迟恢复和执行中取消回归。
 
-全量 Go race（14 个测试包）与 vet、双架构构建、实际 amd64 独立前缀安装包检查通过，独立 Debian root 源码 fixture 26 项通过。前端源码与导出未变，复用 dev.22 的 80 项测试/类型检查/静态构建结果。见 [dev.23 检查与日志](evidence/phase2-dev23-checks-20261015.json)、[源码身份](evidence/phase2-dev23-source-snapshot-20261015.json)。实际 Debian 从 dev.21 升级并恢复既有 pending 记录仍验收中，不能提前记为通过。
+全量 Go race（14 个测试包）与 vet、双架构构建、实际 amd64 独立前缀安装包检查通过，独立 Debian root 源码 fixture 26 项通过。前端源码与导出未变，复用 dev.22 的 80 项测试/类型检查/静态构建结果。见 [dev.23 检查与日志](evidence/phase2-dev23-checks-20261015.json)、[源码身份](evidence/phase2-dev23-source-snapshot-20261015.json)。实际 Debian 从 dev.21 升级及既有 pending 恢复已通过，新慢日志配置实际生效/停用通过；读取扩展协议日志仍存在格式适配缺口；QA 规则阻断、库/账号删除、令牌撤销和零活跃任务已确认，见 [dev.23 原生证据](evidence/phase2-native-dev23-20261015.json)。
 
-本批还将待恢复保护接入真实安装/重装入口，回归覆盖规划与执行期间 receipt 丢失的情况。rsync/lsyncd、管理应用和 PostgreSQL 远程 TLS 继续隔离开发，第二阶段未完成、第三阶段未开始。普通云端预览当前 dev.22；真实宝塔服务器保持未修改。
+本批还将待恢复保护接入真实安装/重装入口，回归覆盖规划与执行期间 receipt 丢失的情况。rsync/lsyncd、管理应用和 PostgreSQL 远程 TLS 继续隔离开发，第二阶段未完成、第三阶段未开始。普通云端预览当前 dev.23（保留升级前数据与二进制备份）；真实宝塔服务器保持未修改。
 
 ## Luna 并行续开发：dev.22（2026-10-15）
 

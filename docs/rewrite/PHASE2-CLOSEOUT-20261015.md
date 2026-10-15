@@ -7,7 +7,7 @@
 - `refine` 已推送 dev.23，产品源码 `3e74660d6fb4da2c5300619e8dd0c3cada7a2992`，见 [检查记录](evidence/phase2-dev23-checks-20261015.json)。
 - 第一阶段已验收；文件/终端、网站/PHP、数据库/缓存、Docker、系统管理、任务、审计及原生 MCP 已有实际实现。不同服务/平台的完整验收尚未结束。
 - dev.23 全量 Go race（14 个测试包）、vet、26 项 Debian root 源码 fixture、双架构构建和实际 amd64 安装包检查通过。前端未变化，复用 dev.22 的 80 项测试、类型检查与静态导出结果。
-- Debian 实际从 dev.21 升级至 dev.23，既有 PostgreSQL pending 慢日志事务已由产品 MCP 首次成功恢复，配置仍为原始字节。新配置/读取/停用链仍在验收，公开原生报告待补。
+- Debian 实际从 dev.21 升级至 dev.23，既有 PostgreSQL pending 慢日志事务已由产品 MCP 首次成功恢复，恢复时配置匹配原始字节。新配置实际生效与停用通过；读取发现扩展协议日志格式未被解析，尚待修复。QA HBA 已阻断，测试库/账号已通过产品任务删除，令牌撤销、活跃任务为零；见 [实际原生证据](evidence/phase2-native-dev23-20261015.json)。
 - 普通云端预览已更新 dev.23，并保留数据/二进制备份。Ubuntu QA 保持 dev.21；ARM64 仅构建，未原生运行。真实宝塔服务器未修改。
 
 旧台账包含待暂缓软件和历史状态，没有可审计的统一完成率。冻结首发清单后按退出检查计算，不按版本号或插件数量估算百分比。
@@ -35,10 +35,10 @@
 
 ## 必须关闭的四组收尾工作
 
-1. **真实缺陷闭环**：完成 dev.23 PostgreSQL 新配置→实际生效/读取→停用与清理，保留权限拒绝和恢复证据；修复其余核心测试阻断问题。
+1. **真实缺陷闭环**：关闭 PostgreSQL 慢日志扩展协议格式读取缺口（不能把解析不支持当作无日志），配置生效、旧记录恢复、停用及测试清理已实际通过，证据已记录。继续修复其余核心测试阻断问题。
 2. **完整用户链**：安装 Web/PHP→建站/数据库→上传→实际访问→TLS 绑定→备份→独立目标恢复，验证错误和恢复。
 3. **核心实机与权限矩阵**：Docker daemon、PHP 扩展 APT/FPM、保留的 SQL/Redis；网页/MCP 成功/拒绝/撤权/任务/审计；升级、重启、重复安装、卸载保留数据。
-4. **发布冻结**：收敛软件入口及平台声明，更新过时进度，提供固定校验和、安装/升级/回退说明与验收结果，再标记第二阶段核心测试版完成。
+4. **发布冻结**：收敛软件入口及平台声明，更新过时进度，记录响应时间、内存与系统修改基线的适用环境，提供固定校验和、安装/升级/回退说明与验收结果，再标记第二阶段核心测试版完成。
 
 公网 CA/DNS、外部通知仍需各自真实验收。用户暂缓生产 SSH/SSL，不重试登录、不索取更多凭据、不改宝塔。可先验受管证书导入/绑定，不能借此宣称公网签发已通过。
 
@@ -46,7 +46,7 @@
 
 | 草稿 | 状态/位置 |
 | --- | --- |
-| rsync/lsyncd | 后端/UI 未集成，撤权日志、清理恢复和脱敏契约尚未全部关闭；`/workspace/powerlinux/dev-lanes/rsync-sync/checkout`、`/workspace/powerlinux/dev-lanes/rsync-ui` |
+| rsync/lsyncd | 后端/UI 未集成；最后已知撤权/清理问题定向回归通过，UI 87 项测试/类型检查通过，未最终构建及原生验收；`/workspace/powerlinux/dev-lanes/rsync-sync/checkout`、`/workspace/powerlinux/dev-lanes/rsync-ui` |
 | phpMyAdmin | 安装/状态草稿已测，缺移除/恢复和原生验收；`/workspace/powerlinux/dev-lanes/admin-apps` |
 | PostgreSQL TLS | 仅证书私有桥/锁/索引基础，缺完整业务链；`/workspace/powerlinux/dev-lanes/postgresql-remote-tls` |
 

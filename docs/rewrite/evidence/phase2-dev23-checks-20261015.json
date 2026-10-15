@@ -25,7 +25,13 @@
       "test_binary_sha256": "fa54d58b8de807a1405ef4946f693893f759449875c0fe4a22cf9ebceb391c61",
       "scope": "Isolated executable on actual Debian dev21 VM; this is not installed-dev23 PostgreSQL acceptance."
     },
-    "installed_debian_upgrade_and_legacy_pending_recovery": "IN_PROGRESS"
+    "installed_debian_upgrade_and_legacy_pending_recovery": "PASS",
+    "native_fresh_postgresql_slowlog": {
+      "configure_live_values": "PASS",
+      "disable": "PASS",
+      "read": "GAP: extended-protocol parse/bind/execute record formats are not recognized by the statement-only parser; returned zero despite native log entries"
+    },
+    "native_qa_cleanup": "PASS: HBA rule blocked; owned nonce database/role deleted via managed task; scoped tokens revoked; active tasks 0"
   },
   "logs": {
     "phase2-dev23-full-race-20261015.log": {
@@ -73,12 +79,15 @@
     "Fresh install and reinstall use the shared pending-journal guard under the instance lock; real plan/apply regression prevents overwriting orphan PHP extension intents"
   ],
   "known_limits": [
-    "Actual Debian21-to23 upgrade and recovery of the already pending QA slowlog journal are being verified separately; do not equate source tests with this result",
+    "Actual dev23 native QA found a slowlog reader format gap for extended-protocol records; configuration/live verification and legacy pending recovery passed, but reading must be repaired or explicitly excluded from first-release support.",
+    "Actual Debian21-to23 upgrade and legacy pending slowlog recovery passed; cleanup is complete, and extended-protocol slowlog reading remains a known gap",
     "ARM64 execution unrun; Ubuntu stays dev21 due limited backup headroom",
     "Rsync/lsyncd, phpMyAdmin and PostgreSQL remote managed TLS remain isolated and unshipped",
     "Table maintenance, replication and PHP module installation still need full native/browser/MCP acceptance",
     "Phase 2 incomplete; third stage not started",
     "Production SSL/SSH deferred by user; BaoTa server untouched"
   ],
-  "native_prior_evidence": "docs/rewrite/evidence/phase2-native-dev21-20261015.json"
+  "native_prior_evidence": "docs/rewrite/evidence/phase2-native-dev21-20261015.json",
+  "native_evidence": "docs/rewrite/evidence/phase2-native-dev23-20261015.json",
+  "native_evidence_sha256": "915c26b6b1091d8b14a71a0ef7d4b65c0990ab2944efadf3dedd8f1c9e2090ba"
 }

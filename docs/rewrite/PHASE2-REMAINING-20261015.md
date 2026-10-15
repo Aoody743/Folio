@@ -8,7 +8,7 @@
 
 ## dev.23 增量（优先于下方历史盘点）
 
-[dev.23 检查](evidence/phase2-dev23-checks-20261015.json)绑定源码 `3e74660d6`，修复 PostgreSQL 慢日志重载顺序、原未配置状态恢复及旧 pending 记录兼容；后端 race/vet、26 项 Debian root 源码 fixture、双架构构建和实际 amd64 安装包检查通过。实际已有待恢复记录的升级/恢复仍验收中。新安装/重装入口也已接入统一 journal 保护。rsync 撤权/恢复/界面、管理应用与 PG 远程 TLS 尚未集成，第二阶段未完成。
+[dev.23 检查](evidence/phase2-dev23-checks-20261015.json)绑定源码 `3e74660d6`，修复 PostgreSQL 慢日志重载顺序、原未配置状态恢复及旧 pending 记录兼容；后端 race/vet、26 项 Debian root 源码 fixture、双架构构建和实际 amd64 安装包检查通过。实际升级/旧记录恢复已通过；新配置生效/停用通过，扩展协议慢日志读取待修。新安装/重装入口也已接入统一 journal 保护。rsync 撤权/恢复/界面、管理应用与 PG 远程 TLS 尚未集成，第二阶段未完成。
 
 ## dev.22 增量（优先于下方历史盘点）
 
