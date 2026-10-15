@@ -4,6 +4,16 @@
 
 日期：2026-10-13（Asia/Singapore）。所有检查只代表记录的环境与当前代码，不代表尚未运行的发行版或第三方服务已经兼容。
 
+## Luna 并行续开发：dev.20（2026-10-15）
+
+源码 `bc2270666` 已从干净工作区构建 dev.20：Go 全量 race（14 个测试包）及 vet、前端 67 项测试、类型检查、静态导出、双架构构建与实际 amd64 独立前缀安装检查通过。见 [dev.20 检查与限制](evidence/phase2-dev20-checks-20261015.json) 和[源码身份](evidence/phase2-dev20-source-snapshot-20261015.json)。ARM64 仅构建；云端 UID1000 下新增 root Sites 测试编译但跳过，不冒充原生验收。
+
+本批增加网页/MCP 共用 Docker 交互终端、PHP 默认 pool 与站点慢日志、站点 session 预览清理，以及使用私有目录 FD 的安全隔离删除。FTP 暂停改为加密原始验证值 journal，可明确查看待恢复状态；只读查询不执行恢复。FTP 账号只读模式目前明确不支持，schema 固定 `read_only:false`。旧 dev.19 暂停记录的迁移与外部 pure-pw 写入协调在下一批补齐，不能宣称升级兼容已完成。
+
+真实 Debian dev.18 Supervisor 安装暴露脚本进程误判：已通过 `stop_preserve` 安全停止并保留数据，未手工接管或写 receipt。dev.20 补入严格脚本/解释器/参数/UID/系统服务归属校验，下一步用新测试实例原生复验。Ubuntu dev.16 的真实 FPM 会话、浏览器清理与 MCP 权限链通过；双方 QA VM 已实际升级至 dev.19，不能把这些事实写成 dev.20 验收。
+
+数据库复制当前只有未注册的配置/权限 guard 骨架；实际 seed/channel 路径仍开发中。下一批并行推进复制、PostgreSQL 访问规则与慢日志、可信 PHP 扩展安装、FTP 旧状态迁移及 rsync/lsyncd。第二阶段进行中，第三阶段未开始。
+
 ## Luna 并行续开发：dev.19（2026-10-15）
 
 用户暂缓真实服务器 SSL/SSH 验收，优先推进其他第二阶段功能。dev.19 源码提交 `04154fc31` 已冻结并构建；Go 全量 race、vet、前端 63 项测试、类型检查、静态导出、双架构构建及实际 amd64 包独立前缀安装检查通过。具体范围与可携带日志见 [dev.19 检查](evidence/phase2-dev19-checks-20261015.json) 和[源码身份](evidence/phase2-dev19-source-snapshot-20261015.json)。
