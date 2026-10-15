@@ -166,7 +166,7 @@
     "read_only_only": true,
     "sql_writes_or_password_access": false,
     "unrelated_system_cluster": "17/main on 5432 was observed online and left untouched",
-    "follow_up": "Root authorized one isolated nonce QA managed database through the product API after this evidence is saved. Instance-wide slowlog mutation remains conditional on proving no unrelated databases or traffic; otherwise only isolated DB creation and read-only API inspection will be tested."
+    "follow_up": "Completed as actual API and MCP QA in postgresql_actual_api_and_mcp_maintenance below; the slow-log mutation exposed a pending-recovery product blocker."
   },
   "coverage_not_run_or_deferred": {
     "Supervisor_browser_ui": "unrun; actual API/MCP scope and lifecycle tested",
@@ -206,5 +206,186 @@
     ],
     "external_private_harness_result": "/workspace/tools/sol-native-20261015/php-session-fpm-result.json",
     "external_private_harness_result_sha256": "ecdbf510fdbc1b9529edd3541da7431f2c970b568bdf4f0bdc740b750a701f73"
+  },
+  "postgresql_actual_api_and_mcp_maintenance": {
+    "captured_at_utc": "2026-10-15T13:23:30Z",
+    "release_version": "0.1.0-dev.21",
+    "instance_id": "postgresql-p2adminqa",
+    "managed_database": {
+      "database": "p2qa_dev21_e7e07933c4cf",
+      "permission": "read",
+      "revision": 1,
+      "managed_receipt_count": 1,
+      "owned_fixture_only": true
+    },
+    "task_authorization": {
+      "action": "managed_postgresql_access_rule_add",
+      "declared_action_scope": "databases:admin",
+      "resource_callback_for_access": [
+        "software:postgresql-p2adminqa",
+        "db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf"
+      ],
+      "resource_callback_for_slowlog": [
+        "software:postgresql-p2adminqa",
+        "db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf",
+        "db:postgresql-p2adminqa"
+      ],
+      "executor_rechecks": [
+        {
+          "scope": "software:manage",
+          "resource": "software:postgresql-p2adminqa"
+        },
+        {
+          "scope": "databases:admin",
+          "resource": "db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf"
+      },
+      {
+        "scope": "databases:admin",
+        "resource": "db:postgresql-p2adminqa"
+        }
+      ],
+      "first_task": {
+        "id": "3717d1b4bf0c3c451af9ee00d3f666e6",
+        "state": "failed",
+        "error": "forbidden: PostgreSQL maintenance grants were revoked before task execution",
+        "token_scopes": [
+          "databases:admin",
+          "databases:read",
+          "tasks:read"
+        ],
+        "token_resources": [
+          "software:postgresql-p2adminqa",
+          "db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf",
+          "db:postgresql-p2adminqa"
+        ],
+        "cause": "The token lacked software:manage for the software instance resource."
+      },
+      "actor_refresh": "ResolveActor refreshes the token actor from persisted current scopes and resources; no grant context was lost.",
+      "corrected_qa_token": {
+        "scopes": [
+          "databases:admin",
+          "databases:read",
+          "tasks:read",
+          "software:manage"
+        ],
+        "resources": [
+          "software:postgresql-p2adminqa",
+          "db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf",
+          "db:postgresql-p2adminqa"
+        ],
+        "revoked_after_test": true
+      },
+      "hba_add_task_after_scope_fix": {
+        "id": "42e301b33a3b6b3d1d21369c64e435ca",
+        "state": "succeeded"
+      }
+    },
+    "access_rule": {
+      "rule_id": "pga_572c00409728222c9ba26ce4210bae90",
+      "database": "p2qa_dev21_e7e07933c4cf",
+      "cidr": "127.0.0.1/32",
+      "role": "p2u_dev21_e7e07933c4cf",
+      "protected_local_admin_preserved": true,
+      "remote_access_supported": false,
+      "initial_hba_sha256": "2bd831b409c550d0b164400dcf1b6c7824cab77ef6d4a2978e1b0e522fcb3b68",
+      "current_hba_sha256": "6142fc50c73cbec85682688b23b1cf6856bbc58a808842235405064c6159acde",
+      "current_state": "allowed",
+      "current_state_note": "Owned nonce QA role/database only; parent directed retaining the rule until typed slow-log recovery succeeds.",
+      "first_cleanup_block_task": {
+        "id": "9fbf6799e65a9fddabcef3f2585d2cd0",
+        "state": "succeeded"
+      },
+      "later_cleanup_block_task": {
+        "id": "8034b7159181c7511762536d97214591",
+        "state": "failed",
+        "error": "postgresql_maintenance_failed"
+      },
+      "later_cleanup_block_reason": "A pending slow-log intent prevented a separate HBA mutation; no HBA bytes were changed by this failed cleanup task."
+    },
+    "slowlog": {
+      "preflight_database_names": [
+        "p2qa_dev21_e7e07933c4cf",
+        "postgres"
+      ],
+      "preflight_connection_groups": [
+        {
+          "count": 5,
+          "datname": null,
+          "state": null
+        },
+        {
+          "count": 1,
+          "datname": "postgres",
+          "state": "active"
+        }
+      ],
+      "no_other_client_database_sessions_observed": true,
+      "configure_task": {
+        "id": "2130f508061da7c663c026ea496fc754",
+        "state": "failed",
+        "error": "postgresql_maintenance_failed: Protected PostgreSQL maintenance failed; inspect current status and recovery state"
+      },
+      "typed_restore_previous_task": {
+        "id": "e7939fb130fab59670eb86b3d3ee390c",
+        "state": "failed",
+        "error": "postgresql_maintenance_failed: Protected PostgreSQL maintenance failed; inspect current status and recovery state"
+      },
+      "restore_attempt_count": 1,
+      "final_api_state": {
+        "configuration_state": "pending_recovery",
+        "enabled": false,
+        "minimum_duration_ms": 0,
+        "reload_applied": false
+      },
+      "initial_postgresql_conf_sha256": "5d9534b7e58adb3ac3b20e53d3b6e04d5c7aeb622e9e6a6a88c00eacaa633fbe",
+      "final_postgresql_conf_sha256": "5d9534b7e58adb3ac3b20e53d3b6e04d5c7aeb622e9e6a6a88c00eacaa633fbe",
+      "typed_block_present": false,
+      "live_settings_read_only_query": [
+        {
+          "name": "log_line_prefix",
+          "setting": "%m [%p] ",
+          "source": "default"
+        },
+        {
+          "name": "log_min_duration_statement",
+          "setting": "-1",
+          "source": "default"
+        },
+        {
+          "name": "log_parameter_max_length",
+          "setting": "-1",
+          "source": "default"
+        },
+        {
+          "name": "log_statement",
+          "setting": "none",
+          "source": "default"
+        }
+      ],
+      "pending_journal_note": "Product intent stores exact prior and target configuration bytes; protected journal payload was not manually read or changed.",
+      "product_classification": "Confirmed slow-log apply and exact restore verification defect under active source fix; task errors are the safe generic Agent wrapper."
+    },
+    "mcp_database_query": {
+      "result": "passed_read_only",
+      "query": "Four pg_settings rows read through the product managed connection profile.",
+      "scopes": [
+        "databases:read",
+        "databases:query"
+      ],
+      "resource": "db:postgresql-p2adminqa:p2qa_dev21_e7e07933c4cf",
+      "token_revoked": true
+    },
+    "final_checks": {
+      "api_health": "passed_dev21",
+      "active_task_count": 0,
+      "current_hba_api_revision_matches_file": true,
+      "current_slowlog_api_revision_matches_file": true,
+      "no_private_journal_or_configuration_manual_edits": true
+    },
+    "private_external_evidence": {
+      "maintenance_result": "/workspace/tools/sol-native-20261015/postgresql-dev21-maintenance-private.json",
+      "recovery_result": "/workspace/tools/sol-native-20261015/postgresql-dev21-recovery-private.json",
+      "live_settings_result": "/workspace/tools/sol-native-20261015/postgresql-dev21-live-settings-private.json"
+    }
   }
 }

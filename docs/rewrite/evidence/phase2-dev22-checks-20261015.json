@@ -91,6 +91,7 @@
     "Supervisor root fixture now reuses production root initialization; real dev21 Supervisor API/MCP success remains separately versioned"
   ],
   "known_limits": [
+    "Subsequent actual dev21 PostgreSQL QA found slowlog verification before reload and inability to restore an originally unconfigured block; the same code is present in dev22. The owned QA journal is pending, main config bytes equal baseline, and dev23 repair is in progress. No manual journal/config cleanup.",
     "Phase 2 incomplete; rsync/lsyncd policy revocation and lifecycle integration are still isolated under review; admin app deployment is not yet integrated",
     "Table maintenance and replication actual MySQL/MariaDB CLI/server acceptance and browser/MCP matrix remain incomplete",
     "PHP distro extension installation on a real APT/FPM runtime remains unrun; source/yum recipes and physical package removal unavailable",
