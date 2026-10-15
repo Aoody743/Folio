@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-10-15T12:58:16Z",
+  "scope": "Native actual-package QA on the owned Debian 13 and Ubuntu 24.04 VMs. No production SSH, public host, external database, or source-code changes were made by this QA run.",
+  "status": "partial_with_known_product_blocker",
+  "release_under_test": {
+    "version": "0.1.0-dev.21",
+    "source_commit": "ad531c410d849690184f5b699e7dfeb6c676e7fa",
+    "buildinfo_working_tree_dirty": false,
+    "go_version": "1.27.2",
+    "archive": "powerlinux-0.1.0-dev.21-linux-amd64.tar.gz",
+    "archive_sha256": "4e00e25ac4ad1d17000128682cf4559c1cdb6bcd88095925f72bfa500717edc3",
+    "binary_sha256": "10b2c564817d257e697b65c5a66cf8ed8b1e42b7311c44a7645d0b3d8eea320a",
+    "installer_sha256": "4c1113dea4ee629c952b1a3ae5d1cd909aded76918549c437dda6daf93a5cc32",
+    "note": "The shared source checkout advanced after this immutable release was built; installed-package results below are scoped to this commit and hashes, not the current checkout."
+  },
+  "debian13": {
+    "upgrade": {
+      "from": "0.1.0-dev.20",
+      "to": "0.1.0-dev.21",
+      "result": "passed",
+      "previous_release_retained": true,
+      "actual_install_log": "/workspace/tools/sol-native-20261015/dev21-upgrade-actual.log",
+      "actual_install_log_sha256": "eb2d883826f3a6d1c0cd2a740f758c438a2afdda29b48a82e24afec7e34e81f7"
+    },
+    "postflight": {
+      "api_health": "passed",
+      "agent_health": "passed",
+      "api_and_agent_actual_binary_sha256": "10b2c564817d257e697b65c5a66cf8ed8b1e42b7311c44a7645d0b3d8eea320a",
+      "agent_policy_sha256_restored": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+      "server_config_sha256_unchanged": "709c70f7e4f7ba198e4d41da6372c8d45a2779b8d929ee189c67a1e92d43a36c",
+      "active_task_count": 0,
+      "pending_install_or_agent_recovery_marker": false
+    }
+  },
+  "ubuntu2404": {
+    "upgrade": {
+      "from": "0.1.0-dev.20",
+      "to": "0.1.0-dev.21",
+      "result": "passed",
+      "previous_release_retained": true,
+      "archive_sha256_verified_on_guest": "4e00e25ac4ad1d17000128682cf4559c1cdb6bcd88095925f72bfa500717edc3",
+      "installer_sha256_verified_on_guest": "4c1113dea4ee629c952b1a3ae5d1cd909aded76918549c437dda6daf93a5cc32",
+      "actual_install_log": "/workspace/tools/sol-native-20261015/ubuntu-dev21-upgrade-actual.log",
+      "actual_install_log_sha256": "844dc3d529db144b4a8b8feb46b1c33660281095e1d4d6ce75741658d4ae349d",
+      "initial_free_bytes": 1051746304,
+      "new_transaction_snapshot_bytes": 343003136,
+      "final_free_bytes": 645210112
+    },
+    "postflight": {
+      "api_health": "passed",
+      "agent_health": "passed",
+      "api_and_agent_actual_binary_sha256": "10b2c564817d257e697b65c5a66cf8ed8b1e42b7311c44a7645d0b3d8eea320a",
+      "agent_policy_sha256_unchanged": "5d4f23f9ca530ccdab2f2d56aa1ce3e9ba24305261863d1589c001b149dd8455",
+      "server_config_sha256_unchanged": "9755cbb04c60de9b27701927a975be95be14b3c7f9c4856b9d5eb3c6dbcea291",
+      "active_task_count_before_and_after": 0,
+      "pending_install_or_agent_recovery_marker": false,
+      "temporary_archive_installer_and_health_files_removed": true
+    }
+  },
+  "supervisor_actual_api_and_mcp": {
+    "release_version": "0.1.0-dev.21",
+    "managed_instance": "supervisor-supervisor-p2nativeqa20",
+    "signed_package_version": "4.2.5-3",
+    "readiness": "Agent restart briefly preceded Unix socket creation; bounded ordinary-user health polling passed before any Supervisor mutation.",
+    "policy_fixture_sha256": "30d322e3a56e2406d6d9a6ebf30ab713d747f641f88e2c5b4b20ad5cd9456e9f",
+    "exact_original_policy_sha256_restored": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+    "profile": "nativeqa_child",
+    "api_created_job": "phase2child21",
+    "job_revision": "3->4->5",
+    "program_fixture_sha256": "008fea7c1be3dede837d01f0cdb1026266c4eaa512f4562b40ea59f29d759914",
+    "start_and_identity": {
+      "result": "passed",
+      "actual_pid": 10535,
+      "uid_gid": "997:990",
+      "argv_matched_fixed_fixture": true,
+      "process_executable_sha256_matched_fixture": true,
+      "product_repaired_owned_programs_ancestor_without_manual_chmod": true
+    },
+    "logs_and_clear": {
+      "actual_api_and_mcp_log_read": "passed",
+      "stdout_marker_bytes_before_clear": 39,
+      "stderr_marker_bytes_before_clear": 40,
+      "read_scope_clear_denied": true,
+      "read_scope_clear_denial_code": -32602,
+      "manage_scope_clear_submission_allowed": true,
+      "clear_task_id": "69fd0ca23b600d3589fefd66d96e6b9f",
+      "clear_task_state": "succeeded",
+      "stdout_and_stderr_empty_after_clear": true,
+      "same_child_pid_survived_clear": true,
+      "stop_and_delete_via_actual_api": "passed"
+    },
+    "cleanup": {
+      "job_deleted": true,
+      "child_stopped_and_absent": true,
+      "fixture_binary_and_job_log_files_removed": true,
+      "scoped_mcp_tokens_revoked": true,
+      "original_policy_restored_and_agent_health_passed": true,
+      "final_instance_health": "healthy",
+      "final_job_count": 0,
+      "final_revision": 5
+    },
+    "private_harness_result": "/workspace/tools/sol-native-20261015/supervisor-dev21-actual-private.json",
+    "private_harness_result_sha256": "a2d1790713656065d06b29ec8d3ba7ccaf30023cb61de0ef0205c5f8a9d84eac"
+  },
+  "dev21_root_unit_fixtures": {
+    "test_binary": "/workspace/tools/sol-native-20261015/plugins-dev21-root.test",
+    "test_binary_sha256": "193cd36928b66f779625d2187f5ba2556c5688c1fb1d30f8a40b27cd28be2657",
+    "filter": "^(TestSupervisorWriteRepairsProgramAncestorAndWorkerCanTraverse|TestSupervisorProgramDirectoryRejectsSymlinksAndUnknownModes|TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates|TestPHPExtensionPendingJournalAllowsOnlyExactReplayContext|TestPHPExtensionConfigFailurePersistsRecoveryUntilRollbackSucceeds|TestPostgreSQLSlowlogRejectsFIFOWithoutBlocking)$",
+    "root_run": {
+      "exit_code": 1,
+      "passed_top_level_tests": 4,
+      "failed_top_level_tests": 2,
+      "test_binary_removed_after_run_by_verified_hash": true,
+      "log": "/workspace/tools/sol-native-20261015/plugins-dev21-root-fixtures.log",
+      "log_sha256": "954c4ff0ad3d3e81111056db6230967335e297c9df100b502cbb4e2b27dd22e5",
+      "failed_tests": [
+        {
+          "name": "TestPHPExtensionPendingJournalAllowsOnlyExactReplayContext",
+          "classification": "real_product_recovery_startup_bug",
+          "evidence": "A pending PHP extension journal causes root constructor/migration finalization to return extension_recovery_required, blocking Agent startup and the Unix recovery entry point. The PHP owner is fixing startup to permit only exact-context recovery without automatic resume or ignoring unsafe ownership."
+        },
+        {
+          "name": "TestSupervisorWriteRepairsProgramAncestorAndWorkerCanTraverse",
+          "classification": "root_fixture_setup_failure_not_reclassified_as_product_pass",
+          "evidence": "The root-only test fixture replaced RootDir under a non-traversable temporary parent and bypassed the constructor's normal 0750 setup. The real dev21 API-created Supervisor child chain passed separately."
+        }
+      ],
+      "passed_tests": [
+        "TestPostgreSQLSlowlogRejectsFIFOWithoutBlocking",
+        "TestPHPExtensionConfigFailurePersistsRecoveryUntilRollbackSucceeds",
+        "TestSupervisorProgramDirectoryRejectsSymlinksAndUnknownModes",
+        "TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates"
+      ]
+    },
+    "separate_unprivileged_fixture_rerun": {
+      "exit_code": 0,
+      "passed": 6,
+      "failed": 0,
+      "output_sha256": "e7f814a266dbd9b6a9809f1d829d4e969d75bc18e84d8d46b1c1992135769824",
+      "scope_note": "This exploratory unprivileged fixture rerun does not replace or conceal the root-run PHP product failure and is not daemon acceptance."
+    }
+  },
+  "postgresql_read_only_preflight": {
+    "platform": "Debian 13 dev21 VM",
+    "api_health": "passed",
+    "owned_instance_id": "postgresql-p2adminqa",
+    "owned_instance_status": "running_healthy",
+    "owned_instance_revision": 1,
+    "installed_version": "17+278",
+    "owned_instance_port": 16432,
+    "owned_instance_process_uid_gid": "997:990",
+    "owned_instance_process_binary_sha256": "6468a969338215cb3912cf9c0b894bdbbd37b9a709926db078e9a5bf8bdc3e16",
+    "tcp_readiness": "accepting",
+    "owned_unix_socket_file": "/opt/powerlinux-software/postgresql/p2adminqa/run/.s.PGSQL.16432",
+    "managed_database_records": 0,
+    "owned_config_log_directives": {
+      "listen_addresses": "127.0.0.1",
+      "port": 16432,
+      "logging_collector": "on",
+      "log_directory": "/opt/powerlinux-software/postgresql/p2adminqa/logs",
+      "log_filename": "postgresql.log",
+      "slowlog_directives_present_in_postgresql_conf_or_auto_conf": false
+    },
+    "slowlog_status_api": "not_run_no_managed_database_record",
+    "read_only_only": true,
+    "sql_writes_or_password_access": false,
+    "unrelated_system_cluster": "17/main on 5432 was observed online and left untouched",
+    "follow_up": "Root authorized one isolated nonce QA managed database through the product API after this evidence is saved. Instance-wide slowlog mutation remains conditional on proving no unrelated databases or traffic; otherwise only isolated DB creation and read-only API inspection will be tested."
+  },
+  "coverage_not_run_or_deferred": {
+    "Supervisor_browser_ui": "unrun; actual API/MCP scope and lifecycle tested",
+    "Docker_exec_and_archive": "unrun on dev21; prior dev19 signed-package attempt failed before apt transaction",
+    "PureFTP_pause_resume_original_password_login_enforcement": "unrun; dev20 read-only package plan timed out after 15 seconds and no apply was submitted",
+    "external_http01_tls": "deferred by user; no production SSH or BaoTa mutations",
+    "source_or_installed_dev22_PHP_recovery_fix": "awaiting a frozen dev22 package for retest"
+  },
+  "previous_dev16_php_session_proof": {
+    "scope_note": "Carried-forward actual dev16 FPM proof; these results are not dev21 acceptance.",
+    "release_version": "0.1.0-dev.16",
+    "installed_binary_sha256": "e06060f3103b7c59278a041af1adfb3bcc579abe87a3ba74323396692071ae52",
+    "actual_fpm_session_test": {
+      "expired_sessions_created_by_managed_package_fpm": 2,
+      "expired_sessions_over_48_hours": 2,
+      "actual_api_cleanup_deleted": 2,
+      "fresh_fpm_session_preserved": true,
+      "browser": "Chromium; page errors 0",
+      "mcp_read_cleanup_denied": true,
+      "mcp_manage_cleanup_succeeded": true,
+      "scoped_tokens_revoked": true,
+      "owned_session_and_php_script_fixtures_removed": true
+    },
+    "actual_cleanup_task_ids": [
+      {
+        "id": "4daf54b0f72e32ea0ee36008b26d6590",
+        "state": "succeeded",
+        "deleted_count": 2,
+        "scope": "browser cleanup task"
+      },
+      {
+        "id": "5282e5cec6568aeed72f153b2a316baa",
+        "state": "succeeded",
+        "deleted_count": 1,
+        "scope": "MCP cleanup task"
+      }
+    ],
+    "external_private_harness_result": "/workspace/tools/sol-native-20261015/php-session-fpm-result.json",
+    "external_private_harness_result_sha256": "ecdbf510fdbc1b9529edd3541da7431f2c970b568bdf4f0bdc740b750a701f73"
+  }
+}

@@ -64,6 +64,7 @@
     "Supervisor worker program ancestry repair and rejection of no-op log clears; Docker socket-deadline timeout classification race fix"
   ],
   "known_limits": [
+    "Subsequent exact dev21 root fixture found a product startup defect: a pending PHP extension intent makes constructor PHP migration reject Agent startup; repair and explicit recovery discovery are in dev22 work. Supervisor daemon lifecycle separately passed on actual dev21.",
     "Actual dev21 daemon/browser/MCP acceptance is in progress, not implied by source or protocol tests",
     "Replication UI is being built separately; native CLI/server/replica filter behavior, including MySQL 8.4 client flags, remains unverified",
     "PHP extension native APT/FPM installation is unrun; source/yum and unsupported distro/ABI recipes remain unavailable; system package removal is deferred",
@@ -74,5 +75,6 @@
     "Production SSL/SSH is deferred by user and the BaoTa server has not been modified",
     "ARM64 binaries were built; ARM64 native execution remains unrun"
   ],
-  "native_prior_evidence": "docs/rewrite/evidence/phase2-native-next-20261015.json"
+  "native_prior_evidence": "docs/rewrite/evidence/phase2-native-next-20261015.json",
+  "native_followup_evidence": "docs/rewrite/evidence/phase2-native-dev21-20261015.json"
 }

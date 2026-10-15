@@ -6,13 +6,17 @@
 
 ## Luna 并行续开发：dev.21（2026-10-15）
 
+### dev.21 后续原生发现（第二阶段仍进行中）
+
+Debian dev.21 的真实 Supervisor 子进程链已经通过：产品创建动作修复 programs 祖先，指定 worker 启动，MCP 读令牌拒绝清理、管理令牌提交成功，日志清空时 PID 保持，停止/删除及令牌撤销完成。独立 root 源码 fixture 同时暴露 PHP 扩展待恢复 journal 会阻断 root Agent 构造启动；普通 UID 测试通过不能排除此问题。该恢复缺陷正优先修复于下一批，尚未以新发行包验收。Supervisor 的另一项 root fixture 失败源于测试替换 RootDir 后未执行生产构造初始化，与已通过的真实服务链区分记录。
+
 源码 `ad531c410` 已推送 `refine`，从干净工作区生成 dev.21。最终 Go 全量 race（14 个测试包）与 vet、前端 70 项测试、类型检查、静态导出、Linux amd64/arm64 构建及实际 amd64 独立前缀安装/重复安装/健康检查/保留数据卸载通过。见 [dev.21 检查与边界](evidence/phase2-dev21-checks-20261015.json) 和[源码身份](evidence/phase2-dev21-source-snapshot-20261015.json)。ARM64 仅构建；源码与协议测试不替代真实服务验收。
 
 本批增加官方发行版 PHP 扩展计划与持久任务、PostgreSQL 本机 SCRAM 访问规则和慢日志、受管 MySQL/MariaDB 同主机复制与只读专用目标。复制种子存于 Agent 私有目录，安装包权限在排队任务实际执行前重新检查；关联实例与库的危险变更由统一保护拒绝。PHP 扩展卸载只停用当前实例并保留系统包，暂不支持物理删包。PostgreSQL 远程访问仍须后续受管 TLS；复制界面与真实客户端/复制过滤验收未完成。
 
 FTP 恢复严格识别旧版 IPv6 字符串破坏冒号字段后的记录，保留原始验证值与其他字段，不宣称旧规则曾完整阻止登录。Supervisor 修复 root 创建的 programs 祖先权限；RPC 返回成功但文件未清空时明确拒绝报告清理成功。另补 Docker socket deadline 与 context 状态发布竞态修复、PostgreSQL FIFO 非阻塞拒绝以及慢日志截断内容遮蔽。
 
-[前批原生证据](evidence/phase2-native-next-20261015.json) 记录 dev.20 双 VM 升级、dev.16 实际 FPM 会话清理、dev.20 Supervisor 安装成功但子进程启动/日志清理失败，以及仅修测试断言后的 root Sites 5/5 通过。dev.21 正在独立 VM 复测，不借用旧版本证据宣称通过。后续由 Luna 在隔离目录继续复制界面、rsync/lsyncd、表维护和管理应用可信部署；第二阶段进行中，第三阶段未开始。真实宝塔服务器保持未修改。
+[前批原生证据](evidence/phase2-native-next-20261015.json) 记录 dev.20 双 VM 升级、dev.16 实际 FPM 会话清理、dev.20 Supervisor 安装成功但子进程启动/日志清理失败，以及仅修测试断言后的 root Sites 5/5 通过。[dev.21 独立 VM 证据](evidence/phase2-native-dev21-20261015.json)已记录 Debian 13、Ubuntu 24.04 实际升级通过及 Supervisor API/MCP 子进程完整闭环；PHP root 重启恢复缺陷仍待 dev.22 修复验收。后续由 Luna 在隔离目录继续复制界面、rsync/lsyncd、表维护和管理应用可信部署；第二阶段进行中，第三阶段未开始。真实宝塔服务器保持未修改。
 
 ## Luna 并行续开发：dev.20（2026-10-15）
 

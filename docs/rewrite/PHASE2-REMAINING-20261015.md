@@ -6,7 +6,7 @@
 
 ## dev.21 增量（优先于下方历史盘点）
 
-[dev.21 检查](evidence/phase2-dev21-checks-20261015.json) 绑定源码 `ad531c410` 与实际包校验和。PHP 官方 APT 模块安装/实例停用、PostgreSQL loopback SCRAM 与慢日志、同主机 MySQL/MariaDB 复制、旧 FTP 记录恢复已进入已实现/待原生验证范围；复制 UI 正在下一批制作。Supervisor 源码已修复真实 VM 揭示的 programs 祖先权限和无效 clear 被误报成功问题，实际子进程闭环复测仍进行中。
+[dev.21 检查](evidence/phase2-dev21-checks-20261015.json) 绑定源码 `ad531c410` 与实际包校验和。PHP 官方 APT 模块安装/实例停用、PostgreSQL loopback SCRAM 与慢日志、同主机 MySQL/MariaDB 复制、旧 FTP 记录恢复已进入已实现/待原生验证范围；复制 UI 正在下一批制作。Supervisor 源码已修复真实 VM 揭示的 programs 祖先权限和无效 clear 被误报成功问题，[dev.21 原生证据](evidence/phase2-native-dev21-20261015.json)中实际 Supervisor API/MCP 子进程闭环已通过，浏览器未测；另发现 PHP 待恢复 journal 阻断 root Agent 重启，dev.22 正优先修复，不能据普通 UID 测试宣称通过。
 
 仍有明确功能限制：PHP source/yum 模块安装及系统包物理移除；PostgreSQL 远程受管 TLS；其他引擎复制与 SSH 同步；FTP 账号只读；rsync/lsyncd；数据库表维护完整界面；phpMyAdmin/pgAdmin 的可信实际部署与专用管理；四个 DNS provider、跨阶段 webhook 依赖及下表其他未关闭项。真实发行版/重启恢复/升级卸载/浏览器/MCP 权限验收矩阵仍须逐项完成。不能把构建、协议 fixture、catalog 声明或部分原生成功当作第二阶段完成。
 
