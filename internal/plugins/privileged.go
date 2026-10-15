@@ -46,28 +46,29 @@ type PrivilegedOptions struct {
 	HTTPClient *http.Client
 }
 type PrivilegedExecutor struct {
-	config                 PrivilegedConfig
-	catalog                *Catalog
-	artifacts              *artifactStore
-	packages               *packageBackend
-	unitDir                string
-	receiptSaveHook        func(string, Instance) error
-	installJournalSaveHook func(context.Context, installJournal, int64) error
-	installProofHook       func(context.Context, installJournal) error
-	installHealthHook      func(context.Context, Instance) Health
-	installEnableHook      func(context.Context, *installJournal) error
-	installControlHook     func(context.Context, ServiceInput, Instance) (map[string]any, error)
-	installUnitCreateHook  func(string, string, []byte) error
-	systemdReloadHook      func(context.Context) error
-	uid, gid               uint32
-	buildUID, buildGID     uint32
-	buildSlot              chan struct{}
-	mu                     sync.Mutex
-	locks                  map[string]*instanceMutex
-	healthMu               sync.Mutex
-	healthCache            map[string]cachedHealth
-	privateCipher          cipher.AEAD
-	profileControl         func(context.Context, Instance, string) error // private trusted test dependency
+	config                    PrivilegedConfig
+	catalog                   *Catalog
+	artifacts                 *artifactStore
+	packages                  *packageBackend
+	unitDir                   string
+	receiptSaveHook           func(string, Instance) error
+	installJournalSaveHook    func(context.Context, installJournal, int64) error
+	installProofHook          func(context.Context, installJournal) error
+	installHealthHook         func(context.Context, Instance) Health
+	installEnableHook         func(context.Context, *installJournal) error
+	installControlHook        func(context.Context, ServiceInput, Instance) (map[string]any, error)
+	installSystemdMainPIDHook func(context.Context, string) (agent.Result, error)
+	installUnitCreateHook     func(string, string, []byte) error
+	systemdReloadHook         func(context.Context) error
+	uid, gid                  uint32
+	buildUID, buildGID        uint32
+	buildSlot                 chan struct{}
+	mu                        sync.Mutex
+	locks                     map[string]*instanceMutex
+	healthMu                  sync.Mutex
+	healthCache               map[string]cachedHealth
+	privateCipher             cipher.AEAD
+	profileControl            func(context.Context, Instance, string) error // private trusted test dependency
 }
 
 var validAccount = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}\$?$`)

@@ -16,6 +16,7 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -494,16 +495,23 @@ func (e *PrivilegedExecutor) installRecoveryInspect(ctx context.Context, id stri
 	// A committed candidate needs only journal finalization. Otherwise every
 	// advertised mutation requires current ownership proof, just like execution.
 	proofValid := receiptState == "candidate"
+	healthFailedContinue := false
 	if !proofValid && (j.Phase == "health_verified" || j.Phase == "boot_verified" || j.Phase == "receipt_pending" || e.installStopPreserveAllowed(j)) {
 		proofValid = e.verifyInstallJournalProofs(ctx, j) == nil
 	}
-	if proofValid && (j.Phase == "health_verified" || j.Phase == "boot_verified" || j.Phase == "receipt_pending") {
+	if proofValid && j.Phase == "health_failed" {
+		_, healthErr := e.verifyHealthFailedInstallRecovery(ctx, j)
+		healthFailedContinue = healthErr == nil
+	}
+	if (proofValid && (j.Phase == "health_verified" || j.Phase == "boot_verified" || j.Phase == "receipt_pending")) || healthFailedContinue {
 		view.Available = append(view.Available, "continue")
 	}
 	if receiptState != "candidate" && e.installStopPreserveAllowed(j) && proofValid {
 		view.Available = append(view.Available, "stop_preserve")
 	} else if !proofValid {
 		view.Reason = "The journal exists, but current ownership proofs do not permit a recovery action."
+	} else if j.Phase == "health_failed" && proofValid && !healthFailedContinue {
+		view.Reason = "The exact install proofs remain valid, but the running service is not currently proven healthy; it was preserved."
 	} else if receiptState == "candidate" {
 		view.Reason = "The install receipt is committed; continue only to finalize its journal checkpoint."
 	}
@@ -569,7 +577,7 @@ func (e *PrivilegedExecutor) installRecoveryAction(ctx context.Context, input in
 
 func (e *PrivilegedExecutor) continueInstallRecovery(ctx context.Context, j *installJournal) error {
 	switch j.Phase {
-	case "health_verified", "boot_verified", "receipt_pending":
+	case "health_failed", "health_verified", "boot_verified", "receipt_pending":
 	default:
 		return failure("recovery_checkpoint_unsupported", "Continue is permitted only after the install health checkpoint", 412)
 	}
@@ -585,21 +593,33 @@ func (e *PrivilegedExecutor) continueInstallRecovery(ctx context.Context, j *ins
 		// service again: it may have been deliberately stopped since that commit.
 		return e.saveNextInstallJournal(ctx, j, "completed")
 	}
-	if err := e.verifyInstallJournalProofs(ctx, *j); err != nil {
-		return err
-	}
-	if j.Instance.Health.Status != "healthy" && j.Instance.Health.Status != "available" && j.Instance.Health.Status != "configuration_required" {
-		return failure("recovery_checkpoint_unsupported", "The recorded install did not pass its health check", 412)
-	}
-	if j.Instance.Service.Program != "" && j.Instance.Service.Kind != "cli" {
-		actual := Health{}
-		if e.installHealthHook != nil {
-			actual = e.installHealthHook(ctx, j.Instance)
-		} else {
-			actual = e.probe(ctx, j.Instance)
+	if j.Phase == "health_failed" {
+		actual, err := e.verifyHealthFailedInstallRecovery(ctx, *j)
+		if err != nil {
+			return err
 		}
-		if actual.Status != "healthy" {
-			return failure("install_recovery_health_failed", "The verified install is no longer healthy; it was preserved for inspection", 409)
+		j.Instance.Status = "running"
+		j.Instance.Health = actual
+		if err := e.saveNextInstallJournal(ctx, j, "health_verified"); err != nil {
+			return err
+		}
+	} else {
+		if err := e.verifyInstallJournalProofs(ctx, *j); err != nil {
+			return err
+		}
+		if j.Instance.Health.Status != "healthy" && j.Instance.Health.Status != "available" && j.Instance.Health.Status != "configuration_required" {
+			return failure("recovery_checkpoint_unsupported", "The recorded install did not pass its health check", 412)
+		}
+		if j.Instance.Service.Program != "" && j.Instance.Service.Kind != "cli" {
+			actual := Health{}
+			if e.installHealthHook != nil {
+				actual = e.installHealthHook(ctx, j.Instance)
+			} else {
+				actual = e.probe(ctx, j.Instance)
+			}
+			if actual.Status != "healthy" {
+				return failure("install_recovery_health_failed", "The verified install is no longer healthy; it was preserved for inspection", 409)
+			}
 		}
 	}
 	if j.DesiredBoot != nil && j.Instance.Service.Program != "" && j.Instance.Service.Kind == "daemon" {
@@ -627,6 +647,115 @@ func (e *PrivilegedExecutor) continueInstallRecovery(ctx context.Context, j *ins
 		return err
 	}
 	return e.saveNextInstallJournal(ctx, j, "completed")
+}
+
+func (e *PrivilegedExecutor) verifyHealthFailedInstallRecovery(ctx context.Context, j installJournal) (Health, error) {
+	if err := ctx.Err(); err != nil {
+		return Health{}, err
+	}
+	if j.Phase != "health_failed" || !e.installStopPreserveAllowed(j) {
+		return Health{}, failure("recovery_checkpoint_unsupported", "Health-failed recovery requires an exact owned systemd daemon proof", 412)
+	}
+	if err := e.verifyInstallJournalProofs(ctx, j); err != nil {
+		return Health{}, err
+	}
+	if err := e.verifyInitializedRuntimeCredential(j.Instance); err != nil {
+		return Health{}, err
+	}
+	ownedPID, err := ownedProcessID(j.Instance)
+	if err != nil {
+		return Health{}, failure("install_recovery_health_failed", "The owned runtime process is not currently proven; it was preserved", 409)
+	}
+	if err := e.verifyJournalUnitMainPID(ctx, j.Instance.Service.Unit, ownedPID); err != nil {
+		return Health{}, err
+	}
+	actual := e.probe(ctx, j.Instance)
+	if err := ctx.Err(); err != nil {
+		return Health{}, err
+	}
+	if actual.Status != "healthy" {
+		return Health{}, failure("install_recovery_health_failed", "The owned service is not currently protocol-healthy; it was preserved", 409)
+	}
+	return actual, nil
+}
+
+func (e *PrivilegedExecutor) verifyJournalUnitMainPID(ctx context.Context, unit string, ownedPID int) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	var result agent.Result
+	var runErr error
+	if e.installSystemdMainPIDHook != nil {
+		result, runErr = e.installSystemdMainPIDHook(ctx, unit)
+	} else {
+		operation := agent.Operation{Name: "plugin_active_main_pid", Program: "/usr/bin/systemctl", Timeout: 15 * time.Second,
+			BuildArgs: func(json.RawMessage) ([]string, error) {
+				return []string{"show", "--property=ActiveState,MainPID", "--", unit}, nil
+			}}
+		runner, err := agent.NewRunner(agent.Options{Operations: []agent.Operation{operation}, MaxOutputBytes: 1024, MaxConcurrent: 1})
+		if err != nil {
+			return failure("install_recovery_state_unknown", "The owned service process could not be verified", 502)
+		}
+		result, runErr = runner.Run(ctx, agent.Request{Operation: operation.Name, Input: json.RawMessage(`{}`)})
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return decodeSystemdActiveMainPID(result, runErr, ownedPID)
+}
+
+func decodeSystemdActiveMainPID(result agent.Result, runErr error, ownedPID int) error {
+	unknown := failure("install_recovery_state_unknown", "The owned service main process state could not be verified", 502)
+	if result.Operation != "plugin_active_main_pid" || result.Truncated || result.Canceled || result.TimedOut || result.DroppedEvents != 0 || result.Stderr != "" || runErr != nil || result.ExitCode != 0 || ownedPID < 2 {
+		return unknown
+	}
+	fields := map[string]string{}
+	for _, line := range strings.Split(strings.TrimSpace(result.Stdout), "\n") {
+		key, value, ok := strings.Cut(line, "=")
+		if !ok || (key != "ActiveState" && key != "MainPID") {
+			return unknown
+		}
+		if _, exists := fields[key]; exists {
+			return unknown
+		}
+		fields[key] = value
+	}
+	if len(fields) != 2 {
+		return unknown
+	}
+	mainPID, err := strconv.Atoi(fields["MainPID"])
+	if err != nil || mainPID < 2 {
+		return unknown
+	}
+	if fields["ActiveState"] != "active" {
+		return failure("install_recovery_health_failed", "The journal-owned systemd unit is not active; it was preserved", 409)
+	}
+	if mainPID != ownedPID {
+		return failure("ownership_conflict", "The systemd main process does not match the journal-owned runtime process; it was preserved", 409)
+	}
+	return nil
+}
+
+func (e *PrivilegedExecutor) verifyInitializedRuntimeCredential(instance Instance) error {
+	switch instance.PluginID {
+	case "mysql", "mysql-community", "mariadb", "postgresql", "mongodb":
+	default:
+		return nil
+	}
+	var credential managedDatabaseCredential
+	if err := e.load("private", databasePrivateID(instance), &credential); err != nil {
+		return failure("credential_unavailable", "Owned database initialization receipt is unavailable", 412)
+	}
+	expectedUser := "root"
+	if instance.PluginID == "postgresql" {
+		expectedUser = e.config.RunUser
+	} else if instance.PluginID == "mongodb" {
+		expectedUser = "powerlinux_admin"
+	}
+	if !credential.Initialized || credential.Engine != instance.PluginID || credential.DataDir != instance.Paths.DataDir || credential.Username != expectedUser || credential.Password == "" {
+		return failure("credential_unavailable", "Owned database initialization receipt does not match its protected runtime", 412)
+	}
+	return nil
 }
 
 func (e *PrivilegedExecutor) commitInstallReceipt(ctx context.Context, j *installJournal) error {
@@ -1125,6 +1254,18 @@ func (e *PrivilegedExecutor) verifyJournalUnit(j installJournal) error {
 		return failure("install_journal_invalid", "Install recovery does not contain an owned systemd unit proof", 412)
 	}
 	dir := e.systemdUnitDir()
+	dropInDir := filepath.Join(dir, j.Instance.Service.Unit+".d")
+	if info, err := os.Lstat(dropInDir); err == nil {
+		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			return failure("ownership_conflict", "The journal-owned service has an unsafe systemd drop-in path; it was preserved", 409)
+		}
+		entries, readErr := os.ReadDir(dropInDir)
+		if readErr != nil || len(entries) != 0 {
+			return failure("ownership_conflict", "The journal-owned service has an external systemd drop-in; it was preserved", 409)
+		}
+	} else if !os.IsNotExist(err) {
+		return failure("ownership_conflict", "The journal-owned systemd drop-in state could not be verified; it was preserved", 409)
+	}
 	file, err := os.OpenFile(filepath.Join(dir, j.Instance.Service.Unit), os.O_RDONLY|syscall.O_NOFOLLOW, 0)
 	if err != nil {
 		return failure("ownership_conflict", "The journal-owned service unit is missing or unsafe; it was preserved", 409)
