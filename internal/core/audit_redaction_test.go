@@ -14,6 +14,44 @@ import (
 	"testing"
 )
 
+func TestSecretBookkeepingAuditKeepsResourceWithoutInternalReferences(t *testing.T) {
+	s, admin := testService(t)
+	ctx := context.Background()
+	store := s.Runtime("fixture").Secrets
+	ref, err := store.Put(ctx, admin, "site:owned", "SQL administrator version", []byte("private-value-canary"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.Get(ctx, admin, "site:owned", ref); err != nil {
+		t.Fatal(err)
+	}
+	if err = store.Delete(ctx, admin, "site:owned", ref); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := s.db.Query("SELECT action,resource,summary FROM audit WHERE action IN ('credentials_store','credentials_resolve','credentials_delete') ORDER BY action")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	count := 0
+	for rows.Next() {
+		var action, resource, summary string
+		if err = rows.Scan(&action, &resource, &summary); err != nil {
+			t.Fatal(err)
+		}
+		if resource != "site:owned" || strings.Contains(summary, ref) || strings.Contains(summary, "secret_ref") || strings.Contains(summary, "private-value-canary") {
+			t.Fatal("credential audit lost resource scope or retained private material")
+		}
+		if action == "credentials_store" && !strings.Contains(summary, "SQL administrator version") {
+			t.Fatal("credential audit lost its public purpose")
+		}
+		count++
+	}
+	if err = rows.Err(); err != nil || count != 3 {
+		t.Fatalf("credential audit records: count=%d err=%v", count, err)
+	}
+}
+
 func TestCertificateProviderAuditCannotExportPrivateMaterial(t *testing.T) {
 	s, admin := testService(t)
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

@@ -180,7 +180,7 @@ func (store boundSecrets) Put(ctx context.Context, prior Actor, resource, name s
 	if err != nil {
 		return "", internal()
 	}
-	store.s.recordAudit(ctx, a, "credentials_store", resource, nil, map[string]any{"secret_ref": ref, "label": name})
+	store.s.recordAudit(ctx, a, "credentials_store", resource, nil, map[string]any{"label": name})
 	return ref, nil
 }
 func (store boundSecrets) Get(ctx context.Context, prior Actor, resource, ref string) ([]byte, error) {
@@ -207,7 +207,7 @@ func (store boundSecrets) Get(ctx context.Context, prior Actor, resource, ref st
 	if json.Unmarshal(raw, &envelope) != nil || envelope.Namespace != store.namespace || envelope.Resource != resource {
 		return nil, internal()
 	}
-	store.s.recordAudit(ctx, a, "credentials_resolve", resource, nil, map[string]any{"secret_ref": ref})
+	store.s.recordAudit(ctx, a, "credentials_resolve", resource, nil, nil)
 	return envelope.Value, nil
 }
 func (store boundSecrets) Delete(ctx context.Context, prior Actor, resource, ref string) error {
@@ -223,6 +223,6 @@ func (store boundSecrets) Delete(ctx context.Context, prior Actor, resource, ref
 	if n != 1 {
 		return missing("Secret reference")
 	}
-	store.s.recordAudit(ctx, a, "credentials_delete", resource, nil, map[string]any{"secret_ref": ref})
+	store.s.recordAudit(ctx, a, "credentials_delete", resource, nil, nil)
 	return nil
 }
