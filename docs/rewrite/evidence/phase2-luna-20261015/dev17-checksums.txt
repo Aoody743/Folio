@@ -1,0 +1,2 @@
+f482ca9a176f316a98e3b397da88abfdc605ad99650cd32be4230d272ab8997a  powerlinux-0.1.0-dev.17-linux-amd64.tar.gz
+599aceb837acee5ce1b23a57012a9bb29dc2c2be09527b9439608359a6927bf8  powerlinux-0.1.0-dev.17-linux-arm64.tar.gz

@@ -1,0 +1,101 @@
+{
+  "schema_version": "powerlinux.qa.source-protocol-summary.v1",
+  "captured_at_utc": "2026-10-15",
+  "scope": "DNSPod International native driver against a verified local TLS HTTP protocol fixture; no external account requests.",
+  "provider": "dns_dpi",
+  "fixed_endpoint": "https://api.dnspod.com",
+  "sources": [
+    {
+      "url": "https://github.com/DNSPod/dnspod-int-api-docs/blob/master/source/domains.rst",
+      "reviewed": "Domain.Info identity and numeric domain ID."
+    },
+    {
+      "url": "https://github.com/DNSPod/dnspod-int-api-docs/blob/master/source/records.rst",
+      "reviewed": "Record.List offset/length, numeric record ID, literal TXT value, enabled flag; Record.Create and Record.Remove."
+    },
+    {
+      "url": "https://github.com/DNSPod/dnspod-int-api-docs/blob/master/source/info.rst",
+      "reviewed": "Global user_token authentication. This older document contains a generic dnsapi.cn reference; actual international action URLs and acme.sh establish api.dnspod.com."
+    },
+    {
+      "url": "https://github.com/acmesh-official/acme.sh/blob/master/dnsapi/dns_dpi.sh",
+      "reviewed": "International api.dnspod.com endpoint; DPI_Id/DPI_Key login_token authentication."
+    }
+  ],
+  "authentication": "Default login_token; optional DPI_AuthField explicitly permits only login_token or user_token. Required DPI_Id is numeric; DPI_Key cannot contain a comma. Credential material is excluded from this summary.",
+  "ownership": "Existing durable receipt framework binds owner, provider, credential hash, canonical challenge name/value, zone ID/name and record ID. Full bounded list and exact identity checks precede cleanup; only the owned record ID is removed. Borrowed existing records are retained; uncertain create responses are recovered by list without replaying creation.",
+  "cases": [
+    "TestLegacyDPIVerifiedHTTPSOwnershipAndDurableCleanup",
+    "TestLegacyDPIResponseLossAndDelayedCommitRecovery",
+    "TestLegacyDPIBorrowedRecordsAndChangedIdentities",
+    "TestLegacyDPIFixedAPIAndVerifiedTLSSafeFailure",
+    "TestLegacyDPIPaginationAndDisabledPreflight",
+    "TestLegacyDPIConcurrentChallengesPreserveOtherValues",
+    "TestLegacyDPIExplicitAuthenticationSchema"
+  ],
+  "covered_behaviors": [
+    "Trusted TLS and rejection of untrusted TLS, authenticated redirects, oversized responses and credential-bearing diagnostics.",
+    "Creation, repeat Present, durable receipt, changed credentials/owner and restart cleanup.",
+    "Lost create response, delayed remote commit and recovery without duplicate create.",
+    "Preexisting borrowed TXT, changed zone ID, changed record ID and externally replaced value.",
+    "Actual multi-page Record.List, duplicate page rejection, disabled TXT preflight and unrelated A/TXT preservation.",
+    "Two concurrent challenge values coexist and are independently cleaned.",
+    "Default/explicit login_token and explicit user_token; unsupported authentication selectors are rejected before network access."
+  ],
+  "runs": [
+    {
+      "command": "GOMAXPROCS=1 go test -p 1 ./internal/sites -run '^TestLegacyDPI' -count=1",
+      "status": "PASS",
+      "top_level_cases": 7,
+      "elapsed_seconds": 0.092,
+      "evidence": "Captured successful tool output; no separate normal-run log."
+    },
+    {
+      "command": "GOMAXPROCS=1 CGO_ENABLED=1 go test -race -p 1 ./internal/sites -run '^TestLegacyDPI' -count=1 -v",
+      "status": "PASS",
+      "top_level_cases": 7,
+      "elapsed_seconds": 1.496,
+      "log": "/workspace/powerlinux/test-artifacts/sol-dpi-race-20261015.log",
+      "race_detector_reports": 0
+    }
+  ],
+  "toolchain": "/workspace/.tools/go-1.27.2/go/bin/go; GOTOOLCHAIN=local; existing module and build caches; no dependency changes.",
+  "external_validation": {
+    "real_provider_account": "UNVERIFIED",
+    "real_ca_issuance": "UNVERIFIED",
+    "validation_level": "LOCAL_VERIFIED_TLS_PROTOCOL_FIXTURE"
+  },
+  "unimplemented_providers": [
+    {
+      "provider": "dns_ddnss",
+      "status": "EXPLICIT_UNAVAILABLE",
+      "source_url": "https://github.com/acmesh-official/acme.sh/blob/master/dnsapi/dns_ddnss.sh",
+      "blocker": "Upstream upd.php mutates a shared host TXT slot with txtm=1 and clears it with txtm=2. No structured authoritative list, per-record ID or conditional exact-value deletion was established; unsafe whole-slot clearing is not implemented."
+    },
+    {
+      "provider": "dns_kinghost",
+      "status": "EXPLICIT_UNAVAILABLE",
+      "source_url": "https://github.com/acmesh-official/acme.sh/blob/master/dnsapi/dns_kinghost.sh",
+      "documentation_url": "https://api.kinghost.net/doc/",
+      "blocker": "Upstream acme/dns.json GET checks status for a name/content existence query; a complete documented list/identity schema and uncertain-create recovery semantics were not established. A speculative response schema was not implemented."
+    },
+    {
+      "provider": "dns_freedns",
+      "status": "EXPLICIT_UNAVAILABLE",
+      "source_url": "https://github.com/acmesh-official/acme.sh/blob/master/dnsapi/dns_freedns.sh",
+      "blocker": "Upstream depends on website login cookies and HTML forms. Stable zone/record identity, bounded complete listing and precise restart-safe deletion semantics were not independently established."
+    },
+    {
+      "provider": "dns_cyon",
+      "status": "EXPLICIT_UNAVAILABLE",
+      "source_url": "https://github.com/acmesh-official/acme.sh/blob/master/dnsapi/dns_cyon.sh",
+      "blocker": "Upstream requires session/TOTP and domain environment switching; list-async embeds HTML hash/identifier attributes. Existing upstream removal matches TXT type/name and deletes all matching TXT values. This unsafe behavior is not a valid exact-ownership port and was not implemented."
+    }
+  ],
+  "limitations": [
+    "No real vendor account, external DNS propagation or real CA issuance is claimed.",
+    "Local protocol conformance does not prove current vendor service behavior.",
+    "Four unsupported providers continue to fail explicitly.",
+    "No full suite, application build, VM, commit or push was run for this scoped change."
+  ]
+}

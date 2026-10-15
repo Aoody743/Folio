@@ -2627,7 +2627,7 @@
     {
       "id": "php.runtime",
       "behavior": "PHP多版本、扩展、FPM、配置和CLI（upstream source）",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "php"
       ],
@@ -2636,26 +2636,36 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "php_maintenance_log_read",
+        "php_maintenance_session_stats",
+        "php_maintenance_session_preview",
+        "php_maintenance_session_cleanup"
+      ],
+      "ui_entry": "Software instance → PHP maintenance",
       "acceptance_checks": [
         "Actual php -v/FPM request reports version and source; coexisting runtimes route independently",
         "Install/enable/disable actual extension; php -m and HTTP extension behavior verified",
         "PHP ini, disabled functions, memory/upload/session limits and FPM pools take effect",
         "Pool socket/user/process configuration and CLI switch validated without globally rewriting unrelated runtime",
-        "Backup/restore config+extension choices and malformed config rollback"
+        "Backup/restore config+extension choices and malformed config rollback",
+        "Bounded managed FPM error read, files-handler stats and immutable cleanup preview with matching runtime revision",
+        "Cleanup task rejects stale/expired or replaced candidates and preserves active/new sessions; verify TaskResult and API/MCP permissions"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-luna-20261015/checks.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "Instance FPM error log/files-handler session maintenance added with bounded filesystem tests and UI helper checks. Per-site sessions, unconfigured slow logs, trusted extension installation and complete native lifecycle/platform parity remain incomplete. Ubuntu dev.16 browser passed log rendering, stats and zero-candidate preview; no cleanup task submitted."
     },
     {
       "id": "php-apt.runtime",
       "behavior": "PHP多版本、扩展、FPM、配置和CLI（signed APT packages）",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "php-apt"
       ],
@@ -2664,26 +2674,36 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "php_maintenance_log_read",
+        "php_maintenance_session_stats",
+        "php_maintenance_session_preview",
+        "php_maintenance_session_cleanup"
+      ],
+      "ui_entry": "Software instance → PHP maintenance",
       "acceptance_checks": [
         "Actual php -v/FPM request reports version and source; coexisting runtimes route independently",
         "Install/enable/disable actual extension; php -m and HTTP extension behavior verified",
         "PHP ini, disabled functions, memory/upload/session limits and FPM pools take effect",
         "Pool socket/user/process configuration and CLI switch validated without globally rewriting unrelated runtime",
-        "Backup/restore config+extension choices and malformed config rollback"
+        "Backup/restore config+extension choices and malformed config rollback",
+        "Bounded managed FPM error read, files-handler stats and immutable cleanup preview with matching runtime revision",
+        "Cleanup task rejects stale/expired or replaced candidates and preserves active/new sessions; verify TaskResult and API/MCP permissions"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-luna-20261015/checks.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "Instance FPM error log/files-handler session maintenance added with bounded filesystem tests and UI helper checks. Per-site sessions, unconfigured slow logs, trusted extension installation and complete native lifecycle/platform parity remain incomplete. Ubuntu dev.16 browser passed log rendering, stats and zero-candidate preview; no cleanup task submitted."
     },
     {
       "id": "php-yum.runtime",
       "behavior": "PHP多版本、扩展、FPM、配置和CLI（signed RPM packages）",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "php-yum"
       ],
@@ -2692,21 +2712,31 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "php_maintenance_log_read",
+        "php_maintenance_session_stats",
+        "php_maintenance_session_preview",
+        "php_maintenance_session_cleanup"
+      ],
+      "ui_entry": "Software instance → PHP maintenance",
       "acceptance_checks": [
         "Actual php -v/FPM request reports version and source; coexisting runtimes route independently",
         "Install/enable/disable actual extension; php -m and HTTP extension behavior verified",
         "PHP ini, disabled functions, memory/upload/session limits and FPM pools take effect",
         "Pool socket/user/process configuration and CLI switch validated without globally rewriting unrelated runtime",
-        "Backup/restore config+extension choices and malformed config rollback"
+        "Backup/restore config+extension choices and malformed config rollback",
+        "Bounded managed FPM error read, files-handler stats and immutable cleanup preview with matching runtime revision",
+        "Cleanup task rejects stale/expired or replaced candidates and preserves active/new sessions; verify TaskResult and API/MCP permissions"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-luna-20261015/checks.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "Instance FPM error log/files-handler session maintenance added with bounded filesystem tests and UI helper checks. Per-site sessions, unconfigured slow logs, trusted extension installation and complete native lifecycle/platform parity remain incomplete. Ubuntu dev.16 browser passed log rendering, stats and zero-candidate preview; no cleanup task submitted."
     },
     {
       "id": "php.guard",
@@ -2788,7 +2818,7 @@
     {
       "id": "mysql.database",
       "behavior": "SQL数据库、用户权限和配置管理",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "mysql"
       ],
@@ -2797,8 +2827,15 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "managed_database_admin_inspect",
+        "managed_database_admin_initialize",
+        "managed_database_admin_prepare_password",
+        "managed_database_admin_rotate",
+        "managed_database_admin_recover",
+        "managed_database_admin_apply_pending"
+      ],
+      "ui_entry": "Software instance → SQL administrator credentials",
       "acceptance_checks": [
         "Actual server product/version identifies selected MySQL/MariaDB source; no substitution",
         "Create/list/drop DB, manage least-privilege users/password/network access and read/write authorization",
@@ -2806,12 +2843,15 @@
         "Root/password rotation does not leak secrets or silently break stored connections",
         "DB-scoped credential cannot access another DB, server files, arbitrary grants or global admin operations"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-sol-20261015/checks.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "Only the administrator credential subset is covered by this batch evidence; complete database behavior/native rotation/platform parity remain incomplete. Existing dev.12 database native evidence is separately recorded."
     },
     {
       "id": "mysql.backup",
@@ -2870,7 +2910,7 @@
     {
       "id": "mysql-community.database",
       "behavior": "SQL数据库、用户权限和配置管理",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "mysql-community"
       ],
@@ -2879,8 +2919,15 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "managed_database_admin_inspect",
+        "managed_database_admin_initialize",
+        "managed_database_admin_prepare_password",
+        "managed_database_admin_rotate",
+        "managed_database_admin_recover",
+        "managed_database_admin_apply_pending"
+      ],
+      "ui_entry": "Software instance → SQL administrator credentials",
       "acceptance_checks": [
         "Actual server product/version identifies selected MySQL/MariaDB source; no substitution",
         "Create/list/drop DB, manage least-privilege users/password/network access and read/write authorization",
@@ -2888,12 +2935,15 @@
         "Root/password rotation does not leak secrets or silently break stored connections",
         "DB-scoped credential cannot access another DB, server files, arbitrary grants or global admin operations"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-sol-20261015/checks.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "Only the administrator credential subset is covered by this batch evidence; complete database behavior/native rotation/platform parity remain incomplete. Existing dev.12 database native evidence is separately recorded."
     },
     {
       "id": "mysql-community.backup",
@@ -2952,7 +3002,7 @@
     {
       "id": "mariadb.database",
       "behavior": "SQL数据库、用户权限和配置管理",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "mariadb"
       ],
@@ -2961,8 +3011,15 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "managed_database_admin_inspect",
+        "managed_database_admin_initialize",
+        "managed_database_admin_prepare_password",
+        "managed_database_admin_rotate",
+        "managed_database_admin_recover",
+        "managed_database_admin_apply_pending"
+      ],
+      "ui_entry": "Software instance → SQL administrator credentials",
       "acceptance_checks": [
         "Actual server product/version identifies selected MySQL/MariaDB source; no substitution",
         "Create/list/drop DB, manage least-privilege users/password/network access and read/write authorization",
@@ -2970,12 +3027,16 @@
         "Root/password rotation does not leak secrets or silently break stored connections",
         "DB-scoped credential cannot access another DB, server files, arbitrary grants or global admin operations"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-sol-20261015/checks.json",
+        "docs/rewrite/evidence/phase2-dev13-native-20261015.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "Debian dev.18 actual API custom-password prepare, durable task, Unix Agent rotation, version advance and healthy daemon passed; dev.13 source native test against these daemons passed SQL pre/post-commit cancellation, save-failure and restart recovery. This covers administrator credentials only, not complete database behavior/platform parity. See native evidence for secrecy-scan limits."
     },
     {
       "id": "mariadb.backup",
@@ -3034,7 +3095,7 @@
     {
       "id": "postgresql.database",
       "behavior": "PostgreSQL库、角色、权限、HBA和配置",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "postgresql"
       ],
@@ -3043,19 +3104,30 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "managed_database_admin_inspect",
+        "managed_database_admin_initialize",
+        "managed_database_admin_prepare_password",
+        "managed_database_admin_rotate",
+        "managed_database_admin_recover",
+        "managed_database_admin_apply_pending"
+      ],
+      "ui_entry": "Software instance → SQL administrator credentials",
       "acceptance_checks": [
         "Real PG database/role CRUD with least privilege",
         "HBA allow/deny observed through real connections; syntax validation and rollback",
         "Config/password changes effective; database-scoped role cannot access another DB"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-sol-20261015/checks.json",
+        "docs/rewrite/evidence/phase2-dev13-native-20261015.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "Debian dev.18 actual API custom-password prepare, durable task, Unix Agent rotation, version advance and healthy daemon passed; dev.13 source native test against these daemons passed SQL pre/post-commit cancellation, save-failure and restart recovery. This covers administrator credentials only, not complete database behavior/platform parity. See native evidence for secrecy-scan limits."
     },
     {
       "id": "postgresql.backup",
@@ -3296,7 +3368,7 @@
     {
       "id": "docker.images",
       "behavior": "Docker仓库凭据、镜像拉取和导入导出",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "docker"
       ],
@@ -3305,19 +3377,32 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "docker_images_list",
+        "docker_image_inspect",
+        "docker_image_remove",
+        "docker_image_pull",
+        "docker_registry_credential_create",
+        "docker_registry_credential_rotate",
+        "docker_registry_credential_get",
+        "docker_registry_credential_list",
+        "docker_registry_credential_delete"
+      ],
+      "ui_entry": "Software instance → Docker image and registry management",
       "acceptance_checks": [
         "Actual isolated daemon, pull trusted digest and inspect actual image",
         "Image export/import bytes verified; owned deletion and registry credentials protected",
         "API user never receives shared host Docker socket access"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-sol-20261015/checks.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "dev.13 source/Unix Agent/Engine HTTP fixture and frontend helper checks passed; actual daemon/registry/browser, image import/export and parity remain incomplete."
     },
     {
       "id": "docker.containers",
@@ -3452,7 +3537,7 @@
     {
       "id": "acme.domains",
       "behavior": "ACME域名、账户、提供商与配置模板",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "acme_pandominassl_apply"
       ],
@@ -3468,12 +3553,15 @@
         "Actual account/domain CRUD and validated credential fields",
         "Templates/config encrypted and secrets never returned in logs/commands"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-dpi-protocol-20261015.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "DNSPod International HTTPS protocol/ownership subset only; external supplier account and public CA acceptance not run. Four other legacy providers remain unavailable. This does not close the entire capability."
     },
     {
       "id": "acme.hooks_sync",
@@ -3505,7 +3593,7 @@
     {
       "id": "supervisor.programs",
       "behavior": "Supervisor进程组、用户、配置、启停和日志",
-      "status": "planned",
+      "status": "in_progress",
       "plugins": [
         "supervisor"
       ],
@@ -3514,19 +3602,28 @@
       ],
       "extra_entries": [],
       "route_ids": [],
-      "new_actions": [],
-      "ui_entry": null,
+      "new_actions": [
+        "supervisor_log_read",
+        "supervisor_log_clear_preview",
+        "supervisor_log_clear"
+      ],
+      "ui_entry": "Software instance → Supervisor job logs",
       "acceptance_checks": [
         "Actual supervisord owns configured programs and reports actual PID/state",
         "Config validate/update; real start/stop/restart, stdout/stderr and crash/retry",
-        "Trusted executable/user/path policies enforced; no cross-owner management"
+        "Trusted executable/user/path policies enforced; no cross-owner management",
+        "Registered-job bounded stdout/stderr reads and both-stream immutable preview; revision/device/inode CAS clear and final TaskResult across REST/MCP/Agent/UI"
       ],
-      "evidence": [],
+      "evidence": [
+        "docs/rewrite/evidence/phase2-luna-20261015/checks.json",
+        "docs/rewrite/evidence/phase2-supervisor-daemon-protocol-20261015.json"
+      ],
       "conditions": [
         "Actual service/transport, no canned runtime responses",
         "Human/API/MCP share identity/resources/results/audit",
         "Mutation failure and recovery are verified"
-      ]
+      ],
+      "verification_note": "Bounded job-log read/both-stream clear implemented with task, exact file identity and revision checks. Isolated actual daemon RPC semantics passed separately; installed-release REST/MCP/Agent/browser and complete lifecycle remain incomplete."
     },
     {
       "id": "query.redis",

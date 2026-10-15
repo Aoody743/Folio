@@ -1,8 +1,33 @@
 # 重构实施与验收记录
 
-最新执行安排（2026-10-14）：用户要求本地 Codex 接续。请先阅读 [最新本地接续记录](LOCAL-CONTINUE-20261014.md)，其中补入 dev.12 数据库真实闭环、Web/PHP reboot、自建 root 测试结果及安装恢复草稿的准确验证边界；下方云端批次作为历史过程保留。
+最新执行安排（2026-10-15）：用户已将本地改动更新至 GitHub，并恢复云端开发。本轮先按要求使用 GPT-6.1 Sol 完成数据库/Docker/DNS 批次；随后用户为节约额度改用 **GPT-6 Luna、Max 推理强度** 继续 PHP/Supervisor 闭环，由主 Agent 统一审查和集成。已从 `refine` 同步 `b893eef`，保留本地安装恢复与 Web 迁移实现。第二阶段继续进行，第三阶段未开始；下方旧批次保留为历史记录。
 
 日期：2026-10-13（Asia/Singapore）。所有检查只代表记录的环境与当前代码，不代表尚未运行的发行版或第三方服务已经兼容。
+
+## 云端第二阶段接续：2026-10-15
+
+- 本轮补齐 SQL 管理员凭据初始化、随机/自定义密码轮换与显式恢复。自定义密码先加密暂存为不可变版本，持久任务仅保存版本标识；实际解密发生在执行时授权检查后，通过受认证 Unix IPC 交给 root Agent。SQL 提交与本地凭据写入分离时保持待恢复状态，不自动重放密码 SQL。
+- Core SecretPut/Get/Delete 的审计保留动作、资源与标签，但不再返回内部 `secret_ref`；新增真实审计存储回归，修复提交为 `ae1b2b582`。
+- Docker 增加私仓凭据 CRUD/CAS、不可变版本、严格仓库匹配的 digest pull，以及逐镜像授权的 typed list；界面接入精确摘要选择、检查/删除和私仓操作。凭据不写入 Docker login 配置、任务或审计输出。SQL 管理员界面显示实际状态与允许的恢复动作。
+- 原生 DNSPod 国际版 HTTPS 驱动补入完整分页、精确 TXT/zone/record 归属和响应丢失恢复；[协议证据](evidence/phase2-dpi-protocol-20261015.json) 同时保留另外四个 DNS provider 的具体限制，未宣称真实供应商账户或公共 CA 验收。
+- 全量 Go race：13 个测试包通过，2 个包无测试；`go vet` 通过。前端 48/48、类型检查、Next.js 静态构建通过。dev.13 amd64/arm64 固定包构建及实际 amd64 包 private-prefix smoke 通过；ARM64 本轮仅构建。见 [批次检查与可携带日志](evidence/phase2-sol-20261015/checks.json) 和 [冻结源码清单](evidence/phase2-dev13-source-snapshot-20261015.json)。
+- 真实 Web/PHP 跨实例迁移、安装恢复、SQL 密码轮换和新增浏览器流程继续在隔离 VM 验收，结果另列，未执行项不计通过。Ubuntu dev.13 实际安装升级已通过，API/Agent 进程校验一致且策略与配置连续；这不等于迁移流程已通过。
+- 逐项缺口已另列 [第二阶段剩余工作](PHASE2-REMAINING-20261015.md)，明确区分缺实现、缺原生验收与外部条件，不按 stale tracker 状态推算完成比例。后续 Luna Max 批次已补 PHP instance error log/session 快照清理与 Supervisor 作业日志查看/双流清理，定向测试通过，统一回归与固定包检查继续进行。PHP 未配置的 slow log 和站点 pool session 管理仍列缺口；未执行原生/浏览器项不计通过。
+- 实际 dev.13 固定二进制的 REST、HTTP MCP、stdio MCP 私仓凭据 CRUD/CAS/权限隔离/撤销与 SQLite 秘密检查 8 项通过，全部自建进程已清理。见 [实际协议证据](evidence/phase2-dev13-registry-live-protocol-20261015.json)；这不代表真实 Docker daemon/private registry pull 验收。
+
+### Luna Max 后续与原生发现
+
+PHP/Supervisor 与 Docker Hub 名称核验修复后，前端 **57/57**、类型检查及静态导出通过。dev.14 首次 ARM64 构建发现 `Stat_t.Nlink` 类型差异，已以显式 `uint64` 转换修复；dev.15 双架构构建与 amd64 实际安装包 smoke 通过，旧失败记录保留。
+
+- dev.13 实际 Ubuntu 迁移首次去程与静态/PHP HTTP 通过；回迁暴露按字母排序重载导致同端口抢占的产品问题。失败已回滚至目标实例 revision 2，实际 HTTP 保持可用。修复后执行顺序为源→目标→PHP，回滚为目标→源→PHP；WAL 校验将旧源与 protected beforeimage 绑定，权限/锁仍保持排序。两种名称顺序、部分 reload 失败和 SIGKILL/WAL 恢复的定向 race 通过。
+- dev.16 最终修复源码再次通过全量 Go race（13 包）、vet；双架构构建及真实 amd64 固定包 private-prefix smoke 通过。前端源码未变，复用 dev.15 已验证静态导出。源码身份见 [dev.16 清单](evidence/phase2-dev16-source-snapshot-20261015.json)，检查与旧失败边界见 [Luna 批次](evidence/phase2-luna-20261015/checks.json)。实际 Ubuntu 同一站点双向迁移已在 dev.16 通过：两端静态/PHP HTTP 正常，worker、PHP 与内容保持不变。见 [原生检查记录](evidence/phase2-dev13-native-20261015.json)。
+- Debian 13 amd64 的真实 Redis/systemd 安装恢复 source binary 检查通过：continue 与 stop_preserve，32.37 秒；测试 marker 和临时 unit/目录清理另由 QA 核实。它是实际内核/服务的 source integration，不能等同面板安装包故障闭环。
+- Debian dev.18 固定包已通过实际恢复：原 `mariadb-p2adminqa` 的 `health_failed` revision 11 由新检查确认 active/MainPID 后，显式 continue 任务成功，journal completed revision 15 且 receipt 存在；原 PID 3004 与数据目录 inode/文件数/字节数保持。真实 PostgreSQL/MariaDB 的 source integration 也已通过（3.34 秒）：自定义密码 SQL、提交前显式 apply、提交后取消、凭据保存失败与重启恢复；执行的是 dev.13 test binary，对接 dev.18 管理的实际 daemon。dev.18 实际 API 自定义密码暂存→持久任务→Unix Agent 轮换在两引擎均通过，旧版本与新版本不同、任务返回与当前状态一致且健康；持久输入只含实例/旧凭据版本/密码标识。Maria 本次密码在被检查的响应、任务行、任务日志、近期审计与 API/Agent journal 中均未出现；PG 首次 checker 误将两种标识要求相等，已纠正断言并从成功任务核实，无重复轮换，因原秘密已丢弃未做该秘密的精确值扫描。
+- Supervisor 4.2.5 的独立非 root daemon 与子进程已验证两路日志 RPC 清理，子进程 PID 与运行状态保留，见 [实际协议证据](evidence/phase2-supervisor-daemon-protocol-20261015.json)。该检查不包含生产 API/Agent/浏览器全链。
+- 实际 dev.16 Chromium 检查通过：读取并显示 100 行 PHP-FPM 错误日志、加载 session 统计并显示零候选清理预览；未提交清理任务，见 [浏览器证据](evidence/phase2-dev16-php-browser-20261015.json)。
+- 真实 Debian MariaDB 第 9 秒才就绪，原 8 秒启动期限提前失败且留下运行进程和受保护 journal。已增加 SQL 45 秒、MongoDB 60 秒的有界等待；为 `health_failed` 增加重新核验归属、初始化凭据、当前进程与真实协议健康后的显式 continue，不重放包安装、初始化或密码 SQL。专项普通/race 测试及 dev.17 全量 race/vet、双架构构建、安装包 smoke 通过；独立审查随后发现还需确认 systemd ActiveState/MainPID 与该 PID 一致。该遗漏已补入 dev.18：固定 `/usr/bin/systemctl show` 的有界查询、严格输出解析和 MainPID 等值检查；inactive、PID 不符、缺字段/重复/截断/取消等负例拒绝且 journal 不变。独立复审无遗留发现；全量 race/vet、双架构及实际 amd64 安装包 smoke 再次通过。[最终源码清单](evidence/phase2-dev18-source-snapshot-20261015.json) 绑定产品提交 `6bc033fc4`，原实例恢复和双 SQL 引擎复验另见原生证据。
+- 原生测试收尾：Debian 恢复已保存的原始 HTTPS/Signed-By 软件源，Ubuntu 原始 source 哈希保持并删除本轮 relay override/mirror；本轮 APT tunnel/relay 已停止，既有共享 relay/API forward 与受管 SQL 数据保留。临时路由、最终源/密钥哈希和扫描边界见原生证据。
+- 云端普通用户预览已升级 dev.18，离线保留原数据和二进制备份，健康与重复启动通过；未在宿主安装 root Agent 或全局服务。真实软件管理继续使用隔离 VM。
 
 ## 本地第二阶段接续：2026-10-14
 
@@ -16,9 +41,9 @@
 
 本机临时 VM、工具链、缓存和专用 SSH key 集中于 `.cache/rewrite`。用户要求开发结束可清理：验收后先 poweroff 并确认 launcher 停止，保留代码、脱敏证据和发行包，再清除本次临时环境。源码、真实服务、固定安装包和浏览器证据分别记录。
 
-## 当前执行状态（优先于历史交接与下方旧批次）
+## 历史云端 Luna 批次（2026-10-13）
 
-用户已恢复云端开发，要求使用 GPT-6 Luna max 按小批次继续完成第二阶段。首批源码闭环已完成，但第二阶段仍未达到退出标准，第三阶段未开始。
+该历史批次按当时要求使用 GPT-6 Luna max。首批源码闭环已完成，以下保留当时的验证状态；当前安排与结果以上方 2026-10-15 记录为准。
 
 - ACME 证书签发/续期及订单 confirm/cancel producer 已迁移到 `Tasks.SubmitPrepared`；order receipt 与 task、权限在同一 SQLite 事务提交。
 - Core 已启用 SQLite `synchronous(FULL)`，新建 master secret 在文件和目录同步成功后才继续；post-commit enqueue 对明确 transient busy 错误做有界重试。

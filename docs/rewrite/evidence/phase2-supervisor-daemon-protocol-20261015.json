@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-15",
+  "status": "pass",
+  "scope": "Actual Supervisor RPC semantics on a private nonroot daemon; separate source Agent fixture tests verify protected API integration",
+  "runtime": "Supervisor 4.2.5 on Linux amd64, isolated private Python target, actual supervised child",
+  "dependencies": {
+    "supervisor-4.2.5.tar.gz": "34761bae1a23c58192281a5115fb07fbf22c9b0133c08166beffc70fed3ebc12",
+    "setuptools-80.9.0-py3-none-any.whl": "062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922"
+  },
+  "harness_sha256": "c2190bd230dea23c57aa5aa9680353fbc5c4e235a870be7ac1ac2fbf9050af46",
+  "checks": [
+    "actual AF_UNIX HTTP/XML-RPC daemon returned stdout and stderr bytes from its child",
+    "documented supervisor.clearProcessLogs(name) returned true",
+    "both real files and subsequent RPC reads were empty at verification",
+    "child remained RUNNING with the same PID",
+    "owned daemon shut down and temporary run directory removed"
+  ],
+  "documentation": "https://supervisord.org/api.html",
+  "limitations": [
+    "No installed-release REST/MCP/Agent/daemon/browser end-to-end acceptance claimed",
+    "A live child can append new output after clearing; no guarantee of permanent emptiness",
+    "No product Python/setuptools dependency or global package/service installation added"
+  ]
+}
