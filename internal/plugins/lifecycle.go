@@ -746,13 +746,15 @@ func defaultConfig(plugin string) map[string]any {
 		config["max_execution_time"] = 30
 		config["upload_max_filesize_mb"] = 16
 		config["post_max_size_mb"] = 20
+		config["slowlog_enabled"] = false
+		config["slowlog_timeout_seconds"] = 5
 	}
 	return config
 }
 func validateConfiguration(plugin string, config map[string]any) error {
 	allowed := map[string]bool{"bind": true, "port": true, "target_id": true}
 	if strings.HasPrefix(plugin, "php") {
-		for _, key := range []string{"memory_limit_mb", "max_children", "max_execution_time", "upload_max_filesize_mb", "post_max_size_mb", "disable_functions", "session_handler", "session_path", "max_input_vars", "timezone", "display_errors"} {
+		for _, key := range []string{"memory_limit_mb", "max_children", "max_execution_time", "upload_max_filesize_mb", "post_max_size_mb", "disable_functions", "session_handler", "session_path", "max_input_vars", "timezone", "display_errors", "slowlog_enabled", "slowlog_timeout_seconds"} {
 			allowed[key] = true
 		}
 	}
@@ -782,9 +784,9 @@ func validateConfiguration(plugin string, config map[string]any) error {
 				return failure("invalid_config", "String configuration value is invalid", 400)
 			}
 		}
-		if key == "display_errors" {
+		if key == "display_errors" || key == "slowlog_enabled" {
 			if _, ok := value.(bool); !ok {
-				return failure("invalid_config", "display_errors must be boolean", 400)
+				return failure("invalid_config", key+" must be boolean", 400)
 			}
 		}
 		if key == "port" {
@@ -793,10 +795,13 @@ func validateConfiguration(plugin string, config map[string]any) error {
 				return failure("invalid_config", "Managed service port must be 1024–65535", 400)
 			}
 		}
-		if strings.HasSuffix(key, "_mb") || slices.Contains([]string{"max_children", "max_execution_time", "max_input_vars", "worker_processes", "worker_connections", "maxclients", "databases", "threads"}, key) {
+		if strings.HasSuffix(key, "_mb") || slices.Contains([]string{"max_children", "max_execution_time", "max_input_vars", "slowlog_timeout_seconds", "worker_processes", "worker_connections", "maxclients", "databases", "threads"}, key) {
 			number, ok := number(value)
 			if !ok || number < 1 || number > 1048576 {
 				return failure("invalid_config", "Numeric configuration field is outside its bounds", 400)
+			}
+			if key == "slowlog_timeout_seconds" && number > 300 {
+				return failure("invalid_config", "PHP slowlog timeout must be between one and 300 seconds", 400)
 			}
 		}
 	}

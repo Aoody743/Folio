@@ -13,6 +13,10 @@ const DockerExecManagement = dynamic(
   () => import("./docker-exec").then((m) => m.DockerExecManagement),
   { ssr: false },
 );
+const DockerTerminalManagement = dynamic(
+  () => import("./docker-terminal").then((m) => m.DockerTerminalManagement),
+  { ssr: false },
+);
 import { Button } from "@astryxdesign/core/Button";
 import { Capability, list } from "@/lib/api";
 import { SoftwareInstance } from "@/lib/resources";
@@ -388,14 +392,25 @@ export function InstanceResources({
           />
           {kind === "docker" && collection === "containers" &&
             targetName(current) && (
-              <DockerExecManagement
-                key={`${instance.id}:${targetName(current)}`}
-                instanceID={instance.id}
-                containerName={targetName(current)}
-                running={String(current.State ?? "").toLowerCase() === "running"}
-                capabilities={capabilities}
-                onExecuted={refresh}
-              />
+              <>
+                <DockerExecManagement
+                  key={`${instance.id}:${targetName(current)}`}
+                  instanceID={instance.id}
+                  containerName={targetName(current)}
+                  running={String(current.State ?? "").toLowerCase() === "running"}
+                  capabilities={capabilities}
+                  onExecuted={refresh}
+                />
+                <DockerTerminalManagement
+                  key={`terminal:${instance.id}:${targetName(current)}`}
+                  instanceID={instance.id}
+                  containerName={targetName(current)}
+                  running={String(current.State ?? "").toLowerCase() === "running"}
+                  capabilities={capabilities}
+                  onExecuted={refresh}
+                  active={active}
+                />
+              </>
             )}
           </>
         ))}

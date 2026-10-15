@@ -304,8 +304,50 @@ func TestPHPMaintenanceLogIsBoundedOwnedAndHonestWhenAbsent(t *testing.T) {
 	if _, err = runPHPMaintenance(t, e, context.Background(), PHPMaintenanceInput{ID: instance.ID, Command: "log_read", Stream: "fpm_error"}); core.ErrorCode(err) != "session_directory_unsafe" {
 		t.Fatalf("symlinked log was accepted: %v", err)
 	}
-	if err = e.ValidatePHPMaintenance(maintenanceInput(t, PHPMaintenanceInput{ID: instance.ID, Command: "log_read", Stream: "slow"})); core.ErrorCode(err) != "invalid_input" {
-		t.Fatalf("unconfigured slowlog was accepted: %v", err)
+	if err = e.ValidatePHPMaintenance(maintenanceInput(t, PHPMaintenanceInput{ID: instance.ID, Command: "log_read", Stream: "slow"})); err != nil {
+		t.Fatalf("typed slowlog stream was rejected: %v", err)
+	}
+}
+
+func TestPHPMaintenanceSlowLogRequiresEnabledConfigAndReadsOnlyTrustedPath(t *testing.T) {
+	e, instance := phpMaintenanceFixture(t)
+	missingAny, err := runPHPMaintenance(t, e, context.Background(), PHPMaintenanceInput{ID: instance.ID, Command: "log_read", Stream: "slow"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	missing := missingAny.(map[string]any)
+	if missing["configured"] != false || missing["generated"] != false || len(missing["lines"].([]string)) != 0 {
+		t.Fatalf("disabled slowlog was represented as configured or generated: %#v", missing)
+	}
+	instance.Config["slowlog_enabled"] = true
+	instance.Config["slowlog_timeout_seconds"] = 5
+	if err = e.save("receipts", instance.ID, instance); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(instance.Paths.LogDir, "fpm-slow.log")
+	if err = os.WriteFile(path, []byte("slow-one\nslow-two\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.Chown(path, int(e.uid), int(e.gid)); err != nil {
+		t.Fatal(err)
+	}
+	resultAny, err := runPHPMaintenance(t, e, context.Background(), PHPMaintenanceInput{ID: instance.ID, Command: "log_read", Stream: "slow", Limit: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := resultAny.(map[string]any)
+	lines := result["lines"].([]string)
+	if result["configured"] != true || result["generated"] != true || len(lines) != 1 || lines[0] != "slow-two" {
+		t.Fatalf("configured slowlog was not read with a bounded tail: %#v", result)
+	}
+	if err = os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.Symlink(filepath.Join(t.TempDir(), "foreign.log"), path); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = runPHPMaintenance(t, e, context.Background(), PHPMaintenanceInput{ID: instance.ID, Command: "log_read", Stream: "slow"}); core.ErrorCode(err) != "session_directory_unsafe" {
+		t.Fatalf("symlinked slowlog was accepted: %v", err)
 	}
 }
 

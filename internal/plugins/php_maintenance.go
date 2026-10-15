@@ -11,12 +11,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/core"
+	"github.com/Aoody743/PowerLinux/internal/phpfilesessions"
 )
 
 const (
@@ -29,10 +29,7 @@ const (
 	phpMaintenanceMaxLog     = 256 << 10
 )
 
-var (
-	phpSessionFilename      = regexp.MustCompile(`^sess_[A-Za-z0-9,-]{1,256}$`)
-	phpMaintenancePreviewID = regexp.MustCompile(`^pmv_[a-f0-9]{48}$`)
-)
+var phpMaintenancePreviewID = regexp.MustCompile(`^pmv_[a-f0-9]{48}$`)
 
 // PHPMaintenanceInput is intentionally limited to named PHP maintenance
 // operations. Paths, commands, session identifiers and log filenames are
@@ -47,28 +44,8 @@ type PHPMaintenanceInput struct {
 	PreviewID        string `json:"preview_id,omitempty"`
 }
 
-type phpMaintenanceSessionFile struct {
-	Name      string `json:"name"`
-	Device    uint64 `json:"device"`
-	Inode     uint64 `json:"inode"`
-	Size      int64  `json:"size"`
-	MTimeSec  int64  `json:"mtime_sec"`
-	MTimeNsec int64  `json:"mtime_nsec"`
-	CTimeSec  int64  `json:"ctime_sec"`
-	CTimeNsec int64  `json:"ctime_nsec"`
-	UID       uint32 `json:"uid"`
-	GID       uint32 `json:"gid"`
-	Mode      uint32 `json:"mode"`
-	Links     uint64 `json:"links"`
-}
-
-type phpMaintenanceDirectory struct {
-	Device uint64 `json:"device"`
-	Inode  uint64 `json:"inode"`
-	UID    uint32 `json:"uid"`
-	GID    uint32 `json:"gid"`
-	Mode   uint32 `json:"mode"`
-}
+type phpMaintenanceSessionFile = phpfilesessions.FileIdentity
+type phpMaintenanceDirectory = phpfilesessions.DirectoryIdentity
 
 type phpMaintenancePreview struct {
 	Version          int                          `json:"version"`
@@ -102,8 +79,8 @@ func validPHPMaintenanceInput(in PHPMaintenanceInput) error {
 	}
 	switch in.Command {
 	case "log_read":
-		if in.Stream != "fpm_error" || in.Limit < 0 || in.Limit > 500 {
-			return failure("invalid_input", "Only the bounded managed FPM error log can be read", 400)
+		if (in.Stream != "fpm_error" && in.Stream != "slow") || in.Limit < 0 || in.Limit > 500 {
+			return failure("invalid_input", "Only bounded managed FPM error and configured slow logs can be read", 400)
 		}
 	case "session_stats":
 		if in.OlderThanSeconds != 0 && !validPHPMaintenanceAge(in.OlderThanSeconds) {
@@ -171,9 +148,29 @@ func (e *PrivilegedExecutor) phpMaintenanceLog(ctx context.Context, in PHPMainte
 	if err != nil {
 		return nil, err
 	}
+	filename := "fpm-error.log"
+	configured := true
+	if in.Stream == "slow" {
+		filename = "fpm-slow.log"
+		configured, _ = instance.Config["slowlog_enabled"].(bool)
+		if enabled, ok := instance.Config["slowlog_enabled"]; ok {
+			if _, valid := enabled.(bool); !valid {
+				return nil, failure("slowlog_configuration_invalid", "Managed PHP slowlog configuration is invalid", 412)
+			}
+		}
+		if value, exists := instance.Config["slowlog_timeout_seconds"]; exists {
+			timeout, valid := number(value)
+			if !valid || timeout < 1 || timeout > 300 {
+				return nil, failure("slowlog_configuration_invalid", "Managed PHP slowlog timeout is outside its supported bounds", 412)
+			}
+		}
+		if !configured {
+			return map[string]any{"id": instance.ID, "stream": "slow", "configured": false, "generated": false, "lines": []string{}, "revision": instance.Revision, "truncated": false}, nil
+		}
+	}
 	root, _, err := openPHPMaintenanceDirectory(instance.Paths.LogDir, e.uid, true)
 	if errors.Is(err, os.ErrNotExist) {
-		return map[string]any{"id": instance.ID, "stream": "fpm_error", "generated": false, "lines": []string{}, "revision": instance.Revision, "truncated": false}, nil
+		return map[string]any{"id": instance.ID, "stream": in.Stream, "configured": configured, "generated": false, "lines": []string{}, "revision": instance.Revision, "truncated": false}, nil
 	}
 	if err != nil {
 		return nil, err
@@ -186,9 +183,9 @@ func (e *PrivilegedExecutor) phpMaintenanceLog(ctx context.Context, in PHPMainte
 	// O_NONBLOCK is required because the name may be replaced with a FIFO
 	// between directory validation and open. Stat below still rejects every
 	// non-regular file; nonblocking open prevents that race from hanging.
-	file, err := root.OpenFile("fpm-error.log", os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
+	file, err := root.OpenFile(filename, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
 	if errors.Is(err, os.ErrNotExist) {
-		return map[string]any{"id": instance.ID, "stream": "fpm_error", "generated": false, "lines": []string{}, "revision": instance.Revision, "truncated": false}, nil
+		return map[string]any{"id": instance.ID, "stream": in.Stream, "configured": configured, "generated": false, "lines": []string{}, "revision": instance.Revision, "truncated": false}, nil
 	}
 	if err != nil {
 		return nil, phpMaintenanceUnsafe("Managed FPM error log could not be opened safely")
@@ -196,11 +193,11 @@ func (e *PrivilegedExecutor) phpMaintenanceLog(ctx context.Context, in PHPMainte
 	defer file.Close()
 	info, err := file.Stat()
 	if err != nil || !phpMaintenanceSafeLogFile(info, e.uid) {
-		return nil, phpMaintenanceUnsafe("Managed FPM error log must be a private regular file")
+		return nil, phpMaintenanceUnsafe("Managed FPM log must be a private regular file")
 	}
-	pathInfo, err := root.Lstat("fpm-error.log")
+	pathInfo, err := root.Lstat(filename)
 	if err != nil || pathInfo.Mode()&os.ModeSymlink != 0 || !os.SameFile(info, pathInfo) {
-		return nil, phpMaintenanceUnsafe("Managed FPM error log identity changed")
+		return nil, phpMaintenanceUnsafe("Managed FPM log identity changed")
 	}
 	if err = ctx.Err(); err != nil {
 		return nil, err
@@ -235,7 +232,7 @@ func (e *PrivilegedExecutor) phpMaintenanceLog(ctx context.Context, in PHPMainte
 	if err = ctx.Err(); err != nil {
 		return nil, err
 	}
-	return map[string]any{"id": instance.ID, "stream": "fpm_error", "generated": true, "lines": lines, "revision": instance.Revision, "truncated": truncated}, nil
+	return map[string]any{"id": instance.ID, "stream": in.Stream, "configured": configured, "generated": true, "lines": lines, "revision": instance.Revision, "truncated": truncated}, nil
 }
 
 func phpMaintenanceSafeLogFile(info os.FileInfo, workerUID uint32) bool {
@@ -472,12 +469,17 @@ func (e *PrivilegedExecutor) phpMaintenanceSessionCleanup(ctx context.Context, i
 		}
 		locked = append(locked, item)
 	}
+	quarantineRoot, err := e.phpSessionQuarantine(instance)
+	if err != nil {
+		return nil, err
+	}
+	defer quarantineRoot.Close()
 	result := phpMaintenanceCleanupResult{ID: instance.ID, Revision: instance.Revision, PreviewID: preview.PreviewID}
 	for _, item := range locked {
 		if err = ctx.Err(); err != nil {
 			return nil, err
 		}
-		if err = removePHPLockedSession(root, item); err != nil {
+		if err = removePHPLockedSession(root, quarantineRoot, item); err != nil {
 			return nil, err
 		}
 		result.DeletedCount++
@@ -509,90 +511,52 @@ func (s *phpLockedSession) close() {
 }
 
 func openPHPLockedSession(root *os.Root, expected phpMaintenanceSessionFile, uid, gid uint32) (*phpLockedSession, error) {
-	// A previewed session can be swapped for a FIFO before open. Keep this
-	// nonblocking, then verify regular-file type and the captured identity.
-	file, err := root.OpenFile(expected.Name, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
+	locked, err := phpfilesessions.Lock(root, expected, uid, gid)
+	if errors.Is(err, phpfilesessions.ErrStale) {
+		return nil, failure("preview_stale", "A previewed session changed; create a fresh preview before cleanup", 412)
+	}
+	if errors.Is(err, phpfilesessions.ErrBusy) {
+		return nil, failure("session_busy", "A PHP request is using a previewed session; create a fresh preview later", 409)
+	}
 	if err != nil {
 		return nil, err
 	}
-	info, err := file.Stat()
-	if err != nil {
-		_ = file.Close()
-		return nil, err
-	}
-	identity, err := phpSessionIdentity(expected.Name, info, uid, gid)
-	if err != nil || identity != expected {
-		_ = file.Close()
-		return nil, failure("preview_stale", "A previewed session changed; create a fresh preview before cleanup", 412)
-	}
-	if err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		_ = file.Close()
-		if err == syscall.EWOULDBLOCK || err == syscall.EAGAIN {
-			return nil, failure("session_busy", "A PHP request is using a previewed session; create a fresh preview later", 409)
-		}
-		return nil, err
-	}
-	currentInfo, statErr := root.Lstat(expected.Name)
-	openedInfo, openedErr := file.Stat()
-	if statErr != nil || openedErr != nil || currentInfo == nil || openedInfo == nil {
-		_ = syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
-		_ = file.Close()
-		return nil, failure("preview_stale", "A previewed session changed; create a fresh preview before cleanup", 412)
-	}
-	currentIdentity, identityErr := phpSessionIdentity(expected.Name, currentInfo, uid, gid)
-	if identityErr != nil || currentIdentity != expected || !os.SameFile(openedInfo, currentInfo) {
-		_ = syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
-		_ = file.Close()
-		return nil, failure("preview_stale", "A previewed session changed; create a fresh preview before cleanup", 412)
-	}
-	return &phpLockedSession{file: file, identity: expected}, nil
+	return &phpLockedSession{file: locked.File, identity: locked.Identity}, nil
 }
 
-func removePHPLockedSession(root *os.Root, item *phpLockedSession) error {
-	openedInfo, err := item.file.Stat()
-	if err != nil {
-		return err
-	}
-	pathInfo, err := root.Lstat(item.identity.Name)
-	if err != nil || pathInfo.Mode()&os.ModeSymlink != 0 || !os.SameFile(openedInfo, pathInfo) {
-		return failure("preview_stale", "A previewed session path changed; new data was preserved", 412)
-	}
+func removePHPLockedSession(root, quarantineRoot *os.Root, item *phpLockedSession) error {
 	temporary, err := randomPHPSessionQuarantine()
 	if err != nil {
 		return err
 	}
-	if err = root.Rename(item.identity.Name, temporary); err != nil {
-		return failure("preview_stale", "A previewed session could not be isolated safely; create a fresh preview", 412)
-	}
-	quarantine, statErr := root.Lstat(temporary)
-	if statErr != nil || quarantine.Mode()&os.ModeSymlink != 0 || !os.SameFile(openedInfo, quarantine) {
-		// Never unlink a replacement. Restore it only if no new session has taken
-		// the old name; otherwise leave it recoverable under its private name.
-		if _, existsErr := root.Lstat(item.identity.Name); errors.Is(existsErr, os.ErrNotExist) {
-			_ = root.Rename(temporary, item.identity.Name)
-		}
-		return failure("preview_stale", "A previewed session changed while cleanup was isolating it; new data was preserved", 412)
-	}
-	quarantinedIdentity, identityErr := phpSessionIdentity(item.identity.Name, quarantine, item.identity.UID, item.identity.GID)
-	if identityErr != nil || !samePHPSessionIdentityExceptCTime(quarantinedIdentity, item.identity) {
-		if _, existsErr := root.Lstat(item.identity.Name); errors.Is(existsErr, os.ErrNotExist) {
-			_ = root.Rename(temporary, item.identity.Name)
-		}
-		return failure("preview_stale", "A previewed session changed while cleanup was isolating it; new data was preserved", 412)
-	}
-	if err = root.Remove(temporary); err != nil {
-		if _, existsErr := root.Lstat(item.identity.Name); errors.Is(existsErr, os.ErrNotExist) {
-			_ = root.Rename(temporary, item.identity.Name)
-		}
+	locked := &phpfilesessions.LockedFile{File: item.file, Identity: item.identity}
+	if err = phpfilesessions.Remove(root, quarantineRoot, locked, temporary); errors.Is(err, phpfilesessions.ErrStale) {
+		return failure("preview_stale", "A previewed session path changed; new data was preserved", 412)
+	} else if errors.Is(err, phpfilesessions.ErrRemove) {
 		return failure("session_cleanup_failed", "A stale PHP session could not be removed safely", 500)
+	} else if errors.Is(err, phpfilesessions.ErrUnsafe) {
+		return phpMaintenanceUnsafe("Managed PHP session quarantine is not private on the session filesystem")
+	} else if err != nil {
+		return err
 	}
 	return nil
 }
 
+func (e *PrivilegedExecutor) phpSessionQuarantine(instance Instance) (*os.Root, error) {
+	parent, _, err := openPHPMaintenanceDirectory(instance.Paths.DataDir, e.uid, true)
+	if err != nil {
+		return nil, phpMaintenanceUnsafe("Managed PHP data directory is not safe for session cleanup")
+	}
+	defer parent.Close()
+	root, err := phpfilesessions.EnsureQuarantine(parent, ".powerlinux-session-quarantine")
+	if errors.Is(err, phpfilesessions.ErrUnsafe) {
+		return nil, phpMaintenanceUnsafe("Managed PHP session quarantine is not a private runtime directory")
+	}
+	return root, err
+}
+
 func samePHPSessionIdentityExceptCTime(a, b phpMaintenanceSessionFile) bool {
-	a.CTimeSec, a.CTimeNsec = 0, 0
-	b.CTimeSec, b.CTimeNsec = 0, 0
-	return a == b
+	return phpfilesessions.SameExceptCTime(a, b)
 }
 
 func randomPHPSessionQuarantine() (string, error) {
@@ -644,50 +608,18 @@ func openPHPMaintenanceDirectory(path string, owner uint32, private bool) (*os.R
 }
 
 func scanPHPSessions(ctx context.Context, root *os.Root, uid, gid uint32) ([]phpMaintenanceSessionFile, error) {
-	directory, err := root.Open(".")
-	if err != nil {
-		return nil, phpMaintenanceUnsafe("Managed PHP session directory could not be scanned safely")
-	}
-	defer directory.Close()
-	entries, err := directory.ReadDir(phpMaintenanceMaxFiles + 1)
-	if err != nil && !errors.Is(err, io.EOF) {
-		return nil, phpMaintenanceUnsafe("Managed PHP session directory could not be scanned safely")
-	}
-	if len(entries) > phpMaintenanceMaxFiles {
+	files, err := phpfilesessions.Scan(ctx, root, phpfilesessions.ScanOptions{UID: uid, GID: gid, MaxEntries: phpMaintenanceMaxFiles})
+	if errors.Is(err, phpfilesessions.ErrScanLimit) {
 		return nil, failure("session_scan_limit", "Managed PHP session directory exceeds its bounded scan limit", 413)
 	}
-	files := make([]phpMaintenanceSessionFile, 0, len(entries))
-	for _, entry := range entries {
-		if err = ctx.Err(); err != nil {
-			return nil, err
-		}
-		if !phpSessionFilename.MatchString(entry.Name()) {
-			return nil, phpMaintenanceUnsafe("Managed PHP session directory contains an unexpected entry")
-		}
-		info, statErr := root.Lstat(entry.Name())
-		if statErr != nil {
-			return nil, phpMaintenanceUnsafe("Managed PHP session entry changed during scan")
-		}
-		identity, identityErr := phpSessionIdentity(entry.Name(), info, uid, gid)
-		if identityErr != nil {
-			return nil, phpMaintenanceUnsafe("Managed PHP session entries must be private, single-link regular files owned by the runtime worker")
-		}
-		files = append(files, identity)
+	if errors.Is(err, phpfilesessions.ErrUnsafe) {
+		return nil, phpMaintenanceUnsafe("Managed PHP session directory contains an unexpected or unsafe entry")
 	}
-	slices.SortFunc(files, func(a, b phpMaintenanceSessionFile) int { return strings.Compare(a.Name, b.Name) })
-	return files, nil
+	return files, err
 }
 
 func phpSessionIdentity(name string, info os.FileInfo, uid, gid uint32) (phpMaintenanceSessionFile, error) {
-	var identity phpMaintenanceSessionFile
-	if !phpSessionFilename.MatchString(name) || info == nil || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 {
-		return identity, errors.New("unsafe PHP session entry")
-	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
-	if !ok || stat.Uid != uid || stat.Gid != gid || stat.Nlink != 1 || stat.Size < 0 {
-		return identity, errors.New("PHP session entry ownership or link count is unsafe")
-	}
-	return phpMaintenanceSessionFile{Name: name, Device: uint64(stat.Dev), Inode: stat.Ino, Size: stat.Size, MTimeSec: stat.Mtim.Sec, MTimeNsec: stat.Mtim.Nsec, CTimeSec: stat.Ctim.Sec, CTimeNsec: stat.Ctim.Nsec, UID: stat.Uid, GID: stat.Gid, Mode: uint32(info.Mode().Perm()), Links: uint64(stat.Nlink)}, nil
+	return phpfilesessions.Identify(name, info, uid, gid)
 }
 
 func (m *Manager) phpMaintenanceBindings() []core.Binding {
@@ -705,7 +637,7 @@ func (m *Manager) phpMaintenanceBindings() []core.Binding {
 		required := []string{"id"}
 		switch spec.command {
 		case "log_read":
-			fields["stream"] = enumSchema("fpm_error")
+			fields["stream"] = enumSchema("fpm_error", "slow")
 			fields["limit"] = map[string]any{"type": "integer", "minimum": 1, "maximum": 500}
 			required = append(required, "stream")
 		case "session_stats":

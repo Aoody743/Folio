@@ -47,6 +47,17 @@ export function PHPMaintenance({
     "php:read",
     ["id", "stream"],
     false,
+    true,
+    "fpm_error",
+  );
+  const slowLogCapability = phpMaintenanceCapability(
+    capabilities,
+    "php_maintenance_log_read",
+    "php:read",
+    ["id", "stream"],
+    false,
+    true,
+    "slow",
   );
   const statsCapability = phpMaintenanceCapability(
     capabilities,
@@ -76,7 +87,7 @@ export function PHPMaintenance({
     active && !!statsCapability,
   );
   const stats = phpWorkerSessionStats(statsResource.data, id);
-  const [log, setLog] = useState<ReturnType<typeof phpMaintenanceLog>>();
+  const [logs, setLogs] = useState<Partial<Record<"fpm_error" | "slow", ReturnType<typeof phpMaintenanceLog>>>>({});
   const [preview, setPreview] =
     useState<ReturnType<typeof phpWorkerSessionPreview>>();
   const [task, setTask] = useState<unknown>();
@@ -88,18 +99,22 @@ export function PHPMaintenance({
     void statsResource.reload();
     onExecuted();
   };
-  const readLog = async () => {
+  const readLog = async (stream: "fpm_error" | "slow") => {
+    const capability = stream === "slow" ? slowLogCapability : logCapability;
+    if (!capability) return;
     setBusy(true);
     setError("");
-    setLog(undefined);
+    setLogs((current) => ({ ...current, [stream]: undefined }));
     try {
+      const properties = capability.input_schema?.properties as Record<string, unknown> | undefined;
       const value = await action<unknown>("php_maintenance_log_read", {
         id,
-        stream: "fpm_error",
+        stream,
+        ...(properties && Object.prototype.hasOwnProperty.call(properties, "limit") ? { limit: 100 } : {}),
       });
-      const parsed = phpMaintenanceLog(value, id);
+      const parsed = phpMaintenanceLog(value, id, stream);
       if (!parsed) throw new Error("PHP日志响应无效，请重新读取。");
-      setLog(parsed);
+      setLogs((current) => ({ ...current, [stream]: parsed }));
     } catch (e) {
       setError(apiErrorMessage(e));
     } finally {
@@ -204,17 +219,46 @@ export function PHPMaintenance({
           <Button
             label={busy ? "正在读取日志…" : "读取PHP错误日志"}
             isDisabled={busy || taskPending}
-            onClick={() => void readLog()}
+            onClick={() => void readLog("fpm_error")}
           />
-          {log && (
-            log.generated && log.lines.length ? (
+          {logs.fpm_error && (
+            logs.fpm_error.generated && logs.fpm_error.lines.length ? (
               <>
-                {log.truncated && <p className="muted">日志内容已按行数或大小截断。</p>}
-                <pre className="json-result">{log.lines.join("\n")}</pre>
+                {logs.fpm_error.truncated && <p className="muted">日志内容已按行数或大小截断。</p>}
+                <pre className="json-result">{logs.fpm_error.lines.join("\n")}</pre>
               </>
             ) : (
               <p className="muted">当前尚无PHP错误日志内容。</p>
             )
+          )}
+        </>
+      )}
+
+      <h3>FPM 慢日志</h3>
+      {!slowLogCapability ? (
+        <Unavailable title="当前后端或账户未提供受管 FPM 慢日志读取能力" />
+      ) : (
+        <>
+          <p className="muted">慢日志由受管 FPM 池设置控制，只读取末尾最多 100 行；文件路径不会传入请求或显示。</p>
+          <Button
+            label={busy ? "正在读取慢日志…" : "读取FPM慢日志"}
+            isDisabled={busy || taskPending}
+            onClick={() => void readLog("slow")}
+          />
+          {logs.slow && !logs.slow.configured && (
+            <p className="muted">当前运行参数未启用慢日志。可在 PHP 运行参数配置中开启 slowlog_enabled 并提交受管应用变更。</p>
+          )}
+          {logs.slow?.configured && logs.slow.generated && logs.slow.lines.length > 0 && (
+            <>
+              {logs.slow.truncated && <p className="muted">慢日志内容已按行数或大小截断。</p>}
+              <pre className="json-result">{logs.slow.lines.join("\n")}</pre>
+            </>
+          )}
+          {logs.slow?.configured && !logs.slow.generated && (
+            <p className="muted">慢日志已配置，当前还没有生成日志文件。</p>
+          )}
+          {logs.slow?.configured && logs.slow.generated && !logs.slow.lines.length && (
+            <p className="muted">当前慢日志为空。</p>
           )}
         </>
       )}

@@ -29,6 +29,7 @@ type Provider struct {
 	deps    core.Dependencies
 	options Options
 	streams chan struct{}
+	docker  *dockerTerminalBridge
 }
 type input struct {
 	terminal.Input
@@ -38,11 +39,19 @@ type input struct {
 }
 
 func New(deps core.Dependencies, options Options) (*Provider, error) {
-	if deps.Authorize == nil || deps.ResolveActor == nil || deps.Secrets == nil || deps.Dispatch == nil {
+	if deps.State == nil || deps.Authorize == nil || deps.ResolveActor == nil || deps.Secrets == nil || deps.Dispatch == nil {
 		return nil, errors.New("terminal bridge requires persisted authorization, bound secrets and core dispatch")
 	}
-	return &Provider{deps: deps, options: options, streams: make(chan struct{}, 16)}, nil
+	return &Provider{deps: deps, options: options, streams: make(chan struct{}, 16), docker: newDockerTerminalBridge()}, nil
 }
+
+// Close cancels API-owned Docker terminal streams before their stores are shut down.
+func (p *Provider) Close() {
+	if p != nil && p.docker != nil {
+		p.docker.shutdown()
+	}
+}
+
 func Resource(id string) string { return "terminal:" + id }
 func failure(code, message string, status int) error {
 	return &core.Error{Code: code, Message: message, Status: status}
@@ -160,6 +169,9 @@ func sessionOperation(name string) bool {
 	return name == "terminal_read" || name == "terminal_input" || name == "terminal_resize" || name == "terminal_renew" || name == "terminal_close" || name == "terminal_share_discover"
 }
 func (p *Provider) resources(ctx context.Context, a core.Actor, name string, raw json.RawMessage) ([]string, error) {
+	if dockerTerminalAction(name) {
+		return p.dockerTerminalResources(ctx, a, name, raw)
+	}
 	current, err := p.deps.ResolveActor(ctx, a)
 	if err != nil {
 		return nil, err
@@ -250,9 +262,13 @@ func (p *Provider) Bindings() []core.Binding {
 			return p.execute(ctx, a, spec.Name, raw)
 		}})
 	}
+	bindings = append(bindings, p.dockerTerminalBindings()...)
 	return bindings
 }
 func (p *Provider) execute(ctx context.Context, a core.Actor, name string, raw json.RawMessage) (core.ActionResult, error) {
+	if dockerTerminalAction(name) {
+		return p.executeDockerTerminal(ctx, a, name, raw)
+	}
 	a, err := p.deps.ResolveActor(ctx, a)
 	if err != nil {
 		return core.ActionResult{}, err

@@ -34,6 +34,9 @@ const archive = await loadTypeScript("../src/lib/docker-archive.ts", {
 });
 const docker = await loadTypeScript("../src/lib/docker-management.ts");
 const manualHTTP = await loadTypeScript("../src/lib/manual-http-acme.ts");
+const dockerTerminal = await loadTypeScript("../src/lib/docker-terminal.ts");
+const phpMaintenance = await loadTypeScript("../src/lib/php-maintenance.ts");
+const sitePHP = await loadTypeScript("../src/lib/site-php-maintenance.ts");
 
 const digest = "a".repeat(64);
 const image = `registry.example/team/app@sha256:${digest}`;
@@ -297,4 +300,117 @@ test("manual HTTP ACME order exposes only exact, domain-bound upload instruction
     ...order,
     http_challenges: [{ ...order.http_challenges[0], body: "token\n.thumbprint" }],
   }), undefined);
+});
+
+test("Docker terminal sessions bind to the selected owned container and bounded replay cursor", () => {
+  const sessionID = `dct_${"e".repeat(32)}`;
+  const session = {
+    id: sessionID,
+    name: "worker_1",
+    session_id: sessionID,
+    target_id: "docker:docker-main:worker_1",
+    type: "docker",
+    rows: 24,
+    cols: 80,
+    created_at: new Date(now).toISOString(),
+    expires_at: new Date(now + 60_000).toISOString(),
+    execution_state: "running",
+    attached: true,
+    stream_started: true,
+    output_available: true,
+  };
+  const parsed = dockerTerminal.dockerTerminalSession(session, "docker-main", "worker_1");
+  assert.equal(parsed.session_id, sessionID);
+  assert.equal(dockerTerminal.dockerTerminalSession({ ...session, target_id: "docker:other:worker_1" }, "docker-main", "worker_1"), undefined);
+  assert.equal(dockerTerminal.dockerTerminalSession({ ...session, name: "other" }, "docker-main", "worker_1"), undefined);
+  assert.equal(dockerTerminal.dockerTerminalSession({ ...session, rows: 501 }, "docker-main", "worker_1"), undefined);
+
+  const page = {
+    ...session,
+    frames: [
+      { sequence: 1, data: Buffer.from("first").toString("base64") },
+      { sequence: 2, data: Buffer.from("second").toString("base64") },
+    ],
+    truncated: false,
+    next: 2,
+  };
+  assert.equal(dockerTerminal.dockerTerminalRead(page, "docker-main", "worker_1", sessionID, 0).next, 2);
+  assert.equal(dockerTerminal.dockerTerminalRead({ ...page, frames: [{ sequence: 1, data: "@@" }] }, "docker-main", "worker_1", sessionID), undefined);
+  assert.equal(dockerTerminal.dockerTerminalRead({ ...page, frames: [{ sequence: 1, data: "eA==" }, { sequence: 1, data: "eQ==" }] }, "docker-main", "worker_1", sessionID), undefined);
+  assert.equal(dockerTerminal.dockerTerminalRead(page, "docker-main", "worker_1", `dct_${"a".repeat(32)}`), undefined);
+});
+
+test("Docker terminal input retries retain a caller frame ID and enforce the 16 KiB bound", () => {
+  const sessionID = `dct_${"f".repeat(32)}`;
+  const frameID = "intent-1234567890";
+  const payload = Buffer.alloc(16 * 1024, 65).toString("base64");
+  assert.deepEqual(dockerTerminal.dockerTerminalInputFrame(sessionID, frameID, payload), {
+    session_id: sessionID,
+    input_id: frameID,
+    data: payload,
+  });
+  assert.throws(() => dockerTerminal.dockerTerminalInputFrame(sessionID, frameID, Buffer.alloc(16 * 1024 + 1, 65).toString("base64")));
+  assert.throws(() => dockerTerminal.dockerTerminalInputFrame(sessionID, "short", "eA=="));
+});
+
+test("PHP slowlog status distinguishes disabled configuration from an empty generated log", () => {
+  const capability = {
+    name: "php_maintenance_log_read",
+    scope: "php:read",
+    task: false,
+    read_only: true,
+    input_schema: {
+      required: ["id", "stream"],
+      properties: { id: { type: "string" }, stream: { enum: ["fpm_error", "slow"] }, limit: { type: "integer" } },
+    },
+  };
+  assert.ok(phpMaintenance.phpMaintenanceCapability([capability], capability.name, "php:read", ["id", "stream"], false, true, "slow"));
+  assert.equal(phpMaintenance.phpMaintenanceCapability([{ ...capability, input_schema: { ...capability.input_schema, properties: { ...capability.input_schema.properties, stream: { enum: ["fpm_error"] } } } }], capability.name, "php:read", ["id", "stream"], false, true, "slow"), undefined);
+  assert.equal(phpMaintenance.phpMaintenanceLog({ id: "php-main", stream: "slow", configured: false, generated: false, lines: [], revision: 5, truncated: false }, "php-main", "slow").configured, false);
+  assert.equal(phpMaintenance.phpMaintenanceLog({ id: "php-main", stream: "slow", configured: false, generated: true, lines: ["leak"], revision: 5, truncated: false }, "php-main", "slow"), undefined);
+});
+
+test("per-site PHP preview inputs stay bound to the site revision and assigned runtime", () => {
+  const siteID = "site-7";
+  const phpInstance = "php-main";
+  const stats = {
+    site_id: siteID,
+    site_revision: 12,
+    php_instance: phpInstance,
+    generated: true,
+    total_sessions: 8,
+    expired_sessions: 3,
+    older_than_seconds: 86400,
+    oldest_age_seconds: 172800,
+    allow_actions: ["preview"],
+    private_path: "/must-not-be-projected",
+  };
+  const parsedStats = sitePHP.sitePHPSessionStats(stats, siteID, 12, phpInstance);
+  assert.equal(parsedStats.expired_sessions, 3);
+  assert.equal("private_path" in parsedStats, false);
+  assert.equal(sitePHP.sitePHPSessionStats(stats, siteID, 13, phpInstance), undefined);
+  assert.equal(sitePHP.sitePHPSessionStats(stats, siteID, 12, "other-php"), undefined);
+
+  const preview = sitePHP.sitePHPSessionPreview({
+    site_id: siteID,
+    site_revision: 12,
+    php_instance: phpInstance,
+    preview_id: `spv_${"a".repeat(48)}`,
+    captured_at: new Date(now).toISOString(),
+    expires_at: new Date(now + 60_000).toISOString(),
+    total_sessions: 8,
+    candidate_count: 3,
+    candidate_bytes: 900,
+    older_than_seconds: 86400,
+    allow_actions: ["cleanup"],
+    session_names: ["must-not-be-returned"],
+  }, siteID, 12, phpInstance);
+  assert.deepEqual(sitePHP.sitePHPSessionCleanupInput(preview, 12, now), {
+    id: siteID,
+    expected_revision: 12,
+    preview_id: `spv_${"a".repeat(48)}`,
+  });
+  assert.equal("session_names" in preview, false);
+  assert.throws(() => sitePHP.sitePHPSessionCleanupInput(preview, 13, now));
+  assert.throws(() => sitePHP.sitePHPSessionCleanupInput(preview, 12, now + 60_000));
 });

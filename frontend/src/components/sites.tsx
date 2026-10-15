@@ -21,6 +21,10 @@ const PHPResources = dynamic(
   () => import("./php-resources").then((m) => m.PHPResources),
   { ssr: false },
 );
+const SitePHPMaintenance = dynamic(
+  () => import("./site-php-maintenance").then((m) => m.SitePHPMaintenance),
+  { ssr: false },
+);
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -649,6 +653,17 @@ export function SitesView({
                   capabilities={capabilities}
                   onExecuted={refresh}
                   active={active && open}
+                />
+              )}
+              {group === "php" && (
+                <SitePHPMaintenance
+                  key={`site-php:${current.id}`}
+                  siteID={current.id}
+                  siteRevision={current.revision}
+                  phpInstance={current.php_instance ?? ""}
+                  capabilities={capabilities}
+                  onExecuted={refresh}
+                  active={active && open && group === "php"}
                 />
               )}
             </>

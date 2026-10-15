@@ -157,6 +157,9 @@ func serveAgent(args []string) error {
 		if err = bind(plugins.Operations(), software); err != nil {
 			return err
 		}
+		if err = bind(plugins.DockerTerminalAgentOperations(), plugins.NewDockerTerminalAgentExecutor(software)); err != nil {
+			return err
+		}
 		modules = append(modules, "software")
 	}
 	var privilegedFiles *files.Service

@@ -143,6 +143,10 @@ func writeWS(ctx context.Context, connection *websocket.Conn, value any) error {
 	return connection.Write(limited, websocket.MessageText, encoded(value))
 }
 func (p *Provider) serveWS(w http.ResponseWriter, r *http.Request, a core.Actor, id string) {
+	if dockerTerminalSessionIDPattern.MatchString(id) {
+		p.serveDockerTerminalWS(w, r, id)
+		return
+	}
 	if _, err := p.streamActor(r, id); err != nil {
 		reply(w, nil, err)
 		return

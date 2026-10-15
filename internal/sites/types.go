@@ -66,8 +66,10 @@ type Protection struct {
 	AllowedReferers []string `json:"allowed_referers"`
 }
 type PHPSettings struct {
-	OpenBasedir bool              `json:"open_basedir"`
-	Values      map[string]string `json:"values"`
+	OpenBasedir           bool              `json:"open_basedir"`
+	Values                map[string]string `json:"values"`
+	SlowlogEnabled        bool              `json:"slowlog_enabled,omitempty"`
+	SlowlogTimeoutSeconds int               `json:"slowlog_timeout_seconds,omitempty"`
 }
 type DirectoryBinding struct {
 	ID      string   `json:"id"`
@@ -176,6 +178,8 @@ type request struct {
 	PlanID              string            `json:"plan_id,omitempty"`
 	TargetWebInstance   string            `json:"target_web_instance,omitempty"`
 	ExpectedRevision    int64             `json:"expected_revision,omitempty"`
+	OlderThanSeconds   int64             `json:"older_than_seconds,omitempty"`
+	PreviewID          string            `json:"preview_id,omitempty"`
 	Site                *Site             `json:"site,omitempty"`
 	Certificate         *Certificate      `json:"certificate,omitempty"`
 	CertPEM             string            `json:"cert_pem,omitempty"`

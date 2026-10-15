@@ -288,6 +288,9 @@ func renderPool(site Site, paths renderedPaths, worker Identity, web WebRuntime)
 	var out strings.Builder
 	fmt.Fprintf(&out, "[powerlinux-%s]\nuser = %s\ngroup = %s\nlisten = %s\nlisten.owner = %s\nlisten.group = %s\nlisten.mode = 0660\npm = ondemand\npm.max_children = 4\npm.process_idle_timeout = 20s\npm.max_requests = 500\nclear_env = yes\nsecurity.limit_extensions = .php\n", siteTag(site.ID), worker.User, worker.Group, iniString(filepath.Join(paths.RunDir, "php-fpm.sock")), web.WorkerUser, web.WorkerGroup)
 	fmt.Fprintf(&out, "php_admin_value[error_log] = %s\nphp_admin_flag[log_errors] = on\nphp_admin_value[upload_tmp_dir] = %s\nphp_admin_value[session.save_path] = %s\n", iniString(filepath.Join(paths.TempDir, "php-errors.log")), iniString(paths.TempDir), iniString(paths.TempDir))
+	if site.PHP.SlowlogEnabled {
+		fmt.Fprintf(&out, "request_slowlog_timeout = %ds\nslowlog = %s\n", site.PHP.SlowlogTimeoutSeconds, filepath.Join(paths.LogDir, "php-slow.log"))
+	}
 	if site.PHP.OpenBasedir {
 		fmt.Fprintf(&out, "php_admin_value[open_basedir] = %s\n", iniString(paths.DocumentRoot+string(filepath.ListSeparator)+paths.TempDir))
 	}

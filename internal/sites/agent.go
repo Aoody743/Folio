@@ -43,7 +43,7 @@ type AgentExecutor struct {
 }
 
 func AgentOperationNames() []string {
-	return []string{"site_list", "site_get", "site_apply", "site_migration_plan", "site_migration_get", "site_migration_apply", "site_delete", "site_retained_list", "site_retained_purge", "site_default_set", "site_default_get", "site_logs", "site_config_get", "site_config_set", "site_backups_list", "site_backup_get", "site_backup_stat", "site_backup_artifact", "site_backup_create", "site_backup_restore", "site_backup_delete", "certificate_list", "certificate_get", "certificate_import", "certificate_delete", "certificate_export", "certificate_acme_issue", "certificate_acme_order", "site_php_cli_get", "site_php_cli_set"}
+	return []string{"site_list", "site_get", "site_apply", "site_migration_plan", "site_migration_get", "site_migration_apply", "site_delete", "site_retained_list", "site_retained_purge", "site_default_set", "site_default_get", "site_logs", "site_php_slowlog_read", "site_php_session_stats", "site_php_session_preview", "site_php_session_cleanup", "site_config_get", "site_config_set", "site_backups_list", "site_backup_get", "site_backup_stat", "site_backup_artifact", "site_backup_create", "site_backup_restore", "site_backup_delete", "certificate_list", "certificate_get", "certificate_import", "certificate_delete", "certificate_export", "certificate_acme_issue", "certificate_acme_order", "site_php_cli_get", "site_php_cli_set"}
 }
 
 func NewAgentExecutor(config AgentConfig, runtimes Runtimes) (*AgentExecutor, error) {
@@ -87,7 +87,7 @@ func NewAgentExecutorWithFiles(config AgentConfig, runtimes Runtimes, sharedFile
 		return nil, err
 	}
 	e := &AgentExecutor{config: config, runtimes: runtimes, state: state, content: content, lockFile: lockFile}
-	for _, directory := range []string{"sites", "retained", "certificates", "workers", "backups", "transactions", "migration-plans", "acme"} {
+	for _, directory := range []string{"sites", "retained", "certificates", "workers", "backups", "transactions", "migration-plans", "acme", "php-sessions"} {
 		if err = state.MkdirAll(directory, 0700); err != nil {
 			e.Close()
 			return nil, err
@@ -217,6 +217,13 @@ func (e *AgentExecutor) Validate(job agent.Request) error {
 	if !safeID.MatchString(in.ID) || in.ExpectedRevision < 0 {
 		return agent.ErrInvalidInput
 	}
+	switch job.Operation {
+	case "site_php_slowlog_read", "site_php_session_stats", "site_php_session_preview", "site_php_session_cleanup":
+		if err := validateSitePHPAgentRequest(job.Operation, job.Input, in); err != nil {
+			return err
+		}
+		return nil
+	}
 	if job.Operation == "site_backup_stat" || job.Operation == "site_backup_artifact" {
 		return validateBackupArtifact(in)
 	}
@@ -304,6 +311,14 @@ func (e *AgentExecutor) executeOperation(ctx context.Context, operation string, 
 		data, err = e.defaultSelection(in.ID)
 	case "site_logs":
 		data, err = e.logs(ctx, in)
+	case "site_php_slowlog_read":
+		data, err = e.sitePHPSlowlog(ctx, in)
+	case "site_php_session_stats":
+		data, err = e.sitePHPSessionStats(ctx, in)
+	case "site_php_session_preview":
+		data, err = e.sitePHPSessionPreview(ctx, in)
+	case "site_php_session_cleanup":
+		data, err = e.sitePHPSessionCleanup(ctx, in)
 	case "site_config_get":
 		data, err = e.configGet(ctx, in.ID)
 	case "site_config_set":

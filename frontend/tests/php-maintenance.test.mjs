@@ -62,6 +62,7 @@ test("PHP log reader accepts only the bounded managed FPM error log shape", () =
     {
       id: "php-1",
       stream: "fpm_error",
+      configured: true,
       generated: true,
       lines: ["worker exited"],
       revision: 2,

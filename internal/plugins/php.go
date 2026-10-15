@@ -39,6 +39,8 @@ func phpConfigurationSchema() map[string]any {
 	properties["timezone"] = map[string]any{"type": "string", "minLength": 1, "maxLength": 64, "pattern": phpTimezone.String()}
 	properties["display_errors"] = map[string]any{"type": "boolean"}
 	properties["session_handler"] = enumSchema("files")
+	properties["slowlog_enabled"] = map[string]any{"type": "boolean"}
+	properties["slowlog_timeout_seconds"] = map[string]any{"type": "integer", "minimum": 1, "maximum": 300}
 	return obj(properties)
 }
 

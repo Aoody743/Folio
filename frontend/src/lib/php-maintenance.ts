@@ -2,7 +2,8 @@ import type { Capability } from "./api";
 
 export type PHPMaintenanceLog = {
   id: string;
-  stream: "fpm_error";
+  stream: "fpm_error" | "slow";
+  configured: boolean;
   generated: boolean;
   lines: string[];
   revision: number;
@@ -50,6 +51,7 @@ export function phpMaintenanceCapability(
   fields: string[],
   task: boolean,
   readOnly = !task,
+  streamName?: "fpm_error" | "slow",
 ): Capability | undefined {
   return capabilities.find((capability) => {
     if (
@@ -64,7 +66,12 @@ export function phpMaintenanceCapability(
       return false;
     if (name === "php_maintenance_log_read") {
       const stream = properties.stream;
-      return isRecord(stream) && Array.isArray(stream.enum) && stream.enum.includes("fpm_error");
+      return (
+        isRecord(stream) &&
+        Array.isArray(stream.enum) &&
+        stream.enum.includes(streamName ?? "fpm_error") &&
+        (!fields.includes("limit") || isRecord(properties.limit))
+      );
     }
     return true;
   });
@@ -73,23 +80,29 @@ export function phpMaintenanceCapability(
 export function phpMaintenanceLog(
   value: unknown,
   instanceID: string,
+  streamName: "fpm_error" | "slow" = "fpm_error",
 ): PHPMaintenanceLog | undefined {
   if (!isRecord(value)) return;
+  const configured = value.configured;
   if (
     value.id !== instanceID ||
-    value.stream !== "fpm_error" ||
+    value.stream !== streamName ||
+    (streamName === "slow" && typeof configured !== "boolean") ||
+    (configured !== undefined && typeof configured !== "boolean") ||
     typeof value.generated !== "boolean" ||
     !Array.isArray(value.lines) ||
     value.lines.length > 500 ||
     !value.lines.every((line) => typeof line === "string") ||
     !safeCount(value.revision) ||
     typeof value.truncated !== "boolean" ||
-    (!value.generated && value.lines.length > 0)
+    (!value.generated && value.lines.length > 0) ||
+    (configured === false && (value.generated || value.lines.length > 0))
   )
     return;
   return {
     id: instanceID,
-    stream: "fpm_error",
+    stream: streamName,
+    configured: configured !== false,
     generated: value.generated,
     lines: [...value.lines] as string[],
     revision: value.revision,

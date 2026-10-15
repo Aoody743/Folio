@@ -81,6 +81,12 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 	if err != nil {
 		return nil, err
 	}
+	registered := false
+	defer func() {
+		if !registered {
+			term.Close()
+		}
+	}()
 	if err = service.RegisterProvider(term); err != nil {
 		return nil, err
 	}
@@ -101,5 +107,6 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 		sys.Close()
 		return nil, err
 	}
+	registered = true
 	return &runtimeModules{system: sys, terminal: term, database: software.DatabaseResourceHandler(service), website: websites.BackupResourceHandler(service)}, nil
 }

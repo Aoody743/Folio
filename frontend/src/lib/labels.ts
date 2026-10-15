@@ -74,6 +74,8 @@ const fields: Record<string, string> = {
   disable_functions: "禁用函数列表",
   display_errors: "显示运行错误",
   session_handler: "会话存储方式",
+  slowlog_enabled: "启用 FPM 慢日志",
+  slowlog_timeout_seconds: "慢请求阈值（秒）",
   upstream: "上游服务地址",
   preserve_host: "保留原Host头",
   cache_seconds: "缓存秒数",

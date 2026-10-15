@@ -265,6 +265,9 @@ func (e *PrivilegedExecutor) configureWithInstallJournal(ctx context.Context, in
 
 func renderDefaultPHPPool(instance Instance, worker, group string, health bool) string {
 	body := fmt.Sprintf("[powerlinux-default]\nuser = %s\ngroup = %s\nlisten = %s\nlisten.owner = %s\nlisten.group = %s\nlisten.mode = 0660\npm = ondemand\npm.max_children = %d\npm.process_idle_timeout = 10s\n", worker, group, filepath.Join(instance.Paths.RunDir, "fpm.sock"), worker, group, setting(instance.Config, "max_children", 5))
+	if enabled, ok := instance.Config["slowlog_enabled"].(bool); ok && enabled {
+		body += fmt.Sprintf("request_slowlog_timeout = %ds\nslowlog = %s\n", setting(instance.Config, "slowlog_timeout_seconds", 5), filepath.Join(instance.Paths.LogDir, "fpm-slow.log"))
+	}
 	if health {
 		body += "ping.path = " + phpHealthPath + "\nping.response = " + phpHealthResponse + "\n"
 	}
@@ -562,6 +565,12 @@ func ownedProcessID(instance Instance) (int, error) {
 	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil || pid < 2 {
 		return 0, failure("ownership_invalid", "Managed PID file is invalid", 412)
+	}
+	if instance.PluginID == "supervisor" {
+		if err = verifySupervisorProcessIdentity(instance, pid); err != nil {
+			return 0, err
+		}
+		return pid, nil
 	}
 	exe, err := os.Readlink(filepath.Join("/proc", strconv.Itoa(pid), "exe"))
 	if err != nil {
