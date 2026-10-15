@@ -658,7 +658,7 @@ func (e *AgentExecutor) applyMigration(ctx context.Context, in request) (site Si
 		recovery, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
 		defer cancel()
 		restoreErr := rollbackConfigs([]changedFile{targetSnapshot, sourceSnapshot})
-		for _, id := range migrationRuntimeIDs(copy, source.ID) {
+		for _, id := range migrationRollbackRuntimeIDs(copy, source.ID) {
 			restoreErr = errors.Join(restoreErr, e.runtimes.Reload(recovery, id))
 		}
 		if restoreErr != nil {
@@ -684,7 +684,7 @@ func (e *AgentExecutor) applyMigration(ctx context.Context, in request) (site Si
 			return site, failure("configuration_rejected", "Source, target Web or PHP rejected the staged migration configuration", 409)
 		}
 	}
-	for _, id := range ids {
+	for _, id := range migrationApplyRuntimeIDs(copy, source.ID) {
 		if err = e.runtimes.Reload(ctx, id); err != nil {
 			return site, failure("reload_failed", "Source, target Web or PHP did not accept the migration reload", 500)
 		}
@@ -711,6 +711,33 @@ func migrationRuntimeIDs(site Site, sourceWeb string) []string {
 	}
 	sort.Strings(ids)
 	return slices.Compact(ids)
+}
+
+// Migration resources stay sorted for authorization and transaction locking.
+// Runtime effects have a different constraint: release the old Web listener
+// before asking the destination Web to claim it. Rollback reverses that order.
+func migrationApplyRuntimeIDs(site Site, sourceWeb string) []string {
+	return orderedUniqueRuntimeIDs(sourceWeb, site.WebInstance, site.PHPInstance)
+}
+
+func migrationRollbackRuntimeIDs(site Site, sourceWeb string) []string {
+	return orderedUniqueRuntimeIDs(site.WebInstance, sourceWeb, site.PHPInstance)
+}
+
+func orderedUniqueRuntimeIDs(ids ...string) []string {
+	result := make([]string, 0, len(ids))
+	seen := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
 }
 
 func syncRuntimeDirectory(path string) error {

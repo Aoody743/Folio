@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/fs"
@@ -777,7 +778,11 @@ func (e *AgentExecutor) rollbackJournal(ctx context.Context, j websiteJournal) e
 	if j.NewContent != nil {
 		result = errors.Join(result, e.removeNewContent(ctx, j.NewContent))
 	}
-	for _, id := range j.RuntimeIDs {
+	runtimeIDs := j.RuntimeIDs
+	if j.Operation == "site_migration_apply" {
+		runtimeIDs = migrationJournalRollbackRuntimeIDs(j)
+	}
+	for _, id := range runtimeIDs {
 		if recovery, ok := e.runtimes.(RuntimeRecovery); ok {
 			result = errors.Join(result, recovery.RecoverRuntime(ctx, id))
 		} else {
@@ -1179,6 +1184,11 @@ func (e *AgentExecutor) validateJournal(ctx context.Context, j websiteJournal, n
 	if total > maxWebsiteJournalPayload || len(seen) != len(allowed) {
 		return errors.New("website journal snapshot set is invalid")
 	}
+	if j.Operation == "site_migration_apply" {
+		if err = validateMigrationJournalSource(j); err != nil {
+			return err
+		}
+	}
 	directoryPaths, err := journalDirectoryPaths(j)
 	if err != nil {
 		return err
@@ -1224,6 +1234,33 @@ func (e *AgentExecutor) validateJournal(ctx context.Context, j websiteJournal, n
 		return errors.New("website journal restore ownership is invalid")
 	}
 	return nil
+}
+
+func validateMigrationJournalSource(j websiteJournal) error {
+	if len(j.Sites) != 2 {
+		return errors.New("website migration journal does not identify its source and target Web runtimes")
+	}
+	path := filepath.Join("sites", j.Sites[0].ID+".json")
+	for _, file := range j.Files {
+		if file.Kind != "state" || file.Path != path {
+			continue
+		}
+		var source Site
+		if !file.Existed || json.Unmarshal(file.Before, &source) != nil ||
+			source.ID != j.Sites[0].ID || source.WebInstance != j.Sites[0].WebRuntime ||
+			source.PHPInstance != j.Sites[0].PHPRuntime {
+			return errors.New("website migration journal source order does not match its protected site receipt")
+		}
+		return nil
+	}
+	return errors.New("website migration journal is missing its protected source site receipt")
+}
+
+func migrationJournalRollbackRuntimeIDs(j websiteJournal) []string {
+	if len(j.Sites) != 2 {
+		return j.RuntimeIDs
+	}
+	return orderedUniqueRuntimeIDs(j.Sites[1].WebRuntime, j.Sites[0].WebRuntime, j.Sites[0].PHPRuntime)
 }
 
 func validJournalTempName(name string) bool {

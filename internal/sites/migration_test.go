@@ -20,16 +20,18 @@ import (
 )
 
 type migrationTestRuntime struct {
-	webs         map[string]WebRuntime
-	php          map[string]PHPRuntime
-	failCheck    string
-	failReload   string
-	failVerify   bool
-	checks       []string
-	reloads      []string
-	recoveries   []string
-	verified     []Site
-	transactions [][]string
+	webs                  map[string]WebRuntime
+	php                   map[string]PHPRuntime
+	listenerOwner         string
+	failCheck             string
+	failReload            string
+	failVerify            bool
+	checks                []string
+	listenerOwnersAtCheck []string
+	reloads               []string
+	recoveries            []string
+	verified              []Site
+	transactions          [][]string
 }
 
 type migrationProviderAgent struct {
@@ -69,6 +71,7 @@ func (r *migrationTestRuntime) PHP(_ context.Context, id string) (PHPRuntime, er
 
 func (r *migrationTestRuntime) Check(_ context.Context, id string) error {
 	r.checks = append(r.checks, id)
+	r.listenerOwnersAtCheck = append(r.listenerOwnersAtCheck, r.listenerOwner)
 	if r.failCheck == id {
 		r.failCheck = ""
 		return errors.New("injected configuration check failure")
@@ -78,6 +81,11 @@ func (r *migrationTestRuntime) Check(_ context.Context, id string) error {
 
 func (r *migrationTestRuntime) Reload(_ context.Context, id string) error {
 	r.reloads = append(r.reloads, id)
+	if _, ok := r.webs[id]; ok {
+		if err := r.reloadWebListener(id); err != nil {
+			return err
+		}
+	}
 	if r.failReload == id {
 		r.failReload = ""
 		return errors.New("injected reload failure")
@@ -92,6 +100,31 @@ func (r *migrationTestRuntime) WithRuntimeTransaction(ctx context.Context, ids [
 
 func (r *migrationTestRuntime) RecoverRuntime(_ context.Context, id string) error {
 	r.recoveries = append(r.recoveries, id)
+	if _, ok := r.webs[id]; ok {
+		return r.reloadWebListener(id)
+	}
+	return nil
+}
+
+func (r *migrationTestRuntime) reloadWebListener(id string) error {
+	web, ok := r.webs[id]
+	if !ok {
+		return errors.New("unknown Web runtime")
+	}
+	_, err := os.Lstat(filepath.Join(web.SnippetsDir, "migration-site.conf"))
+	if err == nil {
+		if r.listenerOwner != "" && r.listenerOwner != id {
+			return errors.New("fixture bind address is already in use by another Web runtime")
+		}
+		r.listenerOwner = id
+		return nil
+	}
+	if !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	if r.listenerOwner == id {
+		r.listenerOwner = ""
+	}
 	return nil
 }
 
@@ -100,7 +133,7 @@ func (r *migrationTestRuntime) VerifySite(_ context.Context, site Site) error {
 	if r.failVerify {
 		return errors.New("injected target verification failure")
 	}
-	if site.WebInstance != "web-target" {
+	if _, ok := r.webs[site.WebInstance]; !ok {
 		return errors.New("migration verified the wrong Web instance")
 	}
 	return nil
@@ -108,9 +141,18 @@ func (r *migrationTestRuntime) VerifySite(_ context.Context, site Site) error {
 
 func newMigrationTestExecutor(t *testing.T, advanced bool) (*AgentExecutor, *migrationTestRuntime, Site, string) {
 	t.Helper()
+	return newMigrationTestExecutorWithWebIDs(t, advanced, "web-source", "web-target")
+}
+
+func newMigrationTestExecutorWithWebIDs(t *testing.T, advanced bool, sourceID, targetID string) (*AgentExecutor, *migrationTestRuntime, Site, string) {
+	t.Helper()
 	base := t.TempDir()
 	site, original := initializeMigrationTestFixture(t, base, advanced)
-	e, runtime, openedSite := openMigrationTestExecutor(t, base)
+	site.WebInstance = sourceID
+	if err := os.WriteFile(filepath.Join(base, "state", "sites", site.ID+".json"), encode(site), 0600); err != nil {
+		t.Fatal(err)
+	}
+	e, runtime, openedSite := openMigrationTestExecutorWithWebIDs(t, base, sourceID, targetID)
 	if openedSite.ID != site.ID {
 		t.Fatal("migration fixture reopened a different site", openedSite.ID)
 	}
@@ -123,11 +165,16 @@ func migrationTestConfig(base string) AgentConfig {
 
 func migrationTestRuntimeAt(t *testing.T, base string) *migrationTestRuntime {
 	t.Helper()
+	return migrationTestRuntimeAtWebIDs(t, base, "web-source", "web-target")
+}
+
+func migrationTestRuntimeAtWebIDs(t *testing.T, base, sourceID, targetID string) *migrationTestRuntime {
+	t.Helper()
 	sourcePrefix := filepath.Join(base, "source-web")
 	targetPrefix := filepath.Join(base, "target-web")
 	phpPrefix := filepath.Join(base, "php")
 	webs := map[string]WebRuntime{}
-	for _, value := range []struct{ id, prefix string }{{"web-source", sourcePrefix}, {"web-target", targetPrefix}} {
+	for _, value := range []struct{ id, prefix string }{{sourceID, sourcePrefix}, {targetID, targetPrefix}} {
 		web := WebRuntime{ID: value.id, Program: "/usr/bin/true", MainConfig: filepath.Join(value.prefix, "nginx.conf"), SnippetsDir: filepath.Join(value.prefix, "snippets"), Prefix: value.prefix, WorkerUser: "nobody", WorkerGroup: "nogroup"}
 		webs[value.id] = web
 	}
@@ -144,7 +191,15 @@ func migrationTestRuntimeAt(t *testing.T, base string) *migrationTestRuntime {
 		webs[id] = web
 	}
 	php := PHPRuntime{ID: "php-shared", Program: "/usr/bin/true", MainConfig: filepath.Join(phpPrefix, "php-fpm.conf"), PoolDir: filepath.Join(phpPrefix, "pools"), Prefix: phpPrefix}
-	return &migrationTestRuntime{webs: webs, php: map[string]PHPRuntime{php.ID: php}}
+	runtime := &migrationTestRuntime{webs: webs, php: map[string]PHPRuntime{php.ID: php}}
+	for id, web := range webs {
+		if _, err := os.Lstat(filepath.Join(web.SnippetsDir, "migration-site.conf")); err == nil {
+			runtime.listenerOwner = id
+		} else if !errors.Is(err, fs.ErrNotExist) {
+			t.Fatal(err)
+		}
+	}
+	return runtime
 }
 
 func initializeMigrationTestFixture(t *testing.T, base string, advanced bool) (Site, string) {
@@ -233,7 +288,12 @@ func initializeMigrationTestFixture(t *testing.T, base string, advanced bool) (S
 
 func openMigrationTestAgent(t *testing.T, base string) (*AgentExecutor, *migrationTestRuntime, Site, error) {
 	t.Helper()
-	runtime := migrationTestRuntimeAt(t, base)
+	return openMigrationTestAgentWithWebIDs(t, base, "web-source", "web-target")
+}
+
+func openMigrationTestAgentWithWebIDs(t *testing.T, base, sourceID, targetID string) (*AgentExecutor, *migrationTestRuntime, Site, error) {
+	t.Helper()
+	runtime := migrationTestRuntimeAtWebIDs(t, base, sourceID, targetID)
 	e, err := NewAgentExecutor(migrationTestConfig(base), runtime)
 	if err != nil {
 		return nil, nil, Site{}, err
@@ -260,6 +320,20 @@ func openMigrationTestExecutor(t *testing.T, base string) (*AgentExecutor, *migr
 	return e, runtime, site
 }
 
+func openMigrationTestExecutorWithWebIDs(t *testing.T, base, sourceID, targetID string) (*AgentExecutor, *migrationTestRuntime, Site) {
+	t.Helper()
+	e, runtime, site, err := openMigrationTestAgentWithWebIDs(t, base, sourceID, targetID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if closeErr := e.Close(); closeErr != nil {
+			t.Errorf("close migration test executor: %v", closeErr)
+		}
+	})
+	return e, runtime, site
+}
+
 func runMigrationAgent(t *testing.T, e *AgentExecutor, operation string, in request) (agent.Result, error) {
 	t.Helper()
 	if in.Actor.ID == "" {
@@ -270,7 +344,16 @@ func runMigrationAgent(t *testing.T, e *AgentExecutor, operation string, in requ
 
 func createMigrationTestPlan(t *testing.T, e *AgentExecutor, site Site, resetAdvanced bool) MigrationPlanView {
 	t.Helper()
-	result, err := runMigrationAgent(t, e, "site_migration_plan", request{ID: site.ID, ExpectedRevision: site.Revision, TargetWebInstance: "web-target", ResetAdvancedConfig: resetAdvanced})
+	targetID := "web-target"
+	if runtime, ok := e.runtimes.(*migrationTestRuntime); ok {
+		for id := range runtime.webs {
+			if id != site.WebInstance {
+				targetID = id
+				break
+			}
+		}
+	}
+	result, err := runMigrationAgent(t, e, "site_migration_plan", request{ID: site.ID, ExpectedRevision: site.Revision, TargetWebInstance: targetID, ResetAdvancedConfig: resetAdvanced})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -346,7 +429,7 @@ func TestWebMigrationPlanApplyPreservesContentWorkerPHPAndJournalRefs(t *testing
 	if !slices.Equal(contentBefore, contentAfter) || !slices.Equal(workerBefore, workerAfter) || !slices.Equal(phpConfigBefore, phpConfigAfter) {
 		t.Fatal("migration changed content, worker ownership or PHP configuration")
 	}
-	if !slices.Equal(runtime.checks, []string{"php-shared", "web-source", "web-target"}) || !slices.Equal(runtime.reloads, []string{"php-shared", "web-source", "web-target"}) {
+	if !slices.Equal(runtime.checks, []string{"php-shared", "web-source", "web-target"}) || !slices.Equal(runtime.reloads, []string{"web-source", "web-target", "php-shared"}) || runtime.listenerOwner != "web-target" || !slices.Equal(runtime.listenerOwnersAtCheck, []string{"web-source", "web-source", "web-source"}) {
 		t.Fatal("migration did not validate and reload PHP plus both Web instances", runtime.checks, runtime.reloads)
 	}
 	if len(runtime.verified) != 1 || runtime.verified[0].WebInstance != "web-target" {
@@ -365,6 +448,98 @@ func TestWebMigrationPlanApplyPreservesContentWorkerPHPAndJournalRefs(t *testing
 	legacy.WebInstance = "web-source"
 	if _, err = runMigrationAgent(t, e, "site_apply", request{ID: migrated.ID, ExpectedRevision: migrated.Revision, Site: &legacy}); err == nil || !strings.Contains(err.Error(), "explicit migration plan") {
 		t.Fatal("sites_update/site_apply bypassed the explicit Web migration plan", err)
+	}
+}
+
+func TestWebMigrationReloadAndRollbackOrdersIgnoreRuntimeNames(t *testing.T) {
+	for _, names := range []struct {
+		name     string
+		sourceID string
+		targetID string
+	}{
+		{name: "target sorts before source", sourceID: "web-zsource", targetID: "web-atarget"},
+		{name: "source sorts before target", sourceID: "web-asource", targetID: "web-ztarget"},
+	} {
+		t.Run(names.name+"/success", func(t *testing.T) {
+			e, runtime, site, _ := newMigrationTestExecutorWithWebIDs(t, false, names.sourceID, names.targetID)
+			view := createMigrationTestPlan(t, e, site, false)
+			result, err := runMigrationAgent(t, e, "site_migration_apply", request{PlanID: view.ID, ExpectedRevision: site.Revision})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var migrated Site
+			if err = json.Unmarshal(result.Data, &migrated); err != nil {
+				t.Fatal(err)
+			}
+			wantChecks := []string{"php-shared", names.sourceID, names.targetID}
+			slices.Sort(wantChecks)
+			if !slices.Equal(runtime.checks, wantChecks) || !slices.Equal(runtime.reloads, []string{names.sourceID, names.targetID, "php-shared"}) || runtime.listenerOwner != names.targetID {
+				t.Fatal("migration runtime order depended on lexical runtime IDs", runtime.checks, runtime.reloads, runtime.listenerOwner)
+			}
+			if len(runtime.transactions) != 1 || !slices.Equal(runtime.transactions[0], wantChecks) {
+				t.Fatal("migration did not retain sorted, deduplicated runtime lock authority", runtime.transactions)
+			}
+			if migrated.WebInstance != names.targetID || migrated.Revision != site.Revision+1 {
+				t.Fatal("migration did not commit the reviewed target and revision", migrated)
+			}
+		})
+
+		t.Run(names.name+"/destination reload failure", func(t *testing.T) {
+			e, runtime, site, original := newMigrationTestExecutorWithWebIDs(t, false, names.sourceID, names.targetID)
+			view := createMigrationTestPlan(t, e, site, false)
+			runtime.failReload = names.targetID
+			if _, err := runMigrationAgent(t, e, "site_migration_apply", request{PlanID: view.ID, ExpectedRevision: site.Revision}); core.ErrorCode(err) != "reload_failed" {
+				t.Fatal("injected destination reload failure was not returned", err)
+			}
+			wantChecks := []string{"php-shared", names.sourceID, names.targetID}
+			slices.Sort(wantChecks)
+			if !slices.Equal(runtime.checks, wantChecks) || !slices.Equal(runtime.reloads, []string{names.sourceID, names.targetID}) {
+				t.Fatal("migration checks or effects used an incorrect order", runtime.checks, runtime.reloads)
+			}
+			if !slices.Equal(runtime.recoveries, []string{names.targetID, names.sourceID, "php-shared"}) || runtime.listenerOwner != names.sourceID {
+				t.Fatal("rollback did not release the target before restoring the source listener", runtime.recoveries, runtime.listenerOwner)
+			}
+			source, err := os.ReadFile(filepath.Join(runtime.webs[names.sourceID].SnippetsDir, site.ID+".conf"))
+			if err != nil || string(source) != original {
+				t.Fatal("rollback did not restore the original source configuration", err)
+			}
+			if _, err = os.Stat(filepath.Join(runtime.webs[names.targetID].SnippetsDir, site.ID+".conf")); !errors.Is(err, fs.ErrNotExist) {
+				t.Fatal("rollback left a destination vhost behind", err)
+			}
+			current, err := e.get(site.ID)
+			if err != nil || current.WebInstance != names.sourceID || current.Revision != site.Revision {
+				t.Fatal("rollback changed protected site metadata", current, err)
+			}
+		})
+	}
+}
+
+func TestMigrationJournalRequiresSourceReceiptToMatchRecoveryOrder(t *testing.T) {
+	e, runtime, site, _ := newMigrationTestExecutor(t, false)
+	view := createMigrationTestPlan(t, e, site, false)
+	in := request{Actor: core.Actor{ID: "migration-owner", Kind: "human", Name: "Migration owner"}, PlanID: view.ID, ExpectedRevision: site.Revision}
+	ctx, finish, err := e.beginWebsiteJournal(context.Background(), "site_migration_apply", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	active := ctx.Value(websiteJournalKey{}).(*activeWebsiteJournal)
+	journal := active.record
+	if err = e.validateJournal(ctx, journal, journal.ID+".json"); err != nil {
+		t.Fatal("fresh migration journal failed validation", err)
+	}
+	swapped := journal
+	swapped.Sites = append([]journalSite(nil), journal.Sites...)
+	swapped.Sites[0], swapped.Sites[1] = swapped.Sites[1], swapped.Sites[0]
+	if err = e.validateJournal(ctx, swapped, swapped.ID+".json"); err == nil {
+		t.Fatal("migration journal accepted a source/target order that disagrees with its protected site receipt")
+	}
+	operationErr := errors.New("force journal rollback after order validation")
+	finish(&operationErr)
+	if !slices.Equal(active.record.RuntimeIDs, []string{"php-shared", "web-source", "web-target"}) {
+		t.Fatal("migration journal changed sorted runtime authority", active.record.RuntimeIDs)
+	}
+	if !slices.Equal(runtime.recoveries, []string{"web-target", "web-source", "php-shared"}) || runtime.listenerOwner != "web-source" {
+		t.Fatal("active journal rollback did not follow the validated migration direction", runtime.recoveries, runtime.listenerOwner)
 	}
 }
 
@@ -410,7 +585,7 @@ func TestWebMigrationAdvancedResetKeepsPrivateOriginalAndRollbackRestoresConfig(
 	if err != nil || current.Revision != site2.Revision || current.WebInstance != site2.WebInstance || current.ConfigurationMode != "advanced" {
 		t.Fatal("failed migration did not restore protected website metadata", current, err)
 	}
-	if !slices.Equal(runtime2.recoveries, []string{"php-shared", "web-source", "web-target"}) {
+	if !slices.Equal(runtime2.recoveries, []string{"web-target", "web-source", "php-shared"}) || runtime2.listenerOwner != "web-source" {
 		t.Fatal("migration rollback did not recover each journaled runtime", runtime2.recoveries)
 	}
 }
@@ -483,7 +658,7 @@ func TestWebMigrationFixtureWALSubprocessSIGKILLRecoversCommitAndRollback(t *tes
 				if _, readErr := os.Stat(targetPath); !errors.Is(readErr, fs.ErrNotExist) {
 					t.Fatal("uncommitted migration left a target vhost behind", readErr)
 				}
-				if !slices.Equal(runtime.recoveries, []string{"php-shared", "web-source", "web-target"}) {
+				if !slices.Equal(runtime.recoveries, []string{"web-target", "web-source", "php-shared"}) || runtime.listenerOwner != "web-source" {
 					t.Fatal("rollback did not recover every journaled runtime", runtime.recoveries)
 				}
 			} else {
