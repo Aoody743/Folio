@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-15",
+  "version": "0.1.0-dev.19",
+  "source_commit": "04154fc31db1578ef59bc08b0a478eb82f3db5f3",
+  "stage_2_complete": false,
+  "checks": {
+    "full_go_race": "PASS",
+    "go_vet": "PASS",
+    "frontend_tests": {
+      "result": "PASS",
+      "tests": 63,
+      "source": "Luna frontend agent report before source freeze"
+    },
+    "typescript": "PASS",
+    "next_static_export": "PASS",
+    "linux_amd64_and_arm64_build": "PASS",
+    "actual_amd64_installer_private_prefix_smoke": "PASS"
+  },
+  "logs": {
+    "full-race": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev19-full-race-20261015.log",
+      "sha256": "538614989e8ce4ed7b6bdcf977cacaa327d61e7cf2dc5341971edb27be78ea07"
+    },
+    "vet": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev19-vet-20261015.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "build": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev19-build-20261015.log",
+      "sha256": "e0ed4d90a097a8b9aae7ee7d7868953d37d6e7fa9cd9856c84036fe888ce47b8"
+    },
+    "package": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev19-package-20261015.log",
+      "sha256": "71c21132a49efb8d093d47f048737b25931855019bf196f83b65367b83cd5aed"
+    }
+  },
+  "archive_sha256": {
+    "linux-amd64": "38cbf588dd82eb65a241a22f391bcf829a22b9d446d6b99e93cbc786b0ae5692",
+    "linux-arm64": "70510e5d5fc3ab14fe4d08b6a02ed302f73f436b11565ecf7657594b92a64091"
+  },
+  "amd64_binary_sha256": "9f33333327423399e5b2c00c02a3e58b3ce787ea38086df7c2c526b6ec458837",
+  "implemented": [
+    "Bounded Docker one-shot exec with encrypted env/stdin and truthful post-timeout execution status",
+    "Same-Agent attested Docker archive export/import; arbitrary external archives remain unsupported",
+    "Managed MySQL/MariaDB binlog status/configuration/purge preview and recovery",
+    "FTP destination directory browsing, creation and nonrecursive preview deletion",
+    "FTP account enabled state; signed-package pause enforcement remains under native verification",
+    "Redacted Redis/Valkey cluster counters and topology",
+    "Manual HTTP-01 ACME order preparation and explicit confirmation without automatic webroot or DNS writes"
+  ],
+  "pending": [
+    "Native dev19 daemon/Agent/UI/MCP behavior acceptance",
+    "Interactive Docker TTY",
+    "PHP slowlog/site sessions/extensions",
+    "Replication, SSH database synchronization and remaining engine-specific behavior",
+    "rsync/lsyncd and admin application workflows",
+    "Other P2 behavior and lifecycle matrix",
+    "External public CA/DNS/notification verification, deferred by user",
+    "ARM64 native execution"
+  ]
+}

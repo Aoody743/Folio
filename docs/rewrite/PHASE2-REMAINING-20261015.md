@@ -4,6 +4,12 @@
 
 `planned`、旧动作字符串数、catalog capability 声明均不是剩余功能数量；不据此计算百分比。下表的“已有”指具体源码能力，不表示整插件验收完成。错误返回、策略限制与缺功能分别保留，不能用通用 SQL、终端或可编辑配置替代专用用户管理闭环。
 
+## dev.19 增量（2026-10-15，优先于下方历史盘点）
+
+[dev.19 检查与边界](evidence/phase2-dev19-checks-20261015.json) 已记录实际实现与检查。下方表格是较早盘点，以下项目已从纯功能缺口进入“已实现、待原生验收”：Docker 单次 exec、同 Agent 证明的镜像归档、MySQL/MariaDB binlog、FTP 备份目标目录维护、FTP 账号状态、Redis/Valkey 脱敏集群视图。手动 HTTP-01 也已有源码与协议测试，公共 CA 验收由用户暂缓。
+
+仍未关闭的功能包括交互 TTY、PHP 慢日志/站点 session/扩展安装、数据库复制与 SSH 同步及引擎专属操作、rsync/lsyncd、管理应用配置，以及其他下表列明的专用行为。FTP 暂停的实际账号拒绝语义正在核验；不能仅凭 enabled 字段或参数测试宣称登录已受阻。所有已有实现仍保留各自原生、平台、权限、任务恢复与 UI/MCP 验收条件。
+
 ## 结论与分类
 
 第二阶段仍有确定的功能缺口：PHP slow log/站点 session/扩展安装，数据库 binlog 与复制变更/SSH 同步，Docker exec/镜像导入导出，rsync 实时同步，FTP 备份目标远端目录维护，以及若干管理应用的专有配置界面。PHP instance error log/session 与 Supervisor job log 已补入 Luna 批次；Ubuntu dev.16 浏览器已验证 FPM 日志、统计及零候选预览，未提交清理任务；独立 Supervisor daemon 的双路日志 RPC 与 PID 保持已通过，安装包 REST/MCP/Agent/UI 全链仍待验收。另有四个 DNS provider 明确不可用。通用 lifecycle、数据库 CRUD 或服务启动成功均不能覆盖这些行为。
