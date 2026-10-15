@@ -28,6 +28,7 @@ import (
 type managedDatabaseCredential struct {
 	Engine, Username, Password, DataDir string
 	Initialized                         bool
+	Version                             string
 }
 
 func databasePrivateID(instance Instance) string { return "database_" + instance.ID }

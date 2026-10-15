@@ -185,9 +185,18 @@ func (e *PrivilegedExecutor) database(ctx context.Context, raw json.RawMessage) 
 	return nil, failure("invalid_input", "Unsupported database operation", 400)
 }
 func (e *PrivilegedExecutor) openManagedAdmin(ctx context.Context, instance Instance) (*sql.DB, error) {
+	if err := e.ensureDatabaseAdminSettled(instance); err != nil {
+		return nil, err
+	}
 	var credential managedDatabaseCredential
 	if err := e.load("private", databasePrivateID(instance), &credential); err != nil || !credential.Initialized || credential.Engine != instance.PluginID || credential.DataDir != instance.Paths.DataDir {
 		return nil, failure("credential_unavailable", "Owned database initialization receipt is unavailable", 412)
+	}
+	return e.openManagedAdminCredential(ctx, instance, credential)
+}
+func (e *PrivilegedExecutor) openManagedAdminCredential(ctx context.Context, instance Instance, credential managedDatabaseCredential) (*sql.DB, error) {
+	if err := e.verifyDatabaseAdminCandidate(instance, credential); err != nil {
+		return nil, err
 	}
 	if instance.PluginID == "postgresql" {
 		return openSQLProfile(ctx, DatabaseConnection{Engine: "postgresql", Host: managedDatabaseHost(instance), Port: setting(instance.Config, "port", 0), Username: credential.Username}, credential.Password, "postgres")

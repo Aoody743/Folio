@@ -61,6 +61,9 @@ func legacyReviewedHTTPSFixture(t *testing.T, provider string) (legacyDNSOptions
 	if provider == "dns_zilore" {
 		official, field = legacyZiloreAPI, "Zilore_Key"
 	}
+	if provider == "dns_dpi" {
+		official, field = legacyDPIAPI, "DPI_Key"
+	}
 	state := &legacyHTTPSFixture{provider: provider, domainID: "21", records: []legacyHTTPSRecord{
 		{id: "9", name: "_acme-challenge.example.test", kind: "TXT", wire: strconv.Quote("unrelated-existing"), status: "enabled"},
 		{id: "8", name: "www.example.test", kind: "A", wire: "192.0.2.10", status: "enabled"},
@@ -76,6 +79,17 @@ func legacyReviewedHTTPSFixture(t *testing.T, provider string) (legacyDNSOptions
 		auth := request.Header.Get("X-Auth-Key")
 		if provider == "dns_online" {
 			auth = strings.TrimPrefix(request.Header.Get("Authorization"), "Bearer ")
+		}
+		if provider == "dns_dpi" {
+			if request.Method != http.MethodPost || request.ParseForm() != nil {
+				t.Error("DPI must use POST forms")
+			}
+			if request.PostForm.Get("login_token") == "123,fixture-private-key" || request.PostForm.Get("user_token") == "123,fixture-private-key" {
+				if request.PostForm.Get("login_token") != "" && request.PostForm.Get("user_token") != "" {
+					t.Error("DPI sent both authentication schemes")
+				}
+				auth = "fixture-private-key"
+			}
 		}
 		if auth != "fixture-private-key" {
 			writer.WriteHeader(401)
@@ -96,7 +110,9 @@ func legacyReviewedHTTPSFixture(t *testing.T, provider string) (legacyDNSOptions
 			writer.Write([]byte("provider echoes fixture-private-key"))
 			return
 		}
-		if provider == "dns_zilore" {
+		if provider == "dns_dpi" {
+			legacyDPIFixtureRequest(t, state, writer, request)
+		} else if provider == "dns_zilore" {
 			legacyZiloreFixtureRequest(t, state, writer, request)
 		} else {
 			legacyOnlineFixtureRequest(t, state, writer, request)
@@ -107,8 +123,12 @@ func legacyReviewedHTTPSFixture(t *testing.T, provider string) (legacyDNSOptions
 	local, _ := url.Parse(server.URL)
 	client := server.Client()
 	client.Transport = legacyFixtureTransport{official: base, server: local, inner: client.Transport}
+	credentials := map[string]string{field: "fixture-private-key"}
+	if provider == "dns_dpi" {
+		credentials["DPI_Id"] = "123"
+	}
 	return legacyDNSOptions{Provider: provider, OwnerID: "https-certificate", State: legacyPrivateDNSState(t),
-		Credentials: map[string]string{field: "fixture-private-key"}, AllowedAPIURLs: []string{official}, HTTPClient: client}, state
+		Credentials: credentials, AllowedAPIURLs: []string{official}, HTTPClient: client}, state
 }
 
 func legacyZiloreFixtureRequest(t *testing.T, state *legacyHTTPSFixture, writer http.ResponseWriter, request *http.Request) {
@@ -329,6 +349,9 @@ func legacyHTTPSExerciseLifecycle(t *testing.T, provider string) {
 	changedAccount := options
 	changedAccount.Credentials = cloneLegacyDNSCredentials(options.Credentials)
 	for field := range changedAccount.Credentials {
+		if provider == "dns_dpi" && field == "DPI_Id" {
+			continue
+		}
 		changedAccount.Credentials[field] = "rotated-private-key"
 	}
 	rotated, err := newLegacyDNSProvider(changedAccount)

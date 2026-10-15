@@ -73,7 +73,7 @@ type PrivilegedExecutor struct {
 var validAccount = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}\$?$`)
 
 func Operations() []string {
-	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "utility_action", "docker_action", "backup_artifact", "database_action", "database_artifact"}
+	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "php_maintenance", "utility_action", "supervisor_log_action", "docker_action", "backup_artifact", "database_action", "database_admin_action", "database_artifact"}
 }
 
 // ValidatePrivilegedConfig performs read-only policy validation. In particular
@@ -376,12 +376,18 @@ func (e *PrivilegedExecutor) Validate(request agent.Request) error {
 		return e.validateAutostart(request.Input)
 	case "php_action":
 		return e.validatePHP(request.Input)
+	case "php_maintenance":
+		return e.ValidatePHPMaintenance(request.Input)
 	case "utility_action":
 		return e.validateUtility(request.Input)
+	case "supervisor_log_action":
+		return e.validateSupervisorLog(request.Input)
 	case "docker_action":
 		return e.validateDocker(request.Input)
 	case "database_action":
 		return e.validateDatabase(request.Input)
+	case "database_admin_action":
+		return e.validateDatabaseAdmin(request.Input)
 	case "database_artifact":
 		return e.validateDatabaseArtifact(request.Input)
 	case "backup_artifact":
@@ -455,14 +461,20 @@ func (e *PrivilegedExecutor) Run(ctx context.Context, request agent.Request) (re
 		output, err = e.control(ctx, input)
 	case "php_action":
 		output, err = e.php(ctx, request.Input)
+	case "php_maintenance":
+		output, err = e.RunPHPMaintenance(ctx, request.Input)
 	case "plugin_autostart":
 		output, err = e.autostart(ctx, request.Input)
 	case "utility_action":
 		output, err = e.utility(ctx, request.Input)
+	case "supervisor_log_action":
+		output, err = e.supervisorLog(ctx, request.Input)
 	case "docker_action":
 		output, err = e.docker(ctx, request.Input)
 	case "database_action":
 		output, err = e.database(ctx, request.Input)
+	case "database_admin_action":
+		output, err = e.databaseAdmin(ctx, request.Input)
 	case "backup_artifact", "database_artifact":
 		return result, failure("stream_required", "Backup artifacts must use the authenticated streaming transport", 400)
 	}

@@ -31,7 +31,7 @@ func (handlers resourceHandlers) HandleResource(w http.ResponseWriter, r *http.R
 }
 
 func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeModules, error) {
-	if err := service.RegisterScopes("files:permissions", "files:host", "terminal:root", "terminal:share", "host:packages"); err != nil {
+	if err := service.RegisterScopes("files:permissions", "files:host", "terminal:root", "terminal:share", "host:packages", "databases:credentials"); err != nil {
 		return nil, err
 	}
 	// Assign an interface only when the concrete pointer is non-nil. Typed nils
@@ -53,6 +53,12 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 		}
 	}
 	if err = service.RegisterExecutor(append(plugins.ManagedJobOperations(), plugins.NativeOperations()...), software); err != nil {
+		return nil, err
+	}
+	if err = service.RegisterExecutor([]string{"docker_registry_pull"}, plugins.NewDockerRegistryExecutor(software, client)); err != nil {
+		return nil, err
+	}
+	if err = service.RegisterExecutor(plugins.DatabaseAdminJobOperations(), plugins.NewDatabaseAdminExecutor(software, client)); err != nil {
 		return nil, err
 	}
 	websites, err := sites.New(service.Runtime("sites"), sites.Options{Agent: executor})

@@ -14,6 +14,14 @@ const PHPResources = dynamic(
   { ssr: false },
 );
 import { hasInstanceResources } from "./instance-resources";
+const PHPMaintenance = dynamic(
+  () => import("./php-maintenance").then((m) => m.PHPMaintenance),
+  { ssr: false },
+);
+const SupervisorLogs = dynamic(
+  () => import("./supervisor-logs").then((m) => m.SupervisorLogs),
+  { ssr: false },
+);
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -465,10 +473,30 @@ export function SoftwareView({
                     active={active && open}
                   />
                 )}
+              {instance && tab === "operations" &&
+                ["php", "php-apt", "php-yum"].includes(instance.plugin_id) && (
+                  <PHPMaintenance
+                    key={instance.id}
+                    instance={instance}
+                    capabilities={capabilities}
+                    onExecuted={refresh}
+                    active={active && open}
+                  />
+                )}
+              {instance && tab === "operations" && instance.plugin_id === "supervisor" && (
+                <SupervisorLogs
+                  key={instance.id}
+                  instance={instance}
+                  capabilities={capabilities}
+                  onExecuted={refresh}
+                  active={active && open}
+                />
+              )}
               <ResourceActions
                 capabilities={capabilities}
                 names={(name) =>
                   compatible(name) &&
+                  !name.startsWith("php_maintenance_") &&
                   !(
                     instance &&
                     tab === "operations" &&

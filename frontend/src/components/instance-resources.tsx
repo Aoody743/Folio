@@ -11,6 +11,8 @@ import { SoftwareInstance } from "@/lib/resources";
 import { choiceLabel } from "@/lib/labels";
 import { useResource } from "@/lib/resource-hook";
 import { ActionForm } from "./actions";
+import { DockerManagement } from "./docker-management";
+import { DatabaseAdminCredentials } from "./database-admin-credentials";
 import { DatabaseRecreation } from "./database-recreation";
 import { Pager, ResourceActions, State, Unavailable } from "./resource-ui";
 type Row = Record<string, unknown>;
@@ -57,7 +59,7 @@ export function InstanceResources({
   const data = useResource<Inventory>(
     name,
     kind === "database" ? { instance_id: instance.id } : { id: instance.id },
-    active && capabilities.some((c) => c.name === name),
+    active && !(kind === "docker" && collection === "images") && capabilities.some((c) => c.name === name),
   );
   const raw = data.data?.items;
   const rows = (
@@ -128,7 +130,7 @@ export function InstanceResources({
                 ? "守护程序"
                 : "服务账户"}
         </h3>
-        {create && (kind !== "database" || databaseReceipt) && (
+        {create && !(kind === "docker" && collection === "images") && (kind !== "database" || databaseReceipt) && (
           <Button
             label={
               kind === "database"
@@ -181,6 +183,8 @@ export function InstanceResources({
           ))}
         </div>
       )}
+      {kind === "database" && <DatabaseAdminCredentials key={instance.id} instanceID={instance.id} engine={instance.plugin_id} capabilities={capabilities} onExecuted={refresh} active={active} />}
+      {kind === "docker" && collection === "images" ? <DockerManagement key={instance.id} instanceID={instance.id} capabilities={capabilities} onExecuted={refresh} active={active}/> : <>
       {data.error && (
         <div className="notice danger" role="alert">
           {data.error}
@@ -322,6 +326,7 @@ export function InstanceResources({
                     `docker_${collection === "containers" ? "container" : collection === "networks" ? "network" : "volume"}_`,
                   ) && !name.endsWith("_create")
                 : name.startsWith(kind + "_") &&
+                  !name.startsWith("supervisor_log_") &&
                   !/_list|_status|_create/.test(name)
             }
             preset={preset}
@@ -330,6 +335,7 @@ export function InstanceResources({
             onExecuted={refresh}
           />
         ))}
+      </>}
     </section>
   );
 }
