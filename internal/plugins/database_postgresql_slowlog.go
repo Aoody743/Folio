@@ -3,7 +3,9 @@ package plugins
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"io"
 	"math"
 	"os"
@@ -14,6 +16,9 @@ import (
 	"syscall"
 	"time"
 	"unicode"
+	"unicode/utf8"
+
+	"github.com/Aoody743/PowerLinux/internal/core"
 )
 
 const (
@@ -62,10 +67,12 @@ type postgresqlSlowlogConfig struct {
 }
 
 type postgresqlSlowlogSetting struct {
-	Name   string
-	Value  string
-	Source string
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Source string `json:"source"`
 }
+
+var postgresqlSlowlogSettingNames = [...]string{"log_min_duration_statement", "log_parameter_max_length", "log_statement", "log_line_prefix"}
 
 func readPostgreSQLConfig(instance Instance, serviceGID int) (postgresAccessFile, error) {
 	file, err := readProfileFile(instance.Paths.ConfigDir, "postgresql.conf")
@@ -278,6 +285,242 @@ func verifyPostgreSQLSlowlogSettings(ctx context.Context, db interface {
 	return nil
 }
 
+func validPostgreSQLSlowlogBaseline(settings map[string]postgresqlSlowlogSetting) bool {
+	if len(settings) != len(postgresqlSlowlogSettingNames) {
+		return false
+	}
+	for _, name := range postgresqlSlowlogSettingNames {
+		item, ok := settings[name]
+		if !ok || item.Name != name || len(item.Value) > 1024 || !utf8.ValidString(item.Value) || strings.ContainsAny(item.Value, "\x00\r\n") {
+			return false
+		}
+		if item.Source != "" && item.Source != "default" && item.Source != "configuration file" {
+			return false
+		}
+	}
+	return true
+}
+
+func verifyPostgreSQLSlowlogBaselineSettings(live, expected map[string]postgresqlSlowlogSetting) error {
+	if !validPostgreSQLSlowlogBaseline(expected) || len(live) != len(postgresqlSlowlogSettingNames) {
+		return failure("runtime_unavailable", "PostgreSQL prior slow-log settings could not be verified", 502)
+	}
+	for _, name := range postgresqlSlowlogSettingNames {
+		want := expected[name]
+		got, ok := live[name]
+		if !ok || got.Name != name || got.Value != want.Value || len(got.Value) > 1024 || !utf8.ValidString(got.Value) || strings.ContainsAny(got.Value, "\x00\r\n") {
+			return failure("reload_not_applied", "PostgreSQL did not restore the recorded prior slow-log values", 409)
+		}
+		if want.Source != "" {
+			if got.Source != want.Source {
+				return failure("reload_not_applied", "PostgreSQL did not restore the recorded prior slow-log source", 409)
+			}
+		} else if got.Source != "default" && got.Source != "configuration file" {
+			return failure("reload_not_applied", "PostgreSQL prior slow-log setting source is not provable", 409)
+		}
+	}
+	return nil
+}
+
+func postgresqlConfigSettingOutput(name, output string) (string, error) {
+	allowed := false
+	for _, fixed := range postgresqlSlowlogSettingNames {
+		if name == fixed {
+			allowed = true
+			break
+		}
+	}
+	if !allowed || !strings.HasSuffix(output, "\n") {
+		return "", failure("configuration_check_failed", "PostgreSQL prior settings could not be read safely", 409)
+	}
+	value := strings.TrimSuffix(output, "\n")
+	if len(value) > 1024 || !utf8.ValidString(value) || strings.ContainsAny(value, "\x00\r\n") {
+		return "", failure("configuration_check_failed", "PostgreSQL prior settings exceeded their safe output bound", 409)
+	}
+	return value, nil
+}
+
+// derivePostgreSQLSlowlogBaseline handles old pending journals that predate a
+// recorded live-settings snapshot. The result is the effective configuration
+// derived from the exact journaled Before file, not a historical live snapshot.
+// The candidate is a root-owned sibling so relative include paths resolve from
+// the same directory. Its suffix is intentionally not .conf, so include_dir
+// scans cannot load the candidate a second time.
+func (e *PrivilegedExecutor) derivePostgreSQLSlowlogBaseline(ctx context.Context, instance Instance, before []byte) (result map[string]postgresqlSlowlogSetting, retErr error) {
+	baseline := make(map[string]postgresqlSlowlogSetting, len(postgresqlSlowlogSettingNames))
+	if len(before) == 0 || len(before) > databasePostgreSQLMaxConfigBytes || !filepath.IsAbs(instance.Paths.ConfigDir) || !filepath.IsAbs(instance.Paths.DataDir) {
+		return nil, failure("configuration_check_failed", "PostgreSQL prior configuration is outside the recovery bounds", 409)
+	}
+	if err := trustedDatabaseProgram(instance.Service.Program); err != nil {
+		return nil, failure("configuration_check_failed", "The trusted PostgreSQL program is unavailable for prior-state verification", 409)
+	}
+	var entropy [12]byte
+	if _, err := rand.Read(entropy[:]); err != nil {
+		return nil, err
+	}
+	tempName := ".powerlinux-slowlog-baseline-" + hex.EncodeToString(entropy[:])
+	root, err := os.OpenRoot(instance.Paths.ConfigDir)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	defer func() {
+		removeErr := root.Remove(tempName)
+		if removeErr != nil && !os.IsNotExist(removeErr) {
+			result = nil
+			retErr = failure("configuration_check_failed", "The temporary PostgreSQL prior-configuration copy could not be removed safely", 409)
+			return
+		}
+		if removeErr == nil {
+			dir, openErr := root.Open(".")
+			if openErr != nil {
+				result = nil
+				retErr = failure("configuration_check_failed", "PostgreSQL prior-configuration cleanup could not be verified", 409)
+				return
+			}
+			syncErr := dir.Sync()
+			closeErr := dir.Close()
+			if syncErr != nil || closeErr != nil {
+				result = nil
+				retErr = failure("configuration_check_failed", "PostgreSQL prior-configuration cleanup could not be verified", 409)
+			}
+		}
+	}()
+	if err = writeAtomicRoot(instance.Paths.ConfigDir, tempName, before, 0640, int(e.gid)); err != nil {
+		return nil, failure("configuration_check_failed", "The journaled PostgreSQL prior configuration could not be staged safely", 409)
+	}
+	staged, err := root.Open(tempName)
+	if err != nil {
+		return nil, failure("configuration_check_failed", "The journaled PostgreSQL prior configuration could not be verified safely", 409)
+	}
+	info, statErr := staged.Stat()
+	var stat *syscall.Stat_t
+	if statErr == nil {
+		stat, _ = info.Sys().(*syscall.Stat_t)
+	}
+	validFile := statErr == nil && stat != nil && info.Mode().IsRegular() && info.Size() == int64(len(before)) && stat.Nlink == 1 && (os.Geteuid() != 0 || stat.Uid == 0) && stat.Gid == uint32(e.gid) && info.Mode().Perm() == 0640
+	if validFile {
+		linkInfo, linkErr := root.Lstat(tempName)
+		linkStat, _ := linkInfo.Sys().(*syscall.Stat_t)
+		validFile = linkErr == nil && linkStat != nil && linkStat.Dev == stat.Dev && linkStat.Ino == stat.Ino && linkInfo.Mode().IsRegular()
+	}
+	if validFile {
+		contents, readErr := io.ReadAll(io.LimitReader(staged, int64(len(before))+1))
+		validFile = readErr == nil && len(contents) == len(before) && bytes.Equal(contents, before)
+	}
+	closeErr := staged.Close()
+	if !validFile || closeErr != nil {
+		return nil, failure("configuration_check_failed", "The journaled PostgreSQL prior configuration could not be verified safely", 409)
+	}
+	dir, err := root.Open(".")
+	if err != nil {
+		return nil, failure("configuration_check_failed", "The temporary PostgreSQL prior-configuration directory could not be synced", 409)
+	}
+	err = dir.Sync()
+	closeErr = dir.Close()
+	if err != nil || closeErr != nil {
+		return nil, failure("configuration_check_failed", "The temporary PostgreSQL prior-configuration directory could not be synced", 409)
+	}
+	configPath := filepath.Join(instance.Paths.ConfigDir, tempName)
+	for _, name := range postgresqlSlowlogSettingNames {
+		args, argsErr := postgresqlConfigValueArgs(instance.Paths.DataDir, configPath, name)
+		if argsErr != nil {
+			return nil, argsErr
+		}
+		output, runErr := runFixed(ctx, instance.Service.Program, args, 10*time.Second, e.credential(instance))
+		if runErr != nil {
+			return nil, failure("configuration_check_failed", "PostgreSQL could not evaluate the journaled prior configuration", 409)
+		}
+		value, parseErr := postgresqlConfigSettingOutput(name, output)
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		baseline[name] = postgresqlSlowlogSetting{Name: name, Value: value}
+	}
+	if !validPostgreSQLSlowlogBaseline(baseline) {
+		return nil, failure("configuration_check_failed", "PostgreSQL prior settings did not match the fixed slow-log schema", 409)
+	}
+	return baseline, nil
+}
+
+func postgresqlConfigValueArgs(dataDir, configPath, name string) ([]string, error) {
+	allowed := false
+	for _, fixed := range postgresqlSlowlogSettingNames {
+		if name == fixed {
+			allowed = true
+			break
+		}
+	}
+	if !allowed || !filepath.IsAbs(dataDir) || !filepath.IsAbs(configPath) || strings.ContainsAny(dataDir+configPath, "\x00\r\n") {
+		return nil, failure("configuration_check_failed", "PostgreSQL prior setting request is outside the fixed recovery scope", 409)
+	}
+	return []string{"-D", dataDir, "-c", "config_file=" + configPath, "-C", name}, nil
+}
+
+func (e *PrivilegedExecutor) waitForPostgreSQLSlowlogTarget(ctx context.Context, instance Instance, target []byte) error {
+	return waitForPostgreSQLSlowlogSettings(ctx, func(callCtx context.Context) (*sql.DB, error) {
+		return e.openManagedAdmin(callCtx, instance)
+	}, func(callCtx context.Context, db *sql.DB) error {
+		return verifyPostgreSQLSlowlogSettings(callCtx, db, target)
+	})
+}
+
+func (e *PrivilegedExecutor) waitForPostgreSQLSlowlogBaseline(ctx context.Context, instance Instance, baseline map[string]postgresqlSlowlogSetting) error {
+	return waitForPostgreSQLSlowlogBaselineUsing(ctx, func(callCtx context.Context) (*sql.DB, error) {
+		return e.openManagedAdmin(callCtx, instance)
+	}, baseline)
+}
+
+func waitForPostgreSQLSlowlogBaselineUsing(ctx context.Context, open func(context.Context) (*sql.DB, error), baseline map[string]postgresqlSlowlogSetting) error {
+	if !validPostgreSQLSlowlogBaseline(baseline) {
+		return failure("operation_recovery_required", "PostgreSQL recovery journal has no valid prior settings snapshot", 409)
+	}
+	return waitForPostgreSQLSlowlogSettings(ctx, open, func(callCtx context.Context, db *sql.DB) error {
+		live, err := queryPostgreSQLSlowlogSettings(callCtx, db)
+		if err != nil {
+			return err
+		}
+		return verifyPostgreSQLSlowlogBaselineSettings(live, baseline)
+	})
+}
+
+func waitForPostgreSQLSlowlogSettings(ctx context.Context, open func(context.Context) (*sql.DB, error), verify func(context.Context, *sql.DB) error) error {
+	if open == nil || verify == nil {
+		return failure("runtime_unavailable", "PostgreSQL live settings verifier is unavailable", 502)
+	}
+	waitCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		if err := waitCtx.Err(); err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			return failure("reload_not_applied", "PostgreSQL did not load the exact slow-log settings within the verification window", 409)
+		}
+		db, err := open(waitCtx)
+		if err == nil {
+			err = verify(waitCtx, db)
+			_ = db.Close()
+			if err == nil {
+				return nil
+			}
+			if code := core.ErrorCode(err); code != "reload_not_applied" && code != "runtime_unavailable" {
+				return err
+			}
+		}
+		select {
+		case <-waitCtx.Done():
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			return failure("reload_not_applied", "PostgreSQL did not load the exact slow-log settings within the verification window", 409)
+		case <-ticker.C:
+		}
+	}
+}
+
 func verifyPostgreSQLSlowlogSettingMap(settings map[string]postgresqlSlowlogSetting, expected postgresqlSlowlogConfig) error {
 	minimum := expected.MinimumDurationMS
 	if !expected.Enabled {
@@ -315,7 +558,11 @@ func (e *PrivilegedExecutor) configurePostgreSQLSlowlog(ctx context.Context, ins
 	if revision != in.ExpectedConfigRevision {
 		return nil, failure("revision_conflict", "PostgreSQL runtime configuration changed; reload slow-log status before editing", 412)
 	}
-	if _, err = e.readPostgreSQLSlowlogSettings(ctx, instance); err != nil {
+	beforeSettings, err := e.readPostgreSQLSlowlogSettings(ctx, instance)
+	if err != nil || !validPostgreSQLSlowlogBaseline(beforeSettings) {
+		if err == nil {
+			err = failure("runtime_unavailable", "PostgreSQL prior slow-log settings have an unsupported source or value", 412)
+		}
 		return nil, err
 	}
 	after, err := makePostgreSQLSlowlogConfig(file.Body, in.Enabled, in.MinimumDurationMS)
@@ -325,7 +572,7 @@ func (e *PrivilegedExecutor) configurePostgreSQLSlowlog(ctx context.Context, ins
 	if bytes.Equal(file.Body, after) {
 		return e.postgreSQLSlowlogStatus(ctx, instance, record)
 	}
-	intent := databasePostgreSQLFileIntent{Version: 1, Kind: "slowlog", InstanceID: instance.ID, Engine: "postgresql", DataDir: instance.Paths.DataDir, ConfigDir: instance.Paths.ConfigDir, Database: record.Database, DatabaseRevision: record.Revision, InstanceRevision: instance.Revision, ExpectedRevision: revision, Before: append([]byte(nil), file.Body...), After: after, BeforeMode: uint32(file.Mode), BeforeUID: file.UID, BeforeGID: file.GID, Operation: "configure", State: "pending", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	intent := databasePostgreSQLFileIntent{Version: 1, Kind: "slowlog", InstanceID: instance.ID, Engine: "postgresql", DataDir: instance.Paths.DataDir, ConfigDir: instance.Paths.ConfigDir, Database: record.Database, DatabaseRevision: record.Revision, InstanceRevision: instance.Revision, ExpectedRevision: revision, Before: append([]byte(nil), file.Body...), After: after, BeforeSettings: beforeSettings, BeforeMode: uint32(file.Mode), BeforeUID: file.UID, BeforeGID: file.GID, Operation: "configure", State: "pending", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 	if err = e.save("private", databasePostgreSQLMaintenanceIntentID(instance, "slowlog"), intent); err != nil {
 		return nil, failure("operation_recovery_required", "PostgreSQL slow-log intent could not be durably recorded", 409)
 	}

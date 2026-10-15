@@ -18,6 +18,13 @@ func (e *PrivilegedExecutor) validateInstallTarget(ctx context.Context, current 
 	if err != nil {
 		return err
 	}
+	// Install and reinstall also need every protected runtime journal to be
+	// settled. In particular, a missing receipt does not make an interrupted
+	// PHP extension transaction safe to overwrite with a fresh installation.
+	// Both callers hold the shared per-instance lock before reaching here.
+	if err := e.ensureInstallFinalized(ctx, plugin+"-"+label); err != nil {
+		return err
+	}
 	if e.config.UseSystemd && len(manifest.Service.Programs) > 0 && manifest.Service.Health != "cli" {
 		if err := e.checkSystemdIdentity(ctx, "powerlinux-plugin-"+plugin+"-"+label+".service", true); err != nil {
 			return err

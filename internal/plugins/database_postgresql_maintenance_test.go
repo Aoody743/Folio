@@ -49,12 +49,20 @@ func TestPostgreSQLSlowlogRejectsFIFOWithoutBlocking(t *testing.T) {
 }
 
 type postgresqlMaintenanceFixture struct {
-	mu        sync.Mutex
-	hbaErrors int64
-	reloadOK  bool
-	settings  map[string]string
-	queries   []string
-	without   string
+	mu                          sync.Mutex
+	hbaErrors                   int64
+	reloadOK                    bool
+	settings                    map[string]string
+	sources                     map[string]string
+	settingsAfterReload         map[string]string
+	sourcesAfterReload          map[string]string
+	reloadLagQueries            int
+	settingsQueriesAfterReload  int
+	settingsQueriesBeforeReload int
+	openCount                   int
+	reloadSeen                  bool
+	queries                     []string
+	without                     string
 }
 
 type postgresqlMaintenanceFixtureDriver struct{ fixture *postgresqlMaintenanceFixture }
@@ -68,6 +76,9 @@ type postgresqlMaintenanceFixtureRows struct {
 var postgresqlMaintenanceFixtureID atomic.Uint64
 
 func (d postgresqlMaintenanceFixtureDriver) Open(string) (driver.Conn, error) {
+	d.fixture.mu.Lock()
+	d.fixture.openCount++
+	d.fixture.mu.Unlock()
 	return &postgresqlMaintenanceFixtureConn{fixture: d.fixture}, nil
 }
 func (c *postgresqlMaintenanceFixtureConn) Prepare(string) (driver.Stmt, error) {
@@ -85,15 +96,31 @@ func (c *postgresqlMaintenanceFixtureConn) QueryContext(_ context.Context, query
 	case "SELECT count(*) FROM pg_hba_file_rules WHERE error IS NOT NULL":
 		return &postgresqlMaintenanceFixtureRows{columns: []string{"count"}, values: [][]driver.Value{{c.fixture.hbaErrors}}}, nil
 	case "SELECT pg_reload_conf()":
+		c.fixture.reloadSeen = true
 		return &postgresqlMaintenanceFixtureRows{columns: []string{"pg_reload_conf"}, values: [][]driver.Value{{c.fixture.reloadOK}}}, nil
 	case "SELECT name,setting,source FROM pg_settings WHERE name IN ('log_min_duration_statement','log_parameter_max_length','log_statement','log_line_prefix')":
+		if c.fixture.reloadSeen {
+			c.fixture.settingsQueriesAfterReload++
+			if c.fixture.settingsAfterReload != nil && c.fixture.settingsQueriesAfterReload > c.fixture.reloadLagQueries {
+				c.fixture.settings = c.fixture.settingsAfterReload
+				if c.fixture.sourcesAfterReload != nil {
+					c.fixture.sources = c.fixture.sourcesAfterReload
+				}
+			}
+		} else {
+			c.fixture.settingsQueriesBeforeReload++
+		}
 		rows := [][]driver.Value{}
 		for _, name := range []string{"log_min_duration_statement", "log_parameter_max_length", "log_statement", "log_line_prefix"} {
 			if name == c.fixture.without {
 				continue
 			}
 			if value, ok := c.fixture.settings[name]; ok {
-				rows = append(rows, []driver.Value{name, value, "configuration file"})
+				source := c.fixture.sources[name]
+				if source == "" {
+					source = "configuration file"
+				}
+				rows = append(rows, []driver.Value{name, value, source})
 			}
 		}
 		return &postgresqlMaintenanceFixtureRows{columns: []string{"name", "setting", "source"}, values: rows}, nil
@@ -234,6 +261,69 @@ func TestPostgreSQLRecoveryContextIsBoundToOneExactPendingJournal(t *testing.T) 
 	}
 }
 
+func TestPostgreSQLSlowlogIntentValidatesSnapshotProvenanceAndLegacyShape(t *testing.T) {
+	instance := Instance{ID: "pg-slowlog-journal", Revision: 3, Paths: Paths{DataDir: "/srv/postgresql/data", ConfigDir: "/etc/postgresql/managed"}}
+	before := []byte("# original configuration\n")
+	after, err := makePostgreSQLSlowlogConfig(before, true, 250)
+	if err != nil {
+		t.Fatal("could not construct the typed slow-log target", err)
+	}
+	created := time.Now().UTC()
+	intent := databasePostgreSQLFileIntent{
+		Version: 1, Kind: "slowlog", InstanceID: instance.ID, Engine: "postgresql", DataDir: instance.Paths.DataDir, ConfigDir: instance.Paths.ConfigDir,
+		Database: "app_db", DatabaseRevision: 1, InstanceRevision: 2, ExpectedRevision: databasePostgreSQLConfigDigest(before),
+		Before: before, After: after, State: "pending", CreatedAt: created, UpdatedAt: created,
+	}
+	if !validPostgreSQLMaintenanceIntent(instance, "slowlog", intent) {
+		t.Fatal("legacy pending intent without a snapshot should remain loadable for explicit recovery")
+	}
+	intent.BeforeSettings = map[string]postgresqlSlowlogSetting{
+		"log_min_duration_statement": {Name: "log_min_duration_statement", Value: "-1", Source: "default"},
+		"log_parameter_max_length":   {Name: "log_parameter_max_length", Value: "-1", Source: "default"},
+		"log_statement":              {Name: "log_statement", Value: "none", Source: "default"},
+		"log_line_prefix":            {Name: "log_line_prefix", Value: "%m [%p] ", Source: "default"},
+	}
+	if !validPostgreSQLMaintenanceIntent(instance, "slowlog", intent) {
+		t.Fatal("well-formed exact baseline snapshot was rejected")
+	}
+	bad := intent
+	bad.BeforeSettings = make(map[string]postgresqlSlowlogSetting, len(intent.BeforeSettings))
+	for name, setting := range intent.BeforeSettings {
+		bad.BeforeSettings[name] = setting
+	}
+	bad.BeforeSettings["log_statement"] = postgresqlSlowlogSetting{Name: "log_statement", Value: "none", Source: "command line"}
+	if validPostgreSQLMaintenanceIntent(instance, "slowlog", bad) {
+		t.Fatal("unprovable setting source in persisted snapshot was accepted")
+	}
+	bad = intent
+	bad.BeforeSettings = make(map[string]postgresqlSlowlogSetting, len(intent.BeforeSettings))
+	for name, setting := range intent.BeforeSettings {
+		bad.BeforeSettings[name] = setting
+	}
+	bad.BeforeSettingsDerived = true
+	if validPostgreSQLMaintenanceIntent(instance, "slowlog", bad) {
+		t.Fatal("a derived effective-config baseline with live-snapshot sources was accepted")
+	}
+	bad = intent
+	bad.BeforeSettings = make(map[string]postgresqlSlowlogSetting, len(intent.BeforeSettings))
+	for name, setting := range intent.BeforeSettings {
+		bad.BeforeSettings[name] = setting
+	}
+	delete(bad.BeforeSettings, "log_line_prefix")
+	if validPostgreSQLMaintenanceIntent(instance, "slowlog", bad) {
+		t.Fatal("incomplete prior setting snapshot was accepted")
+	}
+	bad = intent
+	bad.BeforeSettingsDerived = true
+	for name, setting := range intent.BeforeSettings {
+		setting.Source = ""
+		bad.BeforeSettings[name] = setting
+	}
+	if !validPostgreSQLMaintenanceIntent(instance, "slowlog", bad) {
+		t.Fatal("derived configuration baseline with blank source was rejected")
+	}
+}
+
 func TestPostgreSQLHBAParseAndReloadFixtureReportsServerErrors(t *testing.T) {
 	fixture := &postgresqlMaintenanceFixture{reloadOK: true}
 	db := openPostgreSQLMaintenanceFixture(t, fixture)
@@ -326,6 +416,202 @@ func TestPostgreSQLSlowlogSettingsFixtureVerifiesVersionAndReloadValues(t *testi
 	fixture.mu.Unlock()
 	if _, err = queryPostgreSQLSlowlogSettings(context.Background(), db); core.ErrorCode(err) != "slowlog_unsupported" {
 		t.Fatal("server without the parameter-redaction setting was treated as safe", core.ErrorCode(err))
+	}
+}
+
+func TestPostgreSQLSlowlogReloadWaitsForFreshConnectionsAndDelayedSettings(t *testing.T) {
+	old := map[string]string{
+		"log_min_duration_statement": "-1",
+		"log_parameter_max_length":   "-1",
+		"log_statement":              "none",
+		"log_line_prefix":            "%m [%p] ",
+	}
+	want := map[string]string{
+		"log_min_duration_statement": "250",
+		"log_parameter_max_length":   "0",
+		"log_statement":              "none",
+		"log_line_prefix":            "%m [%p] %u@%d ",
+	}
+	sources := map[string]string{
+		"log_min_duration_statement": "configuration file",
+		"log_parameter_max_length":   "configuration file",
+		"log_statement":              "configuration file",
+		"log_line_prefix":            "configuration file",
+	}
+	fixture := &postgresqlMaintenanceFixture{
+		reloadOK:            true,
+		settings:            old,
+		sources:             map[string]string{"log_min_duration_statement": "default", "log_parameter_max_length": "default", "log_statement": "default", "log_line_prefix": "default"},
+		settingsAfterReload: want,
+		sourcesAfterReload:  sources,
+		reloadLagQueries:    2,
+	}
+	reloadDB := openPostgreSQLMaintenanceFixture(t, fixture)
+	if err := reloadPostgreSQLConfig(context.Background(), reloadDB); err != nil {
+		t.Fatal("reload was not acknowledged", err)
+	}
+	if err := reloadDB.Close(); err != nil {
+		t.Fatal("could not close the reload connection before polling", err)
+	}
+	fixture.mu.Lock()
+	if fixture.settingsQueriesBeforeReload != 0 {
+		fixture.mu.Unlock()
+		t.Fatal("settings were checked before the configuration reload")
+	}
+	fixture.mu.Unlock()
+	target := []byte(databasePostgreSQLSlowlogBegin + "\n# threshold-ms=250\nlog_min_duration_statement = 250\nlog_parameter_max_length = 0\nlog_statement = 'none'\nlog_line_prefix = '%m [%p] %u@%d '\n" + databasePostgreSQLSlowlogEnd + "\n")
+	err := waitForPostgreSQLSlowlogSettings(context.Background(), func(context.Context) (*sql.DB, error) {
+		return openPostgreSQLMaintenanceFixture(t, fixture), nil
+	}, func(ctx context.Context, db *sql.DB) error {
+		return verifyPostgreSQLSlowlogSettings(ctx, db, target)
+	})
+	if err != nil {
+		t.Fatal("delayed PostgreSQL reload was not eventually verified", err)
+	}
+	fixture.mu.Lock()
+	defer fixture.mu.Unlock()
+	if fixture.settingsQueriesBeforeReload != 0 || fixture.settingsQueriesAfterReload < 3 || fixture.openCount < 4 {
+		t.Fatalf("verification did not wait on fresh post-reload connections: before=%d after=%d opens=%d", fixture.settingsQueriesBeforeReload, fixture.settingsQueriesAfterReload, fixture.openCount)
+	}
+}
+
+func TestPostgreSQLSlowlogRestoreWaitsForDelayedUnconfiguredBaseline(t *testing.T) {
+	configured := map[string]string{
+		"log_min_duration_statement": "250",
+		"log_parameter_max_length":   "0",
+		"log_statement":              "none",
+		"log_line_prefix":            "%m [%p] %u@%d ",
+	}
+	defaults := map[string]string{
+		"log_min_duration_statement": "-1",
+		"log_parameter_max_length":   "-1",
+		"log_statement":              "none",
+		"log_line_prefix":            "%m [%p] ",
+	}
+	configuredSources := map[string]string{
+		"log_min_duration_statement": "configuration file",
+		"log_parameter_max_length":   "configuration file",
+		"log_statement":              "configuration file",
+		"log_line_prefix":            "configuration file",
+	}
+	defaultSources := map[string]string{
+		"log_min_duration_statement": "default",
+		"log_parameter_max_length":   "default",
+		"log_statement":              "default",
+		"log_line_prefix":            "default",
+	}
+	fixture := &postgresqlMaintenanceFixture{
+		reloadOK:            true,
+		settings:            configured,
+		sources:             configuredSources,
+		settingsAfterReload: defaults,
+		sourcesAfterReload:  defaultSources,
+		reloadLagQueries:    2,
+	}
+	reloadDB := openPostgreSQLMaintenanceFixture(t, fixture)
+	if err := reloadPostgreSQLConfig(context.Background(), reloadDB); err != nil {
+		t.Fatal("restore reload was not acknowledged", err)
+	}
+	if err := reloadDB.Close(); err != nil {
+		t.Fatal("could not close restore reload connection before polling", err)
+	}
+	baseline := make(map[string]postgresqlSlowlogSetting, len(defaults))
+	for _, name := range postgresqlSlowlogSettingNames {
+		baseline[name] = postgresqlSlowlogSetting{Name: name, Value: defaults[name], Source: "default"}
+	}
+	err := waitForPostgreSQLSlowlogBaselineUsing(context.Background(), func(context.Context) (*sql.DB, error) {
+		return openPostgreSQLMaintenanceFixture(t, fixture), nil
+	}, baseline)
+	if err != nil {
+		t.Fatal("restore did not eventually prove the original unconfigured PostgreSQL defaults", err)
+	}
+	fixture.mu.Lock()
+	defer fixture.mu.Unlock()
+	if fixture.settingsQueriesBeforeReload != 0 || fixture.settingsQueriesAfterReload < 3 || fixture.openCount < 4 {
+		t.Fatalf("restore verification did not wait on fresh post-reload connections: before=%d after=%d opens=%d", fixture.settingsQueriesBeforeReload, fixture.settingsQueriesAfterReload, fixture.openCount)
+	}
+}
+
+func TestPostgreSQLSlowlogBaselinePreservesDefaultsAndPrefixWhitespace(t *testing.T) {
+	baseline := map[string]postgresqlSlowlogSetting{
+		"log_min_duration_statement": {Name: "log_min_duration_statement", Value: "-1", Source: "default"},
+		"log_parameter_max_length":   {Name: "log_parameter_max_length", Value: "-1", Source: "default"},
+		"log_statement":              {Name: "log_statement", Value: "none", Source: "default"},
+		"log_line_prefix":            {Name: "log_line_prefix", Value: "%m [%p] ", Source: "default"},
+	}
+	if !validPostgreSQLSlowlogBaseline(baseline) {
+		t.Fatal("valid native default baseline was rejected")
+	}
+	derived := make(map[string]postgresqlSlowlogSetting, len(baseline))
+	live := make(map[string]postgresqlSlowlogSetting, len(baseline))
+	for name, setting := range baseline {
+		derived[name] = postgresqlSlowlogSetting{Name: name, Value: setting.Value}
+		live[name] = postgresqlSlowlogSetting{Name: name, Value: setting.Value, Source: "default"}
+	}
+	if err := verifyPostgreSQLSlowlogBaselineSettings(live, derived); err != nil {
+		t.Fatal("derived settings did not accept the equivalent native defaults", err)
+	}
+	wrongSource := make(map[string]postgresqlSlowlogSetting, len(baseline))
+	for name, setting := range baseline {
+		wrongSource[name] = setting
+	}
+	wrongSource["log_line_prefix"] = postgresqlSlowlogSetting{Name: "log_line_prefix", Value: "%m [%p] ", Source: "configuration file"}
+	if err := verifyPostgreSQLSlowlogBaselineSettings(wrongSource, baseline); core.ErrorCode(err) != "reload_not_applied" {
+		t.Fatal("recorded live setting source was not compared exactly", core.ErrorCode(err))
+	}
+	output, err := postgresqlConfigSettingOutput("log_line_prefix", "%m [%p] \n")
+	if err != nil || output != "%m [%p] " {
+		t.Fatalf("postgres -C parser did not preserve the prefix's trailing space: %q %v", output, err)
+	}
+	for _, bad := range []string{"%m [%p]\n\n", "%m [%p]\r\n"} {
+		if _, err = postgresqlConfigSettingOutput("log_line_prefix", bad); err == nil {
+			t.Fatalf("unsafe line ending was accepted: %q", bad)
+		}
+	}
+	if _, err = postgresqlConfigSettingOutput("untrusted_setting", "value\n"); err == nil {
+		t.Fatal("caller-selected postgres -C setting was accepted")
+	}
+	for _, name := range postgresqlSlowlogSettingNames {
+		args, argsErr := postgresqlConfigValueArgs("/var/lib/postgresql/data", "/etc/postgresql/candidate", name)
+		if argsErr != nil || !reflect.DeepEqual(args, []string{"-D", "/var/lib/postgresql/data", "-c", "config_file=/etc/postgresql/candidate", "-C", name}) {
+			t.Fatalf("fixed postgres -C argv changed for %s: %#v %v", name, args, argsErr)
+		}
+	}
+}
+
+func TestPostgreSQLSlowlogPollingCancelsInflightOpen(t *testing.T) {
+	parent, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	started := make(chan time.Time, 1)
+	done := make(chan error, 1)
+	go func() {
+		done <- waitForPostgreSQLSlowlogSettings(parent, func(ctx context.Context) (*sql.DB, error) {
+			deadline, ok := ctx.Deadline()
+			if ok {
+				started <- deadline
+			} else {
+				started <- time.Time{}
+			}
+			<-ctx.Done()
+			return nil, ctx.Err()
+		}, func(context.Context, *sql.DB) error { return nil })
+	}()
+	var deadline time.Time
+	select {
+	case deadline = <-started:
+	case <-time.After(time.Second):
+		t.Fatal("slow-log polling did not enter its opener")
+	}
+	if deadline.IsZero() || time.Until(deadline) <= 0 || time.Until(deadline) > 10*time.Second {
+		t.Fatalf("poll opener did not receive the bounded context deadline: %v", deadline)
+	}
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatalf("poll did not stop its in-flight open on context deadline: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("slow-log polling remained stuck in an in-flight open after deadline")
 	}
 }
 

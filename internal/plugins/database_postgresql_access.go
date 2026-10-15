@@ -83,26 +83,28 @@ type postgresAccessFile struct {
 }
 
 type databasePostgreSQLFileIntent struct {
-	Version          int       `json:"version"`
-	Kind             string    `json:"kind"`
-	InstanceID       string    `json:"instance_id"`
-	Engine           string    `json:"engine"`
-	DataDir          string    `json:"data_dir"`
-	ConfigDir        string    `json:"config_dir"`
-	Database         string    `json:"database"`
-	Role             string    `json:"role,omitempty"`
-	DatabaseRevision int64     `json:"database_revision"`
-	InstanceRevision int64     `json:"instance_revision"`
-	ExpectedRevision string    `json:"expected_revision"`
-	Before           []byte    `json:"before"`
-	After            []byte    `json:"after"`
-	BeforeMode       uint32    `json:"before_mode"`
-	BeforeUID        int       `json:"before_uid"`
-	BeforeGID        int       `json:"before_gid"`
-	Operation        string    `json:"operation"`
-	State            string    `json:"state"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	Version               int                                 `json:"version"`
+	Kind                  string                              `json:"kind"`
+	InstanceID            string                              `json:"instance_id"`
+	Engine                string                              `json:"engine"`
+	DataDir               string                              `json:"data_dir"`
+	ConfigDir             string                              `json:"config_dir"`
+	Database              string                              `json:"database"`
+	Role                  string                              `json:"role,omitempty"`
+	DatabaseRevision      int64                               `json:"database_revision"`
+	InstanceRevision      int64                               `json:"instance_revision"`
+	ExpectedRevision      string                              `json:"expected_revision"`
+	Before                []byte                              `json:"before"`
+	After                 []byte                              `json:"after"`
+	BeforeSettings        map[string]postgresqlSlowlogSetting `json:"before_settings,omitempty"`
+	BeforeSettingsDerived bool                                `json:"before_settings_derived,omitempty"`
+	BeforeMode            uint32                              `json:"before_mode"`
+	BeforeUID             int                                 `json:"before_uid"`
+	BeforeGID             int                                 `json:"before_gid"`
+	Operation             string                              `json:"operation"`
+	State                 string                              `json:"state"`
+	CreatedAt             time.Time                           `json:"created_at"`
+	UpdatedAt             time.Time                           `json:"updated_at"`
 }
 
 type databasePostgreSQLAccessRecoveryContextKey struct{}
@@ -574,8 +576,27 @@ func validPostgreSQLMaintenanceIntent(instance Instance, kind string, intent dat
 		return false
 	}
 	if kind == "access" {
+		if len(intent.BeforeSettings) != 0 || intent.BeforeSettingsDerived {
+			return false
+		}
 		_, ok, err := parsePostgreSQLHBAAccess(intent.After, instance.ID, intent.Role)
 		return err == nil && ok
+	}
+	if len(intent.BeforeSettings) != 0 {
+		if !validPostgreSQLSlowlogBaseline(intent.BeforeSettings) {
+			return false
+		}
+		for _, name := range postgresqlSlowlogSettingNames {
+			if intent.BeforeSettingsDerived {
+				if intent.BeforeSettings[name].Source != "" {
+					return false
+				}
+			} else if intent.BeforeSettings[name].Source != "default" && intent.BeforeSettings[name].Source != "configuration file" {
+				return false
+			}
+		}
+	} else if intent.BeforeSettingsDerived {
+		return false
 	}
 	_, ok, err := parsePostgreSQLSlowlogBlock(intent.After)
 	return err == nil && ok
@@ -769,6 +790,18 @@ func (e *PrivilegedExecutor) applyPostgreSQLMaintenanceIntent(ctx context.Contex
 	if !validPostgreSQLMaintenanceIntent(instance, kind, intent) || intent.State != "pending" {
 		return nil, failure("ownership_invalid", "PostgreSQL recovery journal is invalid", 412)
 	}
+	if kind == "slowlog" && len(intent.BeforeSettings) == 0 {
+		baseline, baselineErr := e.derivePostgreSQLSlowlogBaseline(ctx, instance, intent.Before)
+		if baselineErr != nil {
+			return nil, failure("operation_recovery_required", "PostgreSQL slow-log recovery cannot derive the exact prior-configuration target", 409)
+		}
+		intent.BeforeSettings = baseline
+		intent.BeforeSettingsDerived = true
+		intent.UpdatedAt = time.Now().UTC()
+		if err := e.save("private", databasePostgreSQLMaintenanceIntentID(instance, kind), intent); err != nil {
+			return nil, failure("operation_recovery_required", "PostgreSQL slow-log recovery baseline could not be durably recorded", 409)
+		}
+	}
 	var current postgresAccessFile
 	var err error
 	if kind == "access" {
@@ -854,21 +887,25 @@ func (e *PrivilegedExecutor) verifyPostgreSQLMaintenanceRuntime(ctx context.Cont
 	if err != nil {
 		return err
 	}
-	defer db.Close()
 	if intent.Kind == "access" {
+		defer db.Close()
 		if err = validatePostgreSQLHBAFile(ctx, db); err != nil {
 			return err
 		}
-	} else if err = verifyPostgreSQLSlowlogSettings(ctx, db, target); err != nil {
-		return err
-	}
-	if err = reloadPostgreSQLConfig(ctx, db); err != nil {
-		return err
-	}
-	if intent.Kind == "access" {
+		if err = reloadPostgreSQLConfig(ctx, db); err != nil {
+			return err
+		}
 		return validatePostgreSQLHBAFile(ctx, db)
 	}
-	return verifyPostgreSQLSlowlogSettings(ctx, db, target)
+	if err = reloadPostgreSQLConfig(ctx, db); err != nil {
+		_ = db.Close()
+		return err
+	}
+	_ = db.Close()
+	if applyAfter {
+		return e.waitForPostgreSQLSlowlogTarget(ctx, instance, target)
+	}
+	return e.waitForPostgreSQLSlowlogBaseline(ctx, instance, intent.BeforeSettings)
 }
 
 func (e *PrivilegedExecutor) recoverPostgreSQLIntentDirect(ctx context.Context, instance Instance, kind string) error {
