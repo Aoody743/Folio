@@ -425,13 +425,141 @@ func qaAssertIssuedCertificate(t *testing.T, e *AgentExecutor, id string, f *qaA
 
 func TestQAACMEPolicyRejectsUntrustedDirectoriesAndInvalidIdentifiers(t *testing.T) {
 	config := AgentConfig{AllowedACMEServers: []string{"https://qa.example.net/directory"}}
-	for _, mutate := range []func(*ACMEInput){func(in *ACMEInput) { in.Server = "http://qa.example.net/directory" }, func(in *ACMEInput) { in.Server = "https://unknown.example.net/directory" }, func(in *ACMEInput) { in.Server = "https://name:secret@qa.example.net/directory" }, func(in *ACMEInput) { in.Domains = []string{"example.net:80"} }, func(in *ACMEInput) { in.Domains = []string{"127.0.0.1"} }, func(in *ACMEInput) { in.Domains = []string{"*.example.net"}; in.Challenge = "http_webroot" }, func(in *ACMEInput) { in.Domains = []string{"EXAMPLE.net", "example.net"} }} {
+	for _, mutate := range []func(*ACMEInput){func(in *ACMEInput) { in.Server = "http://qa.example.net/directory" }, func(in *ACMEInput) { in.Server = "https://unknown.example.net/directory" }, func(in *ACMEInput) { in.Server = "https://name:secret@qa.example.net/directory" }, func(in *ACMEInput) { in.Domains = []string{"example.net:80"} }, func(in *ACMEInput) { in.Domains = []string{"127.0.0.1"} }, func(in *ACMEInput) { in.Domains = []string{"*.example.net"}; in.Challenge = "http_webroot" }, func(in *ACMEInput) { in.Domains = []string{"*.example.net"}; in.Challenge = "manual_http" }, func(in *ACMEInput) { in.SiteID = "owned-site"; in.Challenge = "manual_http" }, func(in *ACMEInput) { in.CredentialID = "dns-secret"; in.Challenge = "manual_http" }, func(in *ACMEInput) { in.Domains = []string{"EXAMPLE.net", "example.net"} }} {
 		in := ACMEInput{ID: "qa-cert", Domains: []string{"example.net"}, Email: "qa@example.net", Challenge: "manual_dns", Server: "https://qa.example.net/directory"}
 		mutate(&in)
 		if validateACME(&in, config) == nil {
 			t.Fatal("untrusted/invalid ACME input accepted")
 		}
 	}
+}
+
+func TestQARootVMACMEManualHTTPUploadSurvivesRestartAndConfirmsOnlyOnRequest(t *testing.T) {
+	e, runtime := qaRootExecutor(t)
+	f := qaNewACMECA(t, []string{"example.net"})
+	e.config.AllowedACMEServers = []string{f.server.URL + "/directory"}
+	e.acmeHTTPClient = f.server.Client()
+	var uploadMu sync.Mutex
+	uploads := map[string]string{}
+	uploadReads := 0
+	webroot := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		uploadMu.Lock()
+		defer uploadMu.Unlock()
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		body, ok := uploads[r.URL.Path]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		uploadReads++
+		_, _ = io.WriteString(w, body)
+	}))
+	t.Cleanup(webroot.Close)
+	f.webroot = webroot.URL
+
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+	input := &ACMEInput{ID: "qa-manual-http", Domains: []string{"example.net"}, Email: "qa@example.net", Challenge: "manual_http", Server: f.server.URL + "/directory"}
+	result, err := qaAgentRun(ctx, e, "certificate_acme_issue", request{ID: input.ID, ACME: input})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pending struct {
+		State          string `json:"state"`
+		OrderRef       string `json:"order_ref"`
+		HTTPChallenges []struct {
+			Domain string `json:"domain"`
+			URL    string `json:"url"`
+			Path   string `json:"path"`
+			Body   string `json:"body"`
+		} `json:"http_challenges"`
+	}
+	if json.Unmarshal(result.Data, &pending) != nil || pending.State != "pending_http" || pending.OrderRef == "" || len(pending.HTTPChallenges) != 1 {
+		t.Fatalf("manual HTTP upload instructions were not returned: %s", result.Data)
+	}
+	challenge := pending.HTTPChallenges[0]
+	wantBody := "plqa-order1-auth0." + f.thumbprint
+	if challenge.Domain != "example.net" || challenge.URL != "http://example.net"+challenge.Path || challenge.Path != "/.well-known/acme-challenge/plqa-order1-auth0" || challenge.Body != wantBody {
+		t.Fatalf("manual HTTP instructions do not match the ACME challenge: %#v", challenge)
+	}
+	if strings.Contains(string(result.Data), "authorization_url") || strings.Contains(string(result.Data), "PRIVATE KEY") {
+		t.Fatal("manual HTTP public instructions exposed protected ACME order material")
+	}
+	f.mu.Lock()
+	acceptedBeforeUpload := f.orders["1"].valid[0] || f.verifiedHTTP != 0
+	f.mu.Unlock()
+	if acceptedBeforeUpload {
+		t.Fatal("manual HTTP issue accepted or validated the challenge before user confirmation")
+	}
+	uploadMu.Lock()
+	uploads[challenge.Path] = challenge.Body
+	uploadMu.Unlock()
+	orderPath := filepath.Join(e.config.StateDir, "acme", input.ID+".order.json")
+	info, err := os.Stat(orderPath)
+	if err != nil || info.Mode().Perm() != 0600 {
+		t.Fatal("manual HTTP order was not durably protected", err)
+	}
+
+	config := e.config
+	e.Close()
+	restarted, err := NewAgentExecutor(config, runtime)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { restarted.Close() })
+	restarted.acmeHTTPClient = f.server.Client()
+	status, err := qaAgentRun(ctx, restarted, "certificate_acme_order", request{ID: input.ID, Kind: "status"})
+	if err != nil || string(status.Data) != string(result.Data) {
+		t.Fatal("manual HTTP pending upload instructions did not survive restart", err)
+	}
+	if _, err = qaAgentRun(ctx, restarted, "certificate_acme_order", request{ID: input.ID, Kind: "confirm", OrderRef: pending.OrderRef}); err != nil {
+		f.mu.Lock()
+		reasons := append([]string{}, f.failures...)
+		f.mu.Unlock()
+		t.Fatalf("manual HTTP confirm failed: %v; fixture failures: %v", err, reasons)
+	}
+	qaAssertIssuedCertificate(t, restarted, input.ID, f)
+	uploadMu.Lock()
+	if uploadReads != 1 {
+		t.Fatalf("CA fixture did not make exactly one local HTTP validation request: %d", uploadReads)
+	}
+	uploadMu.Unlock()
+	qaAssertACMETrace(t, f, 1, 1)
+
+	second := *input
+	second.ID = "qa-manual-http-tamper"
+	result, err = qaAgentRun(ctx, restarted, "certificate_acme_issue", request{ID: second.ID, ACME: &second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var tampered acmeOrderState
+	path := filepath.Join("acme", second.ID+".order.json")
+	if err = rootJSON(restarted.state, path, &tampered); err != nil {
+		t.Fatal(err)
+	}
+	tampered.HTTPChallenges[0].Body = "changed-body"
+	if err = atomicRoot(restarted.state, path, encode(tampered), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = qaAgentRun(ctx, restarted, "certificate_acme_order", request{ID: second.ID, Kind: "confirm", OrderRef: acmeOrderRef(tampered)}); core.ErrorCode(err) != "metadata_invalid" {
+		t.Fatal("tampered manual HTTP body was not rejected before ACME acceptance", err)
+	}
+	f.mu.Lock()
+	tamperAccepted := f.orders["2"].valid[0]
+	f.mu.Unlock()
+	if tamperAccepted {
+		t.Fatal("tampered HTTP body reached ACME challenge acceptance")
+	}
+	if _, err = qaAgentRun(ctx, restarted, "certificate_acme_order", request{ID: second.ID, Kind: "cancel", OrderRef: acmeOrderRef(tampered)}); err != nil {
+		t.Fatal("could not cancel tampered manual HTTP order", err)
+	}
+	if _, err = qaAgentRun(ctx, restarted, "certificate_acme_order", request{ID: second.ID, Kind: "status"}); core.ErrorCode(err) != "not_found" {
+		t.Fatal("canceled manual HTTP order remained discoverable", err)
+	}
+	qaAssertACMETrace(t, f, 1, 1)
 }
 
 func TestQARootVMACMEHTTPRealJWSCSRAndConcurrentWebsiteRead(t *testing.T) {

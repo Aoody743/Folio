@@ -61,6 +61,12 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 	if err = service.RegisterExecutor(plugins.DatabaseAdminJobOperations(), plugins.NewDatabaseAdminExecutor(software, client)); err != nil {
 		return nil, err
 	}
+	if err = service.RegisterExecutor(plugins.DockerExecJobOperations(), plugins.NewDockerExecExecutor(software, client)); err != nil {
+		return nil, err
+	}
+	if err = service.RegisterExecutor(plugins.FTPMaintenanceJobOperations(), plugins.NewFTPMaintenanceExecutor(software)); err != nil {
+		return nil, err
+	}
 	websites, err := sites.New(service.Runtime("sites"), sites.Options{Agent: executor})
 	if err != nil {
 		return nil, err

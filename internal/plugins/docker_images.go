@@ -26,6 +26,7 @@ func DockerImageResource(instanceID, image string) string {
 
 type dockerImageInspection struct {
 	ID           string   `json:"Id"`
+	RepoTags     []string `json:"RepoTags"`
 	RepoDigests  []string `json:"RepoDigests"`
 	Created      string   `json:"Created"`
 	Architecture string   `json:"Architecture"`
@@ -34,12 +35,13 @@ type dockerImageInspection struct {
 }
 
 type dockerImageView struct {
-	Image        string `json:"image"`
-	ID           string `json:"id"`
-	Created      string `json:"created,omitempty"`
-	Architecture string `json:"architecture,omitempty"`
-	OS           string `json:"os,omitempty"`
-	SizeBytes    int64  `json:"size_bytes"`
+	Image               string `json:"image"`
+	ID                  string `json:"id"`
+	Created             string `json:"created,omitempty"`
+	Architecture        string `json:"architecture,omitempty"`
+	OS                  string `json:"os,omitempty"`
+	SizeBytes           int64  `json:"size_bytes"`
+	RestoredFromArchive bool   `json:"restored_from_archive,omitempty"`
 }
 
 // Hub equivalence is only an Engine ownership proof. Authorization and public
@@ -85,13 +87,9 @@ func dockerImageDigestProofMatches(requested, supplied string) bool {
 }
 
 func (e *PrivilegedExecutor) inspectDockerImage(ctx context.Context, instance Instance, image string) (dockerImageInspection, error) {
-	var inspected dockerImageInspection
-	path := "/images/" + url.PathEscape(image) + "/json"
-	if err := e.dockerRequest(ctx, instance, http.MethodGet, path, nil, &inspected); err != nil {
+	inspected, err := e.inspectDockerImageMetadata(ctx, instance, image)
+	if err != nil {
 		return dockerImageInspection{}, err
-	}
-	if !dockerImageID.MatchString(inspected.ID) || inspected.Size < 0 {
-		return dockerImageInspection{}, failure("invalid_response", "Docker returned invalid image metadata", 502)
 	}
 	for _, repoDigest := range inspected.RepoDigests {
 		if dockerImageDigestProofMatches(image, repoDigest) {
@@ -101,13 +99,38 @@ func (e *PrivilegedExecutor) inspectDockerImage(ctx context.Context, instance In
 	return dockerImageInspection{}, failure("ownership_invalid", "Docker did not confirm the exact digest-qualified image reference", 412)
 }
 
+func (e *PrivilegedExecutor) inspectDockerImageMetadata(ctx context.Context, instance Instance, image string) (dockerImageInspection, error) {
+	var inspected dockerImageInspection
+	path := "/images/" + url.PathEscape(image) + "/json"
+	if err := e.dockerRequest(ctx, instance, http.MethodGet, path, nil, &inspected); err != nil {
+		return dockerImageInspection{}, err
+	}
+	if !dockerImageID.MatchString(inspected.ID) || inspected.Size < 0 || len(inspected.RepoTags) > 256 || len(inspected.RepoDigests) > 256 {
+		return dockerImageInspection{}, failure("invalid_response", "Docker returned invalid image metadata", 502)
+	}
+	for _, repoDigest := range inspected.RepoDigests {
+		if !dockerImage.MatchString(repoDigest) {
+			return dockerImageInspection{}, failure("invalid_response", "Docker returned an invalid RepoDigest", 502)
+		}
+	}
+	for _, tag := range inspected.RepoTags {
+		if tag == "<none>:<none>" {
+			continue
+		}
+		if len(tag) > 255 || strings.ContainsAny(tag, "\x00\r\n\t ") {
+			return dockerImageInspection{}, failure("invalid_response", "Docker returned an invalid RepoTag", 502)
+		}
+	}
+	return inspected, nil
+}
+
 func (e *PrivilegedExecutor) dockerImageAction(ctx context.Context, instance Instance, input DockerInput) (any, error) {
-	inspected, err := e.inspectDockerImage(ctx, instance, input.Image)
+	inspected, restored, err := e.resolveDockerImageArchive(ctx, instance, input.Image)
 	if err != nil {
 		return nil, err
 	}
 	if input.Command == "image_inspect" {
-		return dockerImageView{Image: input.Image, ID: inspected.ID, Created: inspected.Created, Architecture: inspected.Architecture, OS: inspected.OS, SizeBytes: inspected.Size}, nil
+		return dockerImageView{Image: input.Image, ID: inspected.ID, Created: inspected.Created, Architecture: inspected.Architecture, OS: inspected.OS, SizeBytes: inspected.Size, RestoredFromArchive: restored}, nil
 	}
 	if input.Command != "image_remove" {
 		return nil, failure("invalid_input", "Unsupported typed Docker image action", 400)
@@ -115,10 +138,16 @@ func (e *PrivilegedExecutor) dockerImageAction(ctx context.Context, instance Ins
 	query := url.Values{}
 	query.Set("force", "false")
 	query.Set("noprune", "true")
-	if err = e.dockerRequest(ctx, instance, http.MethodDelete, "/images/"+url.PathEscape(input.Image)+"?"+query.Encode(), nil, nil); err != nil {
+	removeRef := input.Image
+	if restored {
+		// The receipt resolver only returns ID-only images with no RepoTags or
+		// RepoDigests, so removing by digest here cannot revoke another alias.
+		removeRef = inspected.ID
+	}
+	if err = e.dockerRequest(ctx, instance, http.MethodDelete, "/images/"+url.PathEscape(removeRef)+"?"+query.Encode(), nil, nil); err != nil {
 		return nil, err
 	}
-	return map[string]any{"image": input.Image, "image_id": inspected.ID, "removed": true}, nil
+	return map[string]any{"image": input.Image, "image_id": inspected.ID, "removed": true, "restored_from_archive": restored}, nil
 }
 
 func dockerImageResources(_ context.Context, _ core.Actor, raw json.RawMessage) ([]string, error) {
@@ -192,6 +221,7 @@ func (m *Manager) dockerImagesListBinding() core.Binding {
 					RepoDigests []string `json:"RepoDigests"`
 					Size        int64    `json:"Size"`
 				} `json:"items"`
+				RestoredFromArchive []dockerImageView `json:"restored_from_archive"`
 			}
 			if err := m.agentJSON(ctx, "docker_action", forward, &output); err != nil {
 				return core.ActionResult{}, err
@@ -209,6 +239,13 @@ func (m *Manager) dockerImagesListBinding() core.Binding {
 					seen[ref] = true
 					items = append(items, dockerImageView{Image: ref, ID: image.ID, SizeBytes: image.Size})
 				}
+			}
+			for _, image := range output.RestoredFromArchive {
+				if !dockerImage.MatchString(image.Image) || !dockerImageID.MatchString(image.ID) || !image.RestoredFromArchive || seen[image.Image] || !m.deps.Authorize(actor, "containers:read", InstanceResource(input.ID)) || !m.deps.Authorize(actor, "containers:read", DockerImageResource(input.ID, image.Image)) {
+					continue
+				}
+				seen[image.Image] = true
+				items = append(items, image)
 			}
 			return core.ActionResult{Data: map[string]any{"items": items}, Resources: []string{InstanceResource(input.ID)}}, nil
 		})

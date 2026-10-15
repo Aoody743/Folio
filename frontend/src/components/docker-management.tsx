@@ -1,5 +1,10 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+const DockerImageArchiveManagement = dynamic(
+  () => import("./docker-image-archive").then((m) => m.DockerImageArchiveManagement),
+  { ssr: false },
+);
 import { Button } from "@astryxdesign/core/Button";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { action, apiErrorMessage, Capability } from "@/lib/api";
@@ -17,6 +22,7 @@ export function DockerManagement({instanceID,capabilities,onExecuted,active=true
   const [name,setName] = useState(""); const [registry,setRegistry] = useState(""); const [username,setUsername] = useState(""); const [password,setPassword] = useState("");
   const [image,setImage] = useState(""); const [confirm,setConfirm] = useState(false);
   const [isTask,setIsTask] = useState(false);
+  const [archiveOpen,setArchiveOpen] = useState(false);
   const [busy,setBusy] = useState(false); const [error,setError] = useState(""); const [result,setResult] = useState<unknown>();
   const rows = dockerImages(images.data);
   let entries:RegistryCredential[]=[]; let invalid="";
@@ -37,11 +43,13 @@ export function DockerManagement({instanceID,capabilities,onExecuted,active=true
     <h3>精确摘要镜像</h3>
     {(error||images.error||credentials.error||invalid) && <div className="notice danger" role="alert">{error||images.error||credentials.error||invalid}</div>}
     {!cap("images_list",["id"]) && <Unavailable title="当前没有镜像读取权限或接口不兼容"/>}
-    <div className="instance-list">{rows.map(v=><button key={v.image} className="instance-row" aria-pressed={selected===v.image} disabled={busy} onClick={()=>{setSelected(v.image);setConfirm(false);setResult(undefined);}}><div><strong>{v.image}</strong><p>{v.id} · {v.size_bytes} B</p></div></button>)}</div>
+    <div className="instance-list">{rows.map(v=><button key={v.image} className="instance-row" aria-pressed={selected===v.image} disabled={busy} onClick={()=>{setSelected(v.image);setConfirm(false);setResult(undefined);setArchiveOpen(false);}}><div><strong>{v.image}</strong><p>{v.id} · {v.size_bytes} B{v.restored_from_archive ? " · 由受管归档恢复" : ""}</p></div></button>)}</div>
     {selected && rows.some(v=>v.image===selected) && <div className="stack"><code>{selected}</code><div className="button-row">
       {cap("image_inspect",["id","image"]) && <Button label="读取镜像详情" isDisabled={busy} onClick={()=>void run("docker_image_inspect",{id:instanceID,image:selected})}/>}
       {cap("image_remove",["id","image"],true) && <Button label="删除此摘要镜像" isDisabled={busy} onClick={()=>setConfirm(true)}/>}
+      <Button label={archiveOpen ? "收起归档管理" : "保存或导入镜像归档"} variant="ghost" onClick={()=>setArchiveOpen(!archiveOpen)}/>
     </div>{confirm && <div className="notice warning"><p>确认删除 {selected}？服务端仅执行非强制删除，使用中的镜像会被拒绝。</p><Button label="确认删除镜像" isDisabled={busy} onClick={()=>{setConfirm(false);void run("docker_image_remove",{id:instanceID,image:selected});}}/><Button label="取消" onClick={()=>setConfirm(false)}/></div>}</div>}
+    {archiveOpen && selected && rows.some(v=>v.image===selected) && <DockerImageArchiveManagement key={`${instanceID}:${selected}`} instanceID={instanceID} image={selected} capabilities={capabilities} onExecuted={refresh}/>}
     <h3>私仓凭据</h3><p className="muted">密码只用于加密保存，不会回显。拉取任务只提交凭据编号和版本。</p>
     <div className="instance-list">{entries.map(v=><button key={v.id} className="instance-row" disabled={busy} onClick={()=>{setCredential(undefined);setPassword("");setCredentialID(v.id);if(cap("registry_credential_get",["id"])) void run("docker_registry_credential_get",{id:v.id},value=>choose(registryCredential(value)));}}><div><strong>{v.name} · {v.registry}</strong><p>{v.username} · 版本 {v.revision}</p></div></button>)}</div>
     <Button label="新建凭据" isDisabled={busy} onClick={()=>{setCredential(undefined);setCredentialID("");setName("");setRegistry("");setUsername("");setPassword("");}}/>

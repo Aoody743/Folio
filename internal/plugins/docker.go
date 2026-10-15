@@ -222,7 +222,15 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 			path = "/containers/json" + filtered + "&all=true&limit=100"
 		}
 		if kind == "images" {
-			path = "/images/json"
+			var images []dockerImageInspection
+			if err = e.dockerRequest(ctx, instance, http.MethodGet, "/images/json", nil, &images); err != nil {
+				return nil, err
+			}
+			restored, aliasErr := e.dockerArchiveImageAliases(instance, images)
+			if aliasErr != nil {
+				return nil, aliasErr
+			}
+			return map[string]any{"items": images, "restored_from_archive": restored}, nil
 		}
 		if err = e.dockerRequest(ctx, instance, http.MethodGet, path, nil, &output); err != nil {
 			return nil, err
@@ -250,8 +258,14 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 	case "image_inspect", "image_remove":
 		return e.dockerImageAction(ctx, instance, input)
 	case "container_create":
-		var image map[string]any
-		if err = e.dockerRequest(ctx, instance, http.MethodGet, "/images/"+url.PathEscape(input.Image)+"/json", nil, &image); err != nil {
+		image, restored, resolveErr := e.resolveDockerImageArchive(ctx, instance, input.Image)
+		if resolveErr != nil {
+			if core.ErrorCode(resolveErr) == "not_found" {
+				return nil, failure("image_not_installed", "Pull or restore the immutable image before creating a container", 412)
+			}
+			return nil, resolveErr
+		}
+		if !dockerImageID.MatchString(image.ID) {
 			return nil, failure("image_not_installed", "Pull and verify the immutable image before creating a container", 412)
 		}
 		env := []string{}
@@ -272,9 +286,20 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 			}
 			host["Mounts"] = []map[string]any{{"Type": "volume", "Source": dockerOwnedName(instance, input.Volume), "Target": "/data", "ReadOnly": false}}
 		}
-		request := map[string]any{"Image": input.Image, "Labels": labels, "Env": env, "ExposedPorts": exposed, "HostConfig": host}
+		engineImage := input.Image
+		if restored {
+			engineImage = image.ID
+		}
+		request := map[string]any{"Image": engineImage, "Labels": labels, "Env": env, "ExposedPorts": exposed, "HostConfig": host}
 		if err = e.dockerRequest(ctx, instance, http.MethodPost, "/containers/create?name="+url.QueryEscape(name), request, &output); err != nil {
 			return nil, err
+		}
+		if restored {
+			if response, ok := output.(map[string]any); ok {
+				response["image"] = input.Image
+				response["image_id"] = image.ID
+				response["restored_from_archive"] = true
+			}
 		}
 		return output, nil
 	case "container_get", "container_logs", "container_start", "container_stop", "container_restart", "container_delete":
@@ -380,11 +405,15 @@ func (m *Manager) dockerBindings() []core.Binding {
 			properties["tail"] = map[string]any{"type": "integer", "minimum": 1, "maximum": 1000}
 		}
 		verb := command
+		resourceResolver := idResource
+		if command == "container_create" {
+			resourceResolver = dockerImageResources
+		}
 		scope := "containers:manage"
 		if read {
 			scope = "containers:read"
 		}
-		result = append(result, m.binding("docker_"+command, "Controlled Docker API over a private Agent-owned socket; no host mounts or privileged containers", scope, read, obj(properties, required...), idResource, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+		result = append(result, m.binding("docker_"+command, "Controlled Docker API over a private Agent-owned socket; no host mounts or privileged containers", scope, read, obj(properties, required...), resourceResolver, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 			var input DockerInput
 			if err := parse(raw, &input); err != nil {
 				return core.ActionResult{}, err
@@ -392,6 +421,13 @@ func (m *Manager) dockerBindings() []core.Binding {
 			input.Command = verb
 			forward, _ := json.Marshal(input)
 			resources := []string{InstanceResource(input.ID)}
+			if verb == "container_create" {
+				var err error
+				resources, err = dockerImageResources(ctx, actor, forward)
+				if err != nil {
+					return core.ActionResult{}, err
+				}
+			}
 			if read || verb == "container_create" {
 				var output any
 				if err := m.agentJSON(ctx, "docker_action", forward, &output); err != nil {

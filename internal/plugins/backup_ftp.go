@@ -190,10 +190,15 @@ func (m *Manager) ftpBindings() []core.Binding {
 		items := []FTPDestination{}
 		for _, row := range rows {
 			var item FTPDestination
-			if json.Unmarshal(row, &item) == nil && m.deps.Authorize(actor, "backup:read", FTPResource(item.ID)) {
-				item.CredentialRef = ""
-				items = append(items, item)
+			if json.Unmarshal(row, &item) != nil || !validInstanceID(item.ID) || !m.deps.Authorize(actor, "backup:read", FTPResource(item.ID)) {
+				continue
 			}
+			current, err := m.ftpProfile(ctx, item.ID)
+			if err != nil {
+				continue
+			}
+			current.CredentialRef = ""
+			items = append(items, current)
 		}
 		return core.ActionResult{Data: map[string]any{"items": items}}, nil
 	}),
@@ -205,6 +210,11 @@ func (m *Manager) ftpBindings() []core.Binding {
 			if strings.ContainsAny(input.Directory, "\x00\r\n") || path.Clean(input.Directory) != input.Directory || strings.Contains(input.Directory, "..") {
 				return core.ActionResult{}, failure("invalid_destination", "FTP directory must be a clean bounded remote path", 400)
 			}
+			unlock, err := acquireFTPMaintenanceLock(ctx, input.ID)
+			if err != nil {
+				return core.ActionResult{}, err
+			}
+			defer unlock()
 			connection, err := ftpDial(ctx, input.FTPDestination, input.Password)
 			if err != nil {
 				return core.ActionResult{}, err
@@ -341,6 +351,11 @@ func (m *Manager) Run(ctx context.Context, request agent.Request) (result agent.
 	if err = m.checkSoftwareArtifact(ctx, input.SoftwareID); err != nil {
 		return result, err
 	}
+	unlock, err := acquireFTPMaintenanceLock(ctx, input.ID)
+	if err != nil {
+		return result, err
+	}
+	defer unlock()
 	profile, err := m.ftpProfile(ctx, input.ID)
 	if err != nil {
 		return result, err
@@ -514,6 +529,12 @@ func (e *PrivilegedExecutor) artifactStream(ctx context.Context, request agent.R
 	return result, nil
 }
 func (e *PrivilegedExecutor) Stream(ctx context.Context, request agent.Request, streams agent.IO) (agent.Result, error) {
+	if request.Operation == "docker_image_archive_artifact" {
+		if err := e.Validate(request); err != nil {
+			return agent.Result{}, err
+		}
+		return e.dockerArchiveArtifactStream(ctx, request, streams)
+	}
 	if request.Operation == "database_artifact" {
 		if err := e.Validate(request); err != nil {
 			return agent.Result{}, err

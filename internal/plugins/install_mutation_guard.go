@@ -16,7 +16,7 @@ func (e *PrivilegedExecutor) ensureInstallFinalized(ctx context.Context, id stri
 	}
 	journal, err := e.loadInstallJournal(id)
 	if core.ErrorCode(err) == "not_found" {
-		return nil
+		return e.ensureDatabaseBinlogConfigFinalized(ctx, id)
 	}
 	if err != nil {
 		return err
@@ -24,5 +24,5 @@ func (e *PrivilegedExecutor) ensureInstallFinalized(ctx context.Context, id stri
 	if journal.Phase != "completed" {
 		return failure("operation_recovery_required", "A protected install is unfinished; inspect and recover it before changing this instance", 409)
 	}
-	return nil
+	return e.ensureDatabaseBinlogConfigFinalized(ctx, id)
 }

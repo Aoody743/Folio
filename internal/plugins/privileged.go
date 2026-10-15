@@ -74,7 +74,7 @@ type PrivilegedExecutor struct {
 var validAccount = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}\$?$`)
 
 func Operations() []string {
-	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "php_maintenance", "utility_action", "supervisor_log_action", "docker_action", "backup_artifact", "database_action", "database_admin_action", "database_artifact"}
+	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "php_maintenance", "utility_action", "supervisor_log_action", "docker_action", "docker_exec", "docker_exec_status", "docker_image_archive_action", "docker_image_archive_artifact", "backup_artifact", "database_action", "database_admin_action", "database_binlog_action", "database_artifact"}
 }
 
 // ValidatePrivilegedConfig performs read-only policy validation. In particular
@@ -385,10 +385,20 @@ func (e *PrivilegedExecutor) Validate(request agent.Request) error {
 		return e.validateSupervisorLog(request.Input)
 	case "docker_action":
 		return e.validateDocker(request.Input)
+	case "docker_exec":
+		return e.validateDockerExec(request.Input)
+	case "docker_exec_status":
+		return e.validateDockerExecStatus(request.Input)
+	case "docker_image_archive_action":
+		return e.validateDockerArchiveAction(request.Input)
+	case "docker_image_archive_artifact":
+		return validateDockerArchiveArtifact(request.Input)
 	case "database_action":
 		return e.validateDatabase(request.Input)
 	case "database_admin_action":
 		return e.validateDatabaseAdmin(request.Input)
+	case "database_binlog_action":
+		return e.validateDatabaseBinlog(request.Input)
 	case "database_artifact":
 		return e.validateDatabaseArtifact(request.Input)
 	case "backup_artifact":
@@ -472,11 +482,19 @@ func (e *PrivilegedExecutor) Run(ctx context.Context, request agent.Request) (re
 		output, err = e.supervisorLog(ctx, request.Input)
 	case "docker_action":
 		output, err = e.docker(ctx, request.Input)
+	case "docker_exec":
+		output, err = e.dockerExec(ctx, request.Input)
+	case "docker_exec_status":
+		output, err = e.dockerExecStatus(ctx, request.Input)
+	case "docker_image_archive_action":
+		output, err = e.dockerArchiveAction(ctx, request)
 	case "database_action":
 		output, err = e.database(ctx, request.Input)
 	case "database_admin_action":
 		output, err = e.databaseAdmin(ctx, request.Input)
-	case "backup_artifact", "database_artifact":
+	case "database_binlog_action":
+		output, err = e.databaseBinlog(ctx, request.Input)
+	case "backup_artifact", "database_artifact", "docker_image_archive_artifact":
 		return result, failure("stream_required", "Backup artifacts must use the authenticated streaming transport", 400)
 	}
 	if err != nil {
