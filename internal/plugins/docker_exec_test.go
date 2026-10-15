@@ -243,6 +243,34 @@ func TestDockerExecReportsRunningEngineProcessAfterClientTimeoutAndAllowsStatusC
 	}
 }
 
+type dockerExecTimeoutFixture struct{}
+
+func (dockerExecTimeoutFixture) Error() string   { return "socket deadline elapsed" }
+func (dockerExecTimeoutFixture) Timeout() bool   { return true }
+func (dockerExecTimeoutFixture) Temporary() bool { return true }
+
+type dockerExecDeadlineRaceContext struct {
+	context.Context
+	deadline time.Time
+}
+
+func (c dockerExecDeadlineRaceContext) Deadline() (time.Time, bool) { return c.deadline, true }
+func (dockerExecDeadlineRaceContext) Done() <-chan struct{}         { return nil }
+func (dockerExecDeadlineRaceContext) Err() error                    { return nil }
+
+func TestDockerExecSocketDeadlineWinsContextTimerPublicationRace(t *testing.T) {
+	err := &net.OpError{Op: "read", Net: "unix", Err: dockerExecTimeoutFixture{}}
+	ctx := dockerExecDeadlineRaceContext{Context: context.Background(), deadline: time.Now().Add(-time.Second)}
+	if got := dockerExecContextError(ctx, err); got != context.DeadlineExceeded {
+		t.Fatalf("expired socket deadline was not attributed to the operation timeout: %v", got)
+	}
+
+	future := dockerExecDeadlineRaceContext{Context: context.Background(), deadline: time.Now().Add(time.Second)}
+	if got := dockerExecContextError(future, err); got != nil {
+		t.Fatalf("unexpired context deadline was misattributed: %v", got)
+	}
+}
+
 func TestDockerExecFrameDecoderBoundsCombinedOutputAndRedactsLongestSecretFirst(t *testing.T) {
 	wire := append(dockerExecFrame(1, []byte("123456")), dockerExecFrame(2, []byte("abcdef"))...)
 	stdout, stderr, outN, errN, truncated, err := decodeDockerExecFrames(strings.NewReader(string(wire)), 8)

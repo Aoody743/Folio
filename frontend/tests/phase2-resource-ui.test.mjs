@@ -37,6 +37,11 @@ const manualHTTP = await loadTypeScript("../src/lib/manual-http-acme.ts");
 const dockerTerminal = await loadTypeScript("../src/lib/docker-terminal.ts");
 const phpMaintenance = await loadTypeScript("../src/lib/php-maintenance.ts");
 const sitePHP = await loadTypeScript("../src/lib/site-php-maintenance.ts");
+const postgresql = await loadTypeScript("../src/lib/postgresql-maintenance.ts");
+const phpPackages = await loadTypeScript("../src/lib/php-extension-packages.ts");
+const ftpAccount = await loadTypeScript("../src/lib/ftp-account-state.ts", {
+  phase2Capability: binlog.phase2Capability,
+});
 
 const digest = "a".repeat(64);
 const image = `registry.example/team/app@sha256:${digest}`;
@@ -413,4 +418,219 @@ test("per-site PHP preview inputs stay bound to the site revision and assigned r
   assert.equal("session_names" in preview, false);
   assert.throws(() => sitePHP.sitePHPSessionCleanupInput(preview, 13, now));
   assert.throws(() => sitePHP.sitePHPSessionCleanupInput(preview, 12, now + 60_000));
+});
+
+test("PostgreSQL maintenance mutations require exact owned revisions and loopback CIDRs", () => {
+  const access = {
+    instance_id: "pg-main",
+    database: "app_db",
+    instance_revision: 8,
+    database_revision: 3,
+    config_revision: digest,
+    configuration_state: "settled",
+    protected_local_admin_preserved: true,
+    remote_access_supported: false,
+    remote_access_limitation: "managed_tls_not_configured",
+    rules: [{
+      rule_id: `pga_${"b".repeat(32)}`,
+      database: "app_db",
+      role: "app_user",
+      cidr: "127.0.0.0/8",
+      auth_method: "scram-sha-256",
+      state: "allowed",
+    }],
+  };
+  const parsed = postgresql.parsePostgreSQLAccessList(access, "pg-main", "app_db");
+  assert.equal(parsed.rules[0].role, "app_user");
+  assert.equal(postgresql.parsePostgreSQLAccessList(access, "pg-other", "app_db"), undefined);
+  assert.equal(postgresql.parsePostgreSQLAccessList({ ...access, config_revision: "stale" }, "pg-main", "app_db"), undefined);
+  assert.equal(postgresql.isLoopbackPostgreSQLCIDR("127.0.0.0/8"), true);
+  assert.equal(postgresql.isLoopbackPostgreSQLCIDR("127.0.0.1/32"), true);
+  assert.equal(postgresql.isLoopbackPostgreSQLCIDR("::1/128"), true);
+  assert.equal(postgresql.isLoopbackPostgreSQLCIDR("127.0.0.1/8"), false);
+  assert.equal(postgresql.isLoopbackPostgreSQLCIDR("10.0.0.0/8"), false);
+  assert.equal(postgresql.isLoopbackPostgreSQLCIDR("127.0.0.0/7"), false);
+  assert.deepEqual(
+    postgresql.postgresqlAccessMutationInput(parsed, "pg-main", "app_db", "add", "127.0.0.0/8"),
+    {
+      instance_id: "pg-main",
+      database: "app_db",
+      expected_config_revision: digest,
+      expected_instance_revision: 8,
+      expected_database_revision: 3,
+      cidr: "127.0.0.0/8",
+      auth_method: "scram-sha-256",
+    },
+  );
+  assert.equal(postgresql.postgresqlAccessMutationInput(parsed, "pg-main", "app_db", "add", "10.0.0.0/8"), undefined);
+  const pending = postgresql.parsePostgreSQLAccessList({ ...access, configuration_state: "pending_recovery" }, "pg-main", "app_db");
+  assert.equal(postgresql.postgresqlAccessMutationInput(pending, "pg-main", "app_db", "remove", access.rules[0].rule_id), undefined);
+  assert.equal(postgresql.postgresqlAccessMutationInput(pending, "pg-main", "app_db", "recover", "apply_pending").recovery_choice, "apply_pending");
+  assert.equal(postgresql.postgresqlAccessMutationInput(pending, "pg-main", "app_db", "recover", "guess"), undefined);
+
+  const slow = {
+    instance_id: "pg-main",
+    database: "app_db",
+    instance_revision: 8,
+    database_revision: 3,
+    config_revision: digest,
+    enabled: true,
+    minimum_duration_ms: 900,
+    configuration_state: "settled",
+    reload_applied: true,
+  };
+  const status = postgresql.parsePostgreSQLSlowlogStatus(slow, "pg-main", "app_db");
+  assert.deepEqual(
+    postgresql.postgresqlSlowlogInput(status, "configure", false, 900),
+    {
+      instance_id: "pg-main",
+      database: "app_db",
+      expected_config_revision: digest,
+      expected_instance_revision: 8,
+      expected_database_revision: 3,
+      enabled: false,
+      minimum_duration_ms: 900,
+    },
+  );
+  assert.equal(postgresql.postgresqlSlowlogInput(status, "configure", true, 600001), undefined);
+  const log = postgresql.parsePostgreSQLSlowlogRead({
+    ...slow,
+    redaction_notice: "String and numeric literals and SQL comments are masked; SQL identifiers may still contain sensitive text.",
+    items: [{ started_at: new Date(now).toISOString(), duration_ms: 1200, database: "app_db", role: "app_user", statement: "SELECT 1" }],
+    truncated: false,
+    log_available: true,
+  }, "pg-main", "app_db");
+  assert.equal(log.items[0].statement, "SELECT 1");
+  assert.equal(postgresql.parsePostgreSQLSlowlogRead({
+    ...slow,
+    redaction_notice: "No data is sensitive",
+    items: [],
+    truncated: false,
+    log_available: true,
+  }, "pg-main", "app_db").redaction_notice, "No data is sensitive");
+  assert.equal(postgresql.parsePostgreSQLSlowlogRead({
+    ...slow,
+    redaction_notice: "",
+    items: [],
+    truncated: false,
+    log_available: true,
+  }, "pg-main", "app_db"), undefined);
+  assert.equal(postgresql.parsePostgreSQLSlowlogRead({
+    ...slow,
+    redaction_notice: "String and numeric literals and SQL comments are masked; SQL identifiers may still contain sensitive text.",
+    items: [{ started_at: new Date(now).toISOString(), duration_ms: 1, database: "other_db", role: "x", statement: "SELECT 1" }],
+    truncated: false,
+    log_available: true,
+  }, "pg-main", "app_db"), undefined);
+});
+
+test("trusted PHP extension plans require pinned resources, ABI revision, expiry, and stable apply keys", () => {
+  const planCap = {
+    name: "php_extension_plan",
+    scope: "php:manage",
+    task: false,
+    read_only: true,
+    input_schema: {
+      required: ["id", "operation", "module_id", "expected_revision"],
+      properties: {
+        id: { type: "string" },
+        operation: { enum: ["install", "uninstall"] },
+        module_id: { enum: ["curl", "zip", "opcache", "imagick"] },
+        expected_revision: { type: "integer", minimum: 1 },
+      },
+    },
+  };
+  const applyCap = {
+    name: "php_extension_apply",
+    scope: "php:manage",
+    task: true,
+    read_only: false,
+    input_schema: {
+      required: ["id", "plan_id", "expected_revision", "idempotency_key"],
+      properties: {
+        id: { type: "string" }, plan_id: { type: "string" },
+        expected_revision: { type: "integer" }, idempotency_key: { type: "string" },
+      },
+    },
+  };
+  const actions = phpPackages.phpExtensionActions([planCap, applyCap]);
+  assert.deepEqual(actions.modules, ["curl", "zip"]);
+  const plan = {
+    plan_id: "phpext_plan_01",
+    id: "php-main",
+    operation: "install",
+    module_id: "curl",
+    php_version: "8.4.2",
+    php_module_api: "20240924",
+    platform: { os: "linux", arch: "amd64", distro: "debian", release: "13" },
+    package_pins: [{ name: "php8.4-curl", version: "8.4.2-1", architecture: "amd64", repository: "debian-security", sha256: digest }],
+    affected_profiles: [{ id: "php-main", php_version: "8.4.2", module_enabled: false, package_reference: false }],
+    changes: [{ kind: "install", target: "php8.4-curl", description: "Install signed curl module package" }],
+    resources: ["software:php-main", "host:packages"],
+    expected_revision: 9,
+    created_at: new Date(now).toISOString(),
+    expires_at: new Date(now + 30 * 60_000).toISOString(),
+    already_installed: false,
+    already_enabled: false,
+    package_removable: false,
+  };
+  const parsed = phpPackages.parsePHPExtensionPlan(plan, {
+    id: "php-main", operation: "install", module_id: "curl", expected_revision: 9,
+  });
+  assert.equal(parsed.package_pins[0].sha256, digest);
+  assert.equal(phpPackages.parsePHPExtensionPlan({ ...plan, resources: ["software:php-main"] }, {
+    id: "php-main", operation: "install", module_id: "curl", expected_revision: 9,
+  }), undefined);
+  assert.equal(phpPackages.phpExtensionApplyInput(parsed, "php-main", 10, now, "intent-key-123456"), undefined);
+  assert.equal(phpPackages.phpExtensionApplyInput(parsed, "php-other", 9, now, "intent-key-123456"), undefined);
+  assert.deepEqual(phpPackages.phpExtensionApplyInput(parsed, "php-main", 9, now, "intent-key-123456"), {
+    id: "php-main", plan_id: plan.plan_id, expected_revision: 9, idempotency_key: "intent-key-123456",
+  });
+  assert.equal(phpPackages.phpExtensionApplyInput(parsed, "php-main", 9, now + 30 * 60_000, "intent-key-123456"), undefined);
+  const uninstallPlan = {
+    ...plan,
+    operation: "uninstall",
+    package_pins: [],
+    changes: [{ kind: "disable", target: "php-main", description: "Disable curl in this PHP instance" }],
+    package_retained_reason: "Physical package removal is deferred; the package will be retained.",
+  };
+  assert.equal(phpPackages.parsePHPExtensionPlan(uninstallPlan, {
+    id: "php-main", operation: "uninstall", module_id: "curl", expected_revision: 9,
+  }).package_removable, false);
+  assert.equal(phpPackages.parsePHPExtensionPlan({ ...uninstallPlan, package_retained_reason: undefined }, {
+    id: "php-main", operation: "uninstall", module_id: "curl", expected_revision: 9,
+  }), undefined);
+  assert.equal(phpPackages.parsePHPExtensionPlan({ ...uninstallPlan, package_removable: true }, {
+    id: "php-main", operation: "uninstall", module_id: "curl", expected_revision: 9,
+  }), undefined);
+});
+
+test("FTP legacy recovery requires the current recovery phase and never claims prior login blocking", () => {
+  const inspection = {
+    id: "ftp-main",
+    name: "nightly",
+    revision: 6,
+    recovery_required: true,
+    phase: "legacy_recovery_required",
+    allowed_recovery_commands: ["legacy_recover"],
+  };
+  const parsed = ftpAccount.parseFTPAccountInspection(inspection, "ftp-main", "nightly");
+  assert.equal(parsed.last_confirmed_enabled, undefined);
+  assert.deepEqual(ftpAccount.ftpLegacyRecoveryInput(parsed, "ftp-main", "nightly"), {
+    id: "ftp-main",
+    name: "nightly",
+    expected_revision: 6,
+    confirm_clear_legacy_deny_rule: true,
+  });
+  assert.equal(ftpAccount.parseFTPAccountInspection(inspection, "ftp-main", "other"), undefined);
+  assert.equal(ftpAccount.parseFTPAccountInspection({ ...inspection, allowed_recovery_commands: ["resume"] }, "ftp-main", "nightly"), undefined);
+  assert.equal(ftpAccount.parseFTPAccountInspection({ ...inspection, last_confirmed_enabled: false }, "ftp-main", "nightly"), undefined);
+  assert.equal(ftpAccount.parseFTPAccountInspection({ ...inspection, phase: "legacy_paused", last_confirmed_enabled: false }, "ftp-main", "nightly"), undefined);
+  assert.equal(ftpAccount.ftpLegacyRecoveryInput({ ...parsed, phase: "active" }, "ftp-main", "nightly"), undefined);
+  const pending = ftpAccount.parseFTPAccountInspection({
+    ...inspection,
+    revision: 5,
+    phase: "legacy_recovery_pending",
+  }, "ftp-main", "nightly");
+  assert.equal(ftpAccount.ftpLegacyRecoveryInput(pending, "ftp-main", "nightly").expected_revision, 5);
 });

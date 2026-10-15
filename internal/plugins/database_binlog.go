@@ -240,6 +240,11 @@ func (e *PrivilegedExecutor) databaseBinlog(ctx context.Context, raw json.RawMes
 	if instance.Status == "uninstalled" {
 		return nil, failure("runtime_unavailable", "Database software is uninstalled", 412)
 	}
+	if in.Command == "configure" || in.Command == "recover_config" || in.Command == "purge" {
+		if err = e.ensureDatabaseReplicationDetached(ctx, instance.ID); err != nil {
+			return nil, err
+		}
+	}
 	if in.Command == "recover_config" {
 		return e.recoverDatabaseBinlogConfig(ctx, instance, in)
 	}

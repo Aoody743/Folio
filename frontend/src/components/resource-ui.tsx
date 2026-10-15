@@ -33,6 +33,19 @@ export function State({ value, reason }: { value?: string; reason?: string }) {
     interrupted: "执行中断",
     managed: "面板管理",
     adopted: "已接管",
+    pause_pending: "暂停待完成",
+    paused: "已暂停",
+    resume_pending: "恢复待完成",
+    conflict: "状态冲突",
+    legacy_recovery_required: "旧版需恢复",
+    legacy_recovery_pending: "旧版恢复待继续",
+    legacy_unrecoverable: "无法安全恢复",
+    pending_recovery: "需要恢复",
+    pending_reload: "等待重载验证",
+    settled: "配置已应用",
+    unconfigured: "尚未配置",
+    unmanaged: "未受管理",
+    restored: "已恢复",
   };
   return (
     <span

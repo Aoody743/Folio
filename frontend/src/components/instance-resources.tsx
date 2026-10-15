@@ -17,6 +17,10 @@ const DockerTerminalManagement = dynamic(
   () => import("./docker-terminal").then((m) => m.DockerTerminalManagement),
   { ssr: false },
 );
+const FTPAccountRecovery = dynamic(
+  () => import("./ftp-account-recovery").then((m) => m.FTPAccountRecovery),
+  { ssr: false },
+);
 import { Button } from "@astryxdesign/core/Button";
 import { Capability, list } from "@/lib/api";
 import { SoftwareInstance } from "@/lib/resources";
@@ -372,6 +376,16 @@ export function InstanceResources({
           )
         ) : (
           <>
+          {kind === "ftp" && targetName(current) && (
+            <FTPAccountRecovery
+              key={`ftp-account-state:${instance.id}:${targetName(current)}`}
+              id={instance.id}
+              name={targetName(current)}
+              capabilities={capabilities}
+              onExecuted={refresh}
+              active={active}
+            />
+          )}
           <ResourceActions
             capabilities={capabilities}
             names={(name) =>
@@ -382,6 +396,7 @@ export function InstanceResources({
                     `docker_${collection === "containers" ? "container" : collection === "networks" ? "network" : "volume"}_`,
                   ) && !name.endsWith("_create")
                 : name.startsWith(kind + "_") &&
+                  !(kind === "ftp" && name.startsWith("ftp_account_state_")) &&
                   !name.startsWith("supervisor_log_") &&
                   !/_list|_status|_create/.test(name)
             }

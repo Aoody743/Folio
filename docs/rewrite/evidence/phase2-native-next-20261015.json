@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-15",
+  "scope": "Sanitized native Linux QA for the dev20 release and earlier PHP session coverage",
+  "status": "partial",
+  "source_snapshot": {
+    "release_version": "0.1.0-dev.20",
+    "commit": "bc2270666cd04c55da2edae137e580b28df7352c",
+    "release_binary_sha256": "819d95fe103f9e74596604ea53dac4793861e3a3e3fe4158d18bd2109e8d5cab",
+    "release_archive_sha256": "ed820c340f0ad3cd2fc8a6fc403a60c170e0f7e411046b3c3ae521c0496cd3ba"
+  },
+  "installed_dev20": {
+    "debian_qa_vm": {
+      "upgrade": "passed",
+      "api_and_agent_health": "passed",
+      "active_services": ["powerlinux.service", "powerlinux-agent.service"],
+      "running_binary_sha256": "819d95fe103f9e74596604ea53dac4793861e3a3e3fe4158d18bd2109e8d5cab",
+      "agent_policy_sha256_after_fixture_restore": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+      "server_config_sha256": "709c70f7e4f7ba198e4d41da6372c8d45a2779b8d929ee189c67a1e92d43a36c"
+    },
+    "ubuntu_qa_vm": {
+      "upgrade": "passed",
+      "api_and_agent_health": "passed",
+      "active_services": ["powerlinux.service", "powerlinux-agent.service"],
+      "running_binary_sha256": "819d95fe103f9e74596604ea53dac4793861e3a3e3fe4158d18bd2109e8d5cab",
+      "agent_policy_sha256": "5d4f23f9ca530ccdab2f2d56aa1ce3e9ba24305261863d1589c001b149dd8455",
+      "server_config_sha256": "9755cbb04c60de9b27701927a975be95be14b3c7f9c4856b9d5eb3c6dbcea291"
+    }
+  },
+  "php_session_qa": {
+    "result": "passed",
+    "platform": "Ubuntu QA VM",
+    "installed_release_when_tested": "0.1.0-dev.16",
+    "installed_binary_sha256_when_tested": "e06060f3103b7c59278a041af1adfb3bcc579abe87a3ba74323396692071ae52",
+    "managed_instance": "php-apt-nativeqa",
+    "fpm_socket_invocation": "passed; fixture ran through the managed package FPM Unix socket",
+    "expired_sessions_created_by_package_fpm": 2,
+    "fresh_session_created_after_preview": true,
+    "browser": {
+      "engine": "Chromium",
+      "session_stats_and_preview": "passed against actual package session files",
+      "expired_session_cleanup": "passed; two expired files deleted",
+      "fresh_session_preserved": true,
+      "page_errors": 0
+    },
+    "mcp": {
+      "php_read_cleanup_denied": true,
+      "php_manage_cleanup": "passed",
+      "tasks_read_observed_cleanup_task": true,
+      "scoped_tokens_revoked": true
+    },
+    "cleanup": {
+      "fixture_script_removed_by_hash": true,
+      "session_fixture_files_remaining": 0,
+      "baseline_service_health_and_site_revision_preserved": true
+    },
+    "scope_note": "This actual FPM/browser/API/MCP proof is from the installed dev16 package. It is not a dev20 native FPM slowlog acceptance run."
+  },
+  "supervisor_dev20": {
+    "signed_package_install": "passed",
+    "package_version": "4.2.5-3",
+    "managed_instance": "supervisor-supervisor-p2nativeqa20",
+    "initial_instance_health": "healthy",
+    "fixture_program_sha256": "008fea7c1be3dede837d01f0cdb1026266c4eaa512f4562b40ea59f29d759914",
+    "job_creation": {
+      "actual_api_action": "supervisor_create",
+      "result": "passed",
+      "revision": 2,
+      "program_id": "nativeqa_child",
+      "job_name": "phase2child"
+    },
+    "program_start": {
+      "result": "failed",
+      "api_error": "supervisor_operation_failed",
+      "observed_service_uid_gid": "997:990",
+      "service_supplementary_groups": [],
+      "blocking_path_component": "data/programs",
+      "blocking_path_owner_uid_gid_mode": "0:0 0700",
+      "parent_data_owner_uid_gid_mode": "997:990 0700",
+      "job_directory_owner_uid_gid_mode": "997:990 0700",
+      "evidence": "Supervisor stderr reported four chdir EACCES failures; child process was not spawned."
+    },
+    "logs": {
+      "actual_read_bytes": 664,
+      "stderr_sha256_before_clear": "5770a21cea7c5b9eae311c31affc8a77a83f74225088ed56155c2628fa172eac",
+      "clear_preview": "passed",
+      "clear_task": "succeeded",
+      "post_clear_stdout_empty": true,
+      "post_clear_stderr_empty": false,
+      "post_clear_stderr_bytes": 664,
+      "clear_verification": "failed; the actual post-clear read still contained the prior stderr content"
+    },
+    "cleanup": {
+      "job_deleted_through_api": true,
+      "final_job_count": 0,
+      "final_instance_health": "healthy",
+      "original_agent_policy_sha256_restored": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+      "policy_check": "passed",
+      "agent_restart_and_ordinary_uid_healthcheck": "passed",
+      "fixture_program_removed_by_hash": true,
+      "prior_failed_dev19_supervisor_instance_touched": false
+    },
+    "scope_note": "A successful child PID and a successful child log/stop lifecycle were not demonstrated. The root-owned 0700 programs ancestor blocked the service user; no manual chmod or policy broadening was performed."
+  },
+  "sites_php_native_unit_fixture": {
+    "platform": "Debian QA VM",
+    "runtime_source_commit": "bc2270666cd04c55da2edae137e580b28df7352c",
+    "original_test_binary_sha256": "324ea01833bbc88dd5af02f15fd3b730023028f2aba6a4858056a34f3b766016",
+    "original_run": {
+      "exit_code": 1,
+      "passed": 4,
+      "failed": 1,
+      "output_sha256": "87d6101ca7877b38574483d9de358f6f76c62b4fa0b985c4701225042294381e",
+      "failure": "A test asserted Truncated=false after writing three lines and requesting a two-line bounded read; the implementation returned the two newest lines and Truncated=true."
+    },
+    "corrected_test_only_rerun": {
+      "test_only_source_sha256": "6863198e8e7434abb78fe21f8c54d1ea432241c55386f1d496c024d131b29b3c",
+      "test_binary_sha256": "030f01585ac1128dd93b3e57b598594f4bf80132d88c089dcde9d35dfca5a264",
+      "runtime_source_changed": false,
+      "command_filter": "^TestSitePHP(Session|Scan|Generated|Slowlog)",
+      "exit_code": 0,
+      "passed": 5,
+      "failed": 0,
+      "output_sha256": "fc45ad69c69563b7ad51c2e3b2ba123d9c6939badf71efb210afad29e690abf7"
+    },
+    "cleanup_and_integrity": {
+      "temporary_test_binaries_removed": true,
+      "installed_dev20_binary_sha256_unchanged": "819d95fe103f9e74596604ea53dac4793861e3a3e3fe4158d18bd2109e8d5cab",
+      "panel_and_agent_services_active_after_test": true
+    },
+    "scope_note": "These are root-run isolated unit fixtures, not actual managed PHP-FPM slowlog acceptance. The corrected rerun changes a test assertion only; the installed package and runtime source are unchanged."
+  },
+  "docker_dev19_install_attempt": {
+    "actual_api_signed_package_plan": "passed",
+    "apply_task_id": "56208c59ff5bc6cae61e371277400bc1",
+    "apply_result": "failed",
+    "failure_code": "package_install_failed",
+    "exit_code": -1,
+    "timeout": false,
+    "apt_transaction_started": false,
+    "package_download_observed": false,
+    "managed_instance_created": false,
+    "scope_note": "This was the dev19 attempt. Docker was not reinstalled or reverified on dev20, and Docker exec/archive work remains unrun."
+  },
+  "pureftp_dev20": {
+    "pause_resume_login_test": "unrun",
+    "reason": "The Debian QA VM has no pure-ftpd package or active pure-ftpd service, and plugins_list has no FTP instance. No package installation was attempted.",
+    "read_only_software_plan": {
+      "attempt": "timed_out_without_a_plan_response_after_15_seconds",
+      "apply_submitted": false,
+      "apt_install_or_source_mutation": false,
+      "cached_candidate_versions": {
+        "pure-ftpd": "1.0.50-2.2+b2",
+        "pure-ftpd-common": "1.0.50-2.2"
+      },
+      "current_sources_include_the_prior_loopback_route": false,
+      "plan_result_available": false
+    },
+    "post_timeout_quiescence": {
+      "active_action_tasks": 0,
+      "apt_or_dpkg_processes": 0,
+      "apt_or_dpkg_locks": 0,
+      "relay_connections_in_flight": 0
+    },
+    "actual_pause_resume_and_login_enforcement": "unrun"
+  },
+  "apt_relay_cleanup": {
+    "owned_debian_and_docker_relays_and_tunnels": "stopped_after_no_active_requests_or_package_tasks_were_verified",
+    "preexisting_ubuntu_openresty_relay_touched": false,
+    "debian_source_file_sha256": "1aea522ae24da35f8b02e3d56288df9c4adf67d9a51baac3d2eabacb46391ce3",
+    "debian_source_matches_original": true,
+    "debian_archive_keyring_sha256": "506b815cbb32d9b6066b4a2aa524071e071761e7e7f68c3ac74f3061ba852017",
+    "debian_archive_keyring_package_version": "2025.1",
+    "debian_archive_keyring_dpkg_verification": "passed; no keyring file mismatch",
+    "debian_archive_keyring_changed_by_this_qa": false,
+    "debian_archive_keyring_hash_matches_prior_evidence": false,
+    "temporary_loopback_source_route_present_after_cleanup": false,
+    "panel_and_agent_health_after_cleanup": "passed",
+    "active_api_tasks_or_package_operations_after_plan_timeout": 0,
+    "guest_apt_or_dpkg_processes_or_locks_after_timeout": 0,
+    "owned_relay_listeners_and_connections_after_cleanup": 0
+  },
+  "deferred_native_coverage": [
+    "Successful Supervisor child start, process identity, child log read/clear, stop signal, and delete chain",
+    "Dev20 Docker install, execution, and archive operations",
+    "PureFTP pause/resume with original-password login enforcement",
+    "Dev20 actual managed PHP-FPM slowlog acceptance"
+  ],
+  "secrets_written_to_this_evidence": false
+}

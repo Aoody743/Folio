@@ -45,6 +45,9 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 		if err := e.ensureInstallFinalized(ctx, id); err != nil {
 			return Plan{}, err
 		}
+		if err := e.ensureDatabaseReplicationDetached(ctx, id); err != nil {
+			return Plan{}, err
+		}
 	}
 	current, loadErr := e.get(ctx, id, false)
 	if loadErr != nil && core.ErrorCode(loadErr) != "not_found" {
@@ -177,6 +180,9 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	defer unlock()
 	if plan.Operation != "install" {
 		if err := e.ensureInstallFinalized(ctx, plan.InstanceID); err != nil {
+			return instance, err
+		}
+		if err := e.ensureDatabaseReplicationDetached(ctx, plan.InstanceID); err != nil {
 			return instance, err
 		}
 	}

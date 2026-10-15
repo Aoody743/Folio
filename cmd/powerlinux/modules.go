@@ -61,6 +61,12 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 	if err = service.RegisterExecutor(plugins.DatabaseAdminJobOperations(), plugins.NewDatabaseAdminExecutor(software, client)); err != nil {
 		return nil, err
 	}
+	if err = service.RegisterExecutor(plugins.PostgreSQLMaintenanceJobOperations(), plugins.NewPostgreSQLMaintenanceExecutor(software, client)); err != nil {
+		return nil, err
+	}
+	if err = service.RegisterExecutor(plugins.PHPExtensionJobOperations(), plugins.NewPHPExtensionExecutor(software, client)); err != nil {
+		return nil, err
+	}
 	if err = service.RegisterExecutor(plugins.DockerExecJobOperations(), plugins.NewDockerExecExecutor(software, client)); err != nil {
 		return nil, err
 	}

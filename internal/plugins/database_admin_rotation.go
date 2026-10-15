@@ -205,6 +205,9 @@ func (e *PrivilegedExecutor) databaseAdmin(ctx context.Context, raw json.RawMess
 	if in.Command == "inspect" {
 		return databaseAdminPublic(c, intent), nil
 	}
+	if err = e.ensureDatabaseReplicationDetached(ctx, i.ID); err != nil {
+		return nil, err
+	}
 	if in.CurrentCredentialVersion != c.Version {
 		return nil, failure("revision_conflict", "Administrator credential changed; reload before editing", 412)
 	}

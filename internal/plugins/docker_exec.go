@@ -827,6 +827,9 @@ func startDockerExec(ctx context.Context, instance Instance, execID, stdin strin
 	socket := filepath.Join(instance.Paths.RunDir, "docker.sock")
 	conn, err := (&net.Dialer{}).DialContext(ctx, "unix", socket)
 	if err != nil {
+		if contextErr := dockerExecContextError(ctx, err); contextErr != nil {
+			return nil, nil, 0, 0, false, contextErr
+		}
 		return nil, nil, 0, 0, false, failure("docker_unavailable", "Protected Docker socket is unavailable", 502)
 	}
 	defer conn.Close()
@@ -855,13 +858,16 @@ func startDockerExec(ctx context.Context, instance Instance, execID, stdin strin
 	request.Header.Set("Connection", "Upgrade")
 	request.Header.Set("Upgrade", "tcp")
 	if err = request.Write(conn); err != nil {
+		if contextErr := dockerExecContextError(ctx, err); contextErr != nil {
+			return nil, nil, 0, 0, false, contextErr
+		}
 		return nil, nil, 0, 0, false, err
 	}
 	reader := bufio.NewReader(conn)
 	response, err := http.ReadResponse(reader, request)
 	if err != nil {
-		if ctx.Err() != nil {
-			return nil, nil, 0, 0, false, ctx.Err()
+		if contextErr := dockerExecContextError(ctx, err); contextErr != nil {
+			return nil, nil, 0, 0, false, contextErr
 		}
 		return nil, nil, 0, 0, false, err
 	}
@@ -870,21 +876,43 @@ func startDockerExec(ctx context.Context, instance Instance, execID, stdin strin
 		return nil, nil, 0, 0, false, failure("docker_exec_failed", "Docker rejected the owned exec start request", 502)
 	}
 	if _, err = io.WriteString(conn, stdin); err != nil {
-		if ctx.Err() != nil {
-			return nil, nil, 0, 0, false, ctx.Err()
+		if contextErr := dockerExecContextError(ctx, err); contextErr != nil {
+			return nil, nil, 0, 0, false, contextErr
 		}
 		return nil, nil, 0, 0, false, err
 	}
 	if unix, ok := conn.(*net.UnixConn); ok {
 		if err = unix.CloseWrite(); err != nil {
+			if contextErr := dockerExecContextError(ctx, err); contextErr != nil {
+				return nil, nil, 0, 0, false, contextErr
+			}
 			return nil, nil, 0, 0, false, err
 		}
 	}
 	stdout, stderr, stdoutBytes, stderrBytes, truncated, err = decodeDockerExecFrames(reader, outputLimit)
-	if err != nil && ctx.Err() != nil {
-		return stdout, stderr, stdoutBytes, stderrBytes, truncated, ctx.Err()
+	if contextErr := dockerExecContextError(ctx, err); contextErr != nil {
+		return stdout, stderr, stdoutBytes, stderrBytes, truncated, contextErr
 	}
 	return stdout, stderr, stdoutBytes, stderrBytes, truncated, err
+}
+
+// A net.Conn deadline enforces the operation context deadline. The socket can
+// report its timeout before the context timer publishes ctx.Err(), so consult
+// the recorded deadline as well.
+func dockerExecContextError(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+	if contextErr := ctx.Err(); contextErr != nil {
+		return contextErr
+	}
+	var networkErr net.Error
+	if errors.As(err, &networkErr) && networkErr.Timeout() {
+		if deadline, ok := ctx.Deadline(); ok && !time.Now().Before(deadline) {
+			return context.DeadlineExceeded
+		}
+	}
+	return nil
 }
 
 func decodeDockerExecFrames(reader io.Reader, outputLimit int) (stdout, stderr []byte, stdoutBytes, stderrBytes int64, truncated bool, returned error) {

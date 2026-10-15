@@ -25,14 +25,15 @@ type TrustedProgram struct {
 	Arguments []string `json:"arguments"`
 }
 type UtilityInput struct {
-	ID               string `json:"id"`
-	Command          string `json:"command"`
-	Name             string `json:"name,omitempty"`
-	ExpectedRevision int64  `json:"expected_revision,omitempty"`
-	Password         string `json:"password,omitempty"`
-	ReadOnly         bool   `json:"read_only,omitempty"`
-	ProgramID        string `json:"program_id,omitempty"`
-	Enabled          bool   `json:"enabled,omitempty"`
+	ID                         string `json:"id"`
+	Command                    string `json:"command"`
+	Name                       string `json:"name,omitempty"`
+	ExpectedRevision           int64  `json:"expected_revision,omitempty"`
+	Password                   string `json:"password,omitempty"`
+	ReadOnly                   bool   `json:"read_only,omitempty"`
+	ProgramID                  string `json:"program_id,omitempty"`
+	Enabled                    bool   `json:"enabled,omitempty"`
+	ConfirmClearLegacyDenyRule bool   `json:"confirm_clear_legacy_deny_rule,omitempty"`
 }
 type utilityAccount struct {
 	Name       string `json:"name"`
@@ -72,12 +73,15 @@ func (e *PrivilegedExecutor) validateUtility(raw json.RawMessage) error {
 		if !utilityName.MatchString(input.Name) {
 			return failure("invalid_input", "FTP account name must be a simple bounded identifier", 400)
 		}
-	case "create", "update", "delete", "start", "stop", "restart", "pause", "resume":
+	case "create", "update", "delete", "start", "stop", "restart", "pause", "resume", "legacy_recover":
 		if !utilityName.MatchString(input.Name) {
 			return failure("invalid_input", "Account/program name must be a simple bounded identifier", 400)
 		}
 		if input.ExpectedRevision < 1 {
 			return failure("invalid_input", "expected_revision is required", 400)
+		}
+		if input.Command == "legacy_recover" && !input.ConfirmClearLegacyDenyRule {
+			return failure("invalid_input", "Explicit confirmation is required to clear the known legacy FTP deny rule", 400)
 		}
 	default:
 		return failure("invalid_input", "Unknown utility action", 400)
@@ -247,14 +251,9 @@ func (e *PrivilegedExecutor) writeSupervisor(instance Instance) error {
 		for _, arg := range profile.Arguments {
 			command += " " + supervisorQuote(arg)
 		}
-		directory := filepath.Join(instance.Paths.DataDir, "programs", name)
-		if err = os.MkdirAll(directory, 0750); err != nil {
-			return err
-		}
-		if os.Geteuid() == 0 {
-			if err = os.Chown(directory, int(e.uid), int(e.gid)); err != nil {
-				return err
-			}
+		directory, pathErr := e.prepareSupervisorProgramDirectory(instance, name)
+		if pathErr != nil {
+			return pathErr
 		}
 		enabled := "false"
 		if entry.Enabled {
@@ -316,8 +315,8 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 	if instance.PluginID != "pureftp" && instance.PluginID != "rsyncd" && instance.PluginID != "supervisor" {
 		return nil, failure("runtime_type_mismatch", "This action requires a managed FTP, rsync or Supervisor instance", 412)
 	}
-	if (input.Command == "pause" || input.Command == "resume") && instance.PluginID != "pureftp" {
-		return nil, failure("unsupported_action", "Per-account pause/resume is specific to managed PureFTP", 412)
+	if (input.Command == "pause" || input.Command == "resume" || input.Command == "legacy_recover") && instance.PluginID != "pureftp" {
+		return nil, failure("unsupported_action", "This per-account action is specific to managed PureFTP", 412)
 	}
 	record, err := e.utilityRecord(instance)
 	if err != nil {
@@ -328,6 +327,12 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 			return nil, failure("unsupported_action", "Per-account inspection is specific to managed PureFTP", 412)
 		}
 		return e.inspectFTPAccountState(instance, record, input.Name)
+	}
+	if input.Command == "legacy_recover" {
+		if instance.PluginID != "pureftp" {
+			return nil, failure("unsupported_action", "Legacy FTP recovery is specific to managed PureFTP", 412)
+		}
+		return e.recoverLegacyPureFTPAccount(ctx, instance, input, record, e.rebuildPureFTPPasswordDB)
 	}
 	if input.Command == "status" {
 		result := map[string]any{"id": instance.ID, "health": e.probe(ctx, instance), "revision": record.Revision}
@@ -358,6 +363,15 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 	}
 	if record.Revision != input.ExpectedRevision {
 		return nil, failure("revision_conflict", "Utility accounts/programs changed", 412)
+	}
+	if instance.PluginID == "pureftp" {
+		legacyJournal, journalErr := e.loadFTPLegacyRecoveryJournal(instance, input.Name)
+		if journalErr != nil {
+			return nil, journalErr
+		}
+		if legacyJournal != nil {
+			return nil, failure("ftp_account_state_pending", "Complete this FTP account's legacy recovery before changing it", 409)
+		}
 	}
 	_, exists := record.Items[input.Name]
 	if input.Command == "create" && exists {

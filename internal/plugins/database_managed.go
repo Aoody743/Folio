@@ -153,6 +153,9 @@ func (e *PrivilegedExecutor) database(ctx context.Context, raw json.RawMessage) 
 		return e.managedDiagnostics(ctx, instance, in.Command)
 	}
 	if in.Command == "create" {
+		if err = e.ensureDatabaseReplicationTargetSchemaCreateAllowed(ctx, instance.ID); err != nil {
+			return nil, err
+		}
 		return e.createManagedDatabase(ctx, instance, in)
 	}
 	var record managedDatabaseRecord
@@ -169,6 +172,9 @@ func (e *PrivilegedExecutor) database(ctx context.Context, raw json.RawMessage) 
 	case "credential":
 		return map[string]any{"database": record.Database, "username": record.Username, "password": record.Credential, "engine": record.Engine, "instance_id": record.InstanceID, "revision": record.Revision}, nil
 	case "delete", "set_password", "set_permission":
+		if err = e.ensureDatabaseReplicationDatabaseDetached(ctx, instance.ID, in.Database); err != nil {
+			return nil, err
+		}
 		if record.Revision != in.ExpectedRevision {
 			return nil, failure("revision_conflict", "Managed database changed; reload before editing", 412)
 		}
@@ -180,6 +186,9 @@ func (e *PrivilegedExecutor) database(ctx context.Context, raw json.RawMessage) 
 	case "backup_delete":
 		return e.deleteDatabaseBackup(ctx, instance, record, in.BackupID)
 	case "restore":
+		if err = e.ensureDatabaseReplicationTargetWritable(ctx, instance.ID, in.Database); err != nil {
+			return nil, err
+		}
 		return e.restoreManagedDatabase(ctx, instance, record, in.BackupID)
 	}
 	return nil, failure("invalid_input", "Unsupported database operation", 400)

@@ -291,18 +291,24 @@ func atomicReplacePureFTPHash(instance Instance, expected pureFTPPasswdSnapshot,
 	if err != nil || fieldsHash != expected.FieldsSHA256 {
 		return pureFTPPasswdSnapshot{}, failure("ftp_account_state_conflict", "PureFTP account no longer matches its protected journal", 409)
 	}
-	var randomName [12]byte
-	if _, err = rand.Read(randomName[:]); err != nil {
-		return pureFTPPasswdSnapshot{}, err
-	}
-	temp := ".ftp-state-" + hex.EncodeToString(randomName[:])
+	// pure-pw writers reserve this deterministic sidecar with O_EXCL before
+	// replacing pureftpd.passwd. Use the same protocol so a concurrent
+	// pure-pw update cannot be silently overwritten.
+	temp := pureFTPPasswdName + ".tmp"
 	fd, err := unix.Openat(dirfd, temp, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_CLOEXEC|unix.O_NOFOLLOW, uint32(current.Stamp.Mode&0777))
 	if err != nil {
+		if errors.Is(err, unix.EEXIST) {
+			return pureFTPPasswdSnapshot{}, failure("ftp_account_state_conflict", "PureFTP account writer sidecar is busy; it was preserved", 409)
+		}
 		return pureFTPPasswdSnapshot{}, err
 	}
 	file := os.NewFile(uintptr(fd), temp)
-	removeTemp := func() { _ = unix.Unlinkat(dirfd, temp, 0) }
-	defer removeTemp()
+	tempReserved := true
+	defer func() {
+		if tempReserved {
+			_ = unix.Unlinkat(dirfd, temp, 0)
+		}
+	}()
 	if _, err = file.Write(updated); err == nil {
 		err = file.Sync()
 	}
@@ -311,6 +317,9 @@ func atomicReplacePureFTPHash(instance Instance, expected pureFTPPasswdSnapshot,
 	}
 	if err == nil {
 		err = file.Chmod(os.FileMode(current.Stamp.Mode & 0777))
+	}
+	if err == nil {
+		err = file.Sync()
 	}
 	closeErr := file.Close()
 	if err == nil {
@@ -339,6 +348,7 @@ func atomicReplacePureFTPHash(instance Instance, expected pureFTPPasswdSnapshot,
 	if err = unix.Renameat(dirfd, temp, dirfd, pureFTPPasswdName); err != nil {
 		return pureFTPPasswdSnapshot{}, failure("ftp_account_state_failed", "PureFTP account file could not be atomically replaced", 502)
 	}
+	tempReserved = false
 	if err = unix.Fsync(dirfd); err != nil {
 		return pureFTPPasswdSnapshot{}, failure("ftp_account_state_failed", "PureFTP account file replacement could not be committed", 502)
 	}
@@ -511,6 +521,13 @@ func (e *PrivilegedExecutor) setPureFTPAccountEnabledUsing(ctx context.Context, 
 	if instance.PluginID != "pureftp" || !utilityName.MatchString(name) {
 		return failure("runtime_type_mismatch", "FTP account state requires a managed virtual account", 412)
 	}
+	legacyJournal, err := e.loadFTPLegacyRecoveryJournal(instance, name)
+	if err != nil {
+		return err
+	}
+	if legacyJournal != nil {
+		return failure("ftp_account_state_pending", "Complete the pending FTP legacy recovery before pausing or resuming this account", 409)
+	}
 	journal, err := e.loadPureFTPStateJournal(instance, name)
 	if err != nil {
 		return err
@@ -660,7 +677,16 @@ func (e *PrivilegedExecutor) inspectFTPAccountState(instance Instance, record ut
 		return FTPAccountStateInspection{}, err
 	}
 	if journal == nil {
-		if !ftpAccountEnabled(account) {
+		phase, commands, pinnedRevision, legacyErr := e.inspectLegacyPureFTPAccount(instance, account)
+		if legacyErr != nil {
+			return FTPAccountStateInspection{}, legacyErr
+		}
+		if phase != "" {
+			if pinnedRevision > 0 {
+				view.Revision = pinnedRevision
+			}
+			view.Phase = phase
+			view.AllowedRecoveryCommands = commands
 			return view, nil
 		}
 		enabled := true

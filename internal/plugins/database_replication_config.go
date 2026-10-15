@@ -66,10 +66,17 @@ func databaseReplicationConfigAfter(before []byte, pairID, engine, role, databas
 	block := fmt.Sprintf("%s\n# pair=%s role=%s\n[mysqld]\nserver-id=%d\n", databaseReplicationConfigMarker, pairID, role, serverID)
 	if role == "source" {
 		block += "log-bin=mysql-bin\nbinlog_format=ROW\n"
-	} else if engine == "mariadb" {
-		// MariaDB's file-based filter is global to its replica process. The
-		// caller must prove this managed instance has no unrelated channel.
-		block += "replicate-wild-do-table=" + databaseReplicationMariaWildcard(database) + "\n"
+	} else {
+		// The target is a dedicated managed instance and must reject application
+		// writes while it is a replica. MySQL's super_read_only also blocks
+		// administrative SQL writes while allowing the replication SQL thread.
+		block += "read_only=ON\n"
+		if engine == "mysql" {
+			block += "super_read_only=ON\n"
+		} else {
+			// MariaDB applies this exact wildcard to every replication channel.
+			block += "replicate-wild-do-table=" + databaseReplicationMariaWildcard(database) + "\n"
+		}
 	}
 	return append(body, []byte(block)...), nil
 }
@@ -107,6 +114,8 @@ func hasReplicationConfigDirective(body []byte, includeBinlog bool) bool {
 			case "log-bin", "skip-log-bin", "disable-log-bin", "log-bin-index", "binlog-format":
 				return true
 			}
+		} else if normalized == "read-only" || normalized == "super-read-only" {
+			return true
 		}
 	}
 	return false

@@ -23,6 +23,10 @@ type PHPInput struct {
 	Values           map[string]any `json:"values,omitempty"`
 	Extension        string         `json:"extension,omitempty"`
 	Enabled          bool           `json:"enabled,omitempty"`
+	Operation        string         `json:"operation,omitempty"`
+	ModuleID         string         `json:"module_id,omitempty"`
+	PlanID           string         `json:"plan_id,omitempty"`
+	IdempotencyKey   string         `json:"idempotency_key,omitempty"`
 }
 
 var phpFunction = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*(,[A-Za-z_][A-Za-z0-9_]*)*$`)
@@ -101,6 +105,10 @@ func renderPHPIni(config map[string]any, sessions string) (string, error) {
 	return body, nil
 }
 func (e *PrivilegedExecutor) validatePHP(raw json.RawMessage) error {
+	return validatePHPInput(raw)
+}
+
+func validatePHPInput(raw json.RawMessage) error {
 	var input PHPInput
 	if err := parse(raw, &input); err != nil {
 		return err
@@ -123,6 +131,14 @@ func (e *PrivilegedExecutor) validatePHP(raw json.RawMessage) error {
 	case "extension_toggle":
 		if input.ExpectedRevision < 1 || !approvedPHPExtensions[input.Extension] {
 			return failure("invalid_input", "Extension or revision is not approved", 400)
+		}
+	case "extension_plan":
+		if input.ExpectedRevision < 1 || (input.Operation != "install" && input.Operation != "uninstall") || !supportedPHPModuleID(input.ModuleID) {
+			return failure("invalid_input", "PHP extension operation, module ID or revision is invalid", 400)
+		}
+	case "extension_apply":
+		if input.ExpectedRevision < 1 || !validPlanID(input.PlanID) || !phpExtensionIdempotencyKey.MatchString(input.IdempotencyKey) {
+			return failure("invalid_input", "PHP extension plan revision or idempotency key is invalid", 400)
 		}
 	default:
 		return failure("invalid_input", "Unknown PHP action", 400)
@@ -156,7 +172,13 @@ func (e *PrivilegedExecutor) php(ctx context.Context, raw json.RawMessage) (any,
 		return nil, err
 	}
 	defer unlock()
-	if input.Command == "configure" || input.Command == "guard_configure" || input.Command == "extension_toggle" {
+	if input.Command == "extension_apply" {
+		ctx, err = e.phpExtensionRecoveryContext(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if input.Command == "configure" || input.Command == "guard_configure" || input.Command == "extension_toggle" || input.Command == "extension_plan" || input.Command == "extension_apply" {
 		if err := e.ensureInstallFinalized(ctx, input.ID); err != nil {
 			return nil, err
 		}
@@ -229,6 +251,10 @@ func (e *PrivilegedExecutor) php(ctx context.Context, raw json.RawMessage) (any,
 		return instance, nil
 	case "extension_toggle":
 		return e.togglePHPExtension(ctx, instance, input)
+	case "extension_plan":
+		return e.planPHPExtension(ctx, instance, input)
+	case "extension_apply":
+		return e.applyPHPExtension(ctx, instance, input)
 	}
 	return nil, failure("invalid_input", "Unknown PHP action", 400)
 }
@@ -280,6 +306,8 @@ func (e *PrivilegedExecutor) checkPHPExtensions(ctx context.Context, instance In
 	return nil
 }
 func (e *PrivilegedExecutor) togglePHPExtension(ctx context.Context, instance Instance, input PHPInput) (any, error) {
+	phpExtensionMutationMu.Lock()
+	defer phpExtensionMutationMu.Unlock()
 	if instance.Revision != input.ExpectedRevision {
 		return nil, failure("revision_conflict", "PHP configuration changed", 412)
 	}
@@ -406,5 +434,6 @@ func (m *Manager) phpBindings() []core.Binding {
 		}))
 		result[len(result)-1].Action.Task = !read
 	}
+	result = append(result, m.phpExtensionBindings()...)
 	return result
 }

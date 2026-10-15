@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"time"
 
@@ -47,6 +46,7 @@ type DatabaseReplicationInput struct {
 	ConfirmEmptyTarget             bool   `json:"confirm_empty_target,omitempty"`
 	ConfirmRemove                  bool   `json:"confirm_remove,omitempty"`
 	ConfirmReplicaHistoryLoss      bool   `json:"confirm_replica_history_loss,omitempty"`
+	ConfirmTargetReadOnly          bool   `json:"confirm_target_read_only,omitempty"`
 	RecoveryChoice                 string `json:"recovery_choice,omitempty"`
 }
 
@@ -77,33 +77,38 @@ type DatabaseReplicationPreview struct {
 	TargetServerID            uint32    `json:"target_server_id"`
 	EstimatedSeedBytes        uint64    `json:"estimated_seed_bytes"`
 	TableCount                int       `json:"table_count"`
+	SchemaSHA256              string    `json:"schema_sha256"`
 	SnapshotSHA256            string    `json:"snapshot_sha256"`
 	ConfirmEmptyTarget        bool      `json:"confirm_empty_target_required"`
 	ConfirmReplicaHistoryLoss bool      `json:"confirm_replica_history_loss_required"`
+	ConfirmTargetReadOnly     bool      `json:"confirm_target_read_only_required"`
 	TargetWillBeReadOnly      bool      `json:"target_will_be_read_only"`
 }
 
 type DatabaseReplicationStatus struct {
-	PairID              string  `json:"pair_id"`
-	PairRevision        int64   `json:"pair_revision"`
-	State               string  `json:"state"`
-	Phase               string  `json:"phase,omitempty"`
-	Engine              string  `json:"engine"`
-	SourceInstanceID    string  `json:"source_instance_id"`
-	TargetInstanceID    string  `json:"target_instance_id"`
-	Database            string  `json:"database"`
-	Channel             string  `json:"channel"`
-	SourceServerID      uint32  `json:"source_server_id"`
-	TargetServerID      uint32  `json:"target_server_id"`
-	SourceLogFile       string  `json:"source_log_file,omitempty"`
-	SourceLogPosition   uint64  `json:"source_log_position,omitempty"`
-	SeedBytes           int64   `json:"seed_bytes,omitempty"`
-	SeedSHA256          string  `json:"seed_sha256,omitempty"`
-	IOThreadRunning     bool    `json:"io_thread_running"`
-	SQLThreadRunning    bool    `json:"sql_thread_running"`
-	SecondsBehindSource *uint64 `json:"seconds_behind_source,omitempty"`
-	ErrorClass          string  `json:"error_class,omitempty"`
-	RecoveryRequired    bool    `json:"recovery_required"`
+	PairID                   string  `json:"pair_id"`
+	PairRevision             int64   `json:"pair_revision"`
+	State                    string  `json:"state"`
+	Phase                    string  `json:"phase,omitempty"`
+	Engine                   string  `json:"engine"`
+	SourceInstanceID         string  `json:"source_instance_id"`
+	TargetInstanceID         string  `json:"target_instance_id"`
+	Database                 string  `json:"database"`
+	Channel                  string  `json:"channel"`
+	SourceServerID           uint32  `json:"source_server_id"`
+	TargetServerID           uint32  `json:"target_server_id"`
+	SourceLogFile            string  `json:"source_log_file,omitempty"`
+	SourceLogPosition        uint64  `json:"source_log_position,omitempty"`
+	SeedBytes                int64   `json:"seed_bytes,omitempty"`
+	SeedSHA256               string  `json:"seed_sha256,omitempty"`
+	TargetReadOnly           bool    `json:"target_read_only"`
+	TargetSuperReadOnly      bool    `json:"target_super_read_only"`
+	TargetProtectionVerified bool    `json:"target_protection_verified"`
+	IOThreadRunning          bool    `json:"io_thread_running"`
+	SQLThreadRunning         bool    `json:"sql_thread_running"`
+	SecondsBehindSource      *uint64 `json:"seconds_behind_source,omitempty"`
+	ErrorClass               string  `json:"error_class,omitempty"`
+	RecoveryRequired         bool    `json:"recovery_required"`
 }
 
 // DatabaseReplicationPairSummary contains only protected pair metadata that
@@ -155,6 +160,8 @@ type databaseReplicationRecord struct {
 	TargetConfigSHA256      string    `json:"target_config_sha256,omitempty"`
 	SourceConfigAfterSHA256 string    `json:"source_config_after_sha256,omitempty"`
 	TargetConfigAfterSHA256 string    `json:"target_config_after_sha256,omitempty"`
+	SourceSchemaSHA256      string    `json:"source_schema_sha256"`
+	TableCount              int       `json:"table_count"`
 	SeedFilename            string    `json:"seed_filename,omitempty"`
 	SeedBytes               int64     `json:"seed_bytes,omitempty"`
 	SeedSHA256              string    `json:"seed_sha256,omitempty"`
@@ -182,6 +189,7 @@ type databaseReplicationPreviewRecord struct {
 	TargetServerID         uint32    `json:"target_server_id"`
 	EstimatedSeedBytes     uint64    `json:"estimated_seed_bytes"`
 	TableCount             int       `json:"table_count"`
+	SchemaSHA256           string    `json:"schema_sha256"`
 	CreatedAt              time.Time `json:"created_at"`
 	ExpiresAt              time.Time `json:"expires_at"`
 	SnapshotSHA256         string    `json:"snapshot_sha256"`
@@ -248,6 +256,12 @@ func validDatabaseReplicationPair(record databaseReplicationRecord) bool {
 	if record.SeedBytes < 0 || record.SeedBytes > databaseReplicationMaxSeed || (record.SeedFilename != "" && !artifactName.MatchString(record.SeedFilename)) || (record.SeedSHA256 != "" && !databaseReplicationDigestPattern.MatchString(record.SeedSHA256)) {
 		return false
 	}
+	if record.SourceSchemaSHA256 != "" && (!databaseReplicationDigestPattern.MatchString(record.SourceSchemaSHA256) || record.TableCount < 1 || record.TableCount > 1000) {
+		return false
+	}
+	if record.SeedFilename != "" && (record.SeedBytes < 1 || record.SeedSHA256 == "" || record.SourceLogFile == "" || record.SourceLogPosition == 0) {
+		return false
+	}
 	if record.SourceLogFile != "" && !databaseBinlogNamePattern.MatchString(record.SourceLogFile) {
 		return false
 	}
@@ -256,7 +270,7 @@ func validDatabaseReplicationPair(record databaseReplicationRecord) bool {
 
 func validReplicationState(state string) bool {
 	switch state {
-	case "pending", "recovery_required", "configuring", "seeding", "stopped", "running", "removing", "removed":
+	case "pending", "recovery_required", "configuring", "seeding", "stopped", "running", "degraded", "removing", "removed":
 		return true
 	default:
 		return false
@@ -265,7 +279,7 @@ func validReplicationState(state string) bool {
 
 func validReplicationPhase(phase string) bool {
 	switch phase {
-	case "config_pending", "source_configured", "target_configured", "seed_dumped", "seed_imported", "account_created", "channel_created", "channel_started", "channel_stopped", "channel_removed", "account_removed", "config_restored", "settled":
+	case "config_pending", "source_config_pending", "source_configured", "target_config_pending", "target_configured", "seed_dump_pending", "seed_dumped", "seed_import_pending", "seed_imported", "account_create_pending", "account_created", "account_grant_pending", "account_granted", "channel_config_pending", "channel_configured", "filter_config_pending", "channel_created", "channel_start_pending", "channel_started", "channel_stop_pending", "channel_stopped", "remove_channel_pending", "channel_removed", "remove_account_pending", "account_removed", "restore_target_config_pending", "restore_source_config_pending", "config_restored", "seed_cleanup_pending", "seed_cleaned", "settled":
 		return true
 	default:
 		return false
@@ -300,7 +314,7 @@ func validDatabaseReplicationPreview(record databaseReplicationPreviewRecord) bo
 		validDatabaseName(record.Database) && canonicalDatabaseReplicationEngine(record.Engine) != "" &&
 		record.SourceInstanceRevision > 0 && record.TargetInstanceRevision > 0 && record.SourceDatabaseRevision > 0 && record.TargetDatabaseRevision > 0 &&
 		databaseReplicationDigestPattern.MatchString(record.SourceConfigRevision) && databaseReplicationDigestPattern.MatchString(record.TargetConfigRevision) &&
-		record.EstimatedSeedBytes <= databaseReplicationMaxSeed && record.TableCount > 0 && record.SourceServerID > 0 && record.TargetServerID > 0 && record.SourceServerID != record.TargetServerID && record.CreatedAt.Before(record.ExpiresAt) &&
+		record.EstimatedSeedBytes <= databaseReplicationMaxSeed && record.TableCount > 0 && databaseReplicationDigestPattern.MatchString(record.SchemaSHA256) && record.SourceServerID > 0 && record.TargetServerID > 0 && record.SourceServerID != record.TargetServerID && record.CreatedAt.Before(record.ExpiresAt) &&
 		record.ExpiresAt.Sub(record.CreatedAt) <= databaseReplicationPreviewTTL && databaseReplicationDigestPattern.MatchString(record.SnapshotSHA256)
 }
 
@@ -310,7 +324,7 @@ func validateDatabaseReplicationInput(raw json.RawMessage) error {
 		return err
 	}
 	if input.Command == "pairs_list" {
-		if !validInstanceID(input.InstanceID) || input.SourceInstanceID != "" || input.TargetInstanceID != "" || input.Database != "" || input.PairID != "" || input.PreviewID != "" || input.SnapshotSHA256 != "" || input.ExpectedSourceInstanceRevision != 0 || input.ExpectedTargetInstanceRevision != 0 || input.ExpectedSourceDatabaseRevision != 0 || input.ExpectedTargetDatabaseRevision != 0 || input.ExpectedPairRevision != 0 || input.ConfirmEmptyTarget || input.ConfirmRemove || input.ConfirmReplicaHistoryLoss || input.RecoveryChoice != "" {
+		if !validInstanceID(input.InstanceID) || input.SourceInstanceID != "" || input.TargetInstanceID != "" || input.Database != "" || input.PairID != "" || input.PreviewID != "" || input.SnapshotSHA256 != "" || input.ExpectedSourceInstanceRevision != 0 || input.ExpectedTargetInstanceRevision != 0 || input.ExpectedSourceDatabaseRevision != 0 || input.ExpectedTargetDatabaseRevision != 0 || input.ExpectedPairRevision != 0 || input.ConfirmEmptyTarget || input.ConfirmRemove || input.ConfirmReplicaHistoryLoss || input.ConfirmTargetReadOnly || input.RecoveryChoice != "" {
 			return failure("invalid_input", "Replication pair listing requires only one managed instance ID", 400)
 		}
 		return nil
@@ -329,7 +343,7 @@ func validateDatabaseReplicationInput(raw json.RawMessage) error {
 	}
 	pairIdentity := func() bool { return databaseReplicationPairPattern.MatchString(input.PairID) }
 	clearConfirmation := func() bool {
-		return !input.ConfirmEmptyTarget && !input.ConfirmRemove && !input.ConfirmReplicaHistoryLoss
+		return !input.ConfirmEmptyTarget && !input.ConfirmRemove && !input.ConfirmReplicaHistoryLoss && !input.ConfirmTargetReadOnly
 	}
 	switch input.Command {
 	case "capabilities":
@@ -341,8 +355,8 @@ func validateDatabaseReplicationInput(raw json.RawMessage) error {
 			return failure("invalid_input", "Replication preview requires source and target revisions and one owned database", 400)
 		}
 	case "configure":
-		if !validDatabaseName(input.Database) || !pairIdentity() || !databaseReplicationPairPattern.MatchString(input.PreviewID) || !databaseReplicationDigestPattern.MatchString(input.SnapshotSHA256) || !positiveRevisions() || input.ExpectedPairRevision != 0 || !input.ConfirmEmptyTarget || !input.ConfirmReplicaHistoryLoss || input.ConfirmRemove || input.RecoveryChoice != "" {
-			return failure("invalid_input", "Replication configure requires an exact preview, current revisions and explicit target and replica-history confirmations", 400)
+		if !validDatabaseName(input.Database) || !pairIdentity() || !databaseReplicationPairPattern.MatchString(input.PreviewID) || !databaseReplicationDigestPattern.MatchString(input.SnapshotSHA256) || !positiveRevisions() || input.ExpectedPairRevision != 0 || !input.ConfirmEmptyTarget || !input.ConfirmReplicaHistoryLoss || !input.ConfirmTargetReadOnly || input.ConfirmRemove || input.RecoveryChoice != "" {
+			return failure("invalid_input", "Replication configure requires an exact preview, current revisions and explicit target-read-only, empty-target and replica-history confirmations", 400)
 		}
 	case "status", "start", "stop", "remove":
 		if !validDatabaseName(input.Database) || !pairIdentity() || input.PreviewID != "" || input.SnapshotSHA256 != "" || input.ExpectedPairRevision < 1 || input.RecoveryChoice != "" || input.ConfirmEmptyTarget ||
@@ -525,6 +539,105 @@ func (e *PrivilegedExecutor) ensureDatabaseReplicationJournalFinalized(ctx conte
 // active pair's ownership: deleting either owned database, rotating either
 // server administrator, changing or uninstalling either server.
 func (e *PrivilegedExecutor) ensureDatabaseReplicationDetached(ctx context.Context, instanceID string) error {
+	return e.ensureDatabaseReplicationDetachedForDatabase(ctx, instanceID, "")
+}
+
+func (e *PrivilegedExecutor) ensureDatabaseReplicationDatabaseDetached(ctx context.Context, instanceID, database string) error {
+	if !validDatabaseName(database) {
+		return failure("invalid_input", "A valid managed database name is required for the replication detach guard", 400)
+	}
+	return e.ensureDatabaseReplicationDetachedForDatabase(ctx, instanceID, database)
+}
+
+// ensureDatabaseReplicationTargetWritable protects application writes to the
+// exact owned target schema. Source traffic remains writable. The only bypass
+// is an unforgeable, in-process marker matching the exact protected
+// configure-seed revision; user-supplied task context cannot create one.
+func (e *PrivilegedExecutor) ensureDatabaseReplicationTargetWritable(ctx context.Context, instanceID, database string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if !validInstanceID(instanceID) || !validDatabaseName(database) {
+		return failure("invalid_input", "A valid managed instance and database are required for the replica write guard", 400)
+	}
+	var instance Instance
+	if err := e.load("receipts", instanceID, &instance); core.ErrorCode(err) == "not_found" {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	if instance.ID != instanceID {
+		return failure("ownership_invalid", "Managed receipt does not match its replication write-guard identity", 412)
+	}
+	if canonicalDatabaseReplicationEngine(instance.PluginID) == "" {
+		return nil
+	}
+	index, err := e.loadDatabaseReplicationIndex(instanceID)
+	if err != nil {
+		return err
+	}
+	marker, hasMarker := ctx.Value(databaseReplicationRecoveryContextKey{}).(databaseReplicationRecoveryContext)
+	for _, pairID := range index.PairIDs {
+		record, loadErr := e.loadDatabaseReplication(pairID)
+		if loadErr != nil {
+			return loadErr
+		}
+		if record == nil || (record.SourceInstanceID != instanceID && record.TargetInstanceID != instanceID) {
+			return failure("ownership_invalid", "Protected replication index points at a missing or unrelated pair", 412)
+		}
+		if record.State == "removed" || record.TargetInstanceID != instanceID || record.Database != database {
+			continue
+		}
+		if hasMarker && marker.executor == e && marker.pairID == pairID && marker.revision == record.Revision && marker.instanceIDs[instanceID] {
+			digest, digestErr := databaseReplicationRecordDigest(*record)
+			if digestErr == nil && digest == marker.digest && record.Operation == "configure" && record.Phase == "seed_import_pending" {
+				return nil
+			}
+		}
+		return failure("replication_target_read_only", "Writes to the managed replica target database are blocked while its replication pair is attached", 409)
+	}
+	return nil
+}
+
+// ensureDatabaseReplicationTargetSchemaCreateAllowed prevents adding another
+// non-system database to an instance whose global read-only setting protects
+// a dedicated replica target.
+func (e *PrivilegedExecutor) ensureDatabaseReplicationTargetSchemaCreateAllowed(ctx context.Context, instanceID string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if !validInstanceID(instanceID) {
+		return failure("invalid_input", "A valid managed instance is required for the replica target guard", 400)
+	}
+	var instance Instance
+	if err := e.load("receipts", instanceID, &instance); core.ErrorCode(err) == "not_found" {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	if canonicalDatabaseReplicationEngine(instance.PluginID) == "" {
+		return nil
+	}
+	index, err := e.loadDatabaseReplicationIndex(instanceID)
+	if err != nil {
+		return err
+	}
+	for _, pairID := range index.PairIDs {
+		record, loadErr := e.loadDatabaseReplication(pairID)
+		if loadErr != nil {
+			return loadErr
+		}
+		if record == nil || (record.SourceInstanceID != instanceID && record.TargetInstanceID != instanceID) {
+			return failure("ownership_invalid", "Protected replication index points at a missing or unrelated pair", 412)
+		}
+		if record.State != "removed" && record.TargetInstanceID == instanceID {
+			return failure("replication_target_not_dedicated", "Do not add databases to a managed replica target; remove its pair first", 409)
+		}
+	}
+	return nil
+}
+
+func (e *PrivilegedExecutor) ensureDatabaseReplicationDetachedForDatabase(ctx context.Context, instanceID, database string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -551,6 +664,9 @@ func (e *PrivilegedExecutor) ensureDatabaseReplicationDetached(ctx context.Conte
 		}
 		if record == nil || (record.SourceInstanceID != instanceID && record.TargetInstanceID != instanceID) {
 			return failure("ownership_invalid", "Protected replication index points at a missing or unrelated pair", 412)
+		}
+		if database != "" && record.Database != database {
+			continue
 		}
 		if record.State != "removed" && (record.SourceInstanceID == instanceID || record.TargetInstanceID == instanceID) {
 			return failure("replication_attached", "Remove the managed replication pair before changing or deleting its source or target database instance", 409)
@@ -581,9 +697,28 @@ func (e *PrivilegedExecutor) databaseReplication(ctx context.Context, raw json.R
 	if err := json.Unmarshal(raw, &input); err != nil {
 		return nil, failure("invalid_input", "Replication command could not be decoded", 400)
 	}
-	// The execution paths are added in the next implementation slice. Keeping
-	// this handler closed and typed prevents an accidental SQL passthrough.
-	return nil, failure("replication_unavailable", fmt.Sprintf("Typed replication command %q is not ready for this engine pair", input.Command), 412)
+	switch input.Command {
+	case "pairs_list":
+		return e.databaseReplicationList(ctx, input.InstanceID)
+	case "capabilities":
+		return e.databaseReplicationCapabilities(ctx, input)
+	case "preview":
+		var out DatabaseReplicationPreview
+		err := e.WithRuntimeTransaction(ctx, []string{input.SourceInstanceID, input.TargetInstanceID}, func(held context.Context) error {
+			var inspectErr error
+			out, inspectErr = e.inspectReplicationPreflight(held, input)
+			return inspectErr
+		})
+		return out, err
+	case "configure", "start", "stop", "remove":
+		return e.mutateDatabaseReplication(ctx, input)
+	case "status":
+		return e.readDatabaseReplicationStatus(ctx, input)
+	case "recover":
+		return e.recoverDatabaseReplication(ctx, input)
+	default:
+		return nil, failure("invalid_input", "Unsupported typed database replication command", 400)
+	}
 }
 
 func databaseReplicationResources(_ context.Context, _ core.Actor, raw json.RawMessage) ([]string, error) {
@@ -624,6 +759,9 @@ func (m *Manager) databaseReplicationBindings() []core.Binding {
 			fields[key] = value
 		}
 		fields["database"] = databaseSchema
+		for _, name := range []string{"expected_source_instance_revision", "expected_target_instance_revision", "expected_source_database_revision", "expected_target_database_revision"} {
+			fields[name] = revision
+		}
 		return fields
 	}
 	bindings := []core.Binding{}
@@ -635,8 +773,8 @@ func (m *Manager) databaseReplicationBindings() []core.Binding {
 	}{
 		{"managed_database_replication_capabilities", "capabilities", "Inspect whether two managed local MySQL/MariaDB instances meet the supported replication prerequisites", "databases:replication", true, false, base, []string{"source_instance_id", "target_instance_id"}},
 		{"managed_database_replication_pairs_list", "pairs_list", "List managed replication pairs only when both endpoint instances and databases are authorized", "databases:replication", true, false, listSchema, []string{"instance_id"}},
-		{"managed_database_replication_preview", "preview", "Freeze current managed source, target, empty-target and seed-size revisions before configuring database replication", "databases:admin", true, false, withDatabase(), []string{"source_instance_id", "target_instance_id", "database"}},
-		{"managed_database_replication_configure", "configure", "Seed one owned database consistently and configure a protected single-channel same-host replication pair", "databases:admin", false, true, map[string]any{"pair_id": pairSchema, "preview_id": pairSchema, "snapshot_sha256": stringDigest, "source_instance_id": instanceSchema, "target_instance_id": instanceSchema, "database": databaseSchema, "expected_source_instance_revision": revision, "expected_target_instance_revision": revision, "expected_source_database_revision": revision, "expected_target_database_revision": revision, "confirm_empty_target": map[string]any{"type": "boolean", "const": true}, "confirm_replica_history_loss": map[string]any{"type": "boolean", "const": true}}, []string{"pair_id", "preview_id", "snapshot_sha256", "source_instance_id", "target_instance_id", "database", "expected_source_instance_revision", "expected_target_instance_revision", "expected_source_database_revision", "expected_target_database_revision", "confirm_empty_target", "confirm_replica_history_loss"}},
+		{"managed_database_replication_preview", "preview", "Freeze current managed source, target, empty-target and seed-size revisions before configuring database replication", "databases:admin", true, false, withDatabase(), []string{"source_instance_id", "target_instance_id", "database", "expected_source_instance_revision", "expected_target_instance_revision", "expected_source_database_revision", "expected_target_database_revision"}},
+		{"managed_database_replication_configure", "configure", "Seed one owned database consistently and configure a protected single-channel same-host replication pair", "databases:admin", false, true, map[string]any{"pair_id": pairSchema, "preview_id": pairSchema, "snapshot_sha256": stringDigest, "source_instance_id": instanceSchema, "target_instance_id": instanceSchema, "database": databaseSchema, "expected_source_instance_revision": revision, "expected_target_instance_revision": revision, "expected_source_database_revision": revision, "expected_target_database_revision": revision, "confirm_empty_target": map[string]any{"type": "boolean", "const": true}, "confirm_replica_history_loss": map[string]any{"type": "boolean", "const": true}, "confirm_target_read_only": map[string]any{"type": "boolean", "const": true}}, []string{"pair_id", "preview_id", "snapshot_sha256", "source_instance_id", "target_instance_id", "database", "expected_source_instance_revision", "expected_target_instance_revision", "expected_source_database_revision", "expected_target_database_revision", "confirm_empty_target", "confirm_replica_history_loss", "confirm_target_read_only"}},
 		{"managed_database_replication_pair_status", "status", "Read only the exact stored pair's bounded and sanitized replication thread status", "databases:replication", true, false, map[string]any{"pair_id": pairSchema, "source_instance_id": instanceSchema, "target_instance_id": instanceSchema, "database": databaseSchema, "expected_pair_revision": revision}, []string{"pair_id", "source_instance_id", "target_instance_id", "database", "expected_pair_revision"}},
 		{"managed_database_replication_start", "start", "Start only the exact managed replication channel after verifying its frozen source identity", "databases:admin", false, true, map[string]any{"pair_id": pairSchema, "source_instance_id": instanceSchema, "target_instance_id": instanceSchema, "database": databaseSchema, "expected_pair_revision": revision}, []string{"pair_id", "source_instance_id", "target_instance_id", "database", "expected_pair_revision"}},
 		{"managed_database_replication_stop", "stop", "Stop only the exact managed replication channel and retain its seed and metadata", "databases:admin", false, true, map[string]any{"pair_id": pairSchema, "source_instance_id": instanceSchema, "target_instance_id": instanceSchema, "database": databaseSchema, "expected_pair_revision": revision}, []string{"pair_id", "source_instance_id", "target_instance_id", "database", "expected_pair_revision"}},

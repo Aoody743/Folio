@@ -76,10 +76,12 @@ func (f *supervisorLogRPCFixture) serveHTTP(w http.ResponseWriter, r *http.Reque
 		_, _ = io.WriteString(w, `<?xml version="1.0"?><methodResponse><params><param><value><boolean>0</boolean></value></param></params></methodResponse>`)
 		return
 	}
-	for _, name := range []string{f.stdout, f.stderr} {
-		if err = os.Truncate(name, 0); err != nil {
-			http.Error(w, "could not clear fixture log", http.StatusInternalServerError)
-			return
+	if mode != "noop" {
+		for _, name := range []string{f.stdout, f.stderr} {
+			if err = os.Truncate(name, 0); err != nil {
+				http.Error(w, "could not clear fixture log", http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 	w.Header().Set("Content-Type", "text/xml")
@@ -285,6 +287,36 @@ func TestSupervisorLogClearRejectsStaleIdentityAndRPCFailureWithoutLeak(t *testi
 	}
 	if data, readErr := os.ReadFile(stderrPath); readErr != nil || string(data) != "new generation" {
 		t.Fatalf("failed clear changed stderr: %q %v", data, readErr)
+	}
+}
+
+func TestSupervisorLogClearRejectsTrueNoopRPCWithoutClaimingSuccess(t *testing.T) {
+	e, instance, fixture := supervisorLogFixture(t)
+	preview, err := runSupervisorLogAction(t, e, SupervisorLogInput{ID: instance.ID, Command: "preview_clear", Name: "worker"}, context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var view struct {
+		Revision int64
+		Stdout   SupervisorLogIdentity
+		Stderr   SupervisorLogIdentity
+	}
+	readSupervisorLogResult(t, preview.Stdout, &view)
+	fixture.mu.Lock()
+	fixture.mode = "noop"
+	fixture.mu.Unlock()
+	result, err := runSupervisorLogAction(t, e, SupervisorLogInput{
+		ID: instance.ID, Command: "clear", Name: "worker", ExpectedRevision: view.Revision,
+		ExpectedStdout: &view.Stdout, ExpectedStderr: &view.Stderr,
+	}, context.Background())
+	if core.ErrorCode(err) != "log_clear_verification_failed" || strings.Contains(result.Stdout, "cleared_streams") {
+		t.Fatalf("successful no-op RPC was reported as cleared: err=%v stdout=%q", err, result.Stdout)
+	}
+	if data, readErr := os.ReadFile(filepath.Join(instance.Paths.LogDir, "worker.log")); readErr != nil || string(data) != "stdout fixture\n" {
+		t.Fatalf("no-op clear changed stdout: %q %v", data, readErr)
+	}
+	if data, readErr := os.ReadFile(filepath.Join(instance.Paths.LogDir, "worker.err")); readErr != nil || string(data) != "stderr fixture\n" {
+		t.Fatalf("no-op clear changed stderr: %q %v", data, readErr)
 	}
 }
 

@@ -2,9 +2,12 @@ package plugins
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -15,6 +18,12 @@ import (
 )
 
 const supervisorLogReadLimit = 64 << 10
+const supervisorLogClearVerifyLimit = 16 << 20
+
+type supervisorLogFingerprint struct {
+	Identity SupervisorLogIdentity
+	SHA256   string
+}
 
 // SupervisorLogIdentity is a safe, path-free snapshot of one managed log.
 // Filesystem numbers are decimal strings because inode/device IDs can exceed
@@ -215,6 +224,47 @@ func (e *PrivilegedExecutor) supervisorLogSnapshot(instance Instance, name, stre
 	return identity, err
 }
 
+func (e *PrivilegedExecutor) supervisorLogClearFingerprint(instance Instance, name, stream string) (supervisorLogFingerprint, error) {
+	file, identity, err := e.openSupervisorLog(instance, name, stream)
+	if err != nil {
+		return supervisorLogFingerprint{}, err
+	}
+	if !identity.Exists {
+		return supervisorLogFingerprint{Identity: identity}, nil
+	}
+	defer file.Close()
+	size, err := strconv.ParseInt(identity.Size, 10, 64)
+	if err != nil || size < 0 || size > supervisorLogClearVerifyLimit {
+		return supervisorLogFingerprint{}, failure("log_clear_verification_failed", "Supervisor log exceeds the safe clear-verification bound; no clear is claimed", 413)
+	}
+	data := make([]byte, int(size))
+	if size > 0 {
+		if _, err = io.ReadFull(io.NewSectionReader(file, 0, size), data); err != nil {
+			return supervisorLogFingerprint{}, failure("log_clear_verification_failed", "Supervisor log changed while its clear state was being checked", 409)
+		}
+	}
+	afterRead, err := e.supervisorLogIdentityForFile(file)
+	if err != nil || afterRead != identity {
+		return supervisorLogFingerprint{}, failure("log_clear_verification_failed", "Supervisor log changed while its clear state was being checked", 409)
+	}
+	currentPath, err := e.supervisorLogSnapshot(instance, name, stream)
+	if err != nil || !supervisorLogIdentityMatches(currentPath, identity) {
+		return supervisorLogFingerprint{}, failure("log_clear_verification_failed", "Supervisor log was replaced while its clear state was being checked", 409)
+	}
+	digest := sha256.Sum256(data)
+	return supervisorLogFingerprint{Identity: identity, SHA256: hex.EncodeToString(digest[:])}, nil
+}
+
+func supervisorLogClearWasNotObserved(before, after supervisorLogFingerprint) bool {
+	if !before.Identity.Exists || !after.Identity.Exists ||
+		before.Identity.Device != after.Identity.Device || before.Identity.Inode != after.Identity.Inode ||
+		before.Identity.Size != after.Identity.Size || before.SHA256 == "" || before.SHA256 != after.SHA256 {
+		return false
+	}
+	size, err := strconv.ParseInt(before.Identity.Size, 10, 64)
+	return err == nil && size > 0
+}
+
 func (e *PrivilegedExecutor) readSupervisorLog(instance Instance, name, stream string, maxBytes int) (map[string]any, error) {
 	file, identity, err := e.openSupervisorLog(instance, name, stream)
 	if err != nil {
@@ -356,14 +406,22 @@ func (e *PrivilegedExecutor) supervisorLog(ctx context.Context, raw json.RawMess
 		if !supervisorLogIdentityMatches(stdout, *input.ExpectedStdout) || !supervisorLogIdentityMatches(stderr, *input.ExpectedStderr) {
 			return nil, failure("revision_conflict", "A Supervisor job log was replaced after preview; create a new preview", 412)
 		}
+		stdoutBefore, err := e.supervisorLogClearFingerprint(instance, input.Name, "stdout")
+		if err != nil {
+			return nil, err
+		}
+		stderrBefore, err := e.supervisorLogClearFingerprint(instance, input.Name, "stderr")
+		if err != nil {
+			return nil, err
+		}
+		if !supervisorLogIdentityMatches(stdoutBefore.Identity, *input.ExpectedStdout) || !supervisorLogIdentityMatches(stderrBefore.Identity, *input.ExpectedStderr) {
+			return nil, failure("revision_conflict", "A Supervisor job log was replaced after preview; create a new preview", 412)
+		}
 		if err = ctx.Err(); err != nil {
 			return nil, err
 		}
-		// Supervisor's documented clearProcessLogs RPC clears and reopens both
-		// streams under its own log handling. It is intentionally scoped to the
-		// registered program and is not a clearAllProcessLogs operation. The
-		// official RPC reference documents clearProcessLogs(name) as clearing
-		// stdout and stderr and reopening both: https://supervisord.org/api.html
+		// The RPC is scoped to the registered program, but Supervisor can return
+		// true when a failed process has no live output dispatcher to clear.
 		response, err := e.supervisorRPC(ctx, instance, "supervisor.clearProcessLogs", input.Name)
 		if err != nil {
 			return nil, err
@@ -371,12 +429,15 @@ func (e *PrivilegedExecutor) supervisorLog(ctx context.Context, raw json.RawMess
 		if err = supervisorRequireXMLRPCTrue(response); err != nil {
 			return nil, err
 		}
-		stdoutAfter, stdoutErr := e.supervisorLogSnapshot(instance, input.Name, "stdout")
-		stderrAfter, stderrErr := e.supervisorLogSnapshot(instance, input.Name, "stderr")
+		stdoutAfter, stdoutErr := e.supervisorLogClearFingerprint(instance, input.Name, "stdout")
+		stderrAfter, stderrErr := e.supervisorLogClearFingerprint(instance, input.Name, "stderr")
 		if stdoutErr != nil || stderrErr != nil {
-			return nil, failure("log_clear_verification_failed", "Supervisor cleared the owned job logs, but the resulting files could not be verified safely", 502)
+			return nil, failure("log_clear_verification_failed", "Supervisor accepted the request, but the resulting log files could not be verified safely; no clear is claimed", 502)
 		}
-		return map[string]any{"id": instance.ID, "name": input.Name, "cleared_streams": []string{"stdout", "stderr"}, "revision": record.Revision, "stdout_after": stdoutAfter, "stderr_after": stderrAfter, "live_output_may_reappear": true}, nil
+		if supervisorLogClearWasNotObserved(stdoutBefore, stdoutAfter) || supervisorLogClearWasNotObserved(stderrBefore, stderrAfter) {
+			return nil, failure("log_clear_verification_failed", "Supervisor accepted the request, but nonempty log contents were unchanged; no clear is claimed", 502)
+		}
+		return map[string]any{"id": instance.ID, "name": input.Name, "cleared_streams": []string{"stdout", "stderr"}, "revision": record.Revision, "stdout_after": stdoutAfter.Identity, "stderr_after": stderrAfter.Identity, "live_output_may_reappear": true}, nil
 	default:
 		return nil, failure("invalid_input", "Unknown Supervisor log action", 400)
 	}

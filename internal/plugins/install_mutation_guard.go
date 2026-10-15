@@ -7,9 +7,9 @@ import (
 )
 
 // ensureInstallFinalized prevents ordinary mutations from advancing a receipt
-// while an install journal still needs recovery. Call it only after acquiring
-// the shared per-instance lock. Read-only operations and recovery operations
-// must not use this guard.
+// while an install or runtime journal still needs recovery. Call it only after
+// acquiring the shared per-instance lock. Read-only inspection stays available;
+// explicit recovery can bypass only its exact validated private journal marker.
 func (e *PrivilegedExecutor) ensureInstallFinalized(ctx context.Context, id string) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -26,5 +26,11 @@ func (e *PrivilegedExecutor) ensureInstallFinalized(ctx context.Context, id stri
 	if err := e.ensureDatabaseBinlogConfigFinalized(ctx, id); err != nil {
 		return err
 	}
-	return e.ensureDatabaseReplicationJournalFinalized(ctx, id)
+	if err := e.ensureDatabaseReplicationJournalFinalized(ctx, id); err != nil {
+		return err
+	}
+	if err := e.ensurePostgreSQLMaintenanceFinalized(ctx, id); err != nil {
+		return err
+	}
+	return e.ensurePHPExtensionFinalized(ctx, id)
 }

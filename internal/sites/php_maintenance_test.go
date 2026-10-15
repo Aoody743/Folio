@@ -208,7 +208,7 @@ func TestSitePHPSessionStatsPreviewCleanupIgnoresUnrelatedTmpFiles(t *testing.T)
 		Lines      []string `json:"lines"`
 		Truncated  bool     `json:"truncated"`
 	}
-	if err = json.Unmarshal(logResult.Data, &log); err != nil || !log.Configured || !log.Generated || log.Truncated || strings.Join(log.Lines, "|") != "slow two|slow three" {
+	if err = json.Unmarshal(logResult.Data, &log); err != nil || !log.Configured || !log.Generated || !log.Truncated || strings.Join(log.Lines, "|") != "slow two|slow three" {
 		t.Fatalf("unexpected bounded site slowlog: %+v, err=%v", log, err)
 	}
 
