@@ -4,6 +4,12 @@
 
 `planned`、旧动作字符串数、catalog capability 声明均不是剩余功能数量；不据此计算百分比。下表的“已有”指具体源码能力，不表示整插件验收完成。错误返回、策略限制与缺功能分别保留，不能用通用 SQL、终端或可编辑配置替代专用用户管理闭环。
 
+## dev.22 增量（优先于下方历史盘点）
+
+[dev.22 检查](evidence/phase2-dev22-checks-20261015.json)绑定源码 `362d2d63b`：表维护后端与界面、复制界面、PHP 原计划恢复发现/继续和 root 重启修复已实现，后端 race/vet、前端 80 项测试及双架构构建/实际 amd64 安装包检查通过。Debian root 源码 fixture 15 项通过；实际数据库维护、复制、PHP 扩展安装及浏览器/MCP 完整矩阵仍待验收，不能将其标为已完成。
+
+rsync/lsyncd 后端与管理应用尚未集成；同步目录策略撤销时必须停止旧授权服务，不能仅拒绝新任务。PG 远程 TLS、其他引擎复制/SSH 同步、明确不可用 DNS 供应商、FTP 只读和跨插件原生完整链路仍是余项。第二阶段未完成，第三阶段未开始。
+
 ## dev.21 增量（优先于下方历史盘点）
 
 [dev.21 检查](evidence/phase2-dev21-checks-20261015.json) 绑定源码 `ad531c410` 与实际包校验和。PHP 官方 APT 模块安装/实例停用、PostgreSQL loopback SCRAM 与慢日志、同主机 MySQL/MariaDB 复制、旧 FTP 记录恢复已进入已实现/待原生验证范围；复制 UI 正在下一批制作。Supervisor 源码已修复真实 VM 揭示的 programs 祖先权限和无效 clear 被误报成功问题，[dev.21 原生证据](evidence/phase2-native-dev21-20261015.json)中实际 Supervisor API/MCP 子进程闭环已通过，浏览器未测；另发现 PHP 待恢复 journal 阻断 root Agent 重启，dev.22 正优先修复，不能据普通 UID 测试宣称通过。
