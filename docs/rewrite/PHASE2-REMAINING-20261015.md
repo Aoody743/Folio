@@ -4,6 +4,12 @@
 
 `planned`、旧动作字符串数、catalog capability 声明均不是剩余功能数量；不据此计算百分比。下表的“已有”指具体源码能力，不表示整插件验收完成。错误返回、策略限制与缺功能分别保留，不能用通用 SQL、终端或可编辑配置替代专用用户管理闭环。
 
+## dev.21 增量（优先于下方历史盘点）
+
+[dev.21 检查](evidence/phase2-dev21-checks-20261015.json) 绑定源码 `ad531c410` 与实际包校验和。PHP 官方 APT 模块安装/实例停用、PostgreSQL loopback SCRAM 与慢日志、同主机 MySQL/MariaDB 复制、旧 FTP 记录恢复已进入已实现/待原生验证范围；复制 UI 正在下一批制作。Supervisor 源码已修复真实 VM 揭示的 programs 祖先权限和无效 clear 被误报成功问题，实际子进程闭环复测仍进行中。
+
+仍有明确功能限制：PHP source/yum 模块安装及系统包物理移除；PostgreSQL 远程受管 TLS；其他引擎复制与 SSH 同步；FTP 账号只读；rsync/lsyncd；数据库表维护完整界面；phpMyAdmin/pgAdmin 的可信实际部署与专用管理；四个 DNS provider、跨阶段 webhook 依赖及下表其他未关闭项。真实发行版/重启恢复/升级卸载/浏览器/MCP 权限验收矩阵仍须逐项完成。不能把构建、协议 fixture、catalog 声明或部分原生成功当作第二阶段完成。
+
 ## dev.20 增量（优先于下方历史盘点）
 
 [dev.20 检查](evidence/phase2-dev20-checks-20261015.json) 记录交互 Docker TTY、PHP 默认/站点慢日志、站点 session 清理、FTP 强暂停与 Supervisor 脚本进程识别的源码及测试范围。新增 root Sites 用例在普通用户云端跳过，实际固定包服务/浏览器/MCP 验收仍需继续。

@@ -4,6 +4,16 @@
 
 日期：2026-10-13（Asia/Singapore）。所有检查只代表记录的环境与当前代码，不代表尚未运行的发行版或第三方服务已经兼容。
 
+## Luna 并行续开发：dev.21（2026-10-15）
+
+源码 `ad531c410` 已推送 `refine`，从干净工作区生成 dev.21。最终 Go 全量 race（14 个测试包）与 vet、前端 70 项测试、类型检查、静态导出、Linux amd64/arm64 构建及实际 amd64 独立前缀安装/重复安装/健康检查/保留数据卸载通过。见 [dev.21 检查与边界](evidence/phase2-dev21-checks-20261015.json) 和[源码身份](evidence/phase2-dev21-source-snapshot-20261015.json)。ARM64 仅构建；源码与协议测试不替代真实服务验收。
+
+本批增加官方发行版 PHP 扩展计划与持久任务、PostgreSQL 本机 SCRAM 访问规则和慢日志、受管 MySQL/MariaDB 同主机复制与只读专用目标。复制种子存于 Agent 私有目录，安装包权限在排队任务实际执行前重新检查；关联实例与库的危险变更由统一保护拒绝。PHP 扩展卸载只停用当前实例并保留系统包，暂不支持物理删包。PostgreSQL 远程访问仍须后续受管 TLS；复制界面与真实客户端/复制过滤验收未完成。
+
+FTP 恢复严格识别旧版 IPv6 字符串破坏冒号字段后的记录，保留原始验证值与其他字段，不宣称旧规则曾完整阻止登录。Supervisor 修复 root 创建的 programs 祖先权限；RPC 返回成功但文件未清空时明确拒绝报告清理成功。另补 Docker socket deadline 与 context 状态发布竞态修复、PostgreSQL FIFO 非阻塞拒绝以及慢日志截断内容遮蔽。
+
+[前批原生证据](evidence/phase2-native-next-20261015.json) 记录 dev.20 双 VM 升级、dev.16 实际 FPM 会话清理、dev.20 Supervisor 安装成功但子进程启动/日志清理失败，以及仅修测试断言后的 root Sites 5/5 通过。dev.21 正在独立 VM 复测，不借用旧版本证据宣称通过。后续由 Luna 在隔离目录继续复制界面、rsync/lsyncd、表维护和管理应用可信部署；第二阶段进行中，第三阶段未开始。真实宝塔服务器保持未修改。
+
 ## Luna 并行续开发：dev.20（2026-10-15）
 
 源码 `bc2270666` 已从干净工作区构建 dev.20：Go 全量 race（14 个测试包）及 vet、前端 67 项测试、类型检查、静态导出、双架构构建与实际 amd64 独立前缀安装检查通过。见 [dev.20 检查与限制](evidence/phase2-dev20-checks-20261015.json) 和[源码身份](evidence/phase2-dev20-source-snapshot-20261015.json)。ARM64 仅构建；云端 UID1000 下新增 root Sites 测试编译但跳过，不冒充原生验收。

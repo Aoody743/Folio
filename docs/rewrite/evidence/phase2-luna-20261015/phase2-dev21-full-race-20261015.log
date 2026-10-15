@@ -1,0 +1,16 @@
+ok  	github.com/Aoody743/PowerLinux/cmd/powerlinux	13.703s
+ok  	github.com/Aoody743/PowerLinux/internal/agent	9.792s
+ok  	github.com/Aoody743/PowerLinux/internal/agentconfig	1.063s
+ok  	github.com/Aoody743/PowerLinux/internal/core	20.372s
+ok  	github.com/Aoody743/PowerLinux/internal/files	1.935s
+ok  	github.com/Aoody743/PowerLinux/internal/httpapi	9.711s
+ok  	github.com/Aoody743/PowerLinux/internal/jobs	1.167s
+ok  	github.com/Aoody743/PowerLinux/internal/mcpbridge	5.978s
+ok  	github.com/Aoody743/PowerLinux/internal/phpfilesessions	(cached)
+ok  	github.com/Aoody743/PowerLinux/internal/plugins	25.040s
+ok  	github.com/Aoody743/PowerLinux/internal/sites	10.454s
+ok  	github.com/Aoody743/PowerLinux/internal/systemops	5.019s
+ok  	github.com/Aoody743/PowerLinux/internal/terminal	3.201s
+ok  	github.com/Aoody743/PowerLinux/internal/terminalbridge	(cached)
+?   	github.com/Aoody743/PowerLinux/internal/webassets	[no test files]
+?   	github.com/Aoody743/PowerLinux/tests/rewrite	[no test files]
