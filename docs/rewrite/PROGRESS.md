@@ -4,6 +4,14 @@
 
 日期：2026-10-13（Asia/Singapore）。所有检查只代表记录的环境与当前代码，不代表尚未运行的发行版或第三方服务已经兼容。
 
+## Luna 并行续开发：dev.23（2026-10-15）
+
+源码 `3e74660d6` 从干净工作区构建 dev.23，优先修复原生验收发现的 PostgreSQL 慢日志问题：先校验文件并重载，再用新连接有界轮询实际设置；新事务先保存原始四项设置及来源，旧待恢复记录从受保护的 Before 配置推导恢复目标，无法证明时继续保持 pending。支持恢复原来未配置的默认状态，保留日志前缀尾部空格；新增延迟生效、延迟恢复和执行中取消回归。
+
+全量 Go race（14 个测试包）与 vet、双架构构建、实际 amd64 独立前缀安装包检查通过，独立 Debian root 源码 fixture 26 项通过。前端源码与导出未变，复用 dev.22 的 80 项测试/类型检查/静态构建结果。见 [dev.23 检查与日志](evidence/phase2-dev23-checks-20261015.json)、[源码身份](evidence/phase2-dev23-source-snapshot-20261015.json)。实际 Debian 从 dev.21 升级并恢复既有 pending 记录仍验收中，不能提前记为通过。
+
+本批还将待恢复保护接入真实安装/重装入口，回归覆盖规划与执行期间 receipt 丢失的情况。rsync/lsyncd、管理应用和 PostgreSQL 远程 TLS 继续隔离开发，第二阶段未完成、第三阶段未开始。普通云端预览当前 dev.22；真实宝塔服务器保持未修改。
+
 ## Luna 并行续开发：dev.22（2026-10-15）
 
 源码 `362d2d63b` 已冻结，干净工作区生成 dev.22。最终 Go 全量 race（14 个测试包）与 vet、前端 80 项测试、类型检查、静态导出、安装脚本回归（31 项，2 项条件跳过）、Linux amd64/arm64 构建和实际 amd64 独立前缀安装闭环通过。见 [dev.22 检查与可携带日志](evidence/phase2-dev22-checks-20261015.json)、[源码身份](evidence/phase2-dev22-source-snapshot-20261015.json)。独立 Debian root 源码 fixture 的 15 项顶层测试通过，包含 PHP 重启、损坏状态、原计划恢复、时钟边界和缺失 receipt 拒绝；这不代替实际扩展安装或新版 daemon 验收。
