@@ -1,5 +1,7 @@
 # 第二阶段剩余工作盘点（2026-10-15）
 
+最新范围调整：用户允许暂缓无用软件，优先以 [核心版收尾清单](PHASE2-CLOSEOUT-20261015.md) 决定首发范围；下方完整旧功能盘点作为参考，不再将全部可选插件强制算作当前退出阻塞。
+
 初版为只读源码盘点；随后按已冻结的 Luna Max 批次补入 PHP runtime 日志/session 与 Supervisor job 日志实现。包含本轮新增的 DB administrator、Docker registry、DNSPod International 改动。依据 [DEVELOPMENT-PLAN](DEVELOPMENT-PLAN.md) 的 P2-01～09 和七项退出标准，交叉读取 [feature-inventory](feature-inventory.json)、[migration-tracker](migration-tracker.json)、实际 Go bindings/执行器与 `plugins/<id>/index.py`。盘点本身不运行构建、测试或 guest 操作；验证结论只引用对应批次证据。
 
 `planned`、旧动作字符串数、catalog capability 声明均不是剩余功能数量；不据此计算百分比。下表的“已有”指具体源码能力，不表示整插件验收完成。错误返回、策略限制与缺功能分别保留，不能用通用 SQL、终端或可编辑配置替代专用用户管理闭环。
