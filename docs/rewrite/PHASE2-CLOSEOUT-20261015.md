@@ -1,8 +1,8 @@
 # 第二阶段核心版收尾
 
-2026-10-15，用户允许不迁移无用软件，要求准备收尾。本文件优先于旧计划中必须迁移全部 23 个核心插件的假设。2026-10-16 用户先将目标收敛到 ARM64，随后又批准 Nginx + PHP / OpenResty + PHP 首次启动二选一、Next.js/Go 应用托管，并将目标改为全新 Debian 13 与 Ubuntu 24.04 amd64 机器；下面较早的 ARM64 记录保留为历史证据，不代表当前产品目标。Nginx 使用 Debian/Ubuntu 签名仓库原生包；不以机器上已有 Nginx 为前置条件。第二阶段仍进行中，第三阶段尚未开始实现。
+2026-10-15，用户允许不迁移无用软件，要求准备收尾。本文件优先于旧计划中必须迁移全部 23 个核心插件的假设。2026-10-16 用户先将目标收敛到 ARM64，随后又批准 Nginx + PHP / OpenResty + PHP 首次启动二选一、Next.js/Go 应用托管，并将目标改为全新 Debian 13 与 Ubuntu 24.04 amd64 机器；下面较早的 ARM64 记录保留为历史证据，不代表当前产品目标。Nginx 使用 Debian/Ubuntu 签名仓库原生包；不以机器上已有 Nginx 为前置条件。2026-10-17 起进入新版首发验收准备，第二阶段仍未完成，第三阶段尚未开始实现。
 
-当前范围约束：Web 栈仅首次安装时选择；选定后不提供直接切换，需先移除网站配置、卸载当前栈，再安装另一栈，网站内容默认保留。Next.js 与 Go 的核心生命周期先行。网站栈完成后，用户可分别选择是否安装 MySQL、PostgreSQL（默认均不安装，也可同时安装）。旧版数据迁移不做；47 个第三阶段插件延后，仅保留面板内部扩展注册接口，不实施第三方包导入、动态菜单或任意 Hook 执行器。MongoDB、phpMyAdmin、pgAdmin 与 FTP 不计入首发范围；FTP 停止新增开发，已有代码和本地改动保留。
+当前范围约束：Web 栈仅首次安装时选择；选定后不提供直接切换，需先移除网站配置、卸载当前栈，再安装另一栈，网站内容默认保留。首次设置继续使用简单的可视化选择界面，复杂能力通过扩展逐步加入，不要求首页承载全部功能。Next.js 与 Go 的核心生命周期先行。网站栈完成后，用户可分别选择是否安装 MySQL、PostgreSQL（默认均不安装，也可同时安装）。旧版数据迁移不做；扩展支持是产品方向，不作为当前首发阻塞，但每个扩展必须有独立权限、任务、审计和验收证据。MongoDB、phpMyAdmin、pgAdmin 与 FTP 不计入本轮核心验收；FTP 停止新增开发，已有代码和本地改动保留。
 
 ## 当前进度
 
@@ -30,6 +30,14 @@
 - 前端 `npm test --prefix frontend` 为 82/82 通过，`make rewrite-ui` 的 TypeScript 检查与 Next.js 静态导出通过；`go -C third_party/mysql test -mod=readonly -race -count=1 ./...` 通过。Linux amd64/arm64 当前源码二进制可构建，但不是安装包；SHA-256 见[当前源码检查证据](evidence/phase2-hosting-core-source-checks-20261016.json)。
 - `make rewrite-test` 未通过：macOS 缺少安装器要求的 `flock`，且数据锁测试依赖 Linux 锁语义；原生 `go test ./internal/plugins` 也因仓库 Linux 专用 syscall/build-tag 文件不能在 Darwin 编译。因此本机没有完成全量 Go 执行测试或发行包构建。
 - Debian 13/Ubuntu 24.04 amd64 原生 QA 环境本轮不可用。Nginx 原生包安装、PHP 网站与 Next.js/Go 实际构建访问、服务/权限/任务/审计矩阵、升级回退与数据保留仍未验收；候选功能不可标记为 `verified`。当前范围、可用/暂缓/不可用标签均不代表已通过实机验证。
+
+### 2026-10-17 验收准备与收尾决策
+
+- GitHub 主仓库已更名为 `Aoody743/Folio`，默认分支为 `main`；新版品牌为 Folio / 折纸面板，旧版 PowerLinux 兼容标识保留。
+- 首发验收按 Debian 13 amd64 与 Ubuntu 24.04 amd64 执行；ARM64 仅作构建与后续扩展目标，不替代 amd64 原生证据。
+- 首轮验收优先覆盖：安装器、Nginx/OpenResty + PHP、MySQL、PostgreSQL、网站访问、备份恢复、网页/MCP 权限、任务、审计、重启、重复安装、升级、回退和卸载保留数据。
+- Next.js/Go 托管、Git/归档导入、数据库外部导入等能力保留为可选扩展；可以在简单 UI 中按需进入，不因扩展尚未完成而阻塞核心版，但未验收前不得标记为 `verified`。
+- 验收期间发现的缺陷直接进入修复批次；修复必须补充对应测试或原生证据，再更新本文件状态。
 
 - `refine` 已推送 dev.23，产品源码 `3e74660d6fb4da2c5300619e8dd0c3cada7a2992`，见 [检查记录](evidence/phase2-dev23-checks-20261015.json)。
 - 第一阶段已验收；文件/终端、网站/PHP、数据库/缓存、Docker、系统管理、任务、审计及原生 MCP 已有实际实现。不同服务/平台的完整验收尚未结束。
