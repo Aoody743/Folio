@@ -18,16 +18,18 @@ import (
 )
 
 type DockerInput struct {
-	ID          string            `json:"id"`
-	Command     string            `json:"command"`
-	Name        string            `json:"name,omitempty"`
-	Image       string            `json:"image,omitempty"`
-	MemoryMB    int64             `json:"memory_mb,omitempty"`
-	CPUs        float64           `json:"cpus,omitempty"`
-	Environment map[string]string `json:"environment,omitempty"`
-	Ports       []ContainerPort   `json:"ports,omitempty"`
-	Volume      string            `json:"volume,omitempty"`
-	Tail        int               `json:"tail,omitempty"`
+	ID               string            `json:"id"`
+	Command          string            `json:"command"`
+	Name             string            `json:"name,omitempty"`
+	Image            string            `json:"image,omitempty"`
+	RegistryUsername string            `json:"registry_username,omitempty"`
+	RegistryPassword string            `json:"registry_password,omitempty"`
+	MemoryMB         int64             `json:"memory_mb,omitempty"`
+	CPUs             float64           `json:"cpus,omitempty"`
+	Environment      map[string]string `json:"environment,omitempty"`
+	Ports            []ContainerPort   `json:"ports,omitempty"`
+	Volume           string            `json:"volume,omitempty"`
+	Tail             int               `json:"tail,omitempty"`
 }
 type ContainerPort struct {
 	Port     int    `json:"port"`
@@ -35,8 +37,9 @@ type ContainerPort struct {
 	Protocol string `json:"protocol"`
 }
 
-var dockerImage = regexp.MustCompile(`^[a-z0-9][a-z0-9./_-]{0,180}@sha256:[a-f0-9]{64}$`)
+var dockerImage = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,127}(?::[0-9]{1,5})?(?:/[a-z0-9][a-z0-9./_-]{0,180})?@sha256:[a-f0-9]{64}$`)
 var dockerEnv = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,63}$`)
+var dockerCredentialRef = regexp.MustCompile(`^sec_[A-Za-z0-9_-]{32}$`)
 
 func (e *PrivilegedExecutor) validateDocker(raw json.RawMessage) error {
 	var input DockerInput
@@ -46,18 +49,26 @@ func (e *PrivilegedExecutor) validateDocker(raw json.RawMessage) error {
 	if !validInstanceID(input.ID) {
 		return failure("invalid_input", "Invalid managed Docker instance ID", 400)
 	}
+	if input.Command != "image_pull" && (input.RegistryUsername != "" || input.RegistryPassword != "") {
+		return failure("invalid_input", "Registry credentials are accepted only for a digest-pinned image pull", 400)
+	}
 	switch input.Command {
 	case "status", "containers_list", "images_list", "networks_list", "volumes_list":
 	case "image_pull":
-		if !dockerImage.MatchString(input.Image) {
-			return failure("invalid_image", "Images must use an immutable SHA-256 digest", 400)
+		if err := validateDockerImageReference(input.Image); err != nil {
+			return err
+		}
+		if input.RegistryUsername != "" || input.RegistryPassword != "" {
+			if input.RegistryUsername == "" || input.RegistryPassword == "" || len(input.RegistryUsername) > 512 || len(input.RegistryPassword) > 4096 || strings.ContainsRune(input.RegistryUsername, 0) || strings.ContainsRune(input.RegistryPassword, 0) {
+				return failure("invalid_input", "Registry username and password must be provided together within their bounds", 400)
+			}
 		}
 	case "image_inspect", "image_remove":
-		if !dockerImage.MatchString(input.Image) {
-			return failure("invalid_image", "Images must use an immutable SHA-256 digest reference", 400)
+		if err := validateDockerImageReference(input.Image); err != nil {
+			return err
 		}
 	case "container_create":
-		if !utilityName.MatchString(input.Name) || !dockerImage.MatchString(input.Image) {
+		if !utilityName.MatchString(input.Name) || validateDockerImageReference(input.Image) != nil {
 			return failure("invalid_input", "Container requires a simple name and digest-pinned image", 400)
 		}
 		if input.MemoryMB < 16 || input.MemoryMB > 16384 || input.CPUs <= 0 || input.CPUs > 16 {
@@ -98,6 +109,10 @@ func dockerOwnedName(instance Instance, name string) string {
 	return "powerlinux-" + instance.ID + "-" + name
 }
 func (e *PrivilegedExecutor) dockerRequest(ctx context.Context, instance Instance, method, path string, input, output any) error {
+	return e.dockerRequestWithRegistryAuth(ctx, instance, method, path, input, output, "")
+}
+
+func (e *PrivilegedExecutor) dockerRequestWithRegistryAuth(ctx context.Context, instance Instance, method, path string, input, output any, registryAuth string) error {
 	var body io.Reader
 	if input != nil {
 		raw, err := json.Marshal(input)
@@ -117,6 +132,9 @@ func (e *PrivilegedExecutor) dockerRequest(ctx context.Context, instance Instanc
 	}
 	if input != nil {
 		request.Header.Set("Content-Type", "application/json")
+	}
+	if registryAuth != "" {
+		request.Header.Set("X-Registry-Auth", registryAuth)
 	}
 	response, err := client.Do(request)
 	if err != nil {
@@ -216,8 +234,12 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 		}
 		return map[string]any{"items": output}, nil
 	case "image_pull":
+		registryAuth, authErr := dockerRegistryAuthHeader(input)
+		if authErr != nil {
+			return nil, authErr
+		}
 		var stream string
-		if err = e.dockerRequest(ctx, instance, http.MethodPost, "/images/create?fromImage="+url.QueryEscape(input.Image), nil, &stream); err != nil {
+		if err = e.dockerRequestWithRegistryAuth(ctx, instance, http.MethodPost, "/images/create?fromImage="+url.QueryEscape(input.Image), nil, &stream, registryAuth); err != nil {
 			return nil, err
 		}
 		for _, line := range strings.Split(stream, "\n") {
@@ -340,7 +362,7 @@ func stripDockerFrames(input string) string {
 }
 func (m *Manager) dockerBindings() []core.Binding {
 	result := []core.Binding{}
-	for _, command := range []string{"status", "containers_list", "images_list", "networks_list", "volumes_list", "image_pull", "container_create", "container_get", "container_logs", "container_start", "container_stop", "container_restart", "container_delete", "network_create", "network_delete", "volume_create", "volume_delete"} {
+	for _, command := range []string{"status", "containers_list", "images_list", "networks_list", "volumes_list", "container_create", "container_get", "container_logs", "container_start", "container_stop", "container_restart", "container_delete", "network_create", "network_delete", "volume_create", "volume_delete"} {
 		read := command == "status" || strings.HasSuffix(command, "_list") || command == "container_get" || command == "container_logs"
 		properties := map[string]any{"id": idSchema()}
 		required := []string{"id"}
@@ -348,7 +370,7 @@ func (m *Manager) dockerBindings() []core.Binding {
 			properties["name"] = map[string]any{"type": "string", "pattern": utilityName.String()}
 			required = append(required, "name")
 		}
-		if command == "image_pull" || command == "container_create" {
+		if command == "container_create" {
 			properties["image"] = map[string]any{"type": "string", "pattern": dockerImage.String()}
 			required = append(required, "image")
 		}
@@ -392,5 +414,6 @@ func (m *Manager) dockerBindings() []core.Binding {
 		}))
 		result[len(result)-1].Action.Task = !read && command != "container_create"
 	}
+	result = append(result, m.dockerImagePullBinding())
 	return result
 }

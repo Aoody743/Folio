@@ -154,7 +154,7 @@ def find_site_row(page, site_name: str) -> None:
 
 
 def set_category_filter(page, category_id: str) -> None:
-    select = page.get_by_label("网站分类筛选", exact=True)
+    select = page.get_by_role("combobox", name=re.compile(r"^网站分类筛选(?:\s|$)"))
     if category_id:
         expect(select.locator(f'option[value="{category_id}"]')).to_have_count(1)
     select.select_option(category_id)
@@ -164,10 +164,10 @@ def update_site_category_in_ui(page, api: APIClient, site_id: str, site_name: st
     page.get_by_role("button", name=site_name, exact=True).click()
     drawer = page.get_by_role("dialog", name=f"网站 · {site_name}", exact=True)
     drawer.get_by_role("tab", name="配置", exact=True).click()
-    category_select = drawer.get_by_label("网站分类", exact=True)
+    category_select = drawer.get_by_role("combobox", name="网站分类", exact=True)
     if category_select.count() == 0:
         drawer.get_by_label("网站分类 · 可选", exact=True).check()
-        category_select = drawer.get_by_label("网站分类", exact=True)
+        category_select = drawer.get_by_role("combobox", name="网站分类", exact=True)
     expect(category_select).to_be_visible()
     category_select.select_option(category_id)
     form = drawer.locator(".action-form")
@@ -204,7 +204,7 @@ def run_categories(page, api: APIClient, fixture: dict[str, Any], stage) -> dict
         category_id = editor.locator("code").inner_text().strip()
         if not re.fullmatch(r"cat-[0-9a-f-]{36}", category_id):
             raise AssertionError("UI did not generate a valid category ID")
-        editor.get_by_label("分类名称", exact=True).fill(category_name)
+        editor.get_by_label(re.compile(r"^分类名称(?:\s|$)")).fill(category_name)
         editor.get_by_role("button", name="创建分类", exact=True).click()
         created = next((item for item in categories(api) if item.get("id") == category_id), None)
         if not created or created.get("name") != category_name or created.get("revision") != 1:
@@ -214,7 +214,7 @@ def run_categories(page, api: APIClient, fixture: dict[str, Any], stage) -> dict
         stage("category edit preserves draft through real CAS conflict")
         manager.get_by_role("button", name=f"编辑 {category_name}", exact=True).click()
         editor = manager.locator('section[aria-label="分类编辑"]')
-        editor.get_by_label("分类名称", exact=True).fill(edited_name)
+        editor.get_by_label(re.compile(r"^分类名称(?:\s|$)")).fill(edited_name)
         before_race = category_by_id(api, category_id)
         if not before_race:
             raise AssertionError("Created category disappeared before conflict test")
@@ -237,7 +237,7 @@ def run_categories(page, api: APIClient, fixture: dict[str, Any], stage) -> dict
         if conflict_response.status != 412 or conflict_error.get("code") != "revision_conflict":
             raise AssertionError("UI stale save did not receive the real 412 revision_conflict response")
         expect(manager.get_by_role("alert")).to_contain_text("分类版本已变化")
-        expect(editor.get_by_label("分类名称", exact=True)).to_have_value(edited_name)
+        expect(editor.get_by_label(re.compile(r"^分类名称(?:\s|$)"))).to_have_value(edited_name)
         editor.get_by_role("button", name="载入最新版本并保留名称", exact=True).click()
         editor.get_by_role("button", name="保存分类", exact=True).click()
         updated = category_by_id(api, category_id)
@@ -279,7 +279,7 @@ def run_categories(page, api: APIClient, fixture: dict[str, Any], stage) -> dict
         page.get_by_role("button", name=site_name, exact=True).click()
         drawer = page.get_by_role("dialog", name=f"网站 · {site_name}", exact=True)
         drawer.get_by_role("tab", name="配置", exact=True).click()
-        drawer.get_by_label("网站分类", exact=True).select_option("")
+        drawer.get_by_role("combobox", name="网站分类", exact=True).select_option("")
         form = drawer.locator(".action-form")
         form.get_by_role("button", name="执行操作", exact=True).click()
         form.get_by_role("button", name="确认执行", exact=True).click()
@@ -326,11 +326,11 @@ def run_system_change_preview(page, fixture: dict[str, Any], stage) -> dict[str,
     expect(workflow.get_by_role("heading", name="系统变更计划", exact=True)).to_be_visible()
     form = workflow.locator('section[aria-label="创建系统变更计划"] .action-form')
     expect(form).to_be_visible()
-    form.get_by_label("类型").select_option(label="服务状态")
+    form.get_by_role("combobox", name=re.compile(r"^类型(?:\s|$)")).select_option(label="服务状态")
     form.get_by_label("服务标识 · 可选", exact=True).check()
     form.get_by_label("服务标识", exact=True).fill(fixture["service_id"])
     form.get_by_label("服务操作 · 可选", exact=True).check()
-    form.get_by_label("服务操作", exact=True).select_option(label="启动")
+    form.get_by_role("combobox", name=re.compile(r"^服务操作(?:\s|$)")).select_option(label="启动")
     form.get_by_role("button", name="执行操作", exact=True).click()
     with page.expect_response(
         lambda response: response.request.method == "POST"

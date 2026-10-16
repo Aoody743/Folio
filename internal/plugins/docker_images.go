@@ -83,7 +83,7 @@ func dockerImageResources(_ context.Context, _ core.Actor, raw json.RawMessage) 
 	if err := parse(raw, &input); err != nil {
 		return nil, err
 	}
-	if !validInstanceID(input.ID) || !dockerImage.MatchString(input.Image) {
+	if !validInstanceID(input.ID) || validateDockerImageReference(input.Image) != nil {
 		return nil, failure("invalid_input", "A managed instance and immutable image digest are required", 400)
 	}
 	return []string{DockerImageResource(input.ID, input.Image), InstanceResource(input.ID)}, nil

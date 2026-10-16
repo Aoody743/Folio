@@ -427,6 +427,10 @@ func (e *AgentExecutor) createMigrationPlan(ctx context.Context, in request) (Mi
 }
 
 func (e *AgentExecutor) prepareMigrationPlanInventory(now time.Time, creatingPlan, needsAdvancedBackup bool) error {
+	pendingErr := e.ensureNoPendingJournal()
+	if creatingPlan && pendingErr != nil {
+		return pendingErr
+	}
 	if err := e.verifyMigrationPlanDirectory(); err != nil {
 		return err
 	}
@@ -478,7 +482,9 @@ func (e *AgentExecutor) prepareMigrationPlanInventory(now time.Time, creatingPla
 		if loadErr != nil {
 			return loadErr
 		}
-		if !now.Before(plan.ExpiresAt) {
+		// A pending WAL may need this plan to prove source/target recovery order.
+		// Keep its authority until the journal has been committed or recovered.
+		if pendingErr == nil && !now.Before(plan.ExpiresAt) {
 			original := filepath.Join("migration-plans", id+".original")
 			if _, backupErr := e.state.Lstat(original); backupErr == nil {
 				continue

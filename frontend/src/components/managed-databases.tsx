@@ -12,6 +12,7 @@ import { Page } from "@/lib/resources";
 import { useResource } from "@/lib/resource-hook";
 import { ActionForm } from "./actions";
 import { DatabaseRecreation } from "./database-recreation";
+import { DatabaseImport } from "./database-import";
 import { Pager, ResourceActions, State, Unavailable } from "./resource-ui";
 type Database = {
   database: string;
@@ -162,6 +163,7 @@ export function ManagedDatabaseResources({
         {[
           { id: "accounts", label: "权限与账户" },
           { id: "backups", label: "备份" },
+          { id: "imports", label: "导入" },
           { id: "diagnostics", label: "诊断与复制" },
         ].map((tab) => (
           <button
@@ -177,7 +179,11 @@ export function ManagedDatabaseResources({
           </button>
         ))}
       </div>
-      {group === "backups" ? (
+      {group === "imports" ? (
+        <DatabaseImport key={`${instanceID}:${current.database}:${current.revision}`} instanceID={instanceID}
+          database={current.database} revision={current.revision} engine={current.engine}
+          capabilities={capabilities} onExecuted={refresh} />
+      ) : group === "backups" ? (
         <>
           <div className="card-heading">
             <h3>实际数据库备份</h3>

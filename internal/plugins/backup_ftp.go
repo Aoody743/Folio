@@ -47,7 +47,7 @@ type FTPTransferInput struct {
 var artifactName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
 
 func FTPResource(id string) string   { return "backup:ftp:" + id }
-func NativeOperations() []string     { return []string{"backup_ftp_transfer"} }
+func NativeOperations() []string     { return []string{"backup_ftp_transfer", "docker_registry_pull"} }
 func ManagedJobOperations() []string { return []string{"plugin_apply"} }
 func AgentJobOperations() []string {
 	operations := []string{}
@@ -138,6 +138,9 @@ func ftpDialLimited(ctx context.Context, profile FTPDestination, password string
 	if strings.ContainsAny(profile.Host, "/\\\x00\r\n") || profile.Host == "" || profile.Port < 1 || profile.Port > 65535 {
 		return nil, failure("invalid_destination", "FTP host/port is invalid", 400)
 	}
+	if hasFTPCommandControl(profile.Username) || hasFTPCommandControl(password) {
+		return nil, failure("invalid_credentials", "FTP credentials cannot contain protocol control characters", 400)
+	}
 	options := []ftp.DialOption{ftp.DialWithContext(ctx), ftp.DialWithTimeout(15 * time.Second), ftp.DialWithShutTimeout(time.Second), ftp.DialWithTrustPasvIP(false)}
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12, ServerName: profile.Host}
 	switch profile.TLSMode {
@@ -181,6 +184,16 @@ func ftpDialLimited(ctx context.Context, profile FTPDestination, password string
 	}
 	return connection, nil
 }
+
+func hasFTPCommandControl(value string) bool {
+	for _, character := range value {
+		if character < 0x20 || character == 0x7f {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *Manager) ftpBindings() []core.Binding {
 	bindings := []core.Binding{m.binding("backup_ftp_destinations_list", "List authorized FTP backup destinations without credentials", "backup:read", true, obj(map[string]any{}), func(context.Context, core.Actor, json.RawMessage) ([]string, error) { return nil, nil }, func(ctx context.Context, actor core.Actor, _ json.RawMessage) (core.ActionResult, error) {
 		rows, err := m.deps.State.List(ctx, "ftp_destinations")
@@ -288,6 +301,19 @@ func (m *Manager) Validate(request agent.Request) error {
 		}
 		return m.executor.Validate(request)
 	}
+	if request.Operation == "docker_registry_pull" {
+		var input dockerRegistryPullTask
+		if err := parse(request.Input, &input); err != nil {
+			return err
+		}
+		if !validInstanceID(input.ID) || !dockerImage.MatchString(input.Image) || !dockerCredentialRef.MatchString(input.CredentialRef) {
+			return failure("invalid_input", "Invalid private registry pull task", 400)
+		}
+		if m.executor == nil {
+			return failure("agent_unavailable", "Private registry pull requires a configured protected Agent", 503)
+		}
+		return nil
+	}
 	if request.Operation != "backup_ftp_transfer" {
 		return agent.ErrUnauthorized
 	}
@@ -326,6 +352,9 @@ func (m *Manager) Run(ctx context.Context, request agent.Request) (result agent.
 			}
 		}
 		return m.executor.Run(ctx, request)
+	}
+	if request.Operation == "docker_registry_pull" {
+		return m.runDockerRegistryPull(ctx, request, actor)
 	}
 	resources, err := ftpResources(ctx, actor, request.Input)
 	if err != nil {
@@ -514,6 +543,12 @@ func (e *PrivilegedExecutor) artifactStream(ctx context.Context, request agent.R
 	return result, nil
 }
 func (e *PrivilegedExecutor) Stream(ctx context.Context, request agent.Request, streams agent.IO) (agent.Result, error) {
+	if request.Operation == "database_import_artifact" {
+		if err := e.Validate(request); err != nil {
+			return agent.Result{}, err
+		}
+		return e.databaseImportArtifactStream(ctx, request, streams)
+	}
 	if request.Operation == "database_artifact" {
 		if err := e.Validate(request); err != nil {
 			return agent.Result{}, err

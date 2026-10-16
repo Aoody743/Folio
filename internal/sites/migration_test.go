@@ -14,6 +14,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/agent"
 	"github.com/Aoody743/PowerLinux/internal/core"
@@ -448,6 +449,26 @@ func TestWebMigrationJournalRejectsSwappedSourceAndTarget(t *testing.T) {
 	j.Sites[0], j.Sites[1] = j.Sites[1], j.Sites[0]
 	if err = e.validateJournal(ctx, j, j.ID+".json"); err == nil || !strings.Contains(err.Error(), "source and target order") {
 		t.Fatal("swapped listener recovery direction accepted", err)
+	}
+}
+
+func TestWebMigrationPendingJournalRetainsExpiredPlanAuthority(t *testing.T) {
+	e, _, site, _ := newMigrationTestExecutor(t, false)
+	view := createMigrationTestPlan(t, e, site, false)
+	_, finish, err := e.beginWebsiteJournal(context.Background(), "site_migration_apply", request{PlanID: view.ID, ExpectedRevision: site.Revision})
+	if err != nil {
+		t.Fatal(err)
+	}
+	operationErr := errors.New("fixture cancellation before any mutation")
+	defer finish(&operationErr)
+	if err = e.prepareMigrationPlanInventory(time.Now().Add(time.Hour), false, true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = e.loadMigrationPlan(view.ID); err != nil {
+		t.Fatal("active WAL lost its expired plan authority", err)
+	}
+	if err = e.prepareMigrationPlanInventory(time.Now().Add(time.Hour), true, false); err == nil {
+		t.Fatal("new planning mutated inventory while a journal needed recovery")
 	}
 }
 

@@ -3,11 +3,13 @@ package plugins
 import (
 	"context"
 	"encoding/binary"
+	"errors"
+	"io"
+	"strings"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"io"
-	"strings"
 )
 
 const mongoBackupMagic = "PowerLinuxMongoBackup:BSON:v1\n"
@@ -113,7 +115,25 @@ func (e *PrivilegedExecutor) backupMongoDatabase(ctx context.Context, instance I
 	}
 	return nil
 }
-func (e *PrivilegedExecutor) restoreMongoDatabase(ctx context.Context, instance Instance, record managedDatabaseRecord, reader io.Reader) error {
+func (e *PrivilegedExecutor) restoreMongoDatabase(ctx context.Context, instance Instance, record managedDatabaseRecord, reader io.ReadSeeker) error {
+	return e.restoreMongoDatabaseMode(ctx, instance, record, reader, true)
+}
+
+func (e *PrivilegedExecutor) restoreMongoImportDatabase(ctx context.Context, instance Instance, record managedDatabaseRecord, reader io.ReadSeeker) error {
+	return e.restoreMongoDatabaseMode(ctx, instance, record, reader, false)
+}
+
+func (e *PrivilegedExecutor) restoreMongoDatabaseMode(ctx context.Context, instance Instance, record managedDatabaseRecord, reader io.ReadSeeker, replaceExisting bool) error {
+	validate := validateMongoImportArtifact
+	if replaceExisting {
+		validate = validateMongoBackupArtifact
+	}
+	if err := validate(ctx, reader); err != nil {
+		return err
+	}
+	if _, err := reader.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
 	header := make([]byte, len(mongoBackupMagic))
 	if _, err := io.ReadFull(reader, header); err != nil || string(header) != mongoBackupMagic {
 		return failure("artifact_invalid", "Backup is not a native BSON database artifact", 412)
@@ -127,18 +147,28 @@ func (e *PrivilegedExecutor) restoreMongoDatabase(ctx context.Context, instance 
 		return err
 	}
 	database := client.Database(record.Database)
-	// Restoration uses the original database-only role, never root. Existing
-	// users and instance settings remain outside this operation's authority.
-	names, err := database.ListCollectionNames(ctx, bson.D{})
-	if err != nil {
-		return failure("query_failed", "MongoDB restore preflight failed", 502)
-	}
-	for _, name := range names {
-		if strings.HasPrefix(name, "system.") {
-			continue
+	if replaceExisting {
+		// Trusted Agent-owned backup restoration retains its explicit replace
+		// behavior and database-only identity.
+		names, listErr := database.ListCollectionNames(ctx, bson.D{})
+		if listErr != nil {
+			return failure("query_failed", "MongoDB restore preflight failed", 502)
 		}
-		if err = database.Collection(name).Drop(ctx); err != nil {
-			return failure("operation_recovery_required", "MongoDB restore could not clear a selected collection", 409)
+		for _, name := range names {
+			if strings.HasPrefix(name, "system.") {
+				continue
+			}
+			if err = database.Collection(name).Drop(ctx); err != nil {
+				return failure("operation_recovery_required", "MongoDB restore could not clear a selected collection", 409)
+			}
+		}
+	} else {
+		names, listErr := database.ListCollectionNames(ctx, bson.D{})
+		if listErr != nil {
+			return failure("import_preflight_failed", "MongoDB target namespace could not be checked", 502)
+		}
+		if len(names) != 0 {
+			return failure("import_target_not_empty", "External imports require an empty managed database; existing collections are preserved", 409)
 		}
 	}
 	var current *mongo.Collection
@@ -205,4 +235,334 @@ func (e *PrivilegedExecutor) restoreMongoDatabase(ctx context.Context, instance 
 			return failure("artifact_invalid", "MongoDB backup contains an unknown frame", 412)
 		}
 	}
+}
+
+// validateMongoImportArtifact consumes the whole framed archive before restore
+// connects or drops a collection. An uploaded file can therefore never make a
+// late malformed frame turn into a partially destructively restored database.
+func validateMongoImportArtifact(ctx context.Context, reader io.ReadSeeker) error {
+	return validateMongoArchive(ctx, reader, true)
+}
+
+func validateMongoBackupArtifact(ctx context.Context, reader io.ReadSeeker) error {
+	return validateMongoArchive(ctx, reader, false)
+}
+
+func validateMongoArchive(ctx context.Context, reader io.ReadSeeker, strict bool) error {
+	if _, err := reader.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+	header := make([]byte, len(mongoBackupMagic))
+	if _, err := io.ReadFull(reader, header); err != nil || string(header) != mongoBackupMagic {
+		return failure("artifact_invalid", "MongoDB import is not a native BSON archive", 412)
+	}
+	collections := map[string]struct{}{}
+	current := ""
+	frames := uint64(0)
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		kind, raw, err := mongoRestoreFrame(reader)
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return failure("artifact_invalid", "MongoDB import contains a truncated or invalid frame", 412)
+		}
+		frames++
+		if frames > 10_000_000 {
+			return failure("artifact_invalid", "MongoDB import contains too many frames", 413)
+		}
+		if strict {
+			if err = mongoBSONHasNoExecutableValues(raw, 0); err != nil {
+				return failure("artifact_invalid", "MongoDB import contains executable BSON values", 412)
+			}
+		}
+		switch kind {
+		case 'C':
+			var metadata struct {
+				Name    string `bson:"name"`
+				Type    string `bson:"type"`
+				Options bson.D `bson:"options"`
+			}
+			if bson.Unmarshal(raw, &metadata) != nil || metadata.Name == "" || len(metadata.Name) > 255 || strings.HasPrefix(metadata.Name, "system.") || strings.ContainsRune(metadata.Name, 0) || metadata.Type != "collection" {
+				return failure("artifact_invalid", "MongoDB import contains unsupported collection metadata or a view", 412)
+			}
+			if strict && validateMongoImportCollectionOptions(metadata.Options) != nil {
+				return failure("artifact_invalid", "MongoDB import contains unsupported or unsafe collection options", 412)
+			}
+			if _, exists := collections[metadata.Name]; exists || len(collections) >= 10000 {
+				return failure("artifact_invalid", "MongoDB import contains duplicate or excessive collections", 412)
+			}
+			collections[metadata.Name] = struct{}{}
+			current = metadata.Name
+		case 'D':
+			if current == "" {
+				return failure("artifact_invalid", "MongoDB import document has no collection", 412)
+			}
+		case 'I':
+			if current == "" {
+				return failure("artifact_invalid", "MongoDB import index has no collection", 412)
+			}
+			var index bson.D
+			if bson.Unmarshal(raw, &index) != nil {
+				return failure("artifact_invalid", "MongoDB import index metadata is invalid", 412)
+			}
+			if !strict {
+				continue
+			}
+			hasName, hasKey := false, false
+			for _, element := range index {
+				switch element.Key {
+				case "name":
+					name, ok := element.Value.(string)
+					hasName = ok && name != "" && len(name) <= 128 && !strings.ContainsRune(name, 0)
+				case "key":
+					key, ok := element.Value.(bson.D)
+					hasKey = ok && len(key) > 0 && len(key) <= 128
+					for _, part := range key {
+						if part.Key == "" || len(part.Key) > 255 || strings.ContainsRune(part.Key, 0) {
+							hasKey = false
+						}
+					}
+				case "collation":
+					if !mongoImportSafeCollation(element.Value) {
+						return failure("artifact_invalid", "MongoDB import contains unsafe index collation options", 412)
+					}
+				case "v", "ns", "unique", "partialFilterExpression", "sparse", "expireAfterSeconds", "hidden", "weights", "default_language", "language_override", "textIndexVersion", "2dsphereIndexVersion", "bits", "min", "max", "bucketSize", "wildcardProjection":
+				default:
+					return failure("artifact_invalid", "MongoDB import contains unsupported index options", 412)
+				}
+			}
+			if !hasName || !hasKey {
+				return failure("artifact_invalid", "MongoDB import index is missing its name or key", 412)
+			}
+		default:
+			return failure("artifact_invalid", "MongoDB import contains an unknown frame type", 412)
+		}
+	}
+}
+
+func validateMongoImportCollectionOptions(options bson.D) error {
+	seen := map[string]bool{}
+	for _, option := range options {
+		if seen[option.Key] {
+			return errors.New("duplicate MongoDB collection option")
+		}
+		seen[option.Key] = true
+		switch option.Key {
+		case "capped":
+			if _, ok := option.Value.(bool); !ok {
+				return errors.New("invalid capped option")
+			}
+		case "size", "max":
+			value, ok := mongoImportInteger(option.Value)
+			if !ok || value < 0 || value > maxExtractedBytes {
+				return errors.New("invalid capped collection bound")
+			}
+		case "validationLevel":
+			value, ok := option.Value.(string)
+			if !ok || (value != "off" && value != "strict" && value != "moderate") {
+				return errors.New("invalid validation level")
+			}
+		case "validationAction":
+			value, ok := option.Value.(string)
+			if !ok || (value != "error" && value != "warn") {
+				return errors.New("invalid validation action")
+			}
+		case "validator":
+			if !mongoImportSafeValidator(option.Value, 0) {
+				return errors.New("validator uses an unsupported expression")
+			}
+		case "collation":
+			if !mongoImportSafeCollation(option.Value) {
+				return errors.New("invalid collation")
+			}
+		default:
+			return errors.New("unsupported MongoDB collection option")
+		}
+	}
+	return nil
+}
+
+func mongoImportInteger(value any) (int64, bool) {
+	switch typed := value.(type) {
+	case int32:
+		return int64(typed), true
+	case int64:
+		return typed, true
+	case int:
+		return int64(typed), true
+	default:
+		return 0, false
+	}
+}
+
+func mongoImportSafeCollation(value any) bool {
+	document, ok := value.(bson.D)
+	if !ok || len(document) == 0 {
+		return false
+	}
+	seen := map[string]bool{}
+	hasLocale := false
+	for _, element := range document {
+		if seen[element.Key] {
+			return false
+		}
+		seen[element.Key] = true
+		switch element.Key {
+		case "locale":
+			locale, ok := element.Value.(string)
+			if !ok || locale == "" || len(locale) > 64 || strings.ContainsRune(locale, 0) {
+				return false
+			}
+			hasLocale = true
+		case "caseLevel", "backwards", "numericOrdering", "normalization":
+			if _, ok := element.Value.(bool); !ok {
+				return false
+			}
+		case "caseFirst":
+			text, ok := element.Value.(string)
+			if !ok || (text != "off" && text != "upper" && text != "lower") {
+				return false
+			}
+		case "strength":
+			strength, ok := mongoImportInteger(element.Value)
+			if !ok || strength < 1 || strength > 5 {
+				return false
+			}
+		case "alternate":
+			text, ok := element.Value.(string)
+			if !ok || (text != "non-ignorable" && text != "shifted") {
+				return false
+			}
+		case "maxVariable":
+			text, ok := element.Value.(string)
+			if !ok || (text != "punct" && text != "space") {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return hasLocale
+}
+
+func mongoImportSafeValidator(value any, depth int) bool {
+	if depth > 50 {
+		return false
+	}
+	switch typed := value.(type) {
+	case bson.D:
+		seen := map[string]bool{}
+		for _, element := range typed {
+			if element.Key == "" || strings.ContainsRune(element.Key, 0) || seen[element.Key] {
+				return false
+			}
+			seen[element.Key] = true
+			if strings.HasPrefix(element.Key, "$") {
+				switch element.Key {
+				case "$and", "$or", "$nor", "$not", "$eq", "$ne", "$gt", "$gte", "$lt", "$lte", "$in", "$nin", "$exists", "$type", "$mod", "$all", "$size", "$elemMatch":
+				default:
+					return false
+				}
+			}
+			if !mongoImportSafeValidator(element.Value, depth+1) {
+				return false
+			}
+		}
+		return true
+	case bson.A:
+		for _, element := range typed {
+			if !mongoImportSafeValidator(element, depth+1) {
+				return false
+			}
+		}
+		return true
+	default:
+		return true
+	}
+}
+
+func mongoBSONHasNoExecutableValues(raw bson.Raw, depth int) error {
+	if depth > 100 {
+		return errors.New("BSON nesting limit exceeded")
+	}
+	elements, err := raw.Elements()
+	if err != nil {
+		return err
+	}
+	seen := map[string]bool{}
+	for _, element := range elements {
+		key := element.Key()
+		if seen[key] {
+			return errors.New("duplicate BSON key is not allowed")
+		}
+		seen[key] = true
+		if key == "$where" || key == "$function" || key == "$accumulator" {
+			return errors.New("$where is not allowed")
+		}
+		value, err := element.ValueErr()
+		if err != nil {
+			return err
+		}
+		switch value.Type {
+		case bson.TypeJavaScript, bson.TypeCodeWithScope, bson.TypeDBPointer, bson.TypeSymbol, bson.TypeUndefined:
+			return errors.New("executable or legacy BSON type is not allowed")
+		case bson.TypeRegex:
+			return errors.New("untrusted regular expressions are not allowed")
+		case bson.TypeEmbeddedDocument:
+			if err := mongoBSONHasNoExecutableValues(value.Document(), depth+1); err != nil {
+				return err
+			}
+		case bson.TypeArray:
+			values, err := value.Array().Values()
+			if err != nil {
+				return err
+			}
+			for _, nested := range values {
+				if nested.Type == bson.TypeJavaScript || nested.Type == bson.TypeCodeWithScope || nested.Type == bson.TypeDBPointer || nested.Type == bson.TypeSymbol || nested.Type == bson.TypeUndefined || nested.Type == bson.TypeRegex {
+					return errors.New("executable or legacy BSON type is not allowed")
+				}
+				if nested.Type == bson.TypeEmbeddedDocument {
+					if err := mongoBSONHasNoExecutableValues(nested.Document(), depth+1); err != nil {
+						return err
+					}
+				}
+				if nested.Type == bson.TypeArray {
+					if err := mongoBSONArrayHasNoExecutableValues(nested.Array(), depth+1); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func mongoBSONArrayHasNoExecutableValues(array bson.RawArray, depth int) error {
+	if depth > 100 {
+		return errors.New("BSON nesting limit exceeded")
+	}
+	values, err := array.Values()
+	if err != nil {
+		return err
+	}
+	for _, value := range values {
+		if value.Type == bson.TypeJavaScript || value.Type == bson.TypeCodeWithScope || value.Type == bson.TypeDBPointer || value.Type == bson.TypeSymbol || value.Type == bson.TypeUndefined || value.Type == bson.TypeRegex {
+			return errors.New("executable or legacy BSON type is not allowed")
+		}
+		if value.Type == bson.TypeEmbeddedDocument {
+			if err := mongoBSONHasNoExecutableValues(value.Document(), depth+1); err != nil {
+				return err
+			}
+		}
+		if value.Type == bson.TypeArray {
+			if err := mongoBSONArrayHasNoExecutableValues(value.Array(), depth+1); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

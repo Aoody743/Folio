@@ -67,13 +67,15 @@ type PrivilegedExecutor struct {
 	healthMu               sync.Mutex
 	healthCache            map[string]cachedHealth
 	privateCipher          cipher.AEAD
-	profileControl         func(context.Context, Instance, string) error // private trusted test dependency
+	profileControl         func(context.Context, Instance, string) error              // private trusted test dependency
+	utilityApplyHook       func(context.Context, Instance, utilityRecord, bool) error // private utility transaction test dependency
+	utilitySaveHook        func(Instance, utilityRecord) error                        // private utility transaction test dependency
 }
 
 var validAccount = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}\$?$`)
 
 func Operations() []string {
-	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "utility_action", "docker_action", "backup_artifact", "database_action", "database_artifact"}
+	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "utility_action", "docker_action", "backup_artifact", "database_action", "database_artifact", "database_import_artifact"}
 }
 
 // ValidatePrivilegedConfig performs read-only policy validation. In particular
@@ -384,6 +386,8 @@ func (e *PrivilegedExecutor) Validate(request agent.Request) error {
 		return e.validateDatabase(request.Input)
 	case "database_artifact":
 		return e.validateDatabaseArtifact(request.Input)
+	case "database_import_artifact":
+		return validDatabaseImportStream(request.Input)
 	case "backup_artifact":
 		var input struct {
 			ID            string `json:"id"`
@@ -463,7 +467,7 @@ func (e *PrivilegedExecutor) Run(ctx context.Context, request agent.Request) (re
 		output, err = e.docker(ctx, request.Input)
 	case "database_action":
 		output, err = e.database(ctx, request.Input)
-	case "backup_artifact", "database_artifact":
+	case "backup_artifact", "database_artifact", "database_import_artifact":
 		return result, failure("stream_required", "Backup artifacts must use the authenticated streaming transport", 400)
 	}
 	if err != nil {

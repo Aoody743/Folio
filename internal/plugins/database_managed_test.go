@@ -85,6 +85,40 @@ func TestMongoTombstoneRecreationIsExplicitlyUnsupported(t *testing.T) {
 	}
 }
 
+func TestManagedDatabaseMutationRestoresReceiptWhenAdminConnectionNeverStarts(t *testing.T) {
+	for _, engine := range []string{"mariadb", "mongodb"} {
+		t.Run(engine, func(t *testing.T) {
+			e := testAgent(t)
+			instance := Instance{ID: engine + "-mutation-open-fail", PluginID: engine, Paths: e.instancePaths(engine, "mutation-open-fail")}
+			old := managedDatabaseRecord{ManagedDatabase: ManagedDatabase{
+				InstanceID: instance.ID,
+				Database:   "qa_mutation_open_fail",
+				Username:   "pl_qa_mutation_open_fail",
+				Engine:     engine,
+				Permission: "read_write",
+				State:      "active",
+				Revision:   7,
+				CreatedAt:  "2026-10-14T00:00:00Z",
+			}, Credential: "still-current-database-password"}
+			key := managedDatabaseKey(instance.ID, old.Database)
+			if err := e.save("private", key, old); err != nil {
+				t.Fatal("could not persist the owned database fixture", err)
+			}
+
+			_, err := e.mutateManagedDatabase(context.Background(), instance, old, ManagedDatabaseInput{
+				Command: "set_password", Password: "new-database-password-123", ExpectedRevision: old.Revision,
+			})
+			if core.ErrorCode(err) != "credential_unavailable" {
+				t.Fatalf("missing administrative initialization receipt did not stop before mutation: %v", err)
+			}
+			var current managedDatabaseRecord
+			if err = e.load("private", key, &current); err != nil || current != old {
+				t.Fatalf("failed pre-mutation connection stranded or changed the ownership receipt: current=%#v err=%v", current, err)
+			}
+		})
+	}
+}
+
 func TestManagedDatabaseReceiptMissingUsesTypedNotFound(t *testing.T) {
 	e := testAgent(t)
 	instance := Instance{
