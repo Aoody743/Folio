@@ -1,0 +1,1 @@
+ok  	github.com/Aoody743/PowerLinux/internal/plugins	1.736s

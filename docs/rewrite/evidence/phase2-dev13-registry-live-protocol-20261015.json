@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "date_utc": "2026-10-15T08:13:29Z",
+  "package_version": "0.1.0-dev.13",
+  "package_sha256": "da1cdf0f3224e74d320200f551b7fba5eb1583a50e21cf7931ffec529e8e7783",
+  "binary_sha256": "ca920ba1038766aa552e35714e4378031a9ca273d0ae92cfc2dccef7d8486e69",
+  "runtime": "actual fixed packaged executable, isolated loopback HTTP server, real SQLite/core registry, no Agent or Docker daemon",
+  "checks": [
+    "fixed_dev13_binary_loopback_human_cookie_session",
+    "registered_UI_capabilities_REST_HTTP_MCP_stdio_MCP_actions",
+    "actual_encrypted_credentials_created_via_human_REST_HTTP_MCP_stdio_MCP",
+    "same_exact_resource_and_scope_permissions_across_session_REST_HTTP_MCP_stdio_MCP",
+    "cross_transport_revision_visibility_and_stale_rotate_delete_CAS",
+    "successful_delete_all_transports_and_tombstone_hidden_from_get_list",
+    "revoked_identity_rejected_by_REST_HTTP_MCP_existing_stdio_MCP",
+    "real_SQLite_immutable_versions_encrypted_secrets_CAS_tombstones_and_no_plaintext_or_ref_in_public_audit_jobs"
+  ],
+  "transports": [
+    "human cookie UI API/session",
+    "REST bearer token",
+    "HTTP MCP JSON-RPC",
+    "packaged stdio MCP bridge"
+  ],
+  "sqlite": {
+    "immutable_versions": 5,
+    "encrypted_secret_rows": 5,
+    "deleted_credentials": 3,
+    "durable_CRUD_jobs": 0
+  },
+  "processes_stopped": true,
+  "limitations": [
+    "No browser UI interaction was exercised; UI capability schema and cookie session API share the tested core actions.",
+    "No Docker daemon, live registry authentication, image pull, or native lifecycle acceptance is claimed."
+  ],
+  "private_harness": "/workspace/tools/sol-native-20261015/api-mcp-registry-live/run_registry_protocol.py",
+  "private_run_prefix": "/workspace/tools/sol-native-20261015/api-mcp-registry-live/run-477598bbf8",
+  "owned_API_or_stdio_processes_remaining": 0,
+  "harness_sha256": "dfe917541573e31abe45dc30905abfc2ad09bdc94a51749a8a0724af349bd44d"
+}

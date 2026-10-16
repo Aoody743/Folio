@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-15",
+  "version": "0.1.0-dev.23",
+  "source_commit": "3e74660d6fb4da2c5300619e8dd0c3cada7a2992",
+  "stage_2_complete": false,
+  "checks": {
+    "full_go_race": {
+      "result": "PASS",
+      "tested_packages": 14,
+      "no_test_packages": 2
+    },
+    "go_vet": "PASS",
+    "frontend": {
+      "reused_unchanged_source_and_export": true,
+      "source_commit": "362d2d63b2415372bc4928c91e86bc0ab061d580",
+      "prior_tests": 80,
+      "prior_typecheck_and_static_build": "PASS",
+      "evidence": "docs/rewrite/evidence/phase2-dev22-checks-20261015.json"
+    },
+    "linux_amd64_and_arm64_build": "PASS",
+    "actual_amd64_installer_private_prefix_smoke": "PASS",
+    "debian_root_source_fixtures": {
+      "result": "PASS",
+      "top_level_tests": 26,
+      "test_binary_sha256": "fa54d58b8de807a1405ef4946f693893f759449875c0fe4a22cf9ebceb391c61",
+      "scope": "Isolated executable on actual Debian dev21 VM; this is not installed-dev23 PostgreSQL acceptance."
+    },
+    "installed_debian_upgrade_and_legacy_pending_recovery": "PASS",
+    "native_fresh_postgresql_slowlog": {
+      "configure_live_values": "PASS",
+      "disable": "PASS",
+      "read": "GAP: extended-protocol parse/bind/execute record formats are not recognized by the statement-only parser; returned zero despite native log entries"
+    },
+    "native_qa_cleanup": "PASS: HBA rule blocked; owned nonce database/role deleted via managed task; scoped tokens revoked; active tasks 0"
+  },
+  "logs": {
+    "phase2-dev23-full-race-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev23-full-race-20261015.log",
+      "sha256": "fc8424dd8512f490c04ebe112ee1c3b1fc339520d09ae729626e761092466843"
+    },
+    "phase2-dev23-vet-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev23-vet-20261015.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "phase2-dev23-build-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev23-build-20261015.log",
+      "sha256": "2ffdf4b13e294153a2b3e89355108cfa7146499e4144cfba259e8fa270d6716a"
+    },
+    "phase2-dev23-package-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev23-package-20261015.log",
+      "sha256": "88fdeec2cb6b25200b6cc59f4c6c20dfc2e1dbedc501706fdf0355665ce5f7f9"
+    },
+    "phase2-dev23-root-fixture-build-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev23-root-fixture-build-20261015.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "phase2-dev23-install-guard-focused-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev23-install-guard-focused-20261015.log",
+      "sha256": "5ab64c39c629e8f38c3ee10473c9e303ffc378e4a5cb7ffa5c47379093155727"
+    },
+    "phase2-dev23-root-fixtures-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev23-root-fixtures-20261015.log",
+      "sha256": "60ccde57828315197aba1f2a0db83fd5a1c0c0849bfc91cb624fe4a317ceaf76"
+    }
+  },
+  "archive_sha256": {
+    "linux-amd64": "af130436835adbc693eb3d89789a290f7e46c3d33287ca64b2c4416aeaeadf51",
+    "linux-arm64": "76e916a0fd35689a6c269c4668e8fb72a7367c7e88c810b4e0e88cadff311f80"
+  },
+  "binary_sha256": {
+    "amd64": "10550fcd51cc0181a4f589280e700dde80d4ff075c715f3d63f6df8a3b578b5f",
+    "arm64": "95b00cd3bc05d44eacdcc187c9ae3c8b509a42887690e8f2d2b22b756a4b915d"
+  },
+  "implemented": [
+    "PostgreSQL slowlog configuration validates files, reloads first, then waits for actual values on fresh connections under a propagated 10s deadline",
+    "New slowlog intents durably record the exact four prior value/source pairs; originally unconfigured defaults and trailing log-prefix whitespace can be restored",
+    "Legacy pending intents derive an explicitly nonhistorical effective target using fixed postgres -C queries against exact protected Before bytes; unknown or unprovable state remains pending",
+    "Malformed baseline snapshots are rejected before mutations; delayed apply/restore and in-flight cancellation have regression coverage",
+    "Fresh install and reinstall use the shared pending-journal guard under the instance lock; real plan/apply regression prevents overwriting orphan PHP extension intents"
+  ],
+  "known_limits": [
+    "Actual dev23 native QA found a slowlog reader format gap for extended-protocol records; configuration/live verification and legacy pending recovery passed, but reading must be repaired or explicitly excluded from first-release support.",
+    "Actual Debian21-to23 upgrade and legacy pending slowlog recovery passed; cleanup is complete, and extended-protocol slowlog reading remains a known gap",
+    "ARM64 execution unrun; Ubuntu stays dev21 due limited backup headroom",
+    "Rsync/lsyncd, phpMyAdmin and PostgreSQL remote managed TLS remain isolated and unshipped",
+    "Table maintenance, replication and PHP module installation still need full native/browser/MCP acceptance",
+    "Phase 2 incomplete; third stage not started",
+    "Production SSL/SSH deferred by user; BaoTa server untouched"
+  ],
+  "native_prior_evidence": "docs/rewrite/evidence/phase2-native-dev21-20261015.json",
+  "native_evidence": "docs/rewrite/evidence/phase2-native-dev23-20261015.json",
+  "native_evidence_sha256": "915c26b6b1091d8b14a71a0ef7d4b65c0990ab2944efadf3dedd8f1c9e2090ba"
+}

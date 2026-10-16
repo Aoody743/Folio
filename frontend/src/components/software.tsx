@@ -13,7 +13,19 @@ const PHPResources = dynamic(
   () => import("./php-resources").then((m) => m.PHPResources),
   { ssr: false },
 );
+const BackupFTPMaintenance = dynamic(
+  () => import("./backup-ftp").then((m) => m.BackupFTPMaintenance),
+  { ssr: false },
+);
 import { hasInstanceResources } from "./instance-resources";
+const PHPMaintenance = dynamic(
+  () => import("./php-maintenance").then((m) => m.PHPMaintenance),
+  { ssr: false },
+);
+const SupervisorLogs = dynamic(
+  () => import("./supervisor-logs").then((m) => m.SupervisorLogs),
+  { ssr: false },
+);
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -178,6 +190,7 @@ export function SoftwareView({
           { id: "catalog", label: "软件目录" },
           { id: "database", label: "数据库连接" },
           { id: "cache", label: "缓存空间" },
+          { id: "backup-ftp", label: "远程备份" },
         ].map((tab) => (
           <button
             role="tab"
@@ -189,7 +202,13 @@ export function SoftwareView({
           </button>
         ))}
       </div>
-      {resourcePage !== "catalog" ? (
+      {resourcePage === "backup-ftp" ? (
+        <BackupFTPMaintenance
+          capabilities={capabilities}
+          onExecuted={onExecuted}
+          active={active}
+        />
+      ) : resourcePage !== "catalog" ? (
         <ConnectionsView
           key={resourcePage}
           kind={resourcePage as "database" | "cache"}
@@ -465,10 +484,30 @@ export function SoftwareView({
                     active={active && open}
                   />
                 )}
+              {instance && tab === "operations" &&
+                ["php", "php-apt", "php-yum"].includes(instance.plugin_id) && (
+                  <PHPMaintenance
+                    key={instance.id}
+                    instance={instance}
+                    capabilities={capabilities}
+                    onExecuted={refresh}
+                    active={active && open}
+                  />
+                )}
+              {instance && tab === "operations" && instance.plugin_id === "supervisor" && (
+                <SupervisorLogs
+                  key={instance.id}
+                  instance={instance}
+                  capabilities={capabilities}
+                  onExecuted={refresh}
+                  active={active && open}
+                />
+              )}
               <ResourceActions
                 capabilities={capabilities}
                 names={(name) =>
                   compatible(name) &&
+                  !name.startsWith("php_maintenance_") &&
                   !(
                     instance &&
                     tab === "operations" &&

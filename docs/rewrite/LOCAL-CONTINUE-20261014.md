@@ -1,6 +1,6 @@
 # 本地 Codex 接续：2026-10-14
 
-用户最新安排是转交本地 Codex 继续。本文件优先说明执行位置和最新状态；旧 HANDOFF 是此前快照，DEVELOPMENT-PLAN 的功能范围和阶段退出标准继续有效。
+本文件保留 2026-10-14 转交本地 Codex 的历史快照。2026-10-15 用户已将本地更新推回 `refine` 并恢复云端开发，当前状态以 [PROGRESS](PROGRESS.md) 为准；DEVELOPMENT-PLAN 的功能范围和阶段退出标准继续有效。
 
 仓库：https://github.com/Aoody743/PowerLinux ，分支 `refine`。不要修改 `main`，不要覆盖本地已有工作。建议从远端 `refine` 建立 `refine-local` 工作分支。
 

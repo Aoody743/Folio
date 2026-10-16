@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-15",
+  "version": "0.1.0-dev.20",
+  "source_commit": "bc2270666cd04c55da2edae137e580b28df7352c",
+  "stage_2_complete": false,
+  "checks": {
+    "full_go_race": {
+      "result": "PASS",
+      "tested_packages": 14,
+      "no_test_packages": 2,
+      "scope": "Ordinary UID1000 cloud execution. New root-only Sites Agent integration cases compile but skip; they are not native acceptance."
+    },
+    "go_vet": "PASS",
+    "frontend_tests": {
+      "result": "PASS",
+      "tests": 67
+    },
+    "typescript": "PASS",
+    "next_static_export": "PASS",
+    "linux_amd64_and_arm64_build": "PASS",
+    "actual_amd64_installer_private_prefix_smoke": "PASS"
+  },
+  "logs": {
+    "phase2-dev20-full-race-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev20-full-race-20261015.log",
+      "sha256": "a1c363ccc5e3c41b145a457fe3e0e4a616163fe2852fb1c635fd8362e0cd4de5"
+    },
+    "phase2-dev20-vet-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev20-vet-20261015.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "phase2-dev20-build-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev20-build-20261015.log",
+      "sha256": "c126501f9ec65066d9ecc4a348b6a0628eac6d83a3b47f3acd46a0db8c6aaf5d"
+    },
+    "phase2-dev20-package-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev20-package-20261015.log",
+      "sha256": "76f40fa7633e4be84463023dfce3f6b6f61dbdb8ee1336435624b0a75dd284d4"
+    },
+    "phase2-dev20-frontend-tests.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev20-frontend-tests.log",
+      "sha256": "101564bf2d3e5ba34ec7fceefea5f39612a07bf669302b978d88a1274155925d"
+    },
+    "phase2-dev20-frontend-typecheck.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev20-frontend-typecheck.log",
+      "sha256": "e8824a3ab3ee9cecfe09018f0e06ef0c70379d4dca5749fa19705e85ad5508de"
+    },
+    "phase2-dev20-frontend-build.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev20-frontend-build.log",
+      "sha256": "1773e471b4f1be342602c35864b1f9d5bd47ae922aedda80b45561b5ac7d79ca"
+    }
+  },
+  "archive_sha256": {
+    "linux-amd64": "ed820c340f0ad3cd2fc8a6fc403a60c170e0f7e411046b3c3ae521c0496cd3ba",
+    "linux-arm64": "8cc3cfd477e0f506303b7ce1885afc508bff225ff13752ebd50cd0bef9f9db10"
+  },
+  "amd64_binary_sha256": "819d95fe103f9e74596604ea53dac4793861e3a3e3fe4158d18bd2109e8d5cab",
+  "implemented": [
+    "Docker interactive terminal shared by browser WebSocket and typed MCP actions; bounded event-driven ring/input, fresh grants, truthful detach status",
+    "PHP default-pool and per-site slowlog configuration and bounded derived-path reads",
+    "Site PHP files sessions immutable preview/cleanup with site/runtime/worker ownership checks",
+    "Root-private pinned-FD same-filesystem quarantine preventing worker directory replacement during session unlink",
+    "PureFTP IPv6-safe verifier pause/resume with encrypted recovery journal; read-only state inspection and per-account state verification",
+    "Strict Supervisor script/interpreter/argv/UID/GID/unit/cgroup process identity; live local shebang fixture tests"
+  ],
+  "known_limits": [
+    "Actual installed dev20 daemon, browser and MCP acceptance still pending; compiled root Sites cases skip in cloud UID1000",
+    "Actual PHP slow-request stack capture unverified",
+    "Old dev19 paused FTP accounts without a verifier journal cannot yet migrate/resume through the new workflow; explicit migration is phase21 work",
+    "FTP per-account read-only enforcement is unsupported, advertised read_only const false and rejected before side effects",
+    "FTP final-check-plus-rename only serializes Agent writers; external direct root/PureFTP CLI writes require quiescence until shared writer protocol is integrated",
+    "Replication source is an unregistered config/guard scaffold, handler explicitly unavailable; seed/channel behavior is not implemented in this snapshot",
+    "PostgreSQL access/logs, signed PHP extension installation, rsync/lsyncd, admin application recipes and other P2 gaps remain",
+    "Public production-server SSL/SSH verification deferred by user; no successful login or remote changes",
+    "ARM64 native execution unrun"
+  ],
+  "native_context": {
+    "ubuntu_php_dev16": "Real FPM-created expired sessions; browser and MCP cleanup/scopes/revocation passed; exact fixtures removed. Separate native evidence to follow.",
+    "debian_supervisor_dev18": "Actual signed install failed health because script interpreter differed from executable check; supported stop_preserve succeeded, no receipt/data retained. Source fix dev20 awaits fresh native install.",
+    "both_vm_core_dev19": "Actual idle upgrades and API/Agent health passed; policies unchanged. These are dev19 facts, not dev20 acceptance."
+  }
+}

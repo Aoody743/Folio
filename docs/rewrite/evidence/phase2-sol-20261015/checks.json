@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-15",
+  "timezone": "Asia/Singapore",
+  "baseline_commit": "b893eef2fd1a1dd3ecc9937d931ac08ef4b2eb73",
+  "version": "0.1.0-dev.13",
+  "source_snapshot": "../phase2-dev13-source-snapshot-20261015.json",
+  "implementation": [
+    "managed SQL administrator initialization, generated/custom password rotation, immutable secret pins and explicit recovery",
+    "Docker encrypted registry credential CRUD/CAS, digest-authorized image listing and credential-pinned pulls through authenticated Unix IPC",
+    "DNSPod International native HTTPS API and persistent exact TXT ownership",
+    "corresponding compact Docker and database administrator interfaces",
+    "omit internal secret references from credential bookkeeping audit summaries"
+  ],
+  "checks": {
+    "go_race": {
+      "result": "pass",
+      "tested_packages": 13,
+      "packages_without_tests": 2,
+      "command": "CGO_ENABLED=1 go test -p 1 -race -timeout 4m -count=1 ./...",
+      "log": "go-race.txt",
+      "environment_gated_native_tests": "skipped; tracked separately"
+    },
+    "go_vet": {
+      "result": "pass",
+      "command": "go vet -p 1 ./..."
+    },
+    "frontend_tests": {
+      "result": "pass",
+      "passed": 48,
+      "failed": 0,
+      "log": "frontend-tests.txt"
+    },
+    "typecheck": {
+      "result": "pass",
+      "log": "frontend-typecheck.txt"
+    },
+    "next_static_build": {
+      "result": "pass",
+      "log": "build.txt"
+    },
+    "linux_build": {
+      "result": "pass",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "checksums": "package-checksums.txt",
+      "arm64_execution": "not_run"
+    },
+    "amd64_packaged_installer_smoke": {
+      "result": "pass",
+      "log": "package-smoke.txt",
+      "systemd_native_acceptance": "separate"
+    }
+  },
+  "native_acceptance": {
+    "status": "in_progress",
+    "description": "Dedicated disposable Debian and Ubuntu guests, verified fixed API and root Agent executables. Individual native results will be linked after execution."
+  },
+  "limitations": [
+    "No actual Docker daemon or external authenticated registry acceptance yet; native Unix IPC and Engine HTTP protocol fixtures are source evidence only.",
+    "DNS provider protocol tests do not prove a real supplier account or public CA issuance. Four other legacy DNS providers remain unavailable with documented protocol limitations.",
+    "No phase-two exit declaration. Remaining old user capabilities, real browser flows, platform/version parity and external conditions are tracked separately."
+  ]
+}

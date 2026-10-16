@@ -173,6 +173,7 @@ func serve(args []string) error {
 	}
 	defer func() {
 		modules.system.Close()
+		modules.terminal.Close()
 		svc.Close()
 		fileManager.files.Close()
 	}()

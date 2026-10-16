@@ -1,0 +1,36 @@
+test_binary_version_mismatch_rejected (test_install.InstallTests.test_binary_version_mismatch_rejected) ... ok
+test_duplicate_member_rejected (test_install.InstallTests.test_duplicate_member_rejected) ... ok
+test_existing_version_cannot_be_replaced (test_install.InstallTests.test_existing_version_cannot_be_replaced) ... ok
+test_failed_atomic_switch_restores_prior_release_and_data (test_install.InstallTests.test_failed_atomic_switch_restores_prior_release_and_data) ... ok
+test_failed_data_preservation_leaves_current_data_and_recovery_journal (test_install.InstallTests.test_failed_data_preservation_leaves_current_data_and_recovery_journal) ... ok
+test_idempotent_install_preserves_data_and_snapshot_count (test_install.InstallTests.test_idempotent_install_preserves_data_and_snapshot_count) ... ok
+test_install_lock_excludes_concurrent_installer (test_install.InstallTests.test_install_lock_excludes_concurrent_installer) ... ok
+test_installed_binary_tampering_is_detected (test_install.InstallTests.test_installed_binary_tampering_is_detected) ... ok
+test_interrupted_transaction_does_not_replace_live_server_data (test_install.InstallTests.test_interrupted_transaction_does_not_replace_live_server_data) ... ok
+test_interrupted_transaction_recovers_before_new_operation (test_install.InstallTests.test_interrupted_transaction_recovers_before_new_operation) ... ok
+test_missing_hash_is_rejected (test_install.InstallTests.test_missing_hash_is_rejected) ... ok
+test_module_flags_require_explicit_agent_policy (test_install.InstallTests.test_module_flags_require_explicit_agent_policy) ... ok
+test_module_preflight_rejects_real_accounts_sharing_api_primary_group (test_install.InstallTests.test_module_preflight_rejects_real_accounts_sharing_api_primary_group) ... ok
+test_path_traversal_archive_rejected (test_install.InstallTests.test_path_traversal_archive_rejected) ... ok
+test_prefix_symlink_rejected (test_install.InstallTests.test_prefix_symlink_rejected) ... ok
+test_privileged_agent_cannot_be_enabled_in_prefix_mode (test_install.InstallTests.test_privileged_agent_cannot_be_enabled_in_prefix_mode) ... ok
+test_server_lock_prevents_live_data_update (test_install.InstallTests.test_server_lock_prevents_live_data_update) ... ok
+test_source_build_requires_software_before_any_filesystem_change (test_install.InstallTests.test_source_build_requires_software_before_any_filesystem_change) ... ok
+test_symlink_member_rejected (test_install.InstallTests.test_symlink_member_rejected) ... ok
+test_uninstall_preserves_data_and_is_repeatable (test_install.InstallTests.test_uninstall_preserves_data_and_is_repeatable) ... ok
+test_unmanaged_directory_preserved (test_install.InstallTests.test_unmanaged_directory_preserved) ... ok
+test_upgrade_rollback_restores_previous_snapshot_and_preserves_new_data (test_install.InstallTests.test_upgrade_rollback_restores_previous_snapshot_and_preserves_new_data) ... ok
+test_valid_package_is_installed_without_system_service (test_install.InstallTests.test_valid_package_is_installed_without_system_service) ... ok
+test_wrong_hash_fails_before_touching_prefix (test_install.InstallTests.test_wrong_hash_fails_before_touching_prefix) ... ok
+test_wrong_platform_rejected (test_install.InstallTests.test_wrong_platform_rejected) ... ok
+test_foreign_owner_rejected_without_modification (test_policy_source.PolicySourceTests.test_foreign_owner_rejected_without_modification) ... ok
+test_policy_name_is_protected_from_untrusted_parent_replacement (test_policy_source.PolicySourceTests.test_policy_name_is_protected_from_untrusted_parent_replacement) ... skipped 'root-owned positive policy-source cases require the owned QA VM'
+test_root_private_policy_accepted_and_unsafe_files_rejected (test_policy_source.PolicySourceTests.test_root_private_policy_accepted_and_unsafe_files_rejected) ... skipped 'root-owned positive policy-source cases require the owned QA VM'
+test_creation_and_unsafe_names_are_bounded (test_production_data_lock.ProductionDataLockTests.test_creation_and_unsafe_names_are_bounded) ... ok
+test_held_maintenance_lock_is_rejected_without_mutation (test_production_data_lock.ProductionDataLockTests.test_held_maintenance_lock_is_rejected_without_mutation) ... ok
+test_same_inode_excludes_another_process_then_releases (test_production_data_lock.ProductionDataLockTests.test_same_inode_excludes_another_process_then_releases) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 1.698s
+
+OK (skipped=2)

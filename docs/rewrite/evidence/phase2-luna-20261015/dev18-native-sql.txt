@@ -1,0 +1,12 @@
+Sanitized native SQL administration test result summary
+
+Source test binary: dev13; SHA-256 1b6eac1dd5f01dbe50835beab4f764b297201c468edda99234e4ebf12979ec48
+Installed API and Agent: dev18; binary SHA-256 fdff6dff813cd7249f97225f72abb68bfee9492c801e00d47abfe2c7ce8690db
+Test: TestNativeDatabaseAdminSQLCommitCancellationAndExplicitRecovery
+Result: PASS (3.34 s) against active managed PostgreSQL and MariaDB daemons
+  mariadb-p2adminqa: PASS (0.62 s)
+  postgresql-p2adminqa: PASS (2.69 s)
+
+Coverage: actual SQL custom rotation, pre-SQL apply, post-SQL cancellation,
+filesystem save failure, and restart recovery. This is a sanitized summary,
+not a verbatim stdout capture. It contains no credentials or private policy data.

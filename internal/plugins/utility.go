@@ -25,21 +25,23 @@ type TrustedProgram struct {
 	Arguments []string `json:"arguments"`
 }
 type UtilityInput struct {
-	ID               string `json:"id"`
-	Command          string `json:"command"`
-	Name             string `json:"name,omitempty"`
-	ExpectedRevision int64  `json:"expected_revision,omitempty"`
-	Password         string `json:"password,omitempty"`
-	ReadOnly         bool   `json:"read_only,omitempty"`
-	ProgramID        string `json:"program_id,omitempty"`
-	Enabled          bool   `json:"enabled,omitempty"`
+	ID                         string `json:"id"`
+	Command                    string `json:"command"`
+	Name                       string `json:"name,omitempty"`
+	ExpectedRevision           int64  `json:"expected_revision,omitempty"`
+	Password                   string `json:"password,omitempty"`
+	ReadOnly                   bool   `json:"read_only,omitempty"`
+	ProgramID                  string `json:"program_id,omitempty"`
+	Enabled                    bool   `json:"enabled,omitempty"`
+	ConfirmClearLegacyDenyRule bool   `json:"confirm_clear_legacy_deny_rule,omitempty"`
 }
 type utilityAccount struct {
-	Name      string `json:"name"`
-	ReadOnly  bool   `json:"read_only,omitempty"`
-	ProgramID string `json:"program_id,omitempty"`
-	Enabled   bool   `json:"enabled,omitempty"`
-	Password  string `json:"password,omitempty"`
+	Name       string `json:"name"`
+	ReadOnly   bool   `json:"read_only,omitempty"`
+	ProgramID  string `json:"program_id,omitempty"`
+	Enabled    bool   `json:"enabled,omitempty"`
+	FTPEnabled *bool  `json:"ftp_enabled,omitempty"`
+	Password   string `json:"password,omitempty"`
 }
 type utilityRecord struct {
 	Revision int64                     `json:"revision"`
@@ -67,12 +69,19 @@ func (e *PrivilegedExecutor) validateUtility(raw json.RawMessage) error {
 	}
 	switch input.Command {
 	case "list", "status":
-	case "create", "update", "delete", "start", "stop", "restart":
+	case "inspect":
+		if !utilityName.MatchString(input.Name) {
+			return failure("invalid_input", "FTP account name must be a simple bounded identifier", 400)
+		}
+	case "create", "update", "delete", "start", "stop", "restart", "pause", "resume", "legacy_recover":
 		if !utilityName.MatchString(input.Name) {
 			return failure("invalid_input", "Account/program name must be a simple bounded identifier", 400)
 		}
 		if input.ExpectedRevision < 1 {
 			return failure("invalid_input", "expected_revision is required", 400)
+		}
+		if input.Command == "legacy_recover" && !input.ConfirmClearLegacyDenyRule {
+			return failure("invalid_input", "Explicit confirmation is required to clear the known legacy FTP deny rule", 400)
 		}
 	default:
 		return failure("invalid_input", "Unknown utility action", 400)
@@ -242,14 +251,9 @@ func (e *PrivilegedExecutor) writeSupervisor(instance Instance) error {
 		for _, arg := range profile.Arguments {
 			command += " " + supervisorQuote(arg)
 		}
-		directory := filepath.Join(instance.Paths.DataDir, "programs", name)
-		if err = os.MkdirAll(directory, 0750); err != nil {
-			return err
-		}
-		if os.Geteuid() == 0 {
-			if err = os.Chown(directory, int(e.uid), int(e.gid)); err != nil {
-				return err
-			}
+		directory, pathErr := e.prepareSupervisorProgramDirectory(instance, name)
+		if pathErr != nil {
+			return pathErr
 		}
 		enabled := "false"
 		if entry.Enabled {
@@ -299,7 +303,7 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 		return nil, err
 	}
 	defer unlock()
-	if input.Command != "list" && input.Command != "status" {
+	if input.Command != "list" && input.Command != "status" && input.Command != "inspect" {
 		if err := e.ensureInstallFinalized(ctx, input.ID); err != nil {
 			return nil, err
 		}
@@ -311,14 +315,44 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 	if instance.PluginID != "pureftp" && instance.PluginID != "rsyncd" && instance.PluginID != "supervisor" {
 		return nil, failure("runtime_type_mismatch", "This action requires a managed FTP, rsync or Supervisor instance", 412)
 	}
+	if (input.Command == "pause" || input.Command == "resume" || input.Command == "legacy_recover") && instance.PluginID != "pureftp" {
+		return nil, failure("unsupported_action", "This per-account action is specific to managed PureFTP", 412)
+	}
 	record, err := e.utilityRecord(instance)
 	if err != nil {
 		return nil, err
 	}
+	if input.Command == "inspect" {
+		if instance.PluginID != "pureftp" {
+			return nil, failure("unsupported_action", "Per-account inspection is specific to managed PureFTP", 412)
+		}
+		return e.inspectFTPAccountState(instance, record, input.Name)
+	}
+	if input.Command == "legacy_recover" {
+		if instance.PluginID != "pureftp" {
+			return nil, failure("unsupported_action", "Legacy FTP recovery is specific to managed PureFTP", 412)
+		}
+		return e.recoverLegacyPureFTPAccount(ctx, instance, input, record, e.rebuildPureFTPPasswordDB)
+	}
 	if input.Command == "status" {
-		return map[string]any{"id": instance.ID, "health": e.probe(ctx, instance), "revision": record.Revision}, nil
+		result := map[string]any{"id": instance.ID, "health": e.probe(ctx, instance), "revision": record.Revision}
+		if instance.PluginID == "pureftp" {
+			items, viewErr := e.ftpAccountStateViews(instance, record)
+			if viewErr != nil {
+				return nil, viewErr
+			}
+			result["accounts"] = items
+		}
+		return result, nil
 	}
 	if input.Command == "list" {
+		if instance.PluginID == "pureftp" {
+			items, viewErr := e.ftpAccountStateViews(instance, record)
+			if viewErr != nil {
+				return nil, viewErr
+			}
+			return map[string]any{"items": items, "revision": record.Revision}, nil
+		}
 		items := []utilityAccount{}
 		for _, item := range record.Items {
 			item.Password = ""
@@ -329,6 +363,15 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 	}
 	if record.Revision != input.ExpectedRevision {
 		return nil, failure("revision_conflict", "Utility accounts/programs changed", 412)
+	}
+	if instance.PluginID == "pureftp" {
+		legacyJournal, journalErr := e.loadFTPLegacyRecoveryJournal(instance, input.Name)
+		if journalErr != nil {
+			return nil, journalErr
+		}
+		if legacyJournal != nil {
+			return nil, failure("ftp_account_state_pending", "Complete this FTP account's legacy recovery before changing it", 409)
+		}
 	}
 	_, exists := record.Items[input.Name]
 	if input.Command == "create" && exists {
@@ -356,7 +399,39 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 		return nil, failure("capacity_exceeded", "At most 256 accounts/programs are supported per instance", 429)
 	}
 	old := record.Items[input.Name]
+	if instance.PluginID == "pureftp" && input.ReadOnly && (input.Command == "create" || input.Command == "update") {
+		return nil, failure("unsupported_action", "PureFTP per-account read-only access is unavailable until existing-file writes can be denied", 412)
+	}
+	var ftpJournal *pureFTPAccountStateJournal
+	if instance.PluginID == "pureftp" && exists {
+		if !ftpAccountEnabled(old) && input.Command == "update" {
+			return nil, failure("ftp_account_paused", "Resume this FTP account before changing its settings", 409)
+		}
+		ftpJournal, err = e.loadPureFTPStateJournal(instance, input.Name)
+		if err != nil {
+			return nil, err
+		}
+		if input.Command != "pause" && input.Command != "resume" && ftpJournal != nil {
+			return nil, failure("ftp_account_state_pending", "Complete this FTP account's pause or resume before changing it", 409)
+		}
+		if !ftpAccountEnabled(old) && ftpJournal == nil {
+			return nil, failure("ftp_account_state_unrecoverable", "This paused FTP account has no protected verifier journal", 409)
+		}
+	}
+	if instance.PluginID == "pureftp" && !ftpAccountEnabled(old) && input.Command == "delete" {
+		return nil, failure("ftp_account_paused", "Resume this FTP account before deleting it", 409)
+	}
 	entry := utilityAccount{Name: input.Name, ReadOnly: input.ReadOnly, ProgramID: input.ProgramID, Enabled: input.Enabled, Password: input.Password}
+	if instance.PluginID == "pureftp" {
+		switch input.Command {
+		case "create":
+			entry.FTPEnabled = ftpAccountEnabledValue(true)
+		case "update":
+			entry.FTPEnabled = old.FTPEnabled
+		case "pause", "resume":
+			entry = old
+		}
+	}
 	if entry.Password == "" {
 		entry.Password = old.Password
 	}
@@ -364,12 +439,28 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 		if _, ok := e.config.Programs[entry.ProgramID]; !ok && input.Command != "delete" {
 			return nil, failure("program_not_trusted", "Choose a program explicitly installed in root Agent policy", 412)
 		}
-	} else if input.Command != "delete" && len(entry.Password) < 12 && !(instance.PluginID == "pureftp" && input.Command == "update" && input.Password == "") {
+	} else if input.Command != "delete" && input.Command != "pause" && input.Command != "resume" && len(entry.Password) < 12 && !(instance.PluginID == "pureftp" && input.Command == "update" && input.Password == "") {
 		return nil, failure("weak_password", "FTP/rsync passwords require at least 12 characters", 400)
 	}
 	if instance.PluginID == "pureftp" {
-		if err = e.pureFTPAccount(ctx, instance, input); err != nil {
-			return nil, err
+		switch input.Command {
+		case "pause", "resume":
+			enabled := input.Command == "resume"
+			if ftpAccountEnabled(old) != enabled || ftpJournal != nil {
+				if err = e.setPureFTPAccountEnabled(ctx, instance, input.Name, enabled, true); err != nil {
+					return nil, err
+				}
+			}
+			entry.FTPEnabled = ftpAccountEnabledValue(enabled)
+		default:
+			if err = e.pureFTPAccount(ctx, instance, input); err != nil {
+				return nil, err
+			}
+			if input.Command == "update" && !ftpAccountEnabled(entry) {
+				if err = e.setPureFTPAccountEnabled(ctx, instance, input.Name, false, true); err != nil {
+					return nil, err
+				}
+			}
 		}
 		entry.Password = ""
 	}
@@ -381,6 +472,11 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 	record.Revision++
 	if err = e.save("private", utilityStateID(instance), record); err != nil {
 		return nil, err
+	}
+	if instance.PluginID == "pureftp" && input.Command == "resume" {
+		if err = e.removePureFTPStateJournal(instance, input.Name); err != nil {
+			return nil, err
+		}
 	}
 	if instance.PluginID == "rsyncd" {
 		if err = e.writeRsync(instance); err != nil {
@@ -418,9 +514,16 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 			}
 		}
 	}
-	return map[string]any{"id": instance.ID, "name": input.Name, "command": input.Command, "revision": record.Revision}, nil
+	result := map[string]any{"id": instance.ID, "name": input.Name, "command": input.Command, "revision": record.Revision}
+	if instance.PluginID == "pureftp" {
+		result["enabled"] = ftpAccountEnabled(entry)
+	}
+	return result, nil
 }
 func (e *PrivilegedExecutor) pureFTPAccount(ctx context.Context, instance Instance, input UtilityInput) error {
+	if input.ReadOnly && (input.Command == "create" || input.Command == "update") {
+		return failure("unsupported_action", "PureFTP per-account read-only access is unavailable until existing-file writes can be denied", 412)
+	}
 	passwd := filepath.Join(instance.Paths.ConfigDir, "pureftpd.passwd")
 	args := []string{}
 	switch input.Command {
@@ -438,16 +541,10 @@ func (e *PrivilegedExecutor) pureFTPAccount(ctx context.Context, instance Instan
 	case "update":
 		if input.Password == "" {
 			directory := filepath.Join(instance.Paths.DataDir, "users", input.Name)
-			mode := os.FileMode(0750)
-			uid := int(e.uid)
-			if input.ReadOnly {
-				mode = 0550
-				uid = 0
-			}
-			if err := os.Chown(directory, uid, int(e.gid)); err != nil {
+			if err := os.Chown(directory, int(e.uid), int(e.gid)); err != nil {
 				return err
 			}
-			return os.Chmod(directory, mode)
+			return os.Chmod(directory, 0750)
 		}
 		args = []string{"passwd", input.Name, "-f", passwd}
 	default:
@@ -466,14 +563,8 @@ func (e *PrivilegedExecutor) pureFTPAccount(ctx context.Context, instance Instan
 	_, err = runFixed(ctx, "/usr/bin/pure-pw", []string{"mkdb", filepath.Join(instance.Paths.ConfigDir, "pureftpd.pdb"), "-f", passwd}, 15*time.Second, nil)
 	if err == nil && input.Command != "delete" {
 		directory := filepath.Join(instance.Paths.DataDir, "users", input.Name)
-		mode := os.FileMode(0750)
-		uid := int(e.uid)
-		if input.ReadOnly {
-			mode = 0550
-			uid = 0
-		}
-		if err = os.Chown(directory, uid, int(e.gid)); err == nil {
-			err = os.Chmod(directory, mode)
+		if err = os.Chown(directory, int(e.uid), int(e.gid)); err == nil {
+			err = os.Chmod(directory, 0750)
 		}
 	}
 	return err
@@ -500,6 +591,9 @@ func (m *Manager) utilityBindings() []core.Binding {
 				} else {
 					properties["password"] = map[string]any{"type": "string", "minLength": 12, "maxLength": 1024, "format": "password"}
 					properties["read_only"] = map[string]any{"type": "boolean"}
+					if plugin == "ftp" {
+						properties["read_only"] = map[string]any{"type": "boolean", "const": false, "default": false, "description": "Per-account read-only enforcement is unavailable; only read/write accounts are currently supported"}
+					}
 				}
 			}
 			verb := command

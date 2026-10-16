@@ -1,0 +1,56 @@
+=== stdout ===
+=== RUN   TestPostgreSQLSlowlogRejectsFIFOWithoutBlocking
+--- PASS: TestPostgreSQLSlowlogRejectsFIFOWithoutBlocking (0.02s)
+=== RUN   TestPostgreSQLAccessRuleProtocolPreservesLocalAuthAndOwnsOnlyItsMarker
+--- PASS: TestPostgreSQLAccessRuleProtocolPreservesLocalAuthAndOwnsOnlyItsMarker (0.01s)
+=== RUN   TestPostgreSQLAccessCIDRRequiresCanonicalLoopbackPrefix
+--- PASS: TestPostgreSQLAccessCIDRRequiresCanonicalLoopbackPrefix (0.00s)
+=== RUN   TestPostgreSQLMaintenanceResourceScopeIncludesInstanceAndServerwideLogs
+--- PASS: TestPostgreSQLMaintenanceResourceScopeIncludesInstanceAndServerwideLogs (0.02s)
+=== RUN   TestPostgreSQLRecoveryContextIsBoundToOneExactPendingJournal
+--- PASS: TestPostgreSQLRecoveryContextIsBoundToOneExactPendingJournal (0.00s)
+=== RUN   TestPostgreSQLSlowlogIntentValidatesSnapshotProvenanceAndLegacyShape
+--- PASS: TestPostgreSQLSlowlogIntentValidatesSnapshotProvenanceAndLegacyShape (0.01s)
+=== RUN   TestPostgreSQLHBAParseAndReloadFixtureReportsServerErrors
+--- PASS: TestPostgreSQLHBAParseAndReloadFixtureReportsServerErrors (0.01s)
+=== RUN   TestPostgreSQLSlowlogBlockUsesTypedThresholdAndPreservesAcrossRegeneration
+--- PASS: TestPostgreSQLSlowlogBlockUsesTypedThresholdAndPreservesAcrossRegeneration (0.00s)
+=== RUN   TestPostgreSQLSlowlogSettingsFixtureVerifiesVersionAndReloadValues
+--- PASS: TestPostgreSQLSlowlogSettingsFixtureVerifiesVersionAndReloadValues (0.01s)
+=== RUN   TestPostgreSQLSlowlogReloadWaitsForFreshConnectionsAndDelayedSettings
+--- PASS: TestPostgreSQLSlowlogReloadWaitsForFreshConnectionsAndDelayedSettings (0.21s)
+=== RUN   TestPostgreSQLSlowlogRestoreWaitsForDelayedUnconfiguredBaseline
+--- PASS: TestPostgreSQLSlowlogRestoreWaitsForDelayedUnconfiguredBaseline (0.20s)
+=== RUN   TestPostgreSQLSlowlogBaselinePreservesDefaultsAndPrefixWhitespace
+--- PASS: TestPostgreSQLSlowlogBaselinePreservesDefaultsAndPrefixWhitespace (0.00s)
+=== RUN   TestPostgreSQLSlowlogPollingCancelsInflightOpen
+--- PASS: TestPostgreSQLSlowlogPollingCancelsInflightOpen (0.10s)
+=== RUN   TestPostgreSQLSlowlogReadIsFixedPathBoundedAndRedactsStatements
+--- PASS: TestPostgreSQLSlowlogReadIsFixedPathBoundedAndRedactsStatements (0.04s)
+=== RUN   TestPHPExtensionPendingJournalAllowsOnlyExactReplayContext
+--- PASS: TestPHPExtensionPendingJournalAllowsOnlyExactReplayContext (0.19s)
+=== RUN   TestPendingPHPExtensionIntentWithoutReceiptBlocksSameIDMutation
+--- PASS: TestPendingPHPExtensionIntentWithoutReceiptBlocksSameIDMutation (0.05s)
+=== RUN   TestPHPModulePlanWindowUsesOneInstantAndAcceptsBoundedExistingClockSkew
+--- PASS: TestPHPModulePlanWindowUsesOneInstantAndAcceptsBoundedExistingClockSkew (0.05s)
+=== RUN   TestPHPExtensionRecoveryInspectionReturnsOnlyExactReplayTuple
+--- PASS: TestPHPExtensionRecoveryInspectionReturnsOnlyExactReplayTuple (0.06s)
+=== RUN   TestPHPExtensionRecoveryInspectionRejectsExpandedOrCorruptInput
+--- PASS: TestPHPExtensionRecoveryInspectionRejectsExpandedOrCorruptInput (0.06s)
+=== RUN   TestPHPProfileMigrationSkipsOnlyValidatedPendingExtensionAndKeepsExactReplay
+--- PASS: TestPHPProfileMigrationSkipsOnlyValidatedPendingExtensionAndKeepsExactReplay (0.10s)
+=== RUN   TestPrivilegedStartupWithPendingPHPExtensionRemainsAvailable
+--- PASS: TestPrivilegedStartupWithPendingPHPExtensionRemainsAvailable (0.15s)
+=== RUN   TestPHPProfileMigrationDoesNotSilentlyAcceptCorruptExtensionState
+--- PASS: TestPHPProfileMigrationDoesNotSilentlyAcceptCorruptExtensionState (0.05s)
+=== RUN   TestPHPProfileMigrationOrdinaryAgentRestartLeavesPendingStateUntouched
+--- PASS: TestPHPProfileMigrationOrdinaryAgentRestartLeavesPendingStateUntouched (1.18s)
+=== RUN   TestFreshInstallCannotBypassOrphanPHPExtensionJournal
+--- PASS: TestFreshInstallCannotBypassOrphanPHPExtensionJournal (0.11s)
+=== RUN   TestPostgreSQLProgramMajorComesFromReviewedPins
+--- PASS: TestPostgreSQLProgramMajorComesFromReviewedPins (0.00s)
+=== RUN   TestSupervisorWriteRepairsProgramAncestorAndWorkerCanTraverse
+--- PASS: TestSupervisorWriteRepairsProgramAncestorAndWorkerCanTraverse (0.17s)
+PASS
+
+=== stderr ===

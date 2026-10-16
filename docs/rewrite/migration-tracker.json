@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-14",
+  "updated": "2026-10-15",
   "timezone": "Asia/Singapore",
   "baseline_commit": "a0b700753f6242d40dd60b40a4533960b58a3632",
   "description": "实施台账：保留所有旧条目，按实际依赖调整阶段。implemented表示有真实实现，verified还要求对应验收证据；静态动作数量不是验收数。",
@@ -4083,8 +4083,8 @@
       "acceptance_cases": [
         "software.acme_pandominassl_apply.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-sol-20261015/checks.json",
+      "verification_note": "Native DNSPod International protocol added in dev.13 with persistent exact TXT ownership and strict HTTPS fixtures. Real supplier accounts/public CA, four other legacy DNS providers, hook/sync behavior and complete versions/platform acceptance remain incomplete."
     },
     {
       "id": "PLUGIN-alist",
@@ -4300,8 +4300,8 @@
       "acceptance_cases": [
         "software.docker.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-sol-20261015/checks.json",
+      "verification_note": "Registry credentials CRUD/CAS and immutable secret pins, exact digest pull/list/inspect/remove and corresponding UI are implemented; full Go race, Unix Agent/Engine protocol and UI helper checks passed for dev.13. Actual daemon/private registry/browser acceptance, import/export/exec, full platform/version parity and lifecycle remain incomplete."
     },
     {
       "id": "PLUGIN-doh",
@@ -4994,8 +4994,8 @@
       "acceptance_cases": [
         "software.mariadb.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-sol-20261015/checks.json",
+      "verification_note": "SQL administrator initialization, generated/custom password rotation and explicit recovery implemented in dev.13; race and Unix IPC checks passed. Earlier dev.12 actual database lifecycle is separate evidence. Native rotation, imports, binlog, replication/SSH and full old action/version parity remain incomplete."
     },
     {
       "id": "PLUGIN-memcached",
@@ -5340,8 +5340,8 @@
       "acceptance_cases": [
         "software.mysql.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-sol-20261015/checks.json",
+      "verification_note": "SQL administrator initialize/rotate/custom-password preparation/recover/apply_pending and UI are implemented with durable immutable secret pins and explicit root intent recovery. dev.13 race/Unix IPC checks passed; real native rotation is separately pending. This does not verify imports, binlog, replication/SSH or all old actions/versions."
     },
     {
       "id": "PLUGIN-mysql-community",
@@ -5465,8 +5465,8 @@
       "acceptance_cases": [
         "software.mysql-community.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-sol-20261015/checks.json",
+      "verification_note": "SQL administrator initialize/rotate/custom-password preparation/recover/apply_pending and UI are implemented; dev.13 race/Unix IPC checks passed. Native MySQL tar variant, imports, binlog, replication/SSH and full version parity remain unverified/incomplete."
     },
     {
       "id": "PLUGIN-nezha",
@@ -5761,8 +5761,8 @@
       "acceptance_cases": [
         "software.php.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-luna-20261015/checks.json",
+      "verification_note": "PHP instance FPM error log and files-handler session statistics/immutable-preview cleanup implemented, with source/race/typed UI checks. Per-site session directories, unconfigured slow logs, extension installation, complete platform/version and real lifecycle/browser acceptance remain incomplete."
     },
     {
       "id": "PLUGIN-php-apt",
@@ -5839,8 +5839,8 @@
       "acceptance_cases": [
         "software.php-apt.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-luna-20261015/checks.json",
+      "verification_note": "PHP instance FPM error log and files-handler session statistics/immutable-preview cleanup implemented, with source/race/typed UI checks. Per-site session directories, unconfigured slow logs, extension installation, complete platform/version and real lifecycle/browser acceptance remain incomplete."
     },
     {
       "id": "PLUGIN-php-guard",
@@ -5925,8 +5925,8 @@
       "acceptance_cases": [
         "software.php-yum.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-luna-20261015/checks.json",
+      "verification_note": "PHP instance FPM error log and files-handler session statistics/immutable-preview cleanup implemented, with source/race/typed UI checks. Per-site session directories, unconfigured slow logs, extension installation, complete platform/version and real lifecycle/browser acceptance remain incomplete."
     },
     {
       "id": "PLUGIN-phpldapadmin",
@@ -6082,8 +6082,8 @@
       "acceptance_cases": [
         "software.postgresql.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-sol-20261015/checks.json",
+      "verification_note": "SQL administrator initialization, generated/custom password rotation and explicit recovery implemented in dev.13; race and Unix IPC checks passed. Earlier dev.12 actual database lifecycle is separate evidence. Native rotation, replication/SSH and full old action/version parity remain incomplete."
     },
     {
       "id": "PLUGIN-prometheus",
@@ -6348,8 +6348,8 @@
       "acceptance_cases": [
         "software.supervisor.lifecycle"
       ],
-      "evidence": "docs/rewrite/evidence/phase2-local-20261014/source-checks.json",
-      "verification_note": "Catalog/typed lifecycle present; plugin-specific actions, supported versions/platforms and real installed service/browser acceptance remain incomplete. Source/systemd fixture evidence does not verify this entire plugin."
+      "evidence": "docs/rewrite/evidence/phase2-luna-20261015/checks.json",
+      "verification_note": "Registered-job stdout/stderr bounded reads, both-stream preview and durable exact revision/device/inode-checked clear implemented. Actual isolated Supervisor 4.2.5 RPC semantics confirmed; installed release API/Agent/browser and full lifecycle/version parity still incomplete."
     },
     {
       "id": "PLUGIN-swap",

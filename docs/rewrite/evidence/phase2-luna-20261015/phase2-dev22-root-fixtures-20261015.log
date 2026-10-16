@@ -1,0 +1,45 @@
+=== RUN   TestPostgreSQLSlowlogRejectsFIFOWithoutBlocking
+--- PASS: TestPostgreSQLSlowlogRejectsFIFOWithoutBlocking (0.04s)
+=== RUN   TestPHPExtensionPendingJournalAllowsOnlyExactReplayContext
+--- PASS: TestPHPExtensionPendingJournalAllowsOnlyExactReplayContext (0.20s)
+=== RUN   TestPHPExtensionConfigFailurePersistsRecoveryUntilRollbackSucceeds
+--- PASS: TestPHPExtensionConfigFailurePersistsRecoveryUntilRollbackSucceeds (0.06s)
+=== RUN   TestPendingPHPExtensionIntentWithoutReceiptBlocksSameIDMutation
+--- PASS: TestPendingPHPExtensionIntentWithoutReceiptBlocksSameIDMutation (0.05s)
+=== RUN   TestPHPModulePlanWindowUsesOneInstantAndAcceptsBoundedExistingClockSkew
+--- PASS: TestPHPModulePlanWindowUsesOneInstantAndAcceptsBoundedExistingClockSkew (0.04s)
+=== RUN   TestManagerBindingsRegisterPHPModuleActionsExactlyOnce
+--- PASS: TestManagerBindingsRegisterPHPModuleActionsExactlyOnce (0.06s)
+=== RUN   TestPHPExtensionRecoveryInspectionReturnsOnlyExactReplayTuple
+--- PASS: TestPHPExtensionRecoveryInspectionReturnsOnlyExactReplayTuple (0.06s)
+=== RUN   TestPHPExtensionRecoveryInspectionRejectsExpandedOrCorruptInput
+--- PASS: TestPHPExtensionRecoveryInspectionRejectsExpandedOrCorruptInput (0.05s)
+=== RUN   TestPHPProfileMigrationSkipsOnlyValidatedPendingExtensionAndKeepsExactReplay
+--- PASS: TestPHPProfileMigrationSkipsOnlyValidatedPendingExtensionAndKeepsExactReplay (0.07s)
+=== RUN   TestPrivilegedStartupWithPendingPHPExtensionRemainsAvailable
+--- PASS: TestPrivilegedStartupWithPendingPHPExtensionRemainsAvailable (0.11s)
+=== RUN   TestPHPProfileMigrationDoesNotSilentlyAcceptCorruptExtensionState
+--- PASS: TestPHPProfileMigrationDoesNotSilentlyAcceptCorruptExtensionState (0.04s)
+=== RUN   TestPHPProfileMigrationOrdinaryAgentRestartLeavesPendingStateUntouched
+--- PASS: TestPHPProfileMigrationOrdinaryAgentRestartLeavesPendingStateUntouched (2.09s)
+=== RUN   TestSupervisorWriteRepairsProgramAncestorAndWorkerCanTraverse
+--- PASS: TestSupervisorWriteRepairsProgramAncestorAndWorkerCanTraverse (0.10s)
+=== RUN   TestSupervisorProgramDirectoryRejectsSymlinksAndUnknownModes
+--- PASS: TestSupervisorProgramDirectoryRejectsSymlinksAndUnknownModes (0.06s)
+=== RUN   TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates
+=== RUN   TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/worker_private
+=== RUN   TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/worker_inherited_managed_mode
+=== RUN   TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/root_private
+=== RUN   TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/root_service_group
+=== RUN   TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/writable
+=== RUN   TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/foreign_owner
+=== RUN   TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/broad_access
+--- PASS: TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates (0.00s)
+    --- PASS: TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/worker_private (0.00s)
+    --- PASS: TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/worker_inherited_managed_mode (0.00s)
+    --- PASS: TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/root_private (0.00s)
+    --- PASS: TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/root_service_group (0.00s)
+    --- PASS: TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/writable (0.00s)
+    --- PASS: TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/foreign_owner (0.00s)
+    --- PASS: TestSupervisorProgramsDirectoryRecognizesOnlyManagedRepairStates/broad_access (0.00s)
+PASS

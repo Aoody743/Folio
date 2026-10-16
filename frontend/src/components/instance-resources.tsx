@@ -5,12 +5,30 @@ const ManagedDatabaseResources = dynamic(
   () => import("./managed-databases").then((m) => m.ManagedDatabaseResources),
   { ssr: false },
 );
+const DatabaseBinlogManagement = dynamic(
+  () => import("./database-binlog").then((m) => m.DatabaseBinlogManagement),
+  { ssr: false },
+);
+const DockerExecManagement = dynamic(
+  () => import("./docker-exec").then((m) => m.DockerExecManagement),
+  { ssr: false },
+);
+const DockerTerminalManagement = dynamic(
+  () => import("./docker-terminal").then((m) => m.DockerTerminalManagement),
+  { ssr: false },
+);
+const FTPAccountRecovery = dynamic(
+  () => import("./ftp-account-recovery").then((m) => m.FTPAccountRecovery),
+  { ssr: false },
+);
 import { Button } from "@astryxdesign/core/Button";
 import { Capability, list } from "@/lib/api";
 import { SoftwareInstance } from "@/lib/resources";
 import { choiceLabel } from "@/lib/labels";
 import { useResource } from "@/lib/resource-hook";
 import { ActionForm } from "./actions";
+import { DockerManagement } from "./docker-management";
+import { DatabaseAdminCredentials } from "./database-admin-credentials";
 import { DatabaseRecreation } from "./database-recreation";
 import { Pager, ResourceActions, State, Unavailable } from "./resource-ui";
 type Row = Record<string, unknown>;
@@ -43,7 +61,11 @@ export function InstanceResources({
       : instance.plugin_id === "rsyncd"
         ? "rsync"
         : instance.plugin_id;
+  const supportsBinlog = ["mysql", "mysql-community", "mariadb"].includes(
+    instance.plugin_id,
+  );
   const [collection, setCollection] = useState("containers");
+  const [databaseSection, setDatabaseSection] = useState("databases");
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string>();
   const [operation, setOperation] = useState<string>();
@@ -57,7 +79,10 @@ export function InstanceResources({
   const data = useResource<Inventory>(
     name,
     kind === "database" ? { instance_id: instance.id } : { id: instance.id },
-    active && capabilities.some((c) => c.name === name),
+    active &&
+      !(kind === "docker" && collection === "images") &&
+      !(kind === "database" && databaseSection === "binlog") &&
+      capabilities.some((c) => c.name === name),
   );
   const raw = data.data?.items;
   const rows = (
@@ -120,7 +145,9 @@ export function InstanceResources({
     <section className="stack" aria-label="软件实例资源">
       <div className="card-heading">
         <h3>
-          {kind === "database"
+          {kind === "database" && databaseSection === "binlog"
+            ? "Binlog 管理"
+            : kind === "database"
             ? "实例数据库"
             : kind === "docker"
               ? "容器资源"
@@ -128,7 +155,7 @@ export function InstanceResources({
                 ? "守护程序"
                 : "服务账户"}
         </h3>
-        {create && (kind !== "database" || databaseReceipt) && (
+        {(!supportsBinlog || databaseSection === "databases") && create && !(kind === "docker" && collection === "images") && (kind !== "database" || databaseReceipt) && (
           <Button
             label={
               kind === "database"
@@ -152,6 +179,28 @@ export function InstanceResources({
           />
         )}
       </div>
+      {supportsBinlog && (
+        <div className="section-tabs" role="tablist" aria-label="数据库实例工具">
+          {[
+            { id: "databases", label: "数据库" },
+            { id: "binlog", label: "Binlog" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={databaseSection === tab.id}
+              onClick={() => {
+                setDatabaseSection(tab.id);
+                setSelected(undefined);
+                setOperation(undefined);
+                setCreating(false);
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
       {kind === "docker" && (
         <div
           className="section-tabs"
@@ -181,6 +230,18 @@ export function InstanceResources({
           ))}
         </div>
       )}
+      {kind === "database" && databaseSection === "binlog" ? (
+        <DatabaseBinlogManagement
+          key={instance.id}
+          instanceID={instance.id}
+          capabilities={capabilities}
+          onExecuted={refresh}
+          active={active}
+        />
+      ) : kind === "docker" && collection === "images" ? (
+        <DockerManagement key={instance.id} instanceID={instance.id} capabilities={capabilities} onExecuted={refresh} active={active}/>
+      ) : <>
+      {kind === "database" && databaseSection === "databases" && <DatabaseAdminCredentials key={instance.id} instanceID={instance.id} engine={instance.plugin_id} capabilities={capabilities} onExecuted={refresh} active={active} />}
       {data.error && (
         <div className="notice danger" role="alert">
           {data.error}
@@ -314,14 +375,29 @@ export function InstanceResources({
             />
           )
         ) : (
+          <>
+          {kind === "ftp" && targetName(current) && (
+            <FTPAccountRecovery
+              key={`ftp-account-state:${instance.id}:${targetName(current)}`}
+              id={instance.id}
+              name={targetName(current)}
+              capabilities={capabilities}
+              onExecuted={refresh}
+              active={active}
+            />
+          )}
           <ResourceActions
             capabilities={capabilities}
             names={(name) =>
               kind === "docker"
-                ? name.startsWith(
+                ? name !== "docker_container_exec" &&
+                  name !== "docker_container_exec_status" &&
+                  name.startsWith(
                     `docker_${collection === "containers" ? "container" : collection === "networks" ? "network" : "volume"}_`,
                   ) && !name.endsWith("_create")
                 : name.startsWith(kind + "_") &&
+                  !(kind === "ftp" && name.startsWith("ftp_account_state_")) &&
+                  !name.startsWith("supervisor_log_") &&
                   !/_list|_status|_create/.test(name)
             }
             preset={preset}
@@ -329,7 +405,31 @@ export function InstanceResources({
             onSelect={setOperation}
             onExecuted={refresh}
           />
+          {kind === "docker" && collection === "containers" &&
+            targetName(current) && (
+              <>
+                <DockerExecManagement
+                  key={`${instance.id}:${targetName(current)}`}
+                  instanceID={instance.id}
+                  containerName={targetName(current)}
+                  running={String(current.State ?? "").toLowerCase() === "running"}
+                  capabilities={capabilities}
+                  onExecuted={refresh}
+                />
+                <DockerTerminalManagement
+                  key={`terminal:${instance.id}:${targetName(current)}`}
+                  instanceID={instance.id}
+                  containerName={targetName(current)}
+                  running={String(current.State ?? "").toLowerCase() === "running"}
+                  capabilities={capabilities}
+                  onExecuted={refresh}
+                  active={active}
+                />
+              </>
+            )}
+          </>
         ))}
+      </>}
     </section>
   );
 }

@@ -28,6 +28,7 @@ import (
 type managedDatabaseCredential struct {
 	Engine, Username, Password, DataDir string
 	Initialized                         bool
+	Version                             string
 }
 
 func databasePrivateID(instance Instance) string { return "database_" + instance.ID }
@@ -98,12 +99,24 @@ func (e *PrivilegedExecutor) configureDatabase(ctx context.Context, instance *In
 	}
 	switch instance.PluginID {
 	case "postgresql":
+		if err := e.ensurePostgreSQLMaintenanceSettled(ctx, *instance); err != nil {
+			return err
+		}
 		if !credential.Initialized {
 			if err := e.initializePostgres(ctx, *instance, credential); err != nil {
 				return err
 			}
 		}
 		body := fmt.Sprintf("data_directory = %s\nlisten_addresses = %s\nport = %d\nunix_socket_directories = %s\nexternal_pid_file = %s\nlogging_collector = on\nlog_directory = %s\nlog_filename = 'postgresql.log'\npassword_encryption = 'scram-sha-256'\nmax_connections = 100\nshared_buffers = '64MB'\n", pgQuote(instance.Paths.DataDir), pgQuote(bind), port, pgQuote(instance.Paths.RunDir), pgQuote(filepath.Join(instance.Paths.RunDir, "server.pid")), pgQuote(instance.Paths.LogDir))
+		if previous, readErr := readProfileFile(instance.Paths.ConfigDir, "postgresql.conf"); readErr == nil {
+			preserved, preserveErr := preservePostgreSQLMaintenanceRuntimeConfig([]byte(body), previous.Body)
+			if preserveErr != nil {
+				return preserveErr
+			}
+			body = string(preserved)
+		} else if !os.IsNotExist(readErr) {
+			return readErr
+		}
 		if err := writeAtomicRoot(instance.Paths.ConfigDir, "postgresql.conf", []byte(body), 0640, int(e.gid)); err != nil {
 			return err
 		}

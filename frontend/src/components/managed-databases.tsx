@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@astryxdesign/core/Button";
 import { bytes, Capability, fullDate, list } from "@/lib/api";
 import { choiceLabel } from "@/lib/labels";
@@ -13,6 +14,18 @@ import { useResource } from "@/lib/resource-hook";
 import { ActionForm } from "./actions";
 import { DatabaseRecreation } from "./database-recreation";
 import { Pager, ResourceActions, State, Unavailable } from "./resource-ui";
+const PostgreSQLMaintenance = dynamic(
+  () => import("./postgresql-maintenance").then((m) => m.PostgreSQLMaintenance),
+  { ssr: false },
+);
+const DatabaseReplicationManagement = dynamic(
+  () => import("./database-replication").then((m) => m.DatabaseReplicationManagement),
+  { ssr: false },
+);
+const DatabaseTableMaintenance = dynamic(
+  () => import("./database-table-maintenance").then((m) => m.DatabaseTableMaintenance),
+  { ssr: false },
+);
 type Database = {
   database: string;
   username: string;
@@ -270,6 +283,39 @@ export function ManagedDatabaseResources({
           )}
         </>
       ) : (
+        <>
+        {group === "diagnostics" && current.engine.toLowerCase() === "postgresql" && (
+          <PostgreSQLMaintenance
+            key={`${instanceID}:${current.database}`}
+            instanceID={instanceID}
+            database={current.database}
+            capabilities={capabilities}
+            onExecuted={onExecuted}
+            active={active}
+          />
+        )}
+        {group === "diagnostics" && (
+          <DatabaseReplicationManagement
+            key={`database-replication:${instanceID}:${current.database}`}
+            instanceID={instanceID}
+            database={current.database}
+            engine={current.engine}
+            capabilities={capabilities}
+            onExecuted={onExecuted}
+            active={active}
+          />
+        )}
+        {group === "diagnostics" && (
+          <DatabaseTableMaintenance
+            key={`database-table-maintenance:${instanceID}:${current.database}`}
+            instanceID={instanceID}
+            database={current.database}
+            engine={current.engine}
+            capabilities={capabilities}
+            onExecuted={onExecuted}
+            active={active}
+          />
+        )}
         <ResourceActions
           capabilities={capabilities}
           names={(name) =>
@@ -290,6 +336,7 @@ export function ManagedDatabaseResources({
           onSelect={setOperation}
           onExecuted={refresh}
         />
+        </>
       )}
     </section>
   );

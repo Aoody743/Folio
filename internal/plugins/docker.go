@@ -3,6 +3,7 @@ package plugins
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net"
@@ -18,16 +19,17 @@ import (
 )
 
 type DockerInput struct {
-	ID          string            `json:"id"`
-	Command     string            `json:"command"`
-	Name        string            `json:"name,omitempty"`
-	Image       string            `json:"image,omitempty"`
-	MemoryMB    int64             `json:"memory_mb,omitempty"`
-	CPUs        float64           `json:"cpus,omitempty"`
-	Environment map[string]string `json:"environment,omitempty"`
-	Ports       []ContainerPort   `json:"ports,omitempty"`
-	Volume      string            `json:"volume,omitempty"`
-	Tail        int               `json:"tail,omitempty"`
+	ID           string              `json:"id"`
+	RegistryAuth *dockerRegistryAuth `json:"registry_auth,omitempty"`
+	Command      string              `json:"command"`
+	Name         string              `json:"name,omitempty"`
+	Image        string              `json:"image,omitempty"`
+	MemoryMB     int64               `json:"memory_mb,omitempty"`
+	CPUs         float64             `json:"cpus,omitempty"`
+	Environment  map[string]string   `json:"environment,omitempty"`
+	Ports        []ContainerPort     `json:"ports,omitempty"`
+	Volume       string              `json:"volume,omitempty"`
+	Tail         int                 `json:"tail,omitempty"`
 }
 type ContainerPort struct {
 	Port     int    `json:"port"`
@@ -35,13 +37,16 @@ type ContainerPort struct {
 	Protocol string `json:"protocol"`
 }
 
-var dockerImage = regexp.MustCompile(`^[a-z0-9][a-z0-9./_-]{0,180}@sha256:[a-f0-9]{64}$`)
+var dockerImage = regexp.MustCompile(`^(?:[a-z0-9][a-z0-9.-]*:[0-9]{1,5}/)?[a-z0-9][a-z0-9./_-]{0,180}@sha256:[a-f0-9]{64}$`)
 var dockerEnv = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,63}$`)
 
 func (e *PrivilegedExecutor) validateDocker(raw json.RawMessage) error {
 	var input DockerInput
 	if err := parse(raw, &input); err != nil {
 		return err
+	}
+	if input.RegistryAuth != nil && (input.Command != "image_pull" || !validDockerRegistryAuth(input.Image, input.RegistryAuth)) {
+		return failure("invalid_registry", "Registry authentication must match the exact image registry", 400)
 	}
 	if !validInstanceID(input.ID) {
 		return failure("invalid_input", "Invalid managed Docker instance ID", 400)
@@ -98,6 +103,9 @@ func dockerOwnedName(instance Instance, name string) string {
 	return "powerlinux-" + instance.ID + "-" + name
 }
 func (e *PrivilegedExecutor) dockerRequest(ctx context.Context, instance Instance, method, path string, input, output any) error {
+	return e.dockerRequestAuth(ctx, instance, method, path, input, output, nil)
+}
+func (e *PrivilegedExecutor) dockerRequestAuth(ctx context.Context, instance Instance, method, path string, input, output any, auth *dockerRegistryAuth) error {
 	var body io.Reader
 	if input != nil {
 		raw, err := json.Marshal(input)
@@ -118,6 +126,11 @@ func (e *PrivilegedExecutor) dockerRequest(ctx context.Context, instance Instanc
 	if input != nil {
 		request.Header.Set("Content-Type", "application/json")
 	}
+	if auth != nil {
+		encoded, _ := json.Marshal(auth)
+		request.Header.Set("X-Registry-Auth", base64.URLEncoding.EncodeToString(encoded))
+		clear(encoded)
+	}
 	response, err := client.Do(request)
 	if err != nil {
 		return failure("docker_unavailable", "Protected Docker socket is unavailable", 502)
@@ -125,7 +138,7 @@ func (e *PrivilegedExecutor) dockerRequest(ctx context.Context, instance Instanc
 	defer response.Body.Close()
 	data, err := io.ReadAll(io.LimitReader(response.Body, (1<<20)+1))
 	if err != nil {
-		return err
+		return failure("docker_operation_failed", "Docker response could not be read", 502)
 	}
 	if len(data) > 1<<20 {
 		return failure("result_too_large", "Docker response exceeds one MiB; request a smaller page", 413)
@@ -209,7 +222,15 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 			path = "/containers/json" + filtered + "&all=true&limit=100"
 		}
 		if kind == "images" {
-			path = "/images/json"
+			var images []dockerImageInspection
+			if err = e.dockerRequest(ctx, instance, http.MethodGet, "/images/json", nil, &images); err != nil {
+				return nil, err
+			}
+			restored, aliasErr := e.dockerArchiveImageAliases(instance, images)
+			if aliasErr != nil {
+				return nil, aliasErr
+			}
+			return map[string]any{"items": images, "restored_from_archive": restored}, nil
 		}
 		if err = e.dockerRequest(ctx, instance, http.MethodGet, path, nil, &output); err != nil {
 			return nil, err
@@ -217,25 +238,34 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 		return map[string]any{"items": output}, nil
 	case "image_pull":
 		var stream string
-		if err = e.dockerRequest(ctx, instance, http.MethodPost, "/images/create?fromImage="+url.QueryEscape(input.Image), nil, &stream); err != nil {
+		if err = e.dockerRequestAuth(ctx, instance, http.MethodPost, "/images/create?fromImage="+url.QueryEscape(input.Image), nil, &stream, input.RegistryAuth); err != nil {
 			return nil, err
 		}
 		for _, line := range strings.Split(stream, "\n") {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
 			var event map[string]any
-			if json.Unmarshal([]byte(line), &event) == nil && event["error"] != nil {
+			if json.Unmarshal([]byte(line), &event) != nil || event["error"] != nil || event["errorDetail"] != nil {
 				return nil, failure("image_pull_failed", "Registry failed to supply the digest-pinned image", 502)
 			}
 		}
-		var image map[string]any
-		if err = e.dockerRequest(ctx, instance, http.MethodGet, "/images/"+url.PathEscape(input.Image)+"/json", nil, &image); err != nil {
-			return nil, err
+		inspected, inspectErr := e.inspectDockerImage(ctx, instance, input.Image)
+		if inspectErr != nil {
+			return nil, failure("image_pull_failed", "Docker did not confirm the digest-pinned image", 502)
 		}
-		return map[string]any{"image": input.Image, "image_id": image["Id"], "repo_digests": image["RepoDigests"]}, nil
+		return dockerImageView{Image: input.Image, ID: inspected.ID, SizeBytes: inspected.Size}, nil
 	case "image_inspect", "image_remove":
 		return e.dockerImageAction(ctx, instance, input)
 	case "container_create":
-		var image map[string]any
-		if err = e.dockerRequest(ctx, instance, http.MethodGet, "/images/"+url.PathEscape(input.Image)+"/json", nil, &image); err != nil {
+		image, restored, resolveErr := e.resolveDockerImageArchive(ctx, instance, input.Image)
+		if resolveErr != nil {
+			if core.ErrorCode(resolveErr) == "not_found" {
+				return nil, failure("image_not_installed", "Pull or restore the immutable image before creating a container", 412)
+			}
+			return nil, resolveErr
+		}
+		if !dockerImageID.MatchString(image.ID) {
 			return nil, failure("image_not_installed", "Pull and verify the immutable image before creating a container", 412)
 		}
 		env := []string{}
@@ -256,9 +286,20 @@ func (e *PrivilegedExecutor) docker(ctx context.Context, raw json.RawMessage) (a
 			}
 			host["Mounts"] = []map[string]any{{"Type": "volume", "Source": dockerOwnedName(instance, input.Volume), "Target": "/data", "ReadOnly": false}}
 		}
-		request := map[string]any{"Image": input.Image, "Labels": labels, "Env": env, "ExposedPorts": exposed, "HostConfig": host}
+		engineImage := input.Image
+		if restored {
+			engineImage = image.ID
+		}
+		request := map[string]any{"Image": engineImage, "Labels": labels, "Env": env, "ExposedPorts": exposed, "HostConfig": host}
 		if err = e.dockerRequest(ctx, instance, http.MethodPost, "/containers/create?name="+url.QueryEscape(name), request, &output); err != nil {
 			return nil, err
+		}
+		if restored {
+			if response, ok := output.(map[string]any); ok {
+				response["image"] = input.Image
+				response["image_id"] = image.ID
+				response["restored_from_archive"] = true
+			}
 		}
 		return output, nil
 	case "container_get", "container_logs", "container_start", "container_stop", "container_restart", "container_delete":
@@ -340,7 +381,7 @@ func stripDockerFrames(input string) string {
 }
 func (m *Manager) dockerBindings() []core.Binding {
 	result := []core.Binding{}
-	for _, command := range []string{"status", "containers_list", "images_list", "networks_list", "volumes_list", "image_pull", "container_create", "container_get", "container_logs", "container_start", "container_stop", "container_restart", "container_delete", "network_create", "network_delete", "volume_create", "volume_delete"} {
+	for _, command := range []string{"status", "containers_list", "networks_list", "volumes_list", "container_create", "container_get", "container_logs", "container_start", "container_stop", "container_restart", "container_delete", "network_create", "network_delete", "volume_create", "volume_delete"} {
 		read := command == "status" || strings.HasSuffix(command, "_list") || command == "container_get" || command == "container_logs"
 		properties := map[string]any{"id": idSchema()}
 		required := []string{"id"}
@@ -364,11 +405,15 @@ func (m *Manager) dockerBindings() []core.Binding {
 			properties["tail"] = map[string]any{"type": "integer", "minimum": 1, "maximum": 1000}
 		}
 		verb := command
+		resourceResolver := idResource
+		if command == "container_create" {
+			resourceResolver = dockerImageResources
+		}
 		scope := "containers:manage"
 		if read {
 			scope = "containers:read"
 		}
-		result = append(result, m.binding("docker_"+command, "Controlled Docker API over a private Agent-owned socket; no host mounts or privileged containers", scope, read, obj(properties, required...), idResource, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+		result = append(result, m.binding("docker_"+command, "Controlled Docker API over a private Agent-owned socket; no host mounts or privileged containers", scope, read, obj(properties, required...), resourceResolver, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 			var input DockerInput
 			if err := parse(raw, &input); err != nil {
 				return core.ActionResult{}, err
@@ -376,6 +421,13 @@ func (m *Manager) dockerBindings() []core.Binding {
 			input.Command = verb
 			forward, _ := json.Marshal(input)
 			resources := []string{InstanceResource(input.ID)}
+			if verb == "container_create" {
+				var err error
+				resources, err = dockerImageResources(ctx, actor, forward)
+				if err != nil {
+					return core.ActionResult{}, err
+				}
+			}
 			if read || verb == "container_create" {
 				var output any
 				if err := m.agentJSON(ctx, "docker_action", forward, &output); err != nil {

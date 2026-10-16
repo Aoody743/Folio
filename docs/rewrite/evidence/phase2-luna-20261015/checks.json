@@ -1,0 +1,166 @@
+{
+  "date": "2026-10-15",
+  "timezone": "Asia/Singapore",
+  "model": "GPT-6 Luna",
+  "reasoning_effort": "max",
+  "implementation": [
+    "PHP instance FPM error-log bounded reads and owned files-handler session statistics/immutable cleanup preview/durable cleanup task",
+    "Supervisor registered-job stdout/stderr bounded reads and both-stream revision/device/inode-checked durable clear",
+    "Docker Hub exact-reference ownership proof follows official familiar-name rules without merging alias ACL grants",
+    "SQL 45s/MongoDB 60s bounded startup readiness; explicit health_failed recovery rechecks exact protected install/process/credential/protocol identity without replaying initialization"
+  ],
+  "source_checks": {
+    "go_race": {
+      "result": "pass",
+      "tested_packages": 13,
+      "packages_without_tests": 2,
+      "log": "go-race.txt",
+      "scope": "wave2 before architecture-only Nlink cast; PHP targeted race passed afterward"
+    },
+    "go_vet": {
+      "result": "pass"
+    },
+    "frontend_tests": {
+      "result": "pass",
+      "passed": 57,
+      "failed": 0,
+      "log": "frontend-tests.txt"
+    },
+    "typecheck": {
+      "result": "pass",
+      "log": "frontend-typecheck.txt"
+    }
+  },
+  "build_attempts": [
+    {
+      "version": "0.1.0-dev.14",
+      "result": "failed_arm64_compile",
+      "cause": "Linux arm64 Stat_t.Nlink is uint32; php session identity field expects uint64",
+      "fix": "explicit uint64(stat.Nlink) without changing amd64 semantics",
+      "log": "dev14-failed-arm64-build.txt",
+      "release_status": "not_complete_or_published"
+    },
+    {
+      "version": "0.1.0-dev.15",
+      "result": "pass",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "checksums": "dev15-checksums.txt",
+      "build": "dev15-build.txt",
+      "amd64_package_smoke": "dev15-package-smoke.txt",
+      "source_snapshot": "../phase2-dev15-source-snapshot-20261015.json",
+      "native_browser": "separate",
+      "arm64_execution": "not_run"
+    },
+    {
+      "version": "0.1.0-dev.16",
+      "result": "pass",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "build": "dev16-build.txt",
+      "checksums": "dev16-checksums.txt",
+      "amd64_packaged_installer_smoke": {
+        "result": "pass",
+        "log": "dev16-package-smoke.txt"
+      },
+      "frontend": "same frozen source and production export reused from dev.15; copy bound by archive SHA",
+      "native_browser": "tracked separately",
+      "arm64_execution": "not_run"
+    },
+    {
+      "version": "0.1.0-dev.17",
+      "result": "pass",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "build": "dev17-build.txt",
+      "checksums": "dev17-checksums.txt",
+      "amd64_packaged_installer_smoke": {
+        "result": "pass",
+        "log": "dev17-package-smoke.txt"
+      },
+      "frontend": "unchanged dev.15 production export",
+      "arm64_execution": "not_run"
+    },
+    {
+      "version": "0.1.0-dev.18",
+      "result": "pass",
+      "architectures": [
+        "amd64",
+        "arm64"
+      ],
+      "build": "dev18-build.txt",
+      "checksums": "dev18-checksums.txt",
+      "amd64_packaged_installer_smoke": {
+        "result": "pass",
+        "log": "dev18-package-smoke.txt"
+      },
+      "frontend": "unchanged dev.15 production export",
+      "arm64_execution": "not_run"
+    }
+  ],
+  "known_issue_after_build": {
+    "component": "Web migration",
+    "version_reproduced": "0.1.0-dev.13",
+    "description": "real OpenResty forward migration and HTTP succeeded, return migration failed because alphabetic reload ordering tried the destination before releasing the source wildcard listener; rollback kept target revision2 online",
+    "state": "fixed dev.16 full race/vet and packaged installer passed; actual Ubuntu same-site bidirectional migration with static/PHP HTTP and worker/PHP/content preservation passed",
+    "scope": "dev.15 contains the same previously existing migration order; do not label full native migration acceptance passed",
+    "source_fix": "directional forward/recovery reload from protected migration sites, sorted runtime grants/locks preserved, beforeimage validates old source identity",
+    "native_evidence": "../phase2-dev13-native-20261015.json"
+  },
+  "limits": [
+    "PHP maintenance is limited to the runtime-owned instance files-handler session directory; site pools use separate Sites ownership and are not managed here. Unconfigured slow logs are not fabricated.",
+    "Actual Supervisor 4.2.5 Unix XML-RPC semantics were verified in an isolated nonroot daemon, separately from the source Agent fixture; this is not installed-release API/Agent/Supervisor/UI acceptance.",
+    "Full phase-two old-feature/version/platform parity remains incomplete."
+  ],
+  "final_source_checks": {
+    "version": "0.1.0-dev.18",
+    "product_commit": "6bc033fc4",
+    "go_race": {
+      "result": "pass",
+      "tested_packages": 13,
+      "without_tests": 2,
+      "log": "dev18-go-race.txt"
+    },
+    "go_vet": {
+      "result": "pass",
+      "log": "dev18-go-vet.txt"
+    },
+    "frontend": "unchanged 57/57 + typecheck + dev.15 static export",
+    "source_snapshot": "../phase2-dev18-source-snapshot-20261015.json"
+  },
+  "cloud_preview": {
+    "version": "0.1.0-dev.18",
+    "result": "pass",
+    "binary_sha256": "fdff6dff813cd7249f97225f72abb68bfee9492c801e00d47abfe2c7ce8690db",
+    "scope": "ordinary UID, graceful stop and offline data/binary backup, health+session readiness and repeated start; host root Agent/global service not installed"
+  },
+  "php_browser": {
+    "version": "0.1.0-dev.16",
+    "result": "pass_readonly_logs_stats_zero_candidate_preview",
+    "cleanup_task": "not_run",
+    "evidence": "../phase2-dev16-php-browser-20261015.json"
+  },
+  "review_followup": {
+    "version": "0.1.0-dev.17",
+    "finding": "Late-health continuation also must prove active systemd MainPID matches the independently owned process; static unit and protocol checks alone are insufficient",
+    "action": "native continuation paused; strict ActiveState/MainPID verification and negative tests added for next frozen package",
+    "status": "fixed_in_dev18_source_and_package",
+    "fix": "strict bounded systemctl ActiveState/MainPID equals independently proven owned PID; malformed/inactive/mismatch rejected without journal mutation; independent re-review clear",
+    "native_evidence": "../phase2-dev13-native-20261015.json"
+  },
+  "native_final": {
+    "evidence": "../phase2-dev13-native-20261015.json",
+    "installed_release": "0.1.0-dev.18",
+    "debian_mariadb_health_failed_continue": "pass_existing_pid_and_data_preserved",
+    "postgresql_mariadb_sql_source_binary_test": "pass_dev13_test_binary_against_dev18_managed_daemons",
+    "api_custom_password_rotation": "pass_both_engines",
+    "limits": "PG discarded first checker secret: exact-value scan not performed for that discarded checker secret; durable input shape and versions verified. Maria exact-secret scan passed in checked surfaces; see native evidence for exact scope. Other engines/platforms and complete phase-two parity remain incomplete.",
+    "test_configuration_cleanup": "Original Debian HTTPS+Signed-By source restored; Ubuntu original source hashes retained and owned relay overrides/mirrors removed; owned APT forwards/relay stopped; shared pre-existing relay/API forwards preserved. Exact hashes and boundaries in native evidence."
+  }
+}

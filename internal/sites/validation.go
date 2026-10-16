@@ -125,6 +125,19 @@ func validateSite(site *Site) error {
 	if site.PHPInstance != "" && !safeID.MatchString(site.PHPInstance) {
 		return invalid("Invalid PHP instance")
 	}
+	if site.PHP.SlowlogEnabled {
+		if site.PHPInstance == "" {
+			return invalid("PHP slow logging requires an assigned managed PHP runtime")
+		}
+		if site.PHP.SlowlogTimeoutSeconds == 0 {
+			site.PHP.SlowlogTimeoutSeconds = 5
+		}
+		if site.PHP.SlowlogTimeoutSeconds < 1 || site.PHP.SlowlogTimeoutSeconds > 300 {
+			return invalid("PHP slowlog timeout must be between one and 300 seconds")
+		}
+	} else if site.PHP.SlowlogTimeoutSeconds != 0 {
+		return invalid("PHP slowlog timeout requires slow logging to be enabled")
+	}
 	if len(site.Domains) < 1 || len(site.Domains) > 100 {
 		return invalid("Website needs between one and 100 domains")
 	}

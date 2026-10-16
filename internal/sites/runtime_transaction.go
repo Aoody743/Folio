@@ -26,6 +26,17 @@ func (e *AgentExecutor) mutationRuntimes(operation string, in request) ([]string
 	if operation == "site_php_cli_set" {
 		return []string{in.ID}, nil
 	}
+	switch operation {
+	case "site_php_slowlog_read", "site_php_session_stats", "site_php_session_preview", "site_php_session_cleanup":
+		site, err := e.get(in.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !safeID.MatchString(site.PHPInstance) {
+			return nil, failure("php_runtime_required", "Website has no managed PHP runtime", 412)
+		}
+		return []string{site.PHPInstance}, nil
+	}
 	if operation == "certificate_import" {
 		all, err := e.list()
 		if err != nil {

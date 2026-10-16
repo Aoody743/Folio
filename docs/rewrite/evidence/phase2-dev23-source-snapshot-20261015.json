@@ -1,0 +1,12 @@
+{
+  "version": "0.1.0-dev.23",
+  "source_commit": "3e74660d6fb4da2c5300619e8dd0c3cada7a2992",
+  "working_tree_dirty_at_build": false,
+  "changed_source_files": {
+    "internal/plugins/database_postgresql_access.go": "95416ea4a263f7e845f5359df7d251260817d5cc2d2d3436102823eb7ac9a33a",
+    "internal/plugins/database_postgresql_maintenance_test.go": "93f0803a102673233b775e4af38416f609398ec15045cf42d976bde47fa43d5e",
+    "internal/plugins/database_postgresql_slowlog.go": "883b302d04567df57ff26b54f319793fea45cc2f3cc6e8e47b59dad5259bafff",
+    "internal/plugins/runtime_dependencies.go": "df9efe9754234e7a6bffadfd6dd3ab493c64e3cd9e9d417588b18a0f50b92c6a",
+    "internal/plugins/runtime_dependencies_guard_test.go": "889990ebcfdd4321e8acb0cd374050f2f2d7a6fb1fcf758567fefc2e72e8296d"
+  }
+}

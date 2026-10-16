@@ -265,6 +265,9 @@ func (e *PrivilegedExecutor) configureWithInstallJournal(ctx context.Context, in
 
 func renderDefaultPHPPool(instance Instance, worker, group string, health bool) string {
 	body := fmt.Sprintf("[powerlinux-default]\nuser = %s\ngroup = %s\nlisten = %s\nlisten.owner = %s\nlisten.group = %s\nlisten.mode = 0660\npm = ondemand\npm.max_children = %d\npm.process_idle_timeout = 10s\n", worker, group, filepath.Join(instance.Paths.RunDir, "fpm.sock"), worker, group, setting(instance.Config, "max_children", 5))
+	if enabled, ok := instance.Config["slowlog_enabled"].(bool); ok && enabled {
+		body += fmt.Sprintf("request_slowlog_timeout = %ds\nslowlog = %s\n", setting(instance.Config, "slowlog_timeout_seconds", 5), filepath.Join(instance.Paths.LogDir, "fpm-slow.log"))
+	}
 	if health {
 		body += "ping.path = " + phpHealthPath + "\nping.response = " + phpHealthResponse + "\n"
 	}
@@ -474,25 +477,86 @@ func (e *PrivilegedExecutor) controlLocked(ctx context.Context, input ServiceInp
 			return nil, err
 		}
 	}
+	var health Health
 	if input.Command == "start" || input.Command == "reload" {
-		deadline := time.Now().Add(8 * time.Second)
-		for {
-			health := e.probe(ctx, instance)
-			if health.Status == "healthy" {
-				break
-			}
-			if time.Now().After(deadline) {
-				return nil, failure("health_check_failed", "Managed service did not respond to its protocol health check", 502)
-			}
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(100 * time.Millisecond):
-			}
+		var err error
+		health, err = waitForRuntimeReadiness(ctx, runtimeReadinessBudget(instance), runtimeProbeBudget(instance), 100*time.Millisecond, func(probeCtx context.Context) Health {
+			return e.probe(probeCtx, instance)
+		})
+		if err != nil {
+			return nil, err
 		}
 	}
-	return map[string]any{"id": input.ID, "command": input.Command, "exit_code": 0, "health": e.probe(ctx, instance)}, nil
+	if health.Status != "healthy" {
+		health = e.probe(ctx, instance)
+	}
+	return map[string]any{"id": input.ID, "command": input.Command, "exit_code": 0, "health": health}, nil
 }
+
+func runtimeReadinessBudget(instance Instance) time.Duration {
+	switch instance.PluginID {
+	case "mysql", "mysql-community", "mariadb", "postgresql":
+		return 45 * time.Second
+	case "mongodb":
+		return 60 * time.Second
+	default:
+		return 8 * time.Second
+	}
+}
+
+func runtimeProbeBudget(instance Instance) time.Duration {
+	switch instance.PluginID {
+	case "mysql", "mysql-community", "mariadb", "postgresql", "mongodb":
+		return 3 * time.Second
+	default:
+		return 500 * time.Millisecond
+	}
+}
+
+func waitForRuntimeReadiness(ctx context.Context, budget, probeBudget, pollInterval time.Duration, probe func(context.Context) Health) (Health, error) {
+	if budget <= 0 || probeBudget <= 0 || pollInterval <= 0 || probe == nil {
+		return Health{}, failure("invalid_input", "Runtime readiness policy is invalid", 500)
+	}
+	deadline := time.Now().Add(budget)
+	for {
+		if err := ctx.Err(); err != nil {
+			return Health{}, err
+		}
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return Health{}, failure("health_check_failed", "Managed service did not respond to its protocol health check", 502)
+		}
+		probeTimeout := min(remaining, probeBudget)
+		probeCtx, cancel := context.WithTimeout(ctx, probeTimeout)
+		health := probe(probeCtx)
+		probeErr := probeCtx.Err()
+		cancel()
+		if err := ctx.Err(); err != nil {
+			return Health{}, err
+		}
+		if health.Status == "healthy" && probeErr == nil && time.Until(deadline) > 0 {
+			return health, nil
+		}
+		remaining = time.Until(deadline)
+		if remaining <= 0 {
+			return Health{}, failure("health_check_failed", "Managed service did not respond to its protocol health check", 502)
+		}
+		wait := min(remaining, pollInterval)
+		timer := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			return Health{}, ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
 func ownedProcessID(instance Instance) (int, error) {
 	data, err := os.ReadFile(filepath.Join(instance.Paths.RunDir, "server.pid"))
 	if err != nil {
@@ -501,6 +565,12 @@ func ownedProcessID(instance Instance) (int, error) {
 	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil || pid < 2 {
 		return 0, failure("ownership_invalid", "Managed PID file is invalid", 412)
+	}
+	if instance.PluginID == "supervisor" {
+		if err = verifySupervisorProcessIdentity(instance, pid); err != nil {
+			return 0, err
+		}
+		return pid, nil
 	}
 	exe, err := os.Readlink(filepath.Join("/proc", strconv.Itoa(pid), "exe"))
 	if err != nil {

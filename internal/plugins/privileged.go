@@ -46,34 +46,35 @@ type PrivilegedOptions struct {
 	HTTPClient *http.Client
 }
 type PrivilegedExecutor struct {
-	config                 PrivilegedConfig
-	catalog                *Catalog
-	artifacts              *artifactStore
-	packages               *packageBackend
-	unitDir                string
-	receiptSaveHook        func(string, Instance) error
-	installJournalSaveHook func(context.Context, installJournal, int64) error
-	installProofHook       func(context.Context, installJournal) error
-	installHealthHook      func(context.Context, Instance) Health
-	installEnableHook      func(context.Context, *installJournal) error
-	installControlHook     func(context.Context, ServiceInput, Instance) (map[string]any, error)
-	installUnitCreateHook  func(string, string, []byte) error
-	systemdReloadHook      func(context.Context) error
-	uid, gid               uint32
-	buildUID, buildGID     uint32
-	buildSlot              chan struct{}
-	mu                     sync.Mutex
-	locks                  map[string]*instanceMutex
-	healthMu               sync.Mutex
-	healthCache            map[string]cachedHealth
-	privateCipher          cipher.AEAD
-	profileControl         func(context.Context, Instance, string) error // private trusted test dependency
+	config                    PrivilegedConfig
+	catalog                   *Catalog
+	artifacts                 *artifactStore
+	packages                  *packageBackend
+	unitDir                   string
+	receiptSaveHook           func(string, Instance) error
+	installJournalSaveHook    func(context.Context, installJournal, int64) error
+	installProofHook          func(context.Context, installJournal) error
+	installHealthHook         func(context.Context, Instance) Health
+	installEnableHook         func(context.Context, *installJournal) error
+	installControlHook        func(context.Context, ServiceInput, Instance) (map[string]any, error)
+	installSystemdMainPIDHook func(context.Context, string) (agent.Result, error)
+	installUnitCreateHook     func(string, string, []byte) error
+	systemdReloadHook         func(context.Context) error
+	uid, gid                  uint32
+	buildUID, buildGID        uint32
+	buildSlot                 chan struct{}
+	mu                        sync.Mutex
+	locks                     map[string]*instanceMutex
+	healthMu                  sync.Mutex
+	healthCache               map[string]cachedHealth
+	privateCipher             cipher.AEAD
+	profileControl            func(context.Context, Instance, string) error // private trusted test dependency
 }
 
 var validAccount = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}\$?$`)
 
 func Operations() []string {
-	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "utility_action", "docker_action", "backup_artifact", "database_action", "database_artifact"}
+	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "php_maintenance", "utility_action", "supervisor_log_action", "docker_action", "docker_exec", "docker_exec_status", "docker_image_archive_action", "docker_image_archive_artifact", "backup_artifact", "database_action", "database_admin_action", "database_binlog_action", "database_replication_action", "database_table_maintenance_action", "database_postgresql_maintenance_action", "database_artifact"}
 }
 
 // ValidatePrivilegedConfig performs read-only policy validation. In particular
@@ -376,12 +377,34 @@ func (e *PrivilegedExecutor) Validate(request agent.Request) error {
 		return e.validateAutostart(request.Input)
 	case "php_action":
 		return e.validatePHP(request.Input)
+	case "php_maintenance":
+		return e.ValidatePHPMaintenance(request.Input)
 	case "utility_action":
 		return e.validateUtility(request.Input)
+	case "supervisor_log_action":
+		return e.validateSupervisorLog(request.Input)
 	case "docker_action":
 		return e.validateDocker(request.Input)
+	case "docker_exec":
+		return e.validateDockerExec(request.Input)
+	case "docker_exec_status":
+		return e.validateDockerExecStatus(request.Input)
+	case "docker_image_archive_action":
+		return e.validateDockerArchiveAction(request.Input)
+	case "docker_image_archive_artifact":
+		return validateDockerArchiveArtifact(request.Input)
 	case "database_action":
 		return e.validateDatabase(request.Input)
+	case "database_admin_action":
+		return e.validateDatabaseAdmin(request.Input)
+	case "database_binlog_action":
+		return e.validateDatabaseBinlog(request.Input)
+	case "database_replication_action":
+		return e.validateDatabaseReplication(request.Input)
+	case "database_table_maintenance_action":
+		return e.validateDatabaseTableMaintenance(request.Input)
+	case "database_postgresql_maintenance_action":
+		return e.ValidatePostgreSQLMaintenance(request.Input)
 	case "database_artifact":
 		return e.validateDatabaseArtifact(request.Input)
 	case "backup_artifact":
@@ -455,15 +478,35 @@ func (e *PrivilegedExecutor) Run(ctx context.Context, request agent.Request) (re
 		output, err = e.control(ctx, input)
 	case "php_action":
 		output, err = e.php(ctx, request.Input)
+	case "php_maintenance":
+		output, err = e.RunPHPMaintenance(ctx, request.Input)
 	case "plugin_autostart":
 		output, err = e.autostart(ctx, request.Input)
 	case "utility_action":
 		output, err = e.utility(ctx, request.Input)
+	case "supervisor_log_action":
+		output, err = e.supervisorLog(ctx, request.Input)
 	case "docker_action":
 		output, err = e.docker(ctx, request.Input)
+	case "docker_exec":
+		output, err = e.dockerExec(ctx, request.Input)
+	case "docker_exec_status":
+		output, err = e.dockerExecStatus(ctx, request.Input)
+	case "docker_image_archive_action":
+		output, err = e.dockerArchiveAction(ctx, request)
 	case "database_action":
 		output, err = e.database(ctx, request.Input)
-	case "backup_artifact", "database_artifact":
+	case "database_admin_action":
+		output, err = e.databaseAdmin(ctx, request.Input)
+	case "database_binlog_action":
+		output, err = e.databaseBinlog(ctx, request.Input)
+	case "database_replication_action":
+		output, err = e.databaseReplication(ctx, request.Input)
+	case "database_table_maintenance_action":
+		output, err = e.databaseTableMaintenance(ctx, request)
+	case "database_postgresql_maintenance_action":
+		output, err = e.RunPostgreSQLMaintenance(ctx, request.Input)
+	case "backup_artifact", "database_artifact", "docker_image_archive_artifact":
 		return result, failure("stream_required", "Backup artifacts must use the authenticated streaming transport", 400)
 	}
 	if err != nil {

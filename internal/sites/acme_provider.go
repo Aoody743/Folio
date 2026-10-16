@@ -20,10 +20,10 @@ type acmePublicInput struct {
 
 func dnsResource(id string) string { return "dns:" + id }
 func (p *Provider) acmeBindings() []core.Binding {
-	fields := map[string]any{"id": idField(), "expected_revision": number(0, 1<<30), "site_id": text(96), "domains": array(text(253), 100), "email": text(254), "challenge": choice("http_webroot", "manual_dns", "dns"), "provider": text(96), "credential_id": text(96), "credential_revision": number(0, 1<<30), "server": text(2048), "force": boolean(), "dns_alias": text(253)}
+	fields := map[string]any{"id": idField(), "expected_revision": number(0, 1<<30), "site_id": text(96), "domains": array(text(253), 100), "email": text(254), "challenge": choice("http_webroot", "manual_http", "manual_dns", "dns"), "provider": text(96), "credential_id": text(96), "credential_revision": number(0, 1<<30), "server": text(2048), "force": boolean(), "dns_alias": text(253)}
 	bindings := []core.Binding{}
 	for _, name := range []string{"certificates_acme_issue", "certificates_acme_renew"} {
-		bindings = append(bindings, core.Binding{Action: core.Action{Name: name, Description: "Issue or renew an actual ACME certificate; manual DNS returns pending records until explicit confirmation", Scope: "certificates:write", Task: true, InputSchema: object(fields, "id", "expected_revision")}, Resources: p.acmeResources, Execute: func(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+		bindings = append(bindings, core.Binding{Action: core.Action{Name: name, Description: "Issue or renew an actual ACME certificate; manual HTTP and DNS return upload instructions until explicit confirmation", Scope: "certificates:write", Task: true, InputSchema: object(fields, "id", "expected_revision")}, Resources: p.acmeResources, Execute: func(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 			return p.submitACME(ctx, a, name, raw)
 		}})
 	}
@@ -35,7 +35,7 @@ func (p *Provider) acmeBindings() []core.Binding {
 		if !spec.read {
 			resources = p.acmeRecoveryResources
 		}
-		bindings = append(bindings, core.Binding{Action: core.Action{Name: spec.name, Description: "Inspect, confirm or cancel a persisted DNS ACME order without exposing account or private keys", Scope: spec.scope, ReadOnly: spec.read, Task: spec.task, InputSchema: object(map[string]any{"id": idField()}, "id")}, Resources: resources, Execute: func(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+		bindings = append(bindings, core.Binding{Action: core.Action{Name: spec.name, Description: "Inspect, confirm or cancel a persisted manual ACME order without exposing account or private keys", Scope: spec.scope, ReadOnly: spec.read, Task: spec.task, InputSchema: object(map[string]any{"id": idField()}, "id")}, Resources: resources, Execute: func(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 			var in struct {
 				ID string `json:"id"`
 			}

@@ -1,11 +1,16 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@astryxdesign/core/Button";
 import { Capability, list } from "@/lib/api";
 import { useResource } from "@/lib/resource-hook";
 import { projectInput, Schema } from "@/lib/schema";
 import { ActionForm } from "./actions";
 import { State, Unavailable } from "./resource-ui";
+const PHPExtensionPackages = dynamic(
+  () => import("./php-extension-packages").then((m) => m.PHPExtensionPackages),
+  { ssr: false },
+);
 type Configuration = {
   id: string;
   revision: number;
@@ -148,6 +153,14 @@ export function PHPResources({
           ) : (
             <p role="status">正在读取实际扩展…</p>
           )}
+          <PHPExtensionPackages
+            key={`packages:${id}`}
+            id={id}
+            currentRevision={modules.data?.revision ?? configuration.data?.revision}
+            capabilities={capabilities}
+            onExecuted={refresh}
+            active={active}
+          />
         </>
       ) : (
         <>

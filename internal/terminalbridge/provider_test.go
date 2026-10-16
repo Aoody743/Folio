@@ -55,6 +55,7 @@ func setup(t *testing.T) fixture {
 	if err = service.RegisterProvider(bridge); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(bridge.Close)
 	return fixture{service, admin, manager, bridge}
 }
 func run(t *testing.T, f fixture, a core.Actor, name string, in any) any {

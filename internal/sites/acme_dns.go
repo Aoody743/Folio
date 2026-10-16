@@ -57,7 +57,7 @@ func dnsAdapters() []dnsAdapter {
 	return []dnsAdapter{
 		row("dns_cf", "Cloudflare", "cloudflare", map[string]string{"CF_Key": "CLOUDFLARE_API_KEY", "CF_Email": "CLOUDFLARE_EMAIL", "CF_Token": "CLOUDFLARE_DNS_API_TOKEN", "CF_Zone_API_Token": "CLOUDFLARE_ZONE_API_TOKEN"}, []string{"CF_Key", "CF_Email"}, []string{"CF_Token"}),
 		row("dns_dp", "DNSPod China", "dnspod", map[string]string{"DP_Id": "", "DP_Key": "DNSPOD_API_KEY"}, []string{"DP_Id", "DP_Key"}),
-		unavailable("dns_dpi", "DNSPod International", "The China DNSPod client is not an international API adapter; a dedicated HTTPS implementation is still required.", "DPI_Id", "DPI_Key"),
+		native("dns_dpi", "DNSPod International"),
 		row("dns_gd", "GoDaddy", "godaddy", map[string]string{"GD_Key": "GODADDY_API_KEY", "GD_Secret": "GODADDY_API_SECRET"}, []string{"GD_Key", "GD_Secret"}),
 		row("dns_pdns", "PowerDNS", "pdns", map[string]string{"PDNS_Url": "PDNS_API_URL", "PDNS_ServerId": "PDNS_SERVER_NAME", "PDNS_Token": "PDNS_API_KEY", "PDNS_Ttl": "PDNS_TTL"}, []string{"PDNS_Url", "PDNS_ServerId", "PDNS_Token"}),
 		row("dns_lua", "LuaDNS", "luadns", map[string]string{"LUA_Key": "LUADNS_API_TOKEN", "LUA_Email": "LUADNS_API_USERNAME"}, []string{"LUA_Key", "LUA_Email"}),
@@ -154,6 +154,15 @@ func ValidateDNSCredentials(provider string, credentials map[string]string) erro
 	}
 	if !valid {
 		return invalid("Required DNS provider credential fields are missing")
+	}
+	if provider == "dns_dpi" {
+		if !legacyDNSNumericID.MatchString(credentials["DPI_Id"]) || strings.Contains(credentials["DPI_Key"], ",") {
+			return invalid("DNSPod International credential ID/token format is invalid")
+		}
+		field := credentials["DPI_AuthField"]
+		if field != "" && field != "login_token" && field != "user_token" {
+			return invalid("DNSPod International authentication field must be login_token or user_token")
+		}
 	}
 	if provider == "dns_ispconfig" {
 		u, err := url.Parse(credentials["ISPC_Api"])

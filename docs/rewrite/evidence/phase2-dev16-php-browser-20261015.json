@@ -1,0 +1,49 @@
+{
+  "run_date": "2026-10-15",
+  "environment": "Ubuntu",
+  "package": {
+    "version": "0.1.0-dev.16",
+    "version_verified_against_healthz": true,
+    "binary_sha256_expected_from_release": "e06060f3103b7c59278a041af1adfb3bcc579abe87a3ba74323396692071ae52",
+    "binary_sha256_observed_during_browser_run": null
+  },
+  "target": {
+    "plugin_id": "php-apt",
+    "instance_id": "php-apt-nativeqa"
+  },
+  "browser": {
+    "engine": "Chromium",
+    "actual_browser": true,
+    "playwright": true,
+    "route_interception": false,
+    "closed_after_run": true,
+    "remaining_playwright_chromium_processes": 0,
+    "temporary_fixture_removed": true
+  },
+  "actions": {
+    "php_maintenance_log_read": {
+      "status": "passed",
+      "stream": "fpm_error",
+      "rendered_tail_lines": 100,
+      "log_content_recorded": false
+    },
+    "php_maintenance_session_stats": {
+      "status": "passed",
+      "aggregate_counts_recorded": false
+    },
+    "php_maintenance_session_preview": {
+      "status": "passed",
+      "rendered_candidate_count": 0
+    }
+  },
+  "cleanup": {
+    "status": "unrun_no_expired_candidates",
+    "cleanup_action_submitted": false,
+    "expiry_rejection_test": "unrun_not_needed_for_this_readonly_window"
+  },
+  "validation": {
+    "harness_exit_code": 0,
+    "page_errors": 0,
+    "py_compile": "passed"
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-15",
+  "version": "0.1.0-dev.22",
+  "source_commit": "362d2d63b2415372bc4928c91e86bc0ab061d580",
+  "stage_2_complete": false,
+  "checks": {
+    "full_go_race": {
+      "result": "PASS",
+      "tested_packages": 14,
+      "no_test_packages": 2,
+      "scope": "Final frozen source including clock-window and orphan-journal fixes; ordinary cloud UID1000. Unchanged packages may use Go test cache."
+    },
+    "go_vet": "PASS",
+    "frontend_tests": {
+      "result": "PASS",
+      "tests": 80
+    },
+    "typescript": "PASS",
+    "next_static_export": "PASS",
+    "installer_regression": {
+      "result": "PASS",
+      "tests": 31,
+      "skipped": 2
+    },
+    "linux_amd64_and_arm64_build": "PASS",
+    "actual_amd64_installer_private_prefix_smoke": "PASS",
+    "debian_root_source_fixtures": {
+      "result": "PASS",
+      "top_level_tests": 15,
+      "test_binary_sha256": "a15314b2202a9f1b15493795a1a0e0f18f1b2cfae6d494b38af23b265463b785",
+      "scope": "Isolated root test executable on Debian dev21 guest; does not replace installed-package/native runtime acceptance."
+    }
+  },
+  "logs": {
+    "phase2-dev22-full-race-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-full-race-20261015.log",
+      "sha256": "fdf3cc638f6cf85a36782ad7f0e28482df038c82a7a490f313e06f32c6dfaa56"
+    },
+    "phase2-dev22-vet-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-vet-20261015.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "phase2-dev22-build-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-build-20261015.log",
+      "sha256": "87d554b28900c88220986571a120c3ba9c56a59eb3b8c090f1234ea220f6a7fc"
+    },
+    "phase2-dev22-package-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-package-20261015.log",
+      "sha256": "2fbfa16a397aa1ba41fbf7ce6e59d21a745fed31a204966ee64efc2f2cb9e16c"
+    },
+    "phase2-dev22-frontend-tests.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-frontend-tests.log",
+      "sha256": "1d4f86f411b56576d2f941b9328b9bddf9e566617cc2535468127fa1af45650c"
+    },
+    "phase2-dev22-frontend-typecheck.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-frontend-typecheck.log",
+      "sha256": "e8824a3ab3ee9cecfe09018f0e06ef0c70379d4dca5749fa19705e85ad5508de"
+    },
+    "phase2-dev22-frontend-build.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-frontend-build.log",
+      "sha256": "088ab6c0a035abe1b110ecee82a5d6be883432de07900720d9f691494b58e8c5"
+    },
+    "phase2-dev22-installer-tests-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-installer-tests-20261015.log",
+      "sha256": "8ec2f48e4a46a66eb7720b072a382d509949b2aa99ab84a0edb4467b5713b902"
+    },
+    "phase2-dev22-root-fixture-build-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-root-fixture-build-20261015.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "phase2-dev22-root-fixtures-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev22-root-fixtures-20261015.log",
+      "sha256": "8da5b133d3315f74ea6e43896f4e1a01896dca660e8549b4d5827b66d5862b66"
+    }
+  },
+  "archive_sha256": {
+    "linux-amd64": "eba577b1f8d200e91cedcd8e52262f26ae8178040a1d9884f22b01aad198fe8c",
+    "linux-arm64": "e701cad01a3d7153cc3f5fad88b5f93047c44400f08468dd606e428ebe22414c"
+  },
+  "binary_sha256": {
+    "amd64": "fdecbabc3606f42117a5dd8d7f04a5860a6bfadc7a302034095d8a1eeac31314",
+    "arm64": "ec8cd56d1f70338dc0fdc25a4bd6911735d3365a97a68c2f4f577fdc29675308"
+  },
+  "implemented": [
+    "Managed MySQL/MariaDB table inventory and revision/schema-pinned check/repair/optimize tasks, bounded driver results, one-shot outcome inspection without automatic replay",
+    "Replication UI with server-advertised recovery choices, exact revisions and explicit dedicated-target confirmations",
+    "PHP restart recovery preserves only authenticated valid pending intents, exposes scoped read-only discovery and explicit original-plan replay in UI; corrupt and orphan state blocks mutations",
+    "PHP plan timestamps use one UTC instant with bounded compatibility tolerance for existing records",
+    "Task observation authorization denial stops polling and remains unknown; manual reread can later notify a real terminal result",
+    "APT install failures expose fixed diagnostic classes and real nonzero exit codes without raw command output or paths",
+    "Supervisor root fixture now reuses production root initialization; real dev21 Supervisor API/MCP success remains separately versioned"
+  ],
+  "known_limits": [
+    "Subsequent actual dev21 PostgreSQL QA found slowlog verification before reload and inability to restore an originally unconfigured block; the same code is present in dev22. The owned QA journal is pending, main config bytes equal baseline, and dev23 repair is in progress. No manual journal/config cleanup.",
+    "Phase 2 incomplete; rsync/lsyncd policy revocation and lifecycle integration are still isolated under review; admin app deployment is not yet integrated",
+    "Table maintenance and replication actual MySQL/MariaDB CLI/server acceptance and browser/MCP matrix remain incomplete",
+    "PHP distro extension installation on a real APT/FPM runtime remains unrun; source/yum recipes and physical package removal unavailable",
+    "PostgreSQL remote access requires managed TLS; only loopback CIDRs supported in current release",
+    "Dev22 root fixtures passed; installed dev22 Debian upgrade/runtime results are still being collected; Ubuntu remains dev21 due limited backup headroom",
+    "PureFTP real login enforcement remains unrun and account read-only unsupported",
+    "Production SSL/SSH deferred by user; BaoTa server untouched",
+    "ARM64 execution unrun; cross-compilation is not native acceptance"
+  ],
+  "native_prior_evidence": "docs/rewrite/evidence/phase2-native-dev21-20261015.json"
+}

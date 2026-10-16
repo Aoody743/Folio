@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-15",
+  "scope": "Sanitized real Linux QA across dev13, dev15, dev16, and dev17",
+  "status": "completed",
+  "artifacts": {
+    "dev13": {
+      "archive_sha256": "da1cdf0f3224e74d320200f551b7fba5eb1583a50e21cf7931ffec529e8e7783",
+      "binary_sha256": "ca920ba1038766aa552e35714e4378031a9ca273d0ae92cfc2dccef7d8486e69"
+    },
+    "native_test_binary": {
+      "sha256": "1b6eac1dd5f01dbe50835beab4f764b297201c468edda99234e4ebf12979ec48"
+    },
+    "dev15_debian_upgrade": {
+      "archive_sha256": "79727f827181240d122c10b87e564f2ca677e9433adfdc999e3223d2534b8b7c",
+      "binary_sha256": "a61de942d4b29615f1e7d8a52d895a7b387da69fdb3cd7a470be547414b7e5bb",
+      "installer_sha256": "4c1113dea4ee629c952b1a3ae5d1cd909aded76918549c437dda6daf93a5cc32"
+    },
+    "dev16_ubuntu_upgrade": {
+      "archive_sha256": "6fafa40b17bafe69ac94b7e7bbae1f6d7dabbee920410c1570c31ca10ffcd106",
+      "binary_sha256": "e06060f3103b7c59278a041af1adfb3bcc579abe87a3ba74323396692071ae52",
+      "installer_sha256": "4c1113dea4ee629c952b1a3ae5d1cd909aded76918549c437dda6daf93a5cc32"
+    },
+    "dev17_debian_upgrade": {
+      "archive_sha256": "f482ca9a176f316a98e3b397da88abfdc605ad99650cd32be4230d272ab8997a",
+      "binary_sha256": "c97b54e11512f3fc1b242b69d20735655832602019637bef08877a1931de70f0",
+      "installer_sha256": "4c1113dea4ee629c952b1a3ae5d1cd909aded76918549c437dda6daf93a5cc32"
+    },
+    "dev18_debian_upgrade": {
+      "archive_sha256": "78cb5d9b20ee63d1fb24cc2c58c2e8aa393ee9d67b4ee7edf68c48960c21224e",
+      "binary_sha256": "fdff6dff813cd7249f97225f72abb68bfee9492c801e00d47abfe2c7ce8690db",
+      "installer_sha256": "4c1113dea4ee629c952b1a3ae5d1cd909aded76918549c437dda6daf93a5cc32"
+    }
+  },
+  "repository_validation": {
+    "debian": {
+      "signed_apt_update": "passed using a TLS-verified official HTTPS upstream relay; Debian archive signatures remained enforced by Signed-By",
+      "source_routing_changed_temporarily": true,
+      "temporary_route_effect": "Only the Debian URI endpoints were temporarily directed to the loopback relay; Signed-By remained /usr/share/keyrings/debian-archive-keyring.pgp.",
+      "original_source_restored": true,
+      "original_source_sha256": "1aea522ae24da35f8b02e3d56288df9c4adf67d9a51baac3d2eabacb46391ce3",
+      "relay_checkpoint_source_sha256": "46031522b860d3e5c55b520300c76a96ca32fe00be3655430af167f858b21804",
+      "archive_keyring_sha256": "506b815cbb32d9b6066b4a2aa524071e071761e7f7e68c3ac74f3061ba852017",
+      "temporary_apt_tunnel_and_relay_removed": true,
+      "upstream_https_certificate_verification": true,
+      "guest_signature_verification": true
+    },
+    "signature_or_tls_bypass": false,
+    "ubuntu": {
+      "pinned_openresty_package_plan": "passed",
+      "signed_repository_metadata": "passed",
+      "original_source_files_preserved": true,
+      "original_source_sha256": {
+        "/etc/apt/sources.list.d/ubuntu.sources": "e93b42f6049cd24174273060f4a33416ad165bf3a3b283626c4e2b93b37700d3",
+        "/etc/apt/sources.list.d/powerlinux-openresty-qa.list": "dfdef5b2c4ec89bb2446e1cb6c0f2f6489339685b69e9559ad78c62b7df6e5ed"
+      },
+      "archive_keyring_sha256": "80a36b0a6de2f69f49d2df75ef473ccde121e9e190b9ea01d20a4f63778d5c31",
+      "temporary_apt_override_and_mirror_copies_removed": true,
+      "upstream_https_certificate_verification": true,
+      "guest_signature_verification": true
+    }
+  },
+  "native_recovery_systemd_test": {
+    "name": "TestQAInstallRecoveryActualSystemd",
+    "result": "passed",
+    "duration_seconds": 32.37,
+    "test_binary_sha256": "1b6eac1dd5f01dbe50835beab4f764b297201c468edda99234e4ebf12979ec48",
+    "system_redis_modified": false,
+    "test_units_or_data_left_after_test": false,
+    "marker_removed_after_test": true
+  },
+  "debian_sql_admin_test": {
+    "name": "TestNativeDatabaseAdminSQLCommitCancellationAndExplicitRecovery",
+    "result": "passed",
+    "postgresql_instance": {
+      "id": "postgresql-p2adminqa",
+      "port": 16432,
+      "managed": true,
+      "running_and_healthy": true
+    },
+    "mariadb_install_attempt": {
+      "id": "mariadb-p2adminqa",
+      "port": 16306,
+      "task_id": "aa94446e034fb482665b678f22c89354",
+      "task_state": "failed",
+      "failure_code": "health_check_failed",
+      "recovery_checkpoint": "health_failed",
+      "recovery_revision": 11,
+      "managed_receipt_present": false,
+      "available_recovery_action": "stop_preserve",
+      "service_process_left_untouched": true,
+      "database_data_and_recovery_journal_preserved": true
+    },
+    "diagnosis": {
+      "kernel_oom_evidence": false,
+      "configured_loopback_port": 16306,
+      "systemd_service_start_utc": "2026-10-15T08:46:30Z",
+      "mariadb_log_ready_utc": "2026-10-15T08:46:39Z",
+      "observed_startup_seconds": 9,
+      "dev15_health_wait_seconds": 8,
+      "interpretation": "The real daemon became ready just after the bounded install health wait; no receipt was committed."
+    },
+    "native_test_run": "passed against both active managed receipts on actual daemons; source test binary remains dev13 while installed API and Agent are dev18.",
+    "test_binary_version": "dev13",
+    "duration_seconds": 3.34,
+    "subtests": {
+      "postgresql-p2adminqa": {
+        "result": "passed",
+        "duration_seconds": 2.69,
+        "checks": "actual SQL custom rotation, pre-SQL apply, post-SQL cancellation, filesystem save failure, and restart recovery"
+      },
+      "mariadb-p2adminqa": {
+        "result": "passed",
+        "duration_seconds": 0.62,
+        "checks": "actual SQL custom rotation, pre-SQL apply, post-SQL cancellation, filesystem save failure, and restart recovery"
+      }
+    },
+    "api_credential_rotation": {
+      "actor_scope": "databases:credentials",
+      "actor_scope_verified": true,
+      "agent_policy_modified": false,
+      "api_password_version_is_separate_from_agent_current_credential_version": true,
+      "postgresql": {
+        "task_id": "95de97c03765fd1f1baab4a4383a7614",
+        "operation": "database_admin_rotate",
+        "resource_id": "db:postgresql-p2adminqa",
+        "task_state": "succeeded",
+        "task_input_field_names": [
+          "instance_id",
+          "current_credential_version",
+          "password_version"
+        ],
+        "plaintext_password_field_present": false,
+        "credential_version_advanced": true,
+        "task_result_matches_fresh_inspect": true,
+        "health_after_rotation": "healthy",
+        "exact_candidate_secret_scan": "not_available; the test helper discarded its in-memory candidate after an initial checker assertion. The candidate was not printed or stored in evidence."
+      },
+      "mariadb": {
+        "task_id": "1111657654a9b15eef2139a4b7e4b61b",
+        "operation": "database_admin_rotate",
+        "resource_id": "db:mariadb-p2adminqa",
+        "task_state": "succeeded",
+        "task_input_field_names": [
+          "instance_id",
+          "current_credential_version",
+          "password_version"
+        ],
+        "plaintext_password_field_present": false,
+        "credential_version_advanced": true,
+        "task_result_matches_fresh_inspect": true,
+        "health_after_rotation": "healthy",
+        "exact_candidate_secret_scan": "passed in memory; candidate absent from prepare/rotation/task/plugin responses, durable task row, task logs, recent audit response, and API/Agent journal."
+      },
+      "secret_values_written_to_evidence_or_stdout": false
+    }
+  },
+  "ubuntu_dev16_migration": {
+    "upgrade": {
+      "result": "passed",
+      "api_and_agent_process_binary_sha256": "e06060f3103b7c59278a041af1adfb3bcc579abe87a3ba74323396692071ae52",
+      "api_health": "ready",
+      "non_root_agent_health": "passed",
+      "agent_policy_sha256_before_and_after": "5d4f23f9ca530ccdab2f2d56aa1ce3e9ba24305261863d1589c001b149dd8455",
+      "server_config_sha256_before_and_after": "9755cbb04c60de9b27701927a975be95be14b3c7f9c4856b9d5eb3c6dbcea291"
+    },
+    "same_existing_site_roundtrip": {
+      "site_id": "solmigration",
+      "host": "solmigration.invalid",
+      "source_web_instance": "openresty-nativeqa",
+      "target_web_instance": "openresty-soltarget",
+      "php_instance": "php-apt-nativeqa",
+      "initial_revision": 2,
+      "target_to_source_revision": 3,
+      "source_to_target_revision": 4,
+      "final_web_instance": "openresty-soltarget",
+      "actual_http_port": 8443,
+      "static_and_php_http_checks": 6,
+      "all_http_statuses": 200,
+      "worker_php_and_content_hashes_preserved": true,
+      "advanced_configuration": "not_run; trusted opt-in was unavailable",
+      "evidence_directory": "/workspace/tools/sol-native-20261015/evidence-20261015T085458Z"
+    }
+  },
+  "dev13_migration_failure_and_rollback": {
+    "site_id": "solmigration",
+    "forward_source_to_target": "passed",
+    "actual_static_and_php_http_after_forward": "passed",
+    "return_target_to_source": {
+      "result": "failed",
+      "error_code": "reload_failed",
+      "actual_daemon_error": "Source OpenResty could not bind port 8443 while target still owned it",
+      "php_reload": "passed"
+    },
+    "actual_rollback": {
+      "result": "passed",
+      "site_owner": "openresty-soltarget",
+      "revision": 2,
+      "target_static_and_php_http": "passed"
+    },
+    "evidence_directory": "/workspace/tools/sol-native-20261015/evidence-20261015T083303Z"
+  },
+  "handoff": {
+    "advanced_configuration": "not_run",
+    "debian": "PostgreSQL and MariaDB p2adminqa are running and healthy on loopback ports 16432/16306. Existing MariaDB health_failed revision 11 was continued successfully on dev18 to completed revision 15 with receipt present; live MariaDB MainPID and data-directory metrics were unchanged. The dev13 two-engine native SQL test and both actual API rotations passed. PostgreSQL exact candidate-secret scanning was unavailable; task input and version/result/inspect consistency were verified. MariaDB candidate was scanned in memory and absent from the recorded surfaces. Original official HTTPS APT sources and archive keyring hashes were restored/verified; QA relay was removed.",
+    "ubuntu": "Migration site remains on openresty-soltarget at revision 4. Original APT source files match the saved manifest; temporary APT override, mirror copies, and repository tunnel were removed. Ubuntu write ownership is available to the parent agent."
+  },
+  "debian_dev17_checkpoint": {
+    "api_unit": {
+      "unit": "powerlinux.service",
+      "active": true,
+      "main_pid": 3979,
+      "start_utc": "2026-10-15T09:10:05Z",
+      "running_binary_sha256": "c97b54e11512f3fc1b242b69d20735655832602019637bef08877a1931de70f0"
+    },
+    "agent_unit": {
+      "unit": "powerlinux-agent.service",
+      "active": true,
+      "main_pid": 4026,
+      "start_utc": "2026-10-15T09:10:07Z",
+      "running_binary_sha256": "c97b54e11512f3fc1b242b69d20735655832602019637bef08877a1931de70f0"
+    },
+    "policy_sha256": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+    "server_config_sha256": "709c70f7e4f7ba198e4d41da6372c8d45a2779b8d929ee189c67a1e92d43a36c",
+    "mariadb_recovery_inspect": {
+      "state": "in_progress",
+      "checkpoint": "health_failed",
+      "revision": 11,
+      "managed_receipt_present": false,
+      "available_actions": [
+        "continue",
+        "stop_preserve"
+      ],
+      "action_taken": "none; waiting for dev18 MainPID-proof hardening"
+    },
+    "mariadb_daemon": {
+      "unit": "powerlinux-plugin-mariadb-p2adminqa.service",
+      "active": true,
+      "main_pid": 3004,
+      "start_utc": "2026-10-15T08:46:30Z",
+      "binary_sha256": "bb4ed4f51f5dc0b739c3c9adceca2596800dcc5c1b0d4ee0be4421b8a5640099",
+      "loopback_port": 16306,
+      "data_directory_device_inode": "65024:132679",
+      "data_file_count": 208,
+      "data_directory_bytes": 161936477
+    },
+    "postgresql_daemon": {
+      "unit": "powerlinux-plugin-postgresql-p2adminqa.service",
+      "active": true,
+      "main_pid": 2819,
+      "start_utc": "2026-10-15T08:44:49Z"
+    },
+    "observation": "API and Agent are running the shipped dev17 binary; MariaDB service and data remain live and unchanged at the recovery checkpoint."
+  },
+  "debian_dev18_mariadb_recovery": {
+    "api_and_agent_processes": {
+      "api_unit": "powerlinux.service",
+      "api_main_pid": 4804,
+      "agent_unit": "powerlinux-agent.service",
+      "agent_main_pid": 4851,
+      "running_binary_sha256": "fdff6dff813cd7249f97225f72abb68bfee9492c801e00d47abfe2c7ce8690db",
+      "systemd_mainpid_matches_live_processes": true,
+      "api_health": "ready"
+    },
+    "policy_sha256_unchanged": "f464f42de4fdbcf8f69fe6a5da85e1be7013e8afd60814053035c0528200e02c",
+    "server_config_sha256_unchanged": "709c70f7e4f7ba198e4d41da6372c8d45a2779b8d929ee189c67a1e92d43a36c",
+    "pre_continue_inspect": {
+      "state": "in_progress",
+      "checkpoint": "health_failed",
+      "revision": 11,
+      "receipt_present": false
+    },
+    "continue_task_id": "a6e6ccf82b1cb29b6e9e5234d4838f55",
+    "continue_task_state": "succeeded",
+    "post_continue_inspect": {
+      "state": "completed",
+      "checkpoint": "completed",
+      "revision": 15,
+      "receipt_present": true
+    },
+    "mariadb": {
+      "instance_id": "mariadb-p2adminqa",
+      "health": "healthy",
+      "status": "running",
+      "unit": "powerlinux-plugin-mariadb-p2adminqa.service",
+      "main_pid_before_after": 3004,
+      "binary_sha256": "bb4ed4f51f5dc0b739c3c9adceca2596800dcc5c1b0d4ee0be4421b8a5640099",
+      "loopback_port": 16306,
+      "data_directory_device_inode": "65024:132679",
+      "data_file_count_before_after": 208,
+      "data_directory_bytes_before_after": 161936477
+    },
+    "postgresql": {
+      "instance_id": "postgresql-p2adminqa",
+      "status": "running",
+      "health": "healthy",
+      "main_pid": 2819,
+      "loopback_port": 16432
+    },
+    "interpretation": "dev18 recovery verified systemd MainPID identity and completed the original health_failed checkpoint without restarting the live MariaDB process or changing its data directory metrics."
+  },
+  "cleanup_and_handoff": {
+    "apt_or_dpkg_active_during_cleanup": false,
+    "ubuntu": {
+      "temporary_override_removed": true,
+      "temporary_mirror_source_copies_removed": true,
+      "original_sources_match_pre_test_manifest": true,
+      "archive_keyring_sha256": "80a36b0a6de2f69f49d2df75ef473ccde121e9e190b9ea01d20a4f63778d5c31",
+      "baseline_units_active": [
+        "powerlinux.service",
+        "powerlinux-agent.service",
+        "powerlinux-plugin-openresty-nativeqa.service",
+        "powerlinux-plugin-php-apt-nativeqa.service"
+      ]
+    },
+    "debian": {
+      "temporary_source_route_restored_to_official_https": true,
+      "temporary_relay_ssh_forward_stopped": true,
+      "temporary_relay_process_and_state_removed": true,
+      "archive_keyring_sha256": "506b815cbb32d9b6066b4a2aa524071e071761e7f7e68c3ac74f3061ba852017",
+      "archive_keyring_package_check_note": "Keyring file hashes match the recorded baseline; dpkg verification listed missing documentation files only.",
+      "baseline_units_active": [
+        "memcached",
+        "redis-server",
+        "mariadb",
+        "postgresql",
+        "powerlinux.service",
+        "powerlinux-agent.service"
+      ],
+      "managed_instances_retained_healthy": [
+        {
+          "id": "postgresql-p2adminqa",
+          "loopback_port": 16432,
+          "main_pid": 2819
+        },
+        {
+          "id": "mariadb-p2adminqa",
+          "loopback_port": 16306,
+          "main_pid": 3004
+        }
+      ]
+    },
+    "remaining_host_processes": {
+      "preexisting_shared_ubuntu_https_relay_pid": 82191,
+      "api_forwards_left_available_for_handoff": [
+        "Ubuntu 127.0.0.1:56805",
+        "Debian 127.0.0.1:50585"
+      ],
+      "apt_reverse_tunnels_listening": false,
+      "stopped_ubuntu_ssh_forward_zombie_pid": 244334
+    },
+    "preserved_for_audit": [
+      "managed database data, receipts, and recovery journals",
+      "Ubuntu dev16 solmigration site and target at revision 4"
+    ],
+    "advanced_configuration": "not_run"
+  }
+}

@@ -35,17 +35,26 @@ type dnsChallenge struct {
 	AuthorizationURL string          `json:"authorization_url"`
 	Challenge        *acme.Challenge `json:"challenge"`
 }
+type httpACMEChallenge struct {
+	Domain           string          `json:"domain"`
+	URL              string          `json:"url"`
+	Path             string          `json:"path"`
+	Body             string          `json:"body"`
+	AuthorizationURL string          `json:"authorization_url"`
+	Challenge        *acme.Challenge `json:"challenge"`
+}
 type acmeOrderState struct {
-	Version          int            `json:"version"`
-	ID               string         `json:"id"`
-	Input            ACMEInput      `json:"input"`
-	Order            *acme.Order    `json:"order"`
-	Records          []dnsChallenge `json:"records"`
-	KeyPEM           string         `json:"key_pem"`
-	ExpectedRevision int64          `json:"expected_revision"`
-	CreatedBy        string         `json:"created_by"`
-	CreatedAt        time.Time      `json:"created_at"`
-	ExpiresAt        time.Time      `json:"expires_at"`
+	Version          int                 `json:"version"`
+	ID               string              `json:"id"`
+	Input            ACMEInput           `json:"input"`
+	Order            *acme.Order         `json:"order"`
+	Records          []dnsChallenge      `json:"records"`
+	HTTPChallenges   []httpACMEChallenge `json:"http_challenges,omitempty"`
+	KeyPEM           string              `json:"key_pem"`
+	ExpectedRevision int64               `json:"expected_revision"`
+	CreatedBy        string              `json:"created_by"`
+	CreatedAt        time.Time           `json:"created_at"`
+	ExpiresAt        time.Time           `json:"expires_at"`
 }
 
 func validateACME(in *ACMEInput, config AgentConfig) error {
@@ -56,7 +65,7 @@ func validateACME(in *ACMEInput, config AgentConfig) error {
 	if err != nil || address.Address != in.Email || len(in.Email) > 254 {
 		return invalid("ACME requires a valid contact email")
 	}
-	if in.Challenge != "http_webroot" && in.Challenge != "manual_dns" && in.Challenge != "dns" {
+	if in.Challenge != "http_webroot" && in.Challenge != "manual_http" && in.Challenge != "manual_dns" && in.Challenge != "dns" {
 		return invalid("Unknown ACME challenge method")
 	}
 	seen := map[string]bool{}
@@ -65,7 +74,7 @@ func validateACME(in *ACMEInput, config AgentConfig) error {
 		if err != nil || port != 80 || strings.Contains(value, ":") || net.ParseIP(host) != nil || !strings.Contains(host, ".") || seen[canonical] {
 			return invalid("ACME identifiers must be distinct DNS names without ports")
 		}
-		if strings.HasPrefix(host, "*.") && in.Challenge == "http_webroot" {
+		if strings.HasPrefix(host, "*.") && (in.Challenge == "http_webroot" || in.Challenge == "manual_http") {
 			return invalid("Wildcard certificates require DNS validation")
 		}
 		in.Domains[index] = canonical
@@ -73,6 +82,9 @@ func validateACME(in *ACMEInput, config AgentConfig) error {
 	}
 	if in.Challenge == "http_webroot" && !safeID.MatchString(in.SiteID) {
 		return invalid("HTTP validation requires an existing owned website")
+	}
+	if in.Challenge == "manual_http" && (in.SiteID != "" || in.DNSAlias != "" || in.Provider != "" || in.CredentialID != "" || in.CredentialRevision != 0) {
+		return invalid("Manual HTTP validation does not use a website or DNS credential")
 	}
 	if in.Server == "" {
 		in.Server = productionACMEDirectory
@@ -152,6 +164,13 @@ func (e *AgentExecutor) acmeClient(ctx context.Context, in ACMEInput) (*acme.Cli
 	return client, nil
 }
 func acmePublicOrder(order acmeOrderState) any {
+	if order.Input.Challenge == "manual_http" {
+		challenges := make([]map[string]string, 0, len(order.HTTPChallenges))
+		for _, challenge := range order.HTTPChallenges {
+			challenges = append(challenges, map[string]string{"domain": challenge.Domain, "url": challenge.URL, "path": challenge.Path, "body": challenge.Body})
+		}
+		return map[string]any{"certificate_id": order.ID, "state": "pending_http", "http_challenges": challenges, "expires_at": order.ExpiresAt, "input": order.Input, "order_ref": acmeOrderRef(order), "confirmation_action": "certificates_acme_confirm"}
+	}
 	records := make([]map[string]string, 0, len(order.Records))
 	for _, r := range order.Records {
 		records = append(records, map[string]string{"name": r.Name, "type": r.Type, "value": r.Value})
@@ -240,9 +259,17 @@ func (e *AgentExecutor) issueACMEOrder(ctx context.Context, in request, input AC
 	if err != nil {
 		return nil, err
 	}
-	state := acmeOrderState{Version: 1, ID: in.ID, Input: input, Order: order, Records: []dnsChallenge{}, KeyPEM: string(keyPEM), ExpectedRevision: in.ExpectedRevision, CreatedBy: in.Actor.ID, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(24 * time.Hour)}
+	state := acmeOrderState{Version: 1, ID: in.ID, Input: input, Order: order, Records: []dnsChallenge{}, HTTPChallenges: []httpACMEChallenge{}, KeyPEM: string(keyPEM), ExpectedRevision: in.ExpectedRevision, CreatedBy: in.Actor.ID, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(24 * time.Hour)}
 	if !order.Expires.IsZero() && order.Expires.Before(state.ExpiresAt) {
 		state.ExpiresAt = order.Expires
+	}
+	manualHTTP := input.Challenge == "manual_http"
+	if manualHTTP {
+		// Retain the remote order before reading its authorizations so a process
+		// restart cannot strand an unreferenced CA order with no cancel receipt.
+		if err = atomicRoot(e.state, filepath.Join("acme", state.ID+".order.json"), encode(state), 0600); err != nil {
+			return nil, err
+		}
 	}
 	var root *os.Root
 	if input.Challenge == "http_webroot" {
@@ -296,7 +323,7 @@ func (e *AgentExecutor) issueACMEOrder(ctx context.Context, in request, input AC
 			continue
 		}
 		kind := "dns-01"
-		if root != nil {
+		if root != nil || manualHTTP {
 			kind = "http-01"
 		}
 		var challenge *acme.Challenge
@@ -308,6 +335,17 @@ func (e *AgentExecutor) issueACMEOrder(ctx context.Context, in request, input AC
 		}
 		if challenge == nil {
 			return nil, failure("challenge_unavailable", "ACME server did not offer the selected challenge", 412)
+		}
+		if manualHTTP {
+			entry, challengeErr := makeManualHTTPChallenge(client, authorization, authURL, challenge, input.Domains)
+			if challengeErr != nil {
+				return nil, challengeErr
+			}
+			state.HTTPChallenges = append(state.HTTPChallenges, entry)
+			if err = atomicRoot(e.state, filepath.Join("acme", state.ID+".order.json"), encode(state), 0600); err != nil {
+				return nil, err
+			}
+			continue
 		}
 		if root == nil {
 			value, err := client.DNS01ChallengeRecord(challenge.Token)
@@ -372,6 +410,9 @@ func (e *AgentExecutor) issueACMEOrder(ctx context.Context, in request, input AC
 		}
 		return acmePublicOrder(state), nil
 	}
+	if manualHTTP && len(state.HTTPChallenges) > 0 {
+		return acmePublicOrder(state), nil
+	}
 	if dnsProvider != nil {
 		dnsCleanupAttempted = true
 		if err = e.cleanupNativeDNS(client, dnsProvider, state); err != nil {
@@ -406,6 +447,9 @@ func (e *AgentExecutor) manualACME(ctx context.Context, in request) (any, error)
 	if in.Kind != "confirm" {
 		return nil, invalid("Unknown ACME order action")
 	}
+	if state.Input.Challenge == "manual_http" {
+		return e.confirmManualHTTPACME(ctx, in, state)
+	}
 	client, err := e.acmeClient(ctx, state.Input)
 	if err != nil {
 		return nil, err
@@ -429,6 +473,121 @@ func (e *AgentExecutor) manualACME(ctx context.Context, in request) (any, error)
 	in.ACME = &state.Input
 	return e.finalizeACME(ctx, client, state, in)
 }
+
+func manualHTTPTokenSafe(token string) bool {
+	if len(token) == 0 || len(token) > 256 {
+		return false
+	}
+	for _, c := range token {
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func makeManualHTTPChallenge(client *acme.Client, authorization *acme.Authorization, authURL string, challenge *acme.Challenge, domains []string) (httpACMEChallenge, error) {
+	var entry httpACMEChallenge
+	if client == nil || authorization == nil || challenge == nil || challenge.Type != "http-01" || authorization.Identifier.Type != "dns" || authorization.Wildcard || !manualHTTPTokenSafe(challenge.Token) || authURL == "" || challenge.URI == "" {
+		return entry, failure("metadata_invalid", "ACME HTTP challenge is incomplete or unsafe", 500)
+	}
+	canonical, host, port, err := domain(authorization.Identifier.Value)
+	if err != nil || port != 80 || strings.Contains(authorization.Identifier.Value, ":") || strings.HasPrefix(host, "*.") || !slices.Contains(domains, canonical) {
+		return entry, failure("metadata_invalid", "ACME HTTP authorization does not match a requested DNS name", 500)
+	}
+	path := client.HTTP01ChallengePath(challenge.Token)
+	if len(path) > 512 || !strings.HasPrefix(path, "/.well-known/acme-challenge/") || strings.ContainsAny(path, "?#\\\x00") {
+		return entry, failure("metadata_invalid", "ACME HTTP challenge path is invalid", 500)
+	}
+	body, err := client.HTTP01ChallengeResponse(challenge.Token)
+	if err != nil || len(body) == 0 || len(body) > 2048 {
+		return entry, failure("metadata_invalid", "ACME HTTP challenge response could not be derived", 500)
+	}
+	challengeCopy := *challenge
+	challengeCopy.Payload = nil
+	return httpACMEChallenge{Domain: canonical, URL: (&url.URL{Scheme: "http", Host: host, Path: path}).String(), Path: path, Body: body, AuthorizationURL: authURL, Challenge: &challengeCopy}, nil
+}
+
+func (e *AgentExecutor) confirmManualHTTPACME(ctx context.Context, in request, state acmeOrderState) (any, error) {
+	if state.Input.Challenge != "manual_http" || len(state.HTTPChallenges) == 0 || len(state.HTTPChallenges) > len(state.Input.Domains) || len(state.HTTPChallenges) > 100 {
+		return nil, failure("metadata_invalid", "Stored manual HTTP order has no valid pending challenges", 500)
+	}
+	input := state.Input
+	if err := validateACME(&input, e.config); err != nil || input.ID != in.ID || string(encode(input)) != string(encode(state.Input)) {
+		return nil, failure("metadata_invalid", "Stored manual HTTP order settings are invalid", 500)
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	client, err := e.acmeClient(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	authURLs := make(map[string]bool, len(state.Order.AuthzURLs))
+	for _, authURL := range state.Order.AuthzURLs {
+		if authURL == "" || authURLs[authURL] {
+			return nil, failure("metadata_invalid", "Stored ACME order authorizations are invalid", 500)
+		}
+		authURLs[authURL] = true
+	}
+	seenDomains := map[string]bool{}
+	seenAuthURLs := map[string]bool{}
+	for _, record := range state.HTTPChallenges {
+		if record.Challenge == nil || record.Challenge.Type != "http-01" || !authURLs[record.AuthorizationURL] || seenAuthURLs[record.AuthorizationURL] || seenDomains[record.Domain] {
+			return nil, failure("metadata_invalid", "Stored ACME HTTP challenge binding is invalid", 500)
+		}
+		auth, err := client.GetAuthorization(ctx, record.AuthorizationURL)
+		if err != nil {
+			return nil, failure("acme_authorization_failed", "ACME HTTP authorization could not be read", 502)
+		}
+		canonical, host, port, domainErr := domain(auth.Identifier.Value)
+		if domainErr != nil || port != 80 || strings.Contains(auth.Identifier.Value, ":") || canonical != record.Domain || auth.Identifier.Type != "dns" || auth.Wildcard || !slices.Contains(input.Domains, canonical) {
+			return nil, failure("metadata_invalid", "ACME HTTP authorization no longer matches the requested DNS name", 500)
+		}
+		matched := (*acme.Challenge)(nil)
+		for _, challenge := range auth.Challenges {
+			if challenge != nil && challenge.Type == "http-01" && challenge.URI == record.Challenge.URI && challenge.Token == record.Challenge.Token {
+				if matched != nil {
+					return nil, failure("metadata_invalid", "ACME authorization has duplicate HTTP challenges", 500)
+				}
+				matched = challenge
+			}
+		}
+		if matched == nil || !manualHTTPTokenSafe(record.Challenge.Token) {
+			return nil, failure("metadata_invalid", "Stored ACME HTTP challenge no longer matches its authorization", 500)
+		}
+		body, err := client.HTTP01ChallengeResponse(record.Challenge.Token)
+		path := client.HTTP01ChallengePath(record.Challenge.Token)
+		wantURL := (&url.URL{Scheme: "http", Host: host, Path: path}).String()
+		if err != nil || body != record.Body || path != record.Path || wantURL != record.URL {
+			return nil, failure("metadata_invalid", "Stored HTTP upload instructions do not match the protected ACME order", 500)
+		}
+		seenAuthURLs[record.AuthorizationURL] = true
+		seenDomains[record.Domain] = true
+		if auth.Status == acme.StatusValid {
+			continue
+		}
+		if auth.Status != acme.StatusPending {
+			return nil, failure("acme_validation_failed", "ACME HTTP authorization is no longer pending", 409)
+		}
+		challenge := *matched
+		challenge.Payload = nil
+		if challenge.Status == acme.StatusPending {
+			if _, err = client.Accept(ctx, &challenge); err != nil {
+				return nil, failure("acme_challenge_failed", "ACME HTTP challenge was rejected", 502)
+			}
+		} else if challenge.Status != acme.StatusProcessing && challenge.Status != acme.StatusValid {
+			return nil, failure("acme_validation_failed", "ACME HTTP challenge is no longer pending", 409)
+		}
+		if _, err = client.WaitAuthorization(ctx, record.AuthorizationURL); err != nil {
+			return nil, failure("acme_validation_failed", "ACME HTTP validation failed; verify the uploaded file is reachable over HTTP", 502)
+		}
+	}
+	in.ExpectedRevision = state.ExpectedRevision
+	in.ACME = &state.Input
+	return e.finalizeACME(ctx, client, state, in)
+}
+
 func (e *AgentExecutor) finalizeACME(ctx context.Context, client *acme.Client, state acmeOrderState, in request) (any, error) {
 	order, err := client.WaitOrder(ctx, state.Order.URI)
 	if err != nil {

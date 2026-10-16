@@ -1,0 +1,60 @@
+
+> powerlinux-ui@0.1.0 test
+> node --test tests/*.test.mjs
+
+✔ cookie write uses same origin credentials and session CSRF, preserving revision (43.260662ms)
+✔ 412 retains structured current note so UI cannot silently overwrite (1.089926ms)
+✔ invalid or failed transport cannot be reported as operation success (3.311797ms)
+✔ identity source distinguishes human, MCP, API and unknown actors (0.243008ms)
+✔ action retry preserves caller intent and file stream keeps raw body with session CSRF (3.017204ms)
+✔ login credentials are consumed only from fragment and removed from remaining URL (1.823195ms)
+✔ post authentication return accepts only a local authorization path (0.234395ms)
+✔ administrator state only exposes known recovery actions and public CAS fields (1.14768ms)
+✔ durable administrator input uses only opaque prepared password pin (0.330717ms)
+✔ only active receipts expose account and backup controls (3.135628ms)
+✔ receipt parsing keeps only public fields and validates the exact target (0.887167ms)
+✔ creation presets use the exact tombstone revision or zero for a fresh name (0.233023ms)
+✔ locked form values preserve the checked target and revision in JSON mode (0.152865ms)
+✔ only the known missing-metadata 404 is fresh and API errors use the formatter (0.623508ms)
+✔ image inventory requires authoritative exact digest; tags and daemon IDs cannot become targets (1.776426ms)
+✔ credential projection drops returned secrets and pull pins only opaque credential version (0.336385ms)
+✔ schema gate rejects task passwords, missing scopes and tag-only image contracts (0.510301ms)
+✔ nested resource schema keeps optional omission and preserves intentional empty file content (2.978546ms)
+✔ map schemas reject invalid values and enforce limits without prototype mutation (0.361242ms)
+✔ union schemas distinguish exactly one branch and allow declared null (0.314463ms)
+✔ resource presets discard server-only metadata and nested credential references (0.356445ms)
+✔ container CPU bounds reject zero and non-finite values while allowing fractional limits (0.320191ms)
+✔ accepts matching backup metadata and returns the fixed same-origin route (1.033272ms)
+✔ rejects mismatched metadata and unsafe or non-fixed download URLs (0.86884ms)
+✔ category actions and server filter are gated by current capability schemas (2.340646ms)
+✔ site assignment choices contain only visible categories and a clear option (0.379469ms)
+✔ generated IDs fit the website category identity contract (0.701953ms)
+✔ save and delete payloads are normalized against the live action schema (0.748141ms)
+✔ permission and revision errors preserve the draft, refetch, and explain backend rejection (0.409563ms)
+✔ a migration plan can apply only to its original site revision before expiry (1.093439ms)
+✔ the fetched protected plan must still match the exact reviewed snapshot (0.245181ms)
+✔ plan parsing rejects malformed identities and projects only review-safe fields (0.131163ms)
+✔ migration actions stay behind the dedicated review flow while other site actions remain visible (0.1217ms)
+✔ recovery capabilities must advertise the expected schemas and task semantics (0.856061ms)
+✔ inspection parser supports missing receipts but rejects mismatched or unsafe state (0.843902ms)
+✔ recovery input uses the current CAS revision and only a fresh advertised action (0.208867ms)
+✔ system workflow validates current capability schemas before constructing inputs (1.298141ms)
+✔ recovery key isolates host and actor and persists only plan/task intent identifiers (0.432116ms)
+✔ failed browser storage probe blocks recovery-dependent mutation setup (0.256347ms)
+✔ plan actions require a fresh plan and backend-supported state/deadline (0.254745ms)
+✔ task submissions and terminal states are read from actual response envelopes (18.40128ms)
+✔ plan preview parser rejects incomplete service responses instead of inventing state (0.351477ms)
+✔ recovery intents clear only after a matching backend state transition (0.2173ms)
+✔ SQL signed and unsigned integers display original decimal text; rounded or malformed values fail closed (1.948088ms)
+✔ binary SQL values preserve bytes rather than attempting UTF-8 decoding (0.420228ms)
+✔ Redis continuation strings retain all uint64 digits and reject overflow, non-decimal and rounded legacy numbers (1.193698ms)
+✔ SQL parameter normalization keeps decimal strings and typed integer objects; unsafe JSON numbers cannot be submitted (0.468479ms)
+✔ HTTP API round trip preserves tagged integers and posts exact SQL parameters and Redis cursor strings (19.754372ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 48
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2200.354216

@@ -4,7 +4,9 @@ import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { action, Capability, fullDate, list, Task } from "@/lib/api";
+import { copyText } from "@/lib/clipboard";
 import { choiceLabel } from "@/lib/labels";
+import { manualHTTPOrder } from "@/lib/manual-http-acme";
 import { Page } from "@/lib/resources";
 import { useResource } from "@/lib/resource-hook";
 import { ActionContext, ActionForm, References } from "./actions";
@@ -47,6 +49,7 @@ type Order = {
   confirmation_action?: string;
   cancellation_action?: string;
   records?: { name: string; type: string; value: string }[];
+  http_challenges?: { domain: string; url: string; path: string; body: string }[];
 };
 export function CertificatesView({
   capabilities,
@@ -64,11 +67,15 @@ export function CertificatesView({
   const [credential, setCredential] = useState<DNSCredential>();
   const [open, setOpen] = useState(false);
   const [create, setCreate] = useState<string>();
+  const [manualHTTPCreate, setManualHTTPCreate] = useState(false);
   const [operation, setOperation] = useState<string>();
   const [orderID, setOrderID] = useState("");
   const [loadedID, setLoadedID] = useState("");
   const [orderTask, setOrderTask] = useState<Task>();
   const [lookupError, setLookupError] = useState("");
+  const [httpAcknowledged, setHTTPAcknowledged] = useState(false);
+  const [copiedHTTP, setCopiedHTTP] = useState("");
+  const [copyError, setCopyError] = useState("");
   const lookupGeneration = useRef(0);
   const has = (name: string) => capabilities.some((c) => c.name === name);
   const certificates = useResource<Page<Certificate>>(
@@ -105,7 +112,74 @@ export function CertificatesView({
     list(certificates.data).find((c) => c.id === selected?.id) ?? selected;
   const currentCredential =
     list(credentials.data).find((c) => c.id === credential?.id) ?? credential;
+  const httpOrder =
+    order.data?.state === "pending_http"
+      ? manualHTTPOrder(order.data, loadedID)
+      : undefined;
   const selectedAction = capabilities.find((c) => c.name === create);
+  const issueCapability = capabilities.find((c) => c.name === "certificates_acme_issue");
+  const issueSchema = issueCapability?.input_schema as
+    | { properties?: Record<string, unknown>; required?: string[]; [key: string]: unknown }
+    | undefined;
+  const challengeSchema = issueSchema?.properties?.challenge as
+    | { enum?: unknown[]; [key: string]: unknown }
+    | undefined;
+  const hasManualHTTP = !!(
+    issueCapability?.scope === "certificates:write" &&
+    issueCapability.task === true &&
+    issueCapability.read_only === false &&
+    challengeSchema?.enum?.includes("manual_http")
+  );
+  const manualHTTPAction = (() => {
+    if (!issueCapability || !issueSchema?.properties || !hasManualHTTP) return undefined;
+    const inputFields = ["id", "expected_revision", "domains", "email", "challenge"];
+    if (!inputFields.every((name) => Object.prototype.hasOwnProperty.call(issueSchema.properties, name)))
+      return undefined;
+    const properties = Object.fromEntries(
+      inputFields.map((name) => [
+        name,
+        name === "challenge"
+          ? { ...(issueSchema.properties![name] as object), const: "manual_http" }
+          : issueSchema.properties![name],
+      ]),
+    );
+    return {
+      ...issueCapability,
+      input_schema: {
+        ...issueSchema,
+        properties,
+        required: ["id", "expected_revision", "domains", "email"],
+      },
+    } as Capability;
+  })();
+  const manualHTTPConfirm = capabilities.find(
+    (c) =>
+      c.name === "certificates_acme_confirm" &&
+      c.scope === "certificates:write" &&
+      c.task === true &&
+      c.read_only === false &&
+      Object.prototype.hasOwnProperty.call(c.input_schema?.properties ?? {}, "id"),
+  );
+  const selectedFormAction =
+    manualHTTPCreate && create === "certificates_acme_issue"
+      ? manualHTTPAction
+      : create === "certificates_acme_issue" &&
+          selectedAction &&
+          challengeSchema?.enum
+        ? ({
+            ...selectedAction,
+            input_schema: {
+              ...issueSchema,
+              properties: {
+                ...issueSchema?.properties,
+                challenge: {
+                  ...challengeSchema,
+                  enum: challengeSchema.enum.filter((value) => value !== "manual_http"),
+                },
+              },
+            },
+          } as Capability)
+        : selectedAction;
   const references: References = {
     ...(providers.data
       ? {
@@ -131,16 +205,28 @@ export function CertificatesView({
     void order.reload();
     onExecuted();
   };
+  const copyHTTP = async (key: string, value: string) => {
+    setCopyError("");
+    try {
+      await copyText(value);
+      setCopiedHTTP(key);
+    } catch (error) {
+      setCopyError(error instanceof Error ? error.message : "无法复制验证内容。");
+    }
+  };
   const showOrder = (value: Order, task?: Task) => {
     setOrderID(value.certificate_id);
     setLoadedID(value.certificate_id);
     if (
-      ["pending_dns", "recovery_required", "dns_cleanup_required"].includes(
+      ["pending_dns", "pending_http", "recovery_required", "dns_cleanup_required"].includes(
         value.state,
       )
     ) {
       setPage("manual");
+      setHTTPAcknowledged(false);
+      setCopyError("");
       setCreate(undefined);
+      setManualHTTPCreate(false);
       setOpen(false);
       setOperation(undefined);
       if (task) setOrderTask(task);
@@ -202,6 +288,7 @@ export function CertificatesView({
   };
   const statusNames: Record<string, string> = {
     pending_dns: "待确认DNS记录",
+    pending_http: "待放置HTTP验证文件",
     issued: "已签发",
     cancelled: "已取消",
     not_due: "尚未到续期时间",
@@ -224,22 +311,40 @@ export function CertificatesView({
             {has("certificates_import") && (
               <Button
                 label="导入证书"
-                onClick={() => setCreate("certificates_import")}
+                onClick={() => {
+                  setManualHTTPCreate(false);
+                  setCreate("certificates_import");
+                }}
               />
             )}{" "}
             {has("certificates_acme_issue") && (
-              <Button
-                label="申请ACME证书"
-                variant="primary"
-                onClick={() => setCreate("certificates_acme_issue")}
-              />
+              <>
+                <Button
+                  label="申请ACME证书"
+                  variant="primary"
+                  onClick={() => {
+                    setManualHTTPCreate(false);
+                    setCreate("certificates_acme_issue");
+                  }}
+                />
+                {manualHTTPAction && (
+                  <Button
+                    label="手动HTTP验证"
+                    variant="ghost"
+                    onClick={() => {
+                      setManualHTTPCreate(true);
+                      setCreate("certificates_acme_issue");
+                    }}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
         <div className="section-tabs" role="tablist" aria-label="证书资源类型">
           {[
             { id: "certificates", label: "证书" },
-            { id: "manual", label: "DNS验证与恢复" },
+            { id: "manual", label: "验证与恢复" },
             { id: "dns", label: "DNS凭据与提供商" },
           ].map((tab) => (
             <button
@@ -331,7 +436,7 @@ export function CertificatesView({
                 onChange={setOrderID}
               />
               <Button
-                label="读取DNS验证订单"
+                label="读取验证订单"
                 type="submit"
                 isDisabled={!orderID || !has("certificates_acme_status")}
               />
@@ -358,7 +463,11 @@ export function CertificatesView({
                     到期 {fullDate(order.data.expires_at)}
                   </span>
                 </div>
-                {order.data.state === "pending_dns" ? (
+                {order.data.state === "pending_http" ? (
+                  <p className="muted">
+                    为每个域名在可通过 HTTP 访问的网站根目录中放置指定文件。必须写入完全相同的正文，不要添加换行；服务不会代替你上传或探测文件。
+                  </p>
+                ) : order.data.state === "pending_dns" ? (
                   <p className="muted">
                     在域名DNS中添加以下实际TXT记录，再确认验证。等待记录与创建订单均不代表证书已经签发。
                   </p>
@@ -372,6 +481,73 @@ export function CertificatesView({
                     </p>
                     <p>订单待恢复不代表证书已经签发。</p>
                   </div>
+                )}
+                {order.data.state === "pending_http" && httpOrder && (
+                  <section className="stack" aria-label="HTTP验证文件">
+                    {httpOrder.http_challenges.map((challenge) => (
+                      <div className="stack notice warning" key={challenge.domain}>
+                        <strong>{challenge.domain}</strong>
+                        <div>
+                          <small>完整验证 URL</small>
+                          <code className="wrap-code">{challenge.url}</code>
+                          <Button
+                            label={copiedHTTP === `${challenge.domain}:url` ? "已复制 URL" : "复制 URL"}
+                            variant="ghost"
+                            onClick={() => void copyHTTP(`${challenge.domain}:url`, challenge.url)}
+                          />
+                        </div>
+                        <div>
+                          <small>网站根目录下的文件路径</small>
+                          <code className="wrap-code">{challenge.path}</code>
+                          <Button
+                            label={copiedHTTP === `${challenge.domain}:path` ? "已复制路径" : "复制路径"}
+                            variant="ghost"
+                            onClick={() => void copyHTTP(`${challenge.domain}:path`, challenge.path)}
+                          />
+                        </div>
+                        <div>
+                          <small>文件正文（精确内容）</small>
+                          <pre className="json-result">{challenge.body}</pre>
+                          <Button
+                            label={copiedHTTP === `${challenge.domain}:body` ? "已复制正文" : "复制正文"}
+                            variant="ghost"
+                            onClick={() => void copyHTTP(`${challenge.domain}:body`, challenge.body)}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {copyError && <div className="notice danger" role="alert">{copyError}</div>}
+                    <p className="muted">
+                      放置完成后，请从外部网络确认上方 URL 能通过普通 HTTP 返回完全相同的正文，再继续验证。
+                    </p>
+                    <label className="check-label">
+                      <input
+                        type="checkbox"
+                        checked={httpAcknowledged}
+                        onChange={(event) => setHTTPAcknowledged(event.target.checked)}
+                      />
+                      <span>已放置所有验证文件；我确认 URL 与正文都与此订单完全一致，继续验证。</span>
+                    </label>
+                    {httpAcknowledged && manualHTTPConfirm && (
+                      <ActionForm
+                        key={`acme-http-confirm:${loadedID}:${httpOrder.order_ref}`}
+                        capability={manualHTTPConfirm}
+                        preset={{ id: loadedID }}
+                        lockedPresetFields={["id"]}
+                        onBack={() => setHTTPAcknowledged(false)}
+                        onExecuted={saved}
+                      />
+                    )}
+                    {httpAcknowledged && !manualHTTPConfirm && (
+                      <Unavailable title="当前账户没有继续验证此证书订单的权限" />
+                    )}
+                  </section>
+                )}
+                {order.data.state === "pending_http" && !httpOrder && (
+                  <Unavailable
+                    title="HTTP挑战响应无效"
+                    detail="返回内容没有通过证书标识、URL、路径和正文校验。请重新读取订单或检查任务结果。"
+                  />
                 )}
                 {!!order.data.records?.length && (
                   <div className="resource-table-wrap">
@@ -403,11 +579,12 @@ export function CertificatesView({
                   capabilities={capabilities}
                   names={(name) =>
                     name ===
-                      (order.data?.confirmation_action ??
-                        "certificates_acme_confirm") ||
-                    name ===
                       (order.data?.cancellation_action ??
-                        "certificates_acme_cancel")
+                        "certificates_acme_cancel") ||
+                    (order.data?.state !== "pending_http" &&
+                      name ===
+                        (order.data?.confirmation_action ??
+                          "certificates_acme_confirm"))
                   }
                   preset={{ id: loadedID }}
                   selected={operation}
@@ -424,7 +601,10 @@ export function CertificatesView({
               {has("certificates_dns_credentials_save") && (
                 <Button
                   label="添加DNS凭据"
-                  onClick={() => setCreate("certificates_dns_credentials_save")}
+                  onClick={() => {
+                    setManualHTTPCreate(false);
+                    setCreate("certificates_dns_credentials_save");
+                  }}
                 />
               )}
             </div>
@@ -491,7 +671,7 @@ export function CertificatesView({
           </>
         )}
       </Card>
-      {selectedAction && (
+      {selectedFormAction && (
         <ResourceDrawer
           open={!!create}
           title={
@@ -499,19 +679,30 @@ export function CertificatesView({
               ? "导入证书"
               : create === "certificates_dns_credentials_save"
                 ? "添加DNS凭据"
-                : "申请ACME证书"
+                : manualHTTPCreate
+                  ? "申请ACME证书 · 手动HTTP验证"
+                  : "申请ACME证书"
           }
-          onClose={() => setCreate(undefined)}
+          onClose={() => {
+            setCreate(undefined);
+            setManualHTTPCreate(false);
+          }}
         >
+          {manualHTTPCreate && (
+            <p className="muted">
+              只填写证书标识、域名和联系人邮箱。此流程不需要网站选择、DNS别名或提供商凭据；验证文件由你放置后再明确继续验证。
+            </p>
+          )}
           <ActionForm
-            capability={selectedAction}
+            capability={selectedFormAction}
             preset={{
               expected_revision: 0,
-              ...(siteID ? { site_id: siteID } : {}),
+              ...(!manualHTTPCreate && siteID ? { site_id: siteID } : {}),
               ...(create === "certificates_acme_issue"
-                ? { challenge: siteID ? "http_webroot" : "manual_dns" }
+                ? { challenge: manualHTTPCreate ? "manual_http" : siteID ? "http_webroot" : "manual_dns" }
                 : {}),
             }}
+            lockedPresetFields={manualHTTPCreate ? ["expected_revision", "challenge"] : []}
             onExecuted={saved}
             references={references}
           />

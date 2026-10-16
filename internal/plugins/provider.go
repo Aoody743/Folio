@@ -96,13 +96,28 @@ func (m *Manager) Bindings() []core.Binding {
 		bindings[i].Action.Task = bindings[i].Action.Name == "software_apply" || bindings[i].Action.Name == "software_service_control" || bindings[i].Action.Name == "software_recovery"
 	}
 	bindings = append(bindings, m.databaseBindings()...)
+	bindings = append(bindings, m.databaseAdminBindings()...)
+	bindings = append(bindings, m.databaseBinlogBindings()...)
+	bindings = append(bindings, m.databaseReplicationBindings()...)
+	bindings = append(bindings, m.databaseTableMaintenanceBindings()...)
 	bindings = append(bindings, m.autostartBindings()...)
 	bindings = append(bindings, m.cacheBindings()...)
+	bindings = append(bindings, m.cacheClusterBindings()...)
+	bindings = append(bindings, m.postgresqlMaintenanceBindings()...)
 	bindings = append(bindings, m.phpBindings()...)
+	bindings = append(bindings, m.phpMaintenanceBindings()...)
 	bindings = append(bindings, m.utilityBindings()...)
+	bindings = append(bindings, m.ftpAccountStateBindings()...)
+	bindings = append(bindings, m.ftpLegacyRecoveryBinding())
+	bindings = append(bindings, m.supervisorLogBindings()...)
 	bindings = append(bindings, m.dockerBindings()...)
 	bindings = append(bindings, m.dockerImageBindings()...)
+	bindings = append(bindings, m.dockerImagesListBinding())
+	bindings = append(bindings, m.dockerRegistryBindings()...)
+	bindings = append(bindings, m.dockerArchiveBindings()...)
+	bindings = append(bindings, m.dockerExecBindings()...)
 	bindings = append(bindings, m.ftpBindings()...)
+	bindings = append(bindings, m.ftpMaintenanceBindings()...)
 	return bindings
 }
 

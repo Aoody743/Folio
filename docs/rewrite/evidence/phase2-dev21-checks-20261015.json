@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-15",
+  "version": "0.1.0-dev.21",
+  "source_commit": "ad531c410d849690184f5b699e7dfeb6c676e7fa",
+  "stage_2_complete": false,
+  "checks": {
+    "full_go_race": {
+      "result": "PASS",
+      "tested_packages": 14,
+      "no_test_packages": 2,
+      "scope": "Final source including FIFO rejection; ordinary cloud UID1000. Root-only paths have separate guest fixture and daemon acceptance requirements."
+    },
+    "go_vet": "PASS",
+    "frontend_tests": {
+      "result": "PASS",
+      "tests": 70
+    },
+    "typescript": "PASS",
+    "next_static_export": "PASS",
+    "linux_amd64_and_arm64_build": "PASS",
+    "actual_amd64_installer_private_prefix_smoke": "PASS"
+  },
+  "logs": {
+    "phase2-dev21-full-race-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev21-full-race-20261015.log",
+      "sha256": "f1a3e3649ae295840280c59ab1d4bc8833d47a408127327c43b69ad00bcfa142"
+    },
+    "phase2-dev21-vet-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev21-vet-20261015.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "phase2-dev21-build-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev21-build-20261015.log",
+      "sha256": "01e866cd930a0651617e4586d2663220656255054f2346ad958f6632d2c85931"
+    },
+    "phase2-dev21-package-20261015.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev21-package-20261015.log",
+      "sha256": "dadc73190d9bfbf8a1071a4746c45071a0c9dcad25555ca32ca123e0a3419685"
+    },
+    "phase2-dev21-frontend-tests.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev21-frontend-tests.log",
+      "sha256": "87d6fdaf0b2fbfa2f8b578c60b36eb406c4af47d8b8985cf7dbabe87f27f3e3c"
+    },
+    "phase2-dev21-frontend-typecheck.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev21-frontend-typecheck.log",
+      "sha256": "e8824a3ab3ee9cecfe09018f0e06ef0c70379d4dca5749fa19705e85ad5508de"
+    },
+    "phase2-dev21-frontend-build.log": {
+      "path": "docs/rewrite/evidence/phase2-luna-20261015/phase2-dev21-frontend-build.log",
+      "sha256": "027003cdd1135524db06c6a4e9c61d8bc6281e9460ce808602111c45d75576d1"
+    }
+  },
+  "archive_sha256": {
+    "linux-amd64": "4e00e25ac4ad1d17000128682cf4559c1cdb6bcd88095925f72bfa500717edc3",
+    "linux-arm64": "28ebe3ac0f16ea5026893c796e8fb2b920d85fe00121c64d7c8078254fd037fc"
+  },
+  "amd64_binary_sha256": "10b2c564817d257e697b65c5a66cf8ed8b1e42b7311c44a7645d0b3d8eea320a",
+  "implemented": [
+    "Signed official distro PHP extension plan/apply with ABI checks, durable intent, fresh independent package authorization, external ownership preservation and exact recovery markers",
+    "PHP module uninstall disables only the selected instance and retains system packages; physical package removal is explicitly unavailable",
+    "PostgreSQL owned loopback SCRAM access rules and bounded redacted slow logs with config revisions, reload verification and explicit recovery",
+    "Registered same-host MySQL/MariaDB replication actions with dedicated read-only targets, consistent seed workflow, Agent-private seed files, exact import database, paired resource checks and lifecycle guards",
+    "Exact legacy PureFTP malformed IPv6-rule recovery plus upstream pure-pw exclusive sidecar coordination; truthful account-state UI",
+    "Supervisor worker program ancestry repair and rejection of no-op log clears; Docker socket-deadline timeout classification race fix"
+  ],
+  "known_limits": [
+    "Subsequent actual dev21 PostgreSQL QA found slowlog verification before reload and inability to restore an originally unconfigured block; the same code is present in dev22. The owned QA journal is pending, main config bytes equal baseline, and dev23 repair is in progress. No manual journal/config cleanup.",
+    "Subsequent exact dev21 root fixture found a product startup defect: a pending PHP extension intent makes constructor PHP migration reject Agent startup; repair and explicit recovery discovery are in dev22 work. Supervisor daemon lifecycle separately passed on actual dev21.",
+    "Actual dev21 daemon/browser/MCP acceptance is in progress, not implied by source or protocol tests",
+    "Replication UI is being built separately; native CLI/server/replica filter behavior, including MySQL 8.4 client flags, remains unverified",
+    "PHP extension native APT/FPM installation is unrun; source/yum and unsupported distro/ABI recipes remain unavailable; system package removal is deferred",
+    "PostgreSQL remote access remains unavailable until managed TLS is implemented; this batch accepts loopback CIDRs only",
+    "Supervisor no-dispatch FATAL clear can be rejected truthfully rather than falsely succeed; successful running child log lifecycle remains a native acceptance item",
+    "PureFTP actual login enforcement and FTP account read-only mode remain unverified/unsupported respectively",
+    "Rsync/lsyncd, table maintenance UI and admin application deployment remain subsequent batches; phase 2 is not complete",
+    "Production SSL/SSH is deferred by user and the BaoTa server has not been modified",
+    "ARM64 binaries were built; ARM64 native execution remains unrun"
+  ],
+  "native_prior_evidence": "docs/rewrite/evidence/phase2-native-next-20261015.json",
+  "native_followup_evidence": "docs/rewrite/evidence/phase2-native-dev21-20261015.json"
+}

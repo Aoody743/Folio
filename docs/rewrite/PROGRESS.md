@@ -1,12 +1,89 @@
 # 重构实施与验收记录
 
-最新执行安排（2026-10-14）：用户要求本地 Codex 接续。请先阅读 [最新本地接续记录](LOCAL-CONTINUE-20261014.md)，其中补入 dev.12 数据库真实闭环、Web/PHP reboot、自建 root 测试结果及安装恢复草稿的准确验证边界；下方云端批次作为历史过程保留。
+2026-10-15 最新收尾指示：用户允许不迁移无用软件，已暂停 phpMyAdmin/PG 远程 TLS 等可选扩展，优先关闭核心版实际验收。范围、当前进度与四组退出检查见 [第二阶段核心版收尾](PHASE2-CLOSEOUT-20261015.md)。第二阶段仍未完成，旧的 23 插件全量要求按新范围调整。
+
+最新执行安排（2026-10-15）：用户已将本地改动更新至 GitHub，并恢复云端开发。本轮先按要求使用 GPT-6.1 Sol 完成数据库/Docker/DNS 批次；随后用户为节约额度改用 **GPT-6 Luna、Max 推理强度** 继续 PHP/Supervisor 闭环，由主 Agent 统一审查和集成。已从 `refine` 同步 `b893eef`，保留本地安装恢复与 Web 迁移实现。第二阶段继续进行，第三阶段未开始；下方旧批次保留为历史记录。
 
 日期：2026-10-13（Asia/Singapore）。所有检查只代表记录的环境与当前代码，不代表尚未运行的发行版或第三方服务已经兼容。
 
-## 本地第二阶段接续：2026-10-14
+## Luna 并行续开发：dev.23（2026-10-15）
 
-发布范围已按用户最新指示调整：全新发布并支持后续更新；旧版面板兼容、自动迁移和降级回滚不作为退出条件。软件/网站/数据库失败恢复与数据保护继续保留。
+源码 `3e74660d6` 从干净工作区构建 dev.23，优先修复原生验收发现的 PostgreSQL 慢日志问题：先校验文件并重载，再用新连接有界轮询实际设置；新事务先保存原始四项设置及来源，旧待恢复记录从受保护的 Before 配置推导恢复目标，无法证明时继续保持 pending。支持恢复原来未配置的默认状态，保留日志前缀尾部空格；新增延迟生效、延迟恢复和执行中取消回归。
+
+全量 Go race（14 个测试包）与 vet、双架构构建、实际 amd64 独立前缀安装包检查通过，独立 Debian root 源码 fixture 26 项通过。前端源码与导出未变，复用 dev.22 的 80 项测试/类型检查/静态构建结果。见 [dev.23 检查与日志](evidence/phase2-dev23-checks-20261015.json)、[源码身份](evidence/phase2-dev23-source-snapshot-20261015.json)。实际 Debian 从 dev.21 升级及既有 pending 恢复已通过，新慢日志配置实际生效/停用通过；读取扩展协议日志仍存在格式适配缺口；QA 规则阻断、库/账号删除、令牌撤销和零活跃任务已确认，见 [dev.23 原生证据](evidence/phase2-native-dev23-20261015.json)。
+
+本批还将待恢复保护接入真实安装/重装入口，回归覆盖规划与执行期间 receipt 丢失的情况。rsync/lsyncd、管理应用和 PostgreSQL 远程 TLS 继续隔离开发，第二阶段未完成、第三阶段未开始。普通云端预览当前 dev.23（保留升级前数据与二进制备份）；真实宝塔服务器保持未修改。
+
+## Luna 并行续开发：dev.22（2026-10-15）
+
+源码 `362d2d63b` 已冻结，干净工作区生成 dev.22。最终 Go 全量 race（14 个测试包）与 vet、前端 80 项测试、类型检查、静态导出、安装脚本回归（31 项，2 项条件跳过）、Linux amd64/arm64 构建和实际 amd64 独立前缀安装闭环通过。见 [dev.22 检查与可携带日志](evidence/phase2-dev22-checks-20261015.json)、[源码身份](evidence/phase2-dev22-source-snapshot-20261015.json)。独立 Debian root 源码 fixture 的 15 项顶层测试通过，包含 PHP 重启、损坏状态、原计划恢复、时钟边界和缺失 receipt 拒绝；这不代替实际扩展安装或新版 daemon 验收。
+
+本批增加 MySQL/MariaDB 表清单与检查/修复/优化的持久任务及界面：预览绑定库/实例修订、表结构与期限；只修复支持的引擎，结果身份和最终状态逐行校验；执行结果不确定时只检查，不能自动重放 SQL。复制界面支持专用只读目标、显式确认、服务端允许的恢复选项。任务读取权限被撤销时停止轮询并显示结果未知，手动重读后仍能报告真实终态。
+
+PHP 修复 dev.21 原生 root 测试发现的重启阻断，合法待恢复事务不再阻断 Agent 启动；新增只读恢复检查及折叠入口，继续操作仍重新检查软件包权限。独立审查还修复双次时钟读数导致新计划超出严格期限，以及 receipt 丢失后同 ID 操作覆盖未完成事务的问题。APT 失败诊断只暴露固定分类和可信非零退出码。第二阶段仍未完成，第三阶段未开始。
+
+后续 dev.21 PostgreSQL 原生验收确认访问规则添加/阻断及精确授权检查可用，但首次慢日志配置与恢复原未配置状态均失败，journal 保持 pending，配置仍为原始字节。相同验证顺序在 dev.22 源码仍存在，正优先修复于 dev.23；没有手工改写受保护记录，也不能将源码测试通过写成慢日志已原生通过。见更新的 [dev.21 原生证据](evidence/phase2-native-dev21-20261015.json)。
+
+rsync/lsyncd 与管理应用仍在隔离目录：前者正在修复权限撤销后旧服务仍运行的策略漂移，必须完成精确服务归属、启动门禁、生命周期保护再集成；后者尚待可信 payload、FPM/Web 实际链路。当前未将这些草稿计入发布功能。真实宝塔服务器保持未修改。
+
+## Luna 并行续开发：dev.21（2026-10-15）
+
+### dev.21 后续原生发现（第二阶段仍进行中）
+
+Debian dev.21 的真实 Supervisor 子进程链已经通过：产品创建动作修复 programs 祖先，指定 worker 启动，MCP 读令牌拒绝清理、管理令牌提交成功，日志清空时 PID 保持，停止/删除及令牌撤销完成。独立 root 源码 fixture 同时暴露 PHP 扩展待恢复 journal 会阻断 root Agent 构造启动；普通 UID 测试通过不能排除此问题。该恢复缺陷正优先修复于下一批，尚未以新发行包验收。Supervisor 的另一项 root fixture 失败源于测试替换 RootDir 后未执行生产构造初始化，与已通过的真实服务链区分记录。
+
+源码 `ad531c410` 已推送 `refine`，从干净工作区生成 dev.21。最终 Go 全量 race（14 个测试包）与 vet、前端 70 项测试、类型检查、静态导出、Linux amd64/arm64 构建及实际 amd64 独立前缀安装/重复安装/健康检查/保留数据卸载通过。见 [dev.21 检查与边界](evidence/phase2-dev21-checks-20261015.json) 和[源码身份](evidence/phase2-dev21-source-snapshot-20261015.json)。ARM64 仅构建；源码与协议测试不替代真实服务验收。
+
+本批增加官方发行版 PHP 扩展计划与持久任务、PostgreSQL 本机 SCRAM 访问规则和慢日志、受管 MySQL/MariaDB 同主机复制与只读专用目标。复制种子存于 Agent 私有目录，安装包权限在排队任务实际执行前重新检查；关联实例与库的危险变更由统一保护拒绝。PHP 扩展卸载只停用当前实例并保留系统包，暂不支持物理删包。PostgreSQL 远程访问仍须后续受管 TLS；复制界面与真实客户端/复制过滤验收未完成。
+
+FTP 恢复严格识别旧版 IPv6 字符串破坏冒号字段后的记录，保留原始验证值与其他字段，不宣称旧规则曾完整阻止登录。Supervisor 修复 root 创建的 programs 祖先权限；RPC 返回成功但文件未清空时明确拒绝报告清理成功。另补 Docker socket deadline 与 context 状态发布竞态修复、PostgreSQL FIFO 非阻塞拒绝以及慢日志截断内容遮蔽。
+
+[前批原生证据](evidence/phase2-native-next-20261015.json) 记录 dev.20 双 VM 升级、dev.16 实际 FPM 会话清理、dev.20 Supervisor 安装成功但子进程启动/日志清理失败，以及仅修测试断言后的 root Sites 5/5 通过。[dev.21 独立 VM 证据](evidence/phase2-native-dev21-20261015.json)已记录 Debian 13、Ubuntu 24.04 实际升级通过及 Supervisor API/MCP 子进程完整闭环；PHP root 重启恢复缺陷仍待 dev.22 修复验收。后续由 Luna 在隔离目录继续复制界面、rsync/lsyncd、表维护和管理应用可信部署；第二阶段进行中，第三阶段未开始。真实宝塔服务器保持未修改。
+
+## Luna 并行续开发：dev.20（2026-10-15）
+
+源码 `bc2270666` 已从干净工作区构建 dev.20：Go 全量 race（14 个测试包）及 vet、前端 67 项测试、类型检查、静态导出、双架构构建与实际 amd64 独立前缀安装检查通过。见 [dev.20 检查与限制](evidence/phase2-dev20-checks-20261015.json) 和[源码身份](evidence/phase2-dev20-source-snapshot-20261015.json)。ARM64 仅构建；云端 UID1000 下新增 root Sites 测试编译但跳过，不冒充原生验收。
+
+本批增加网页/MCP 共用 Docker 交互终端、PHP 默认 pool 与站点慢日志、站点 session 预览清理，以及使用私有目录 FD 的安全隔离删除。FTP 暂停改为加密原始验证值 journal，可明确查看待恢复状态；只读查询不执行恢复。FTP 账号只读模式目前明确不支持，schema 固定 `read_only:false`。旧 dev.19 暂停记录的迁移与外部 pure-pw 写入协调在下一批补齐，不能宣称升级兼容已完成。
+
+真实 Debian dev.18 Supervisor 安装暴露脚本进程误判：已通过 `stop_preserve` 安全停止并保留数据，未手工接管或写 receipt。dev.20 补入严格脚本/解释器/参数/UID/系统服务归属校验，下一步用新测试实例原生复验。Ubuntu dev.16 的真实 FPM 会话、浏览器清理与 MCP 权限链通过；双方 QA VM 已实际升级至 dev.19，不能把这些事实写成 dev.20 验收。
+
+数据库复制当前只有未注册的配置/权限 guard 骨架；实际 seed/channel 路径仍开发中。下一批并行推进复制、PostgreSQL 访问规则与慢日志、可信 PHP 扩展安装、FTP 旧状态迁移及 rsync/lsyncd。第二阶段进行中，第三阶段未开始。
+
+## Luna 并行续开发：dev.19（2026-10-15）
+
+用户暂缓真实服务器 SSL/SSH 验收，优先推进其他第二阶段功能。dev.19 源码提交 `04154fc31` 已冻结并构建；Go 全量 race、vet、前端 63 项测试、类型检查、静态导出、双架构构建及实际 amd64 包独立前缀安装检查通过。具体范围与可携带日志见 [dev.19 检查](evidence/phase2-dev19-checks-20261015.json) 和[源码身份](evidence/phase2-dev19-source-snapshot-20261015.json)。
+
+本批增加 Docker 单次 exec、同 Agent 证明的镜像归档、binlog 管理及显式恢复、FTP 目标目录维护、账号启停状态、缓存集群脱敏视图和手动 HTTP-01。归档不接受无证明的任意外部镜像；关闭 exec 流不保证终止容器内命令；FTP 账号暂停尚待实际包登录验证。以上测试不替代真实服务、浏览器与 MCP 完整验收，也不表示第二阶段完成。
+
+下一批由 Luna 并行实现交互 TTY、PHP 慢日志与站点会话维护、数据库复制及 rsync/lsyncd，对应界面同步开发；独立子代理负责真实 VM 验收，主 Agent 负责共享接线、审查和整合。第二阶段进行中，第三阶段未开始。
+
+## 云端第二阶段接续：2026-10-15
+
+- 本轮补齐 SQL 管理员凭据初始化、随机/自定义密码轮换与显式恢复。自定义密码先加密暂存为不可变版本，持久任务仅保存版本标识；实际解密发生在执行时授权检查后，通过受认证 Unix IPC 交给 root Agent。SQL 提交与本地凭据写入分离时保持待恢复状态，不自动重放密码 SQL。
+- Core SecretPut/Get/Delete 的审计保留动作、资源与标签，但不再返回内部 `secret_ref`；新增真实审计存储回归，修复提交为 `ae1b2b582`。
+- Docker 增加私仓凭据 CRUD/CAS、不可变版本、严格仓库匹配的 digest pull，以及逐镜像授权的 typed list；界面接入精确摘要选择、检查/删除和私仓操作。凭据不写入 Docker login 配置、任务或审计输出。SQL 管理员界面显示实际状态与允许的恢复动作。
+- 原生 DNSPod 国际版 HTTPS 驱动补入完整分页、精确 TXT/zone/record 归属和响应丢失恢复；[协议证据](evidence/phase2-dpi-protocol-20261015.json) 同时保留另外四个 DNS provider 的具体限制，未宣称真实供应商账户或公共 CA 验收。
+- 全量 Go race：13 个测试包通过，2 个包无测试；`go vet` 通过。前端 48/48、类型检查、Next.js 静态构建通过。dev.13 amd64/arm64 固定包构建及实际 amd64 包 private-prefix smoke 通过；ARM64 本轮仅构建。见 [批次检查与可携带日志](evidence/phase2-sol-20261015/checks.json) 和 [冻结源码清单](evidence/phase2-dev13-source-snapshot-20261015.json)。
+- 真实 Web/PHP 跨实例迁移、安装恢复、SQL 密码轮换和新增浏览器流程继续在隔离 VM 验收，结果另列，未执行项不计通过。Ubuntu dev.13 实际安装升级已通过，API/Agent 进程校验一致且策略与配置连续；这不等于迁移流程已通过。
+- 逐项缺口已另列 [第二阶段剩余工作](PHASE2-REMAINING-20261015.md)，明确区分缺实现、缺原生验收与外部条件，不按 stale tracker 状态推算完成比例。后续 Luna Max 批次已补 PHP instance error log/session 快照清理与 Supervisor 作业日志查看/双流清理，定向测试通过，统一回归与固定包检查继续进行。PHP 未配置的 slow log 和站点 pool session 管理仍列缺口；未执行原生/浏览器项不计通过。
+- 实际 dev.13 固定二进制的 REST、HTTP MCP、stdio MCP 私仓凭据 CRUD/CAS/权限隔离/撤销与 SQLite 秘密检查 8 项通过，全部自建进程已清理。见 [实际协议证据](evidence/phase2-dev13-registry-live-protocol-20261015.json)；这不代表真实 Docker daemon/private registry pull 验收。
+
+### Luna Max 后续与原生发现
+
+PHP/Supervisor 与 Docker Hub 名称核验修复后，前端 **57/57**、类型检查及静态导出通过。dev.14 首次 ARM64 构建发现 `Stat_t.Nlink` 类型差异，已以显式 `uint64` 转换修复；dev.15 双架构构建与 amd64 实际安装包 smoke 通过，旧失败记录保留。
+
+- dev.13 实际 Ubuntu 迁移首次去程与静态/PHP HTTP 通过；回迁暴露按字母排序重载导致同端口抢占的产品问题。失败已回滚至目标实例 revision 2，实际 HTTP 保持可用。修复后执行顺序为源→目标→PHP，回滚为目标→源→PHP；WAL 校验将旧源与 protected beforeimage 绑定，权限/锁仍保持排序。两种名称顺序、部分 reload 失败和 SIGKILL/WAL 恢复的定向 race 通过。
+- dev.16 最终修复源码再次通过全量 Go race（13 包）、vet；双架构构建及真实 amd64 固定包 private-prefix smoke 通过。前端源码未变，复用 dev.15 已验证静态导出。源码身份见 [dev.16 清单](evidence/phase2-dev16-source-snapshot-20261015.json)，检查与旧失败边界见 [Luna 批次](evidence/phase2-luna-20261015/checks.json)。实际 Ubuntu 同一站点双向迁移已在 dev.16 通过：两端静态/PHP HTTP 正常，worker、PHP 与内容保持不变。见 [原生检查记录](evidence/phase2-dev13-native-20261015.json)。
+- Debian 13 amd64 的真实 Redis/systemd 安装恢复 source binary 检查通过：continue 与 stop_preserve，32.37 秒；测试 marker 和临时 unit/目录清理另由 QA 核实。它是实际内核/服务的 source integration，不能等同面板安装包故障闭环。
+- Debian dev.18 固定包已通过实际恢复：原 `mariadb-p2adminqa` 的 `health_failed` revision 11 由新检查确认 active/MainPID 后，显式 continue 任务成功，journal completed revision 15 且 receipt 存在；原 PID 3004 与数据目录 inode/文件数/字节数保持。真实 PostgreSQL/MariaDB 的 source integration 也已通过（3.34 秒）：自定义密码 SQL、提交前显式 apply、提交后取消、凭据保存失败与重启恢复；执行的是 dev.13 test binary，对接 dev.18 管理的实际 daemon。dev.18 实际 API 自定义密码暂存→持久任务→Unix Agent 轮换在两引擎均通过，旧版本与新版本不同、任务返回与当前状态一致且健康；持久输入只含实例/旧凭据版本/密码标识。Maria 本次密码在被检查的响应、任务行、任务日志、近期审计与 API/Agent journal 中均未出现；PG 首次 checker 误将两种标识要求相等，已纠正断言并从成功任务核实，无重复轮换，因原秘密已丢弃未做该秘密的精确值扫描。
+- Supervisor 4.2.5 的独立非 root daemon 与子进程已验证两路日志 RPC 清理，子进程 PID 与运行状态保留，见 [实际协议证据](evidence/phase2-supervisor-daemon-protocol-20261015.json)。该检查不包含生产 API/Agent/浏览器全链。
+- 实际 dev.16 Chromium 检查通过：读取并显示 100 行 PHP-FPM 错误日志、加载 session 统计并显示零候选清理预览；未提交清理任务，见 [浏览器证据](evidence/phase2-dev16-php-browser-20261015.json)。
+- 真实 Debian MariaDB 第 9 秒才就绪，原 8 秒启动期限提前失败且留下运行进程和受保护 journal。已增加 SQL 45 秒、MongoDB 60 秒的有界等待；为 `health_failed` 增加重新核验归属、初始化凭据、当前进程与真实协议健康后的显式 continue，不重放包安装、初始化或密码 SQL。专项普通/race 测试及 dev.17 全量 race/vet、双架构构建、安装包 smoke 通过；独立审查随后发现还需确认 systemd ActiveState/MainPID 与该 PID 一致。该遗漏已补入 dev.18：固定 `/usr/bin/systemctl show` 的有界查询、严格输出解析和 MainPID 等值检查；inactive、PID 不符、缺字段/重复/截断/取消等负例拒绝且 journal 不变。独立复审无遗留发现；全量 race/vet、双架构及实际 amd64 安装包 smoke 再次通过。[最终源码清单](evidence/phase2-dev18-source-snapshot-20261015.json) 绑定产品提交 `6bc033fc4`，原实例恢复和双 SQL 引擎复验另见原生证据。
+- 原生测试收尾：Debian 恢复已保存的原始 HTTPS/Signed-By 软件源，Ubuntu 原始 source 哈希保持并删除本轮 relay override/mirror；本轮 APT tunnel/relay 已停止，既有共享 relay/API forward 与受管 SQL 数据保留。临时路由、最终源/密钥哈希和扫描边界见原生证据。
+- 云端普通用户预览已升级 dev.18，离线保留原数据和二进制备份，健康与重复启动通过；未在宿主安装 root Agent 或全局服务。真实软件管理继续使用隔离 VM。
+
+## 本地第二阶段接续：2026-10-14
 
 本批从远端 `refine` 的 `92752b9` 建立 `refine-local`；旁边旧工作区的未提交改动未修改。使用 GPT-6 Luna max 分模块实现并独立审查。第二阶段仍在进行中，第三阶段未开始。
 
@@ -16,17 +93,11 @@
 - Debian 13 **原生 arm64** 可丢弃 VM 已建立，宿主未全局安装 Go/插件或修改 SSH/防火墙。真实 Redis/systemd 源测试的 continue/stop_preserve、外部 drop-in 拒绝和 missing-unit 拒绝通过。迁移 root 文件系统 fixture 的两种真实子进程 SIGKILL 检查通过；其 Web check/reload 为协议 fixture，不能当作 OpenResty/PHP 服务验收。
 - 普通 UID、umask 077 的全量 Go race 13 包通过、2 包无测试，387 项顶层测试通过、55 项环境或 helper 用例跳过；对应源码快照与逐项跳过记录见 [源码证据](evidence/phase2-local-20261014/source-checks.json)。前端 43 项源码测试、类型检查及静态导出通过。最后安全修复的插件定向 race、全量 vet 和依赖校验通过；固定包验收随后补入，未执行前不宣称可部署或阶段完成。
 
-- 网站监听交接补充：正常迁移按源 Web、PHP、目标 Web 顺序发布，WAL 回滚先释放目标，再恢复原 Web，锁仍按 ID 排序。正向、反向与 late-probe 失败回滚，以及原有 SIGKILL/归属/CAS 定向检查通过；这是根文件系统和监听协议模型证据，真实固定包服务验收继续进行。见 [监听交接证据](evidence/phase2-local-20261014/web-listener-checks.json)。新增真实网站迁移验收脚本，目前仅语法检查，尚未运行。
-
-- 临时任务凭据增加不可变加密 TTL、原子索引与独立启动/周期清理；排队取消或撤权不再依赖下一次调用清理，过期值即时拒绝读取。普通 Debian UID 的 4 项 secrets 定向检查及 45 项 Core 顶层源码测试通过；统一 race 与真实私仓仍待本批集成。见 [凭据到期证据](evidence/phase2-local-20261014/credential-expiry-checks.json)。
-
-- dev.13 固定包（源码 `b893eef`、clean、Go 1.27.2）双架构构建通过，arm64 包实际全新安装并验证 API/Agent。实际签名 Redis 安装因收据目录只读到达 receipt_pending，解除故障并重启 Agent 后 REST continue 成功，已有系统 Redis 保持正常。真正 OpenResty 1.27.1.2 与 Debian PHP8.4/FPM 链及正向迁移通过；反向迁移在旧 dev.13 复现 reload_failed，后续固定包需复验监听顺序修复。详见 [固定包证据](evidence/phase2-local-20261014/fixed-package-checks.json)。
-
 本机临时 VM、工具链、缓存和专用 SSH key 集中于 `.cache/rewrite`。用户要求开发结束可清理：验收后先 poweroff 并确认 launcher 停止，保留代码、脱敏证据和发行包，再清除本次临时环境。源码、真实服务、固定安装包和浏览器证据分别记录。
 
-## 云端第二阶段过程记录（历史批次）
+## 历史云端 Luna 批次（2026-10-13）
 
-用户已恢复云端开发，要求使用 GPT-6 Luna max 按小批次继续完成第二阶段。首批源码闭环已完成，但第二阶段仍未达到退出标准，第三阶段未开始。
+该历史批次按当时要求使用 GPT-6 Luna max。首批源码闭环已完成，以下保留当时的验证状态；当前安排与结果以上方 2026-10-15 记录为准。
 
 - ACME 证书签发/续期及订单 confirm/cancel producer 已迁移到 `Tasks.SubmitPrepared`；order receipt 与 task、权限在同一 SQLite 事务提交。
 - Core 已启用 SQLite `synchronous(FULL)`，新建 master secret 在文件和目录同步成功后才继续；post-commit enqueue 对明确 transient busy 错误做有界重试。

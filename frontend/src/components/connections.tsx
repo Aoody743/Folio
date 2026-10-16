@@ -87,10 +87,14 @@ export function ConnectionsView({
       /hash_|list_|set_|keys_scan|key_type/.test(name)
     )
       return false;
+    if (name.startsWith("cache_cluster_"))
+      return current?.engine === "redis" || current?.engine === "valkey";
     return name.startsWith("cache_");
   };
   const inGroup = (name: string) =>
-    group === "status"
+    group === "cluster"
+      ? name.startsWith("cache_cluster_")
+      : group === "status"
       ? /status|get$|tables_list$|scan$|type$/.test(name)
       : group === "query"
         ? /query|documents_/.test(name)
@@ -108,6 +112,7 @@ export function ConnectionsView({
         ]
       : [
           { id: "status", label: "状态与键列表" },
+          { id: "cluster", label: "集群状态" },
           { id: "data", label: "键与集合" },
           { id: "config", label: "连接设置" },
         ];

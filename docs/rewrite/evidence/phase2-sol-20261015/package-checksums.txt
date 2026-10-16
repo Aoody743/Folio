@@ -1,0 +1,2 @@
+da1cdf0f3224e74d320200f551b7fba5eb1583a50e21cf7931ffec529e8e7783  powerlinux-0.1.0-dev.13-linux-amd64.tar.gz
+cf5f8745ee68ac4f30f88e8bafdf2fb62b9cba6f8dd393b088ea5ff3695ecd12  powerlinux-0.1.0-dev.13-linux-arm64.tar.gz

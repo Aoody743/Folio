@@ -106,6 +106,32 @@ func siteResource(_ context.Context, _ core.Actor, raw json.RawMessage) ([]strin
 	}
 	return []string{Resource(in.ID)}, nil
 }
+func (p *Provider) sitePHPResources(scope string) func(context.Context, core.Actor, json.RawMessage) ([]string, error) {
+	return func(ctx context.Context, actor core.Actor, raw json.RawMessage) ([]string, error) {
+		var in struct {
+			ID string `json:"id"`
+		}
+		if json.Unmarshal(raw, &in) != nil || !safeID.MatchString(in.ID) {
+			return nil, invalid("A website ID is required")
+		}
+		siteResource := Resource(in.ID)
+		if !p.deps.Authorize(actor, scope, siteResource) {
+			return nil, denied()
+		}
+		site, err := p.get(ctx, actor, in.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !safeID.MatchString(site.PHPInstance) {
+			return nil, failure("php_runtime_required", "This website has no managed PHP runtime", 412)
+		}
+		phpResource := "software:" + site.PHPInstance
+		if !p.deps.Authorize(actor, "software:read", phpResource) {
+			return nil, denied()
+		}
+		return []string{siteResource, phpResource}, nil
+	}
+}
 func certResource(_ context.Context, _ core.Actor, raw json.RawMessage) ([]string, error) {
 	var in struct {
 		ID string `json:"id"`
@@ -132,7 +158,7 @@ func (p *Provider) Bindings() []core.Binding {
 		"id":                    idField(), "expected_revision": revision, "name": text(160), "domains": domains, "web_instance": idField(), "php_instance": text(96), "run_path": text(1024), "category_id": text(96), "status": choice("running", "stopped"), "default": boolean(), "ipv6": boolean(), "index": array(text(128), 16), "description": text(4000), "expires_at": text(64), "rewrite": text(16 << 10), "access_log": boolean(),
 		"rate_limit":         object(map[string]any{"enabled": boolean(), "connections": number(0, 100000), "bytes_per_second": number(0, 1<<40), "requests_per_second": number(0, 100000)}),
 		"protection":         object(map[string]any{"enabled": boolean(), "username": text(64), "password": text(72), "deny_paths": array(text(1024), 64), "anti_hotlink": boolean(), "allowed_referers": domains}),
-		"php":                object(map[string]any{"open_basedir": boolean(), "values": map[string]any{"type": "object", "additionalProperties": text(1024), "maxProperties": 32}}),
+		"php":                object(map[string]any{"open_basedir": boolean(), "values": map[string]any{"type": "object", "additionalProperties": text(1024), "maxProperties": 32}, "slowlog_enabled": boolean(), "slowlog_timeout_seconds": number(0, 300)}),
 		"directory_bindings": array(binding, 64), "proxies": array(proxy, 64), "redirects": array(redirect, 64),
 	}
 	bindings := []core.Binding{
@@ -149,6 +175,10 @@ func (p *Provider) Bindings() []core.Binding {
 		p.binding("sites_default_set", "Select a default website with explicit revisions for both the new and previous defaults", "sites:write", "site_default_set", false, true, object(map[string]any{"id": idField(), "expected_revision": revision, "previous_site_id": text(96), "previous_revision": revision}, "id", "expected_revision"), p.defaultResources),
 		p.binding("sites_default_get", "Read the selected and current default websites after checking access to both resources", "sites:read", "site_default_get", true, false, object(map[string]any{"id": idField()}, "id"), siteResource),
 		p.binding("sites_logs", "Read bounded actual Web/PHP log lines", "sites:read", "site_logs", true, false, object(map[string]any{"id": idField(), "kind": choice("access", "error", "php"), "offset": number(0, 1<<30), "limit": number(1, 1000)}, "id", "kind"), siteResource),
+		p.binding("sites_php_slowlog_read", "Read the bounded configured slowlog for one managed website PHP pool", "sites:read", "site_php_slowlog_read", true, false, object(map[string]any{"id": idField(), "limit": number(1, 500)}, "id"), p.sitePHPResources("sites:read")),
+		p.binding("sites_php_session_stats", "Count only managed PHP files sessions in one website tmp directory", "sites:read", "site_php_session_stats", true, false, object(map[string]any{"id": idField(), "older_than_seconds": number(3600, 365*24*60*60)}, "id"), p.sitePHPResources("sites:read")),
+		p.binding("sites_php_session_preview", "Capture an immutable bounded cleanup preview for one website's expired PHP sessions", "sites:read", "site_php_session_preview", false, false, object(map[string]any{"id": idField(), "expected_revision": revision, "older_than_seconds": number(3600, 365*24*60*60)}, "id", "expected_revision", "older_than_seconds"), p.sitePHPResources("sites:read")),
+		p.binding("sites_php_session_cleanup", "Remove only expired PHP sessions captured by the current immutable preview", "sites:write", "site_php_session_cleanup", false, true, object(map[string]any{"id": idField(), "expected_revision": revision, "preview_id": map[string]any{"type": "string", "pattern": sitePHPPreviewID.String(), "maxLength": 52}}, "id", "expected_revision", "preview_id"), p.sitePHPResources("sites:write")),
 		p.binding("sites_config_get", "Read the actual owned virtual-host configuration", "sites:read", "site_config_get", true, false, object(map[string]any{"id": idField()}, "id"), siteResource),
 		p.binding("sites_config_set", "Apply advanced Web configuration only with explicitly delegated root authority and a trusted policy opt-in", "sites:config", "site_config_set", false, true, object(map[string]any{"id": idField(), "expected_revision": revision, "config": text(48 << 10)}, "id", "expected_revision", "config"), func(ctx context.Context, a core.Actor, raw json.RawMessage) ([]string, error) {
 			if !p.deps.Authorize(a, "terminal:root", "host:local") {
@@ -456,6 +486,8 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 	_ = json.Unmarshal(fields["plan_id"], &in.PlanID)
 	_ = json.Unmarshal(fields["target_web_instance"], &in.TargetWebInstance)
 	_ = json.Unmarshal(fields["expected_revision"], &in.ExpectedRevision)
+	_ = json.Unmarshal(fields["older_than_seconds"], &in.OlderThanSeconds)
+	_ = json.Unmarshal(fields["preview_id"], &in.PreviewID)
 	_ = json.Unmarshal(fields["kind"], &in.Kind)
 	_ = json.Unmarshal(fields["offset"], &in.Offset)
 	_ = json.Unmarshal(fields["limit"], &in.Limit)
@@ -468,6 +500,17 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 		_ = json.Unmarshal(keep, &in.KeepData)
 	}
 	resources := []string{Resource(in.ID)}
+	if name == "sites_php_slowlog_read" || name == "sites_php_session_stats" || name == "sites_php_session_preview" || name == "sites_php_session_cleanup" {
+		scope := "sites:read"
+		if name == "sites_php_session_cleanup" {
+			scope = "sites:write"
+		}
+		var err error
+		resources, err = p.sitePHPResources(scope)(ctx, actor, raw)
+		if err != nil {
+			return core.ActionResult{}, err
+		}
+	}
 	if name == "sites_migration_plan" {
 		var err error
 		resources, err = p.migrationPlanResources(ctx, actor, raw)
@@ -617,7 +660,7 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 
 // All slow website mutations use the shared durable four-slot manager.
 func JobOperationNames() []string {
-	return []string{"site_apply", "site_migration_apply", "site_delete", "site_retained_purge", "site_default_set", "site_config_set", "site_backup_create", "site_backup_restore", "certificate_acme_issue", "certificate_acme_order"}
+	return []string{"site_apply", "site_migration_apply", "site_delete", "site_retained_purge", "site_default_set", "site_config_set", "site_backup_create", "site_backup_restore", "site_php_session_cleanup", "certificate_acme_issue", "certificate_acme_order"}
 }
 func (p *Provider) Validate(job agent.Request) error {
 	known := false
@@ -641,6 +684,9 @@ func (p *Provider) Validate(job agent.Request) error {
 			return agent.ErrInvalidInput
 		}
 	} else if !safeID.MatchString(in.ID) {
+		return agent.ErrInvalidInput
+	}
+	if job.Operation == "site_php_session_cleanup" && (in.ExpectedRevision < 1 || !sitePHPPreviewID.MatchString(in.PreviewID)) {
 		return agent.ErrInvalidInput
 	}
 	return nil
@@ -730,6 +776,11 @@ func (p *Provider) Run(ctx context.Context, job agent.Request) (agent.Result, er
 	}
 	if job.Operation == "site_config_set" && !p.deps.Authorize(actor, "terminal:root", "host:local") {
 		return agent.Result{}, denied()
+	}
+	if job.Operation == "site_php_session_cleanup" {
+		if _, err = p.sitePHPResources("sites:write")(ctx, actor, job.Input); err != nil {
+			return agent.Result{}, err
+		}
 	}
 	if err = p.resolveACMEJob(ctx, actor, &in); err != nil {
 		return agent.Result{}, err
