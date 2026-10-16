@@ -188,7 +188,7 @@ func serve(args []string) error {
 		return err
 	}
 	mux := http.NewServeMux()
-	mux.Handle("/api/", httpapi.NewWithOptions(svc, httpapi.Options{SecureCookies: *cert != "" || *secureCookie || strings.HasPrefix(*public, "https://"), AllowedOrigins: trusted, ResourceHandler: resourceHandlers{fileManager, modules.terminal, modules.database, modules.website}}))
+	mux.Handle("/api/", httpapi.NewWithOptions(svc, httpapi.Options{SecureCookies: *cert != "" || *secureCookie || strings.HasPrefix(*public, "https://"), AllowedOrigins: trusted, ResourceHandler: resourceHandlers{fileManager, modules.terminal, modules.database, modules.website, modules.apps}}))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")

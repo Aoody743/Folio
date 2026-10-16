@@ -430,6 +430,7 @@ export function ActionForm({
         "credential_id",
         "certificate_id",
         "backup_id",
+        "import_id",
       ].includes(key),
     ),
   );

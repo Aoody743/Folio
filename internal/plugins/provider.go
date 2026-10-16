@@ -118,6 +118,7 @@ func (m *Manager) Bindings() []core.Binding {
 	bindings = append(bindings, m.dockerExecBindings()...)
 	bindings = append(bindings, m.ftpBindings()...)
 	bindings = append(bindings, m.ftpMaintenanceBindings()...)
+	bindings = append(bindings, m.hostedAppBindings()...)
 	return bindings
 }
 
@@ -431,7 +432,7 @@ func (m *Manager) ReadRuntimeTarget(ctx context.Context, id string) (RuntimeTarg
 	}
 	target := RuntimeTarget{Instance: instance}
 	switch instance.PluginID {
-	case "openresty":
+	case "openresty", "nginx":
 		target.NginxConf = filepath.Join(instance.Paths.ConfigDir, "nginx.conf")
 		target.SitesDir = filepath.Join(instance.Paths.ConfigDir, "sites")
 	case "php", "php-apt", "php-yum":

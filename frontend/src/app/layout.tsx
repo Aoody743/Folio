@@ -4,8 +4,8 @@ import "@astryxdesign/core/astryx.css";
 import "@astryxdesign/theme-neutral/theme.css";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "PowerLinux",
-  description: "轻量 Linux 管理面板",
+  title: "Folio · 折纸面板",
+  description: "AI 时代的 Linux 服务器可视化工具",
   icons: { icon: "/icon.svg" },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };

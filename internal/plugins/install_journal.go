@@ -1131,7 +1131,7 @@ func systemdUnitBytes(e *PrivilegedExecutor, instance Instance, nonce string) ([
 		return nil, err
 	}
 	switch instance.PluginID {
-	case "openresty":
+	case "openresty", "nginx":
 		args = append(args, "-g", "daemon off;")
 	case "php", "php-apt", "php-yum":
 		args[len(args)-1] = "-F"
@@ -1147,7 +1147,7 @@ func systemdUnitBytes(e *PrivilegedExecutor, instance Instance, nonce string) ([
 		command += " " + unitQuote(arg)
 	}
 	identity := ""
-	if instance.PluginID != "openresty" && !isPHPRuntime(instance.PluginID) && instance.PluginID != "pureftp" && instance.PluginID != "docker" {
+	if instance.PluginID != "openresty" && instance.PluginID != "nginx" && !isPHPRuntime(instance.PluginID) && instance.PluginID != "pureftp" && instance.PluginID != "docker" {
 		group := e.config.RunGroup
 		if group == "" {
 			group = e.config.RunUser
@@ -1155,7 +1155,7 @@ func systemdUnitBytes(e *PrivilegedExecutor, instance Instance, nonce string) ([
 		identity = "User=" + e.config.RunUser + "\nGroup=" + group + "\n"
 	}
 	reload := ""
-	if instance.PluginID == "openresty" {
+	if instance.PluginID == "openresty" || instance.PluginID == "nginx" {
 		reload = "ExecReload=" + unitQuote(instance.Service.Program)
 		reloadArgs, _ := e.serviceArgs(instance, "reload")
 		for _, arg := range reloadArgs {

@@ -126,6 +126,6 @@ func healthcheck(args []string) error {
 	if *expected != "" && body.Version != *expected {
 		return errors.New("healthy process does not match the expected installed version")
 	}
-	fmt.Printf("PowerLinux %s healthy.\n", body.Version)
+	fmt.Printf("Folio %s healthy.\n", body.Version)
 	return nil
 }

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/agent"
 	"github.com/Aoody743/PowerLinux/internal/core"
@@ -546,6 +547,26 @@ func TestMigrationJournalRequiresSourceReceiptToMatchRecoveryOrder(t *testing.T)
 	}
 	if !slices.Equal(runtime.recoveries, []string{"web-target", "web-source", "php-shared"}) || runtime.listenerOwner != "web-source" {
 		t.Fatal("active journal rollback did not follow the validated migration direction", runtime.recoveries, runtime.listenerOwner)
+	}
+}
+
+func TestWebMigrationPendingJournalRetainsExpiredPlanAuthority(t *testing.T) {
+	e, _, site, _ := newMigrationTestExecutor(t, false)
+	view := createMigrationTestPlan(t, e, site, false)
+	_, finish, err := e.beginWebsiteJournal(context.Background(), "site_migration_apply", request{PlanID: view.ID, ExpectedRevision: site.Revision})
+	if err != nil {
+		t.Fatal(err)
+	}
+	operationErr := errors.New("fixture cancellation before any mutation")
+	defer finish(&operationErr)
+	if err = e.prepareMigrationPlanInventory(time.Now().Add(time.Hour), false, true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = e.loadMigrationPlan(view.ID); err != nil {
+		t.Fatal("active WAL lost its expired plan authority", err)
+	}
+	if err = e.prepareMigrationPlanInventory(time.Now().Add(time.Hour), true, false); err == nil {
+		t.Fatal("new planning mutated inventory while a journal needed recovery")
 	}
 }
 

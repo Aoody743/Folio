@@ -28,6 +28,7 @@ import {
   Task,
 } from "@/lib/api";
 import { Icon, IconName } from "./icon";
+import { HostingStackSetup } from "./hosting-stack-setup";
 const NoteEditor = dynamic(() => import("./notes").then((m) => m.NoteEditor), {
   ssr: false,
 });
@@ -254,7 +255,7 @@ export function Panel() {
       }
     }
     setSession(next);
-    document.title = next.panel?.panel_name || "PowerLinux";
+    document.title = next.panel?.panel_name || "Folio · 折纸面板";
   }, []);
   const loadSession = useCallback(async () => {
     try {
@@ -539,7 +540,7 @@ export function Panel() {
                     setSection("overview");
                     setNotesAll(false);
                   }}
-                  aria-label={`${session?.panel?.panel_name ?? "PowerLinux"} 概览`}
+                  aria-label={`${session?.panel?.panel_name ?? "Folio · 折纸面板"} 概览`}
                 >
                   <span className="brand-mark">
                     <i />
@@ -547,7 +548,7 @@ export function Panel() {
                     <i />
                     <i />
                   </span>
-                  <strong>{session?.panel?.panel_name ?? "PowerLinux"}</strong>
+                  <strong>{session?.panel?.panel_name ?? "Folio · 折纸面板"}</strong>
                 </button>
                 <div className="host-pill">
                   <span
@@ -596,7 +597,7 @@ export function Panel() {
                 <div className="page-heading">
                   <div>
                     <span className="eyebrow">
-                      {section === "overview" ? "WORKSPACE" : "POWERLINUX"}
+                      {section === "overview" ? "WORKSPACE" : "FOLIO"}
                     </span>
                     <h1>
                       {section === "overview"
@@ -666,6 +667,7 @@ export function Panel() {
                     秒尝试读取，恢复后自动同步。
                   </div>
                 )}
+                <HostingStackSetup capabilities={caps} />
                 {section === "overview" &&
                   (notesAll ? (
                     <Card className="panel-card">
@@ -960,6 +962,34 @@ export function Panel() {
                             detail="这里只显示实际任务错误与提醒。"
                           />
                         )}
+                      </Card>
+                      <Card className="panel-card secondary-card">
+                        <CardTitle icon="software" title="第二阶段核心测试版范围">
+                          <span className="status-chip warning">验收进行中</span>
+                        </CardTitle>
+                        <div className="rows">
+                          <div className="event-row">
+                            <span className="status-chip accent">可用</span>
+                            <div>
+                              <strong>网站 / PHP、数据库与缓存（MariaDB 主线、PostgreSQL 本机管理、Redis）、Docker、Supervisor</strong>
+                              <p>文件、本地备份、计划任务、系统设置、安全审计及网页 / MCP 授权也属于核心测试版。每项功能仍以当前能力和权限检查为准。</p>
+                            </div>
+                          </div>
+                          <div className="event-row">
+                            <span className="status-chip warning">暂缓</span>
+                            <div>
+                              <strong>MongoDB、phpMyAdmin / pgAdmin、PureFTP、FTP 远程备份、文件同步</strong>
+                              <p>包括 rsync / lsyncd、PHP yum / 源码和 PostgreSQL 远程 TLS。</p>
+                            </div>
+                          </div>
+                          <div className="event-row">
+                            <span className="status-chip danger">不可用</span>
+                            <div>
+                              <strong>跨主机或跨引擎数据库复制，以及未实现的管理能力</strong>
+                              <p>首发范围尚未完成实际环境验收；这里的范围标签不表示功能已验证。</p>
+                            </div>
+                          </div>
+                        </div>
                       </Card>
                     </div>
                   ))}
@@ -1535,7 +1565,7 @@ function Auth({
           <i />
           <i />
         </span>
-        <strong>{panel?.panel_name ?? "PowerLinux"}</strong>
+        <strong>{panel?.panel_name ?? "Folio · 折纸面板"}</strong>
       </div>
       <Card className="auth-card panel-card">
         <span className="eyebrow">YOUR LINUX WORKSPACE</span>

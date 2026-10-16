@@ -47,6 +47,9 @@ func renderWebsite(site Site, paths renderedPaths, web WebRuntime, fpmAddress st
 	if err := validateSite(&site); err != nil {
 		return "", err
 	}
+	if site.ExpiresAt != "" && !web.SupportsLua {
+		return "", invalid("Automatic website expiration requires the OpenResty stack; clear expires_at or select an OpenResty runtime")
+	}
 	if !filepath.IsAbs(paths.DocumentRoot) || !filepath.IsAbs(paths.LogDir) {
 		return "", invalid("Website Agent paths must be absolute")
 	}

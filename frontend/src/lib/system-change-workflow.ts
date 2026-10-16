@@ -34,6 +34,7 @@ const actionNames: readonly SystemChangeAction[] = [
 ];
 
 export function systemChangeRecoveryKey(origin: string, identity: string) {
+  // Keep the storage namespace stable across the rebrand so pending workflows survive upgrades.
   return `powerlinux:system-change:v1:${encodeURIComponent(origin)}:${encodeURIComponent(identity)}`;
 }
 

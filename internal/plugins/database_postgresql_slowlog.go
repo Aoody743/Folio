@@ -31,10 +31,11 @@ const (
 )
 
 var (
-	postgresqlSlowlogDirectivePattern = regexp.MustCompile(`(?im)^\s*(log_min_duration_statement|log_parameter_max_length|log_statement|log_line_prefix)\s*=`)
-	postgresqlSlowlogRecordPattern    = regexp.MustCompile(`^(.*?) LOG:\s+duration:\s+([0-9]+(?:\.[0-9]+)?) ms\s+statement:\s*(.*)$`)
-	postgresqlSlowlogPrefixPattern    = regexp.MustCompile(`^(.+?) \[[0-9]+\] ([^@ ]+)@([^ ]+)$`)
-	postgresqlSlowlogSecretPattern    = regexp.MustCompile(`(?i)\b(password|passwd|secret|token|api[_-]?key)\s*=\s*[^,\s;]+`)
+	postgresqlSlowlogDirectivePattern      = regexp.MustCompile(`(?im)^\s*(log_min_duration_statement|log_parameter_max_length|log_statement|log_line_prefix)\s*=`)
+	postgresqlSlowlogRecordPattern         = regexp.MustCompile(`^(.*?) LOG:\s+duration:\s+([0-9]+(?:\.[0-9]+)?) ms\s+statement:\s*(.*)$`)
+	postgresqlSlowlogProtocolRecordPattern = regexp.MustCompile(`^(.*?) LOG:\s+duration:\s+([0-9]+(?:\.[0-9]+)?) ms\s+(parse|bind|execute)\s+(?:<unnamed>|[^\s:]{1,256}):\s*(.*)$`)
+	postgresqlSlowlogPrefixPattern         = regexp.MustCompile(`^(.+?) \[[0-9]+\] ([^@ ]+)@([^ ]+)$`)
+	postgresqlSlowlogSecretPattern         = regexp.MustCompile(`(?i)\b(password|passwd|secret|token|api[_-]?key)\s*=\s*[^,\s;]+`)
 )
 
 type DatabasePostgreSQLSlowlogEntry struct {
@@ -654,25 +655,32 @@ func parsePostgreSQLSlowlogEntries(data []byte, database string, limit int, trun
 			line = line[:databasePostgreSQLSlowlogMaxLine]
 			*truncated = true
 		}
-		match := postgresqlSlowlogRecordPattern.FindStringSubmatch(strings.TrimSuffix(line, "\r"))
-		if match == nil {
+		line = strings.TrimSuffix(line, "\r")
+		prefix, durationText, statement, operation := "", "", "", ""
+		if match := postgresqlSlowlogRecordPattern.FindStringSubmatch(line); match != nil {
+			prefix, durationText, statement = match[1], match[2], match[3]
+		} else if match := postgresqlSlowlogProtocolRecordPattern.FindStringSubmatch(line); match != nil {
+			prefix, durationText, statement, operation = match[1], match[2], match[4], match[3]
+		} else {
 			continue
 		}
-		duration, err := strconv.ParseFloat(match[2], 64)
+		duration, err := strconv.ParseFloat(durationText, 64)
 		if err != nil || math.IsNaN(duration) || math.IsInf(duration, 0) || duration < 0 || duration > 1e12 {
 			continue
 		}
-		prefix := strings.TrimSpace(match[1])
-		meta := postgresqlSlowlogPrefixPattern.FindStringSubmatch(prefix)
+		meta := postgresqlSlowlogPrefixPattern.FindStringSubmatch(strings.TrimSpace(prefix))
 		if meta == nil {
 			continue
 		}
 		if meta[3] != database {
 			continue
 		}
-		statement, statementTruncated := redactPostgreSQLStatement(match[3])
+		statement, statementTruncated := redactPostgreSQLStatement(statement)
 		if statementTruncated {
 			*truncated = true
+		}
+		if operation != "" {
+			statement = operation + ": " + statement
 		}
 		entries = append(entries, DatabasePostgreSQLSlowlogEntry{StartedAt: safePostgreSQLLogField(meta[1], 128), DurationMS: duration, Role: safePostgreSQLLogField(meta[2], 63), Database: safePostgreSQLLogField(meta[3], 63), Statement: statement})
 	}

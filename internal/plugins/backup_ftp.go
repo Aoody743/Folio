@@ -106,6 +106,12 @@ func ftpDial(ctx context.Context, profile FTPDestination, password string) (*ftp
 	return ftpDialLimited(ctx, profile, password, maxExtractedBytes)
 }
 
+func containsFTPProtocolControl(value string) bool {
+	return strings.ContainsFunc(value, func(character rune) bool {
+		return character < 0x20 || character == 0x7f
+	})
+}
+
 type ftpBoundedConn struct {
 	net.Conn
 	remaining int64
@@ -137,6 +143,9 @@ func (c *ftpBoundedConn) Close() error {
 func ftpDialLimited(ctx context.Context, profile FTPDestination, password string, maxData int64) (*ftp.ServerConn, error) {
 	if strings.ContainsAny(profile.Host, "/\\\x00\r\n") || profile.Host == "" || profile.Port < 1 || profile.Port > 65535 {
 		return nil, failure("invalid_destination", "FTP host/port is invalid", 400)
+	}
+	if containsFTPProtocolControl(profile.Username) || containsFTPProtocolControl(password) {
+		return nil, failure("invalid_credentials", "FTP credentials contain protocol control characters", 400)
 	}
 	options := []ftp.DialOption{ftp.DialWithContext(ctx), ftp.DialWithTimeout(15 * time.Second), ftp.DialWithShutTimeout(time.Second), ftp.DialWithTrustPasvIP(false)}
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12, ServerName: profile.Host}
@@ -529,11 +538,23 @@ func (e *PrivilegedExecutor) artifactStream(ctx context.Context, request agent.R
 	return result, nil
 }
 func (e *PrivilegedExecutor) Stream(ctx context.Context, request agent.Request, streams agent.IO) (agent.Result, error) {
+	if request.Operation == "hosted_app_source_upload" {
+		if err := e.Validate(request); err != nil {
+			return agent.Result{}, err
+		}
+		return e.hostedAppSourceUpload(ctx, request, streams)
+	}
 	if request.Operation == "docker_image_archive_artifact" {
 		if err := e.Validate(request); err != nil {
 			return agent.Result{}, err
 		}
 		return e.dockerArchiveArtifactStream(ctx, request, streams)
+	}
+	if request.Operation == "database_import_artifact" {
+		if err := e.Validate(request); err != nil {
+			return agent.Result{}, err
+		}
+		return e.databaseImportArtifactStream(ctx, request, streams)
 	}
 	if request.Operation == "database_artifact" {
 		if err := e.Validate(request); err != nil {

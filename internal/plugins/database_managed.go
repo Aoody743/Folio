@@ -29,6 +29,13 @@ type ManagedDatabaseInput struct {
 	Password         string `json:"password,omitempty"`
 	ExpectedRevision int64  `json:"expected_revision,omitempty"`
 	BackupID         string `json:"backup_id,omitempty"`
+	ImportID         string `json:"import_id,omitempty"`
+	ImportRevision   int64  `json:"import_revision,omitempty"`
+	ImportBytes      int64  `json:"import_bytes,omitempty"`
+	ImportSHA256     string `json:"import_sha256,omitempty"`
+	ImportOffset     int64  `json:"import_offset,omitempty"`
+	ImportChunk      string `json:"import_chunk,omitempty"`
+	ImportFinal      bool   `json:"import_final,omitempty"`
 }
 type ManagedDatabase struct {
 	InstanceID string `json:"instance_id"`
@@ -78,7 +85,7 @@ func (e *PrivilegedExecutor) validateDatabase(raw json.RawMessage) error {
 		if in.ExpectedRevision < 0 {
 			return failure("invalid_input", "Expected database revision cannot be negative", 400)
 		}
-	case "delete", "credential", "receipt", "set_password", "set_permission", "backup", "backups_list", "backup_delete", "restore", "backup_stat":
+	case "delete", "credential", "receipt", "set_password", "set_permission", "backup", "backups_list", "backup_delete", "restore", "backup_stat", "imports_list":
 		if !validDatabaseName(in.Database) {
 			return failure("invalid_input", "A concrete database name is required", 400)
 		}
@@ -93,6 +100,21 @@ func (e *PrivilegedExecutor) validateDatabase(raw json.RawMessage) error {
 		}
 		if (in.Command == "restore" || in.Command == "backup_stat" || in.Command == "backup_delete") && !artifactName.MatchString(in.BackupID) {
 			return failure("invalid_input", "Invalid owned backup receipt ID", 400)
+		}
+	case "import_begin":
+		if !validDatabaseName(in.Database) || in.ExpectedRevision < 1 || in.ImportBytes < 1 || in.ImportBytes > maxExtractedBytes || !validDatabaseImportSHA256(in.ImportSHA256) {
+			return failure("invalid_input", "A current database revision, bounded import size and SHA-256 are required", 400)
+		}
+	case "import_chunk":
+		if !validDatabaseName(in.Database) || !validDatabaseImportID(in.ImportID) || in.ExpectedRevision < 1 || in.ImportRevision < 1 || in.ImportOffset < 0 || len(in.ImportChunk) == 0 || len(in.ImportChunk) > maxDatabaseImportChunkBase64 {
+			return failure("invalid_input", "Invalid bounded database import chunk", 400)
+		}
+		if _, err := base64.StdEncoding.DecodeString(in.ImportChunk); err != nil {
+			return failure("invalid_input", "Database import chunk is not valid base64", 400)
+		}
+	case "import", "import_delete", "import_recover":
+		if !validDatabaseName(in.Database) || !validDatabaseImportID(in.ImportID) || in.ExpectedRevision < 1 || in.ImportRevision < 1 {
+			return failure("invalid_input", "A database import ID and current revisions are required", 400)
 		}
 	default:
 		return failure("invalid_input", "Unsupported typed database command", 400)
@@ -183,6 +205,8 @@ func (e *PrivilegedExecutor) database(ctx context.Context, raw json.RawMessage) 
 		return e.backupManagedDatabase(ctx, instance, record)
 	case "backups_list":
 		return e.listDatabaseBackups(ctx, instance, record)
+	case "imports_list":
+		return e.listManagedDatabaseImports(instance, record)
 	case "backup_delete":
 		return e.deleteDatabaseBackup(ctx, instance, record, in.BackupID)
 	case "restore":
@@ -190,6 +214,28 @@ func (e *PrivilegedExecutor) database(ctx context.Context, raw json.RawMessage) 
 			return nil, err
 		}
 		return e.restoreManagedDatabase(ctx, instance, record, in.BackupID)
+	case "import_begin":
+		if record.Revision != in.ExpectedRevision {
+			return nil, failure("revision_conflict", "Managed database changed; reload before uploading an import", 412)
+		}
+		return e.beginManagedDatabaseImport(ctx, instance, record, in)
+	case "import_chunk":
+		return e.appendManagedDatabaseImportChunk(ctx, instance, record, in)
+	case "import":
+		if record.Revision != in.ExpectedRevision {
+			return nil, failure("revision_conflict", "Managed database changed; reload before applying an import", 412)
+		}
+		return e.applyManagedDatabaseImport(ctx, instance, record, in.ImportID, in.ImportRevision)
+	case "import_delete":
+		if record.Revision != in.ExpectedRevision {
+			return nil, failure("revision_conflict", "Managed database changed; reload before deleting this import", 412)
+		}
+		return e.deleteManagedDatabaseImport(ctx, instance, record, in.ImportID, in.ImportRevision)
+	case "import_recover":
+		if record.Revision != in.ExpectedRevision {
+			return nil, failure("revision_conflict", "Managed database changed; reload before recovering this import", 412)
+		}
+		return e.recoverManagedDatabaseImport(instance, record, in.ImportID, in.ImportRevision)
 	}
 	return nil, failure("invalid_input", "Unsupported database operation", 400)
 }
@@ -536,6 +582,24 @@ func appendUniqueName(values []string, candidate string) []string {
 	return append(values, candidate)
 }
 func sha256Digest(value string) []byte { hash := sha256.Sum256([]byte(value)); return hash[:] }
+
+// A failed administrative connection is known to happen before any server
+// write. Restore the active receipt only if the exact mutation claim we wrote
+// is still current; ambiguous or partially applied operations remain visible
+// as recovery-required instead.
+func (e *PrivilegedExecutor) rollbackUnstartedManagedDatabaseMutation(instance Instance, old managedDatabaseRecord, claimedState string) error {
+	var current managedDatabaseRecord
+	if err := e.load("private", managedDatabaseKey(instance.ID, old.Database), &current); err != nil {
+		return err
+	}
+	expected := old
+	expected.State = claimedState
+	if current != expected {
+		return failure("revision_conflict", "Managed database mutation receipt changed before its server connection", 412)
+	}
+	return e.save("private", managedDatabaseKey(instance.ID, old.Database), old)
+}
+
 func (e *PrivilegedExecutor) mutateManagedDatabase(ctx context.Context, instance Instance, record managedDatabaseRecord, in ManagedDatabaseInput) (any, error) {
 	old := record
 	record.State = "updating"
@@ -546,10 +610,16 @@ func (e *PrivilegedExecutor) mutateManagedDatabase(ctx context.Context, instance
 		return nil, err
 	}
 	var err error
+	rollbackOpenFailure := func(openErr error) (any, error) {
+		if rollbackErr := e.rollbackUnstartedManagedDatabaseMutation(instance, old, record.State); rollbackErr != nil {
+			return nil, failure("operation_recovery_required", "Database administration could not be reached and its receipt could not be restored; inspect the preserved receipt", 409)
+		}
+		return nil, openErr
+	}
 	if instance.PluginID == "mongodb" {
 		client, openErr := e.managedMongo(ctx, instance)
 		if openErr != nil {
-			return nil, openErr
+			return rollbackOpenFailure(openErr)
 		}
 		defer client.Disconnect(context.WithoutCancel(ctx))
 		if in.Command == "delete" {
@@ -569,7 +639,7 @@ func (e *PrivilegedExecutor) mutateManagedDatabase(ctx context.Context, instance
 	} else {
 		db, openErr := e.openManagedAdmin(ctx, instance)
 		if openErr != nil {
-			return nil, openErr
+			return rollbackOpenFailure(openErr)
 		}
 		defer db.Close()
 		role := quoteDatabaseIdentifier(instance.PluginID, record.Username)
@@ -677,7 +747,7 @@ func managedDatabaseResources(_ context.Context, _ core.Actor, raw json.RawMessa
 }
 func (m *Manager) managedDatabaseBindings() []core.Binding {
 	schema := func() map[string]any {
-		return map[string]any{"instance_id": idSchema(), "database": map[string]any{"type": "string", "pattern": databaseIdentifier.String()}, "username": map[string]any{"type": "string", "pattern": databaseIdentifier.String()}, "permission": enumSchema("read", "data_write", "read_write"), "password": map[string]any{"type": "string", "minLength": 12, "maxLength": 512, "format": "password"}, "expected_revision": revisionSchema(), "backup_id": map[string]any{"type": "string", "pattern": artifactName.String()}}
+		return map[string]any{"instance_id": idSchema(), "database": map[string]any{"type": "string", "pattern": databaseIdentifier.String()}, "username": map[string]any{"type": "string", "pattern": databaseIdentifier.String()}, "permission": enumSchema("read", "data_write", "read_write"), "password": map[string]any{"type": "string", "minLength": 12, "maxLength": 512, "format": "password"}, "expected_revision": revisionSchema(), "backup_id": map[string]any{"type": "string", "pattern": artifactName.String()}, "import_id": map[string]any{"type": "string", "pattern": databaseImportIDPattern.String()}, "import_revision": revisionSchema(), "import_bytes": map[string]any{"type": "integer", "minimum": 1, "maximum": maxExtractedBytes}, "import_sha256": map[string]any{"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}, "import_offset": map[string]any{"type": "integer", "minimum": 0, "maximum": maxExtractedBytes}, "import_chunk": map[string]any{"type": "string", "minLength": 4, "maxLength": maxDatabaseImportChunkBase64, "contentEncoding": "base64"}, "import_final": map[string]any{"type": "boolean"}}
 	}
 	specs := []struct {
 		Name, Command, Scope string
@@ -696,6 +766,12 @@ func (m *Manager) managedDatabaseBindings() []core.Binding {
 		{"managed_database_backups_list", "backups_list", "databases:backup", true, false, []string{"instance_id", "database"}, []string{"instance_id", "database"}},
 		{"managed_database_backup_delete", "backup_delete", "databases:backup", false, false, []string{"instance_id", "database", "backup_id"}, []string{"instance_id", "database", "backup_id"}},
 		{"managed_database_restore", "restore", "databases:restore", false, true, []string{"instance_id", "database", "backup_id"}, []string{"instance_id", "database", "backup_id"}},
+		{"managed_database_imports_list", "imports_list", "databases:read", true, false, []string{"instance_id", "database"}, []string{"instance_id", "database"}},
+		{"managed_database_import_begin", "import_begin", "databases:restore", false, false, []string{"instance_id", "database", "expected_revision", "import_bytes", "import_sha256"}, []string{"instance_id", "database", "expected_revision", "import_bytes", "import_sha256"}},
+		{"managed_database_import_chunk", "import_chunk", "databases:restore", false, false, []string{"instance_id", "database", "expected_revision", "import_id", "import_revision", "import_offset", "import_chunk", "import_final"}, []string{"instance_id", "database", "expected_revision", "import_id", "import_revision", "import_offset", "import_chunk", "import_final"}},
+		{"managed_database_import_apply", "import", "databases:restore", false, true, []string{"instance_id", "database", "expected_revision", "import_id", "import_revision"}, []string{"instance_id", "database", "expected_revision", "import_id", "import_revision"}},
+		{"managed_database_import_recover", "import_recover", "databases:restore", false, false, []string{"instance_id", "database", "expected_revision", "import_id", "import_revision"}, []string{"instance_id", "database", "expected_revision", "import_id", "import_revision"}},
+		{"managed_database_import_delete", "import_delete", "databases:restore", false, false, []string{"instance_id", "database", "expected_revision", "import_id", "import_revision"}, []string{"instance_id", "database", "expected_revision", "import_id", "import_revision"}},
 		{"managed_database_diagnostics", "diagnostics", "databases:admin", true, false, []string{"instance_id"}, []string{"instance_id"}},
 		{"managed_database_replication_status", "replication_status", "databases:replication", true, false, []string{"instance_id"}, []string{"instance_id"}},
 	}
@@ -710,6 +786,9 @@ func (m *Manager) managedDatabaseBindings() []core.Binding {
 		description := "Operate on an owned database using typed commands and dedicated database-only identities"
 		if spec.Command == "receipt" {
 			description = "Read the public ownership state and revision of a managed database without returning credentials"
+		}
+		if spec.Command == "import_recover" {
+			description = "Resolve an import left applying after interruption; records recovery_required and never replays imported SQL or BSON"
 		}
 		binding := m.binding(spec.Name, description, spec.Scope, spec.Read, obj(fields, spec.Required...), managedDatabaseResources, func(ctx context.Context, a core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 			var input ManagedDatabaseInput
@@ -755,7 +834,8 @@ func (m *Manager) managedDatabaseBindings() []core.Binding {
 		binding.Action.Task = spec.Task
 		bindings = append(bindings, binding)
 	}
-	return append(bindings, m.databaseDownloadBindings()...)
+	bindings = append(bindings, m.databaseDownloadBindings()...)
+	return append(bindings, m.databaseImportBindings()...)
 }
 func (m *Manager) bindManagedDatabaseCredential(ctx context.Context, a core.Actor, in ManagedDatabaseInput, output any) (core.ActionResult, error) {
 	data, ok := output.(map[string]any)

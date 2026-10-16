@@ -441,3 +441,15 @@ func runFixedResult(ctx context.Context, program string, args []string, timeout 
 	}
 	return runner.Run(ctx, agent.Request{Operation: operation.Name, Input: json.RawMessage(`{}`)})
 }
+
+func runFixedDirectoryResult(ctx context.Context, program, directory string, args []string, timeout time.Duration, credential *syscall.Credential, environment []string) (agent.Result, error) {
+	operation := agent.Operation{Name: "plugin_fixed_command", Program: program, Timeout: timeout, WorkDir: directory, Environment: append([]string{"DEBIAN_FRONTEND=noninteractive"}, environment...), BuildArgs: func(json.RawMessage) ([]string, error) { return append([]string(nil), args...), nil }}
+	if credential != nil {
+		operation.Credential = credential
+	}
+	runner, err := agent.NewRunner(agent.Options{Operations: []agent.Operation{operation}, MaxConcurrent: 1, MaxOutputBytes: 1 << 20})
+	if err != nil {
+		return agent.Result{}, err
+	}
+	return runner.Run(ctx, agent.Request{Operation: operation.Name, Input: json.RawMessage(`{}`)})
+}

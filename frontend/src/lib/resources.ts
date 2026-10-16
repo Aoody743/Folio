@@ -25,7 +25,18 @@ export type Site = {
   };
   updated_at: string;
   config?: unknown;
+  proxies?: SiteProxy[];
   [key: string]: unknown;
+};
+export type SiteProxy = {
+  id: string;
+  path: string;
+  upstream: string;
+  enabled: boolean;
+  preserve_host?: boolean;
+  cache_seconds?: number;
+  websocket?: boolean;
+  headers?: Record<string, string>;
 };
 export type CatalogVersion = {
   id: string;

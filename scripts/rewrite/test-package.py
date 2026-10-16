@@ -93,7 +93,7 @@ def main():
                 parser = Scripts()
                 parser.feed(page)
                 assert parser.sources, "Packaged UI has no Next.js scripts (placeholder or incorrect embed)"
-                assert "PowerLinux" in page, "Packaged UI must identify the product"
+                assert "Folio" in page, "Packaged UI must identify the product"
                 static = next(source for source in parser.sources if "/_next/static/" in source)
                 with urlopen(endpoint + static, timeout=3) as response:
                     assert len(response.read()) > 100

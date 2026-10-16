@@ -18,6 +18,7 @@ type runtimeModules struct {
 	terminal *terminalbridge.Provider
 	database httpapi.ResourceHandler
 	website  httpapi.ResourceHandler
+	apps     httpapi.ResourceHandler
 }
 type resourceHandlers []httpapi.ResourceHandler
 
@@ -31,7 +32,7 @@ func (handlers resourceHandlers) HandleResource(w http.ResponseWriter, r *http.R
 }
 
 func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeModules, error) {
-	if err := service.RegisterScopes("files:permissions", "files:host", "terminal:root", "terminal:share", "host:packages", "databases:credentials"); err != nil {
+	if err := service.RegisterScopes("files:permissions", "files:host", "terminal:root", "terminal:share", "host:packages", "databases:credentials", "hosted_apps:read", "hosted_apps:manage"); err != nil {
 		return nil, err
 	}
 	// Assign an interface only when the concrete pointer is non-nil. Typed nils
@@ -114,5 +115,5 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 		return nil, err
 	}
 	registered = true
-	return &runtimeModules{system: sys, terminal: term, database: software.DatabaseResourceHandler(service), website: websites.BackupResourceHandler(service)}, nil
+	return &runtimeModules{system: sys, terminal: term, database: software.DatabaseResourceHandler(service), website: websites.BackupResourceHandler(service), apps: software.HostedAppSourceResourceHandler(service)}, nil
 }

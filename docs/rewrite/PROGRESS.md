@@ -4,7 +4,37 @@
 
 最新执行安排（2026-10-15）：用户已将本地改动更新至 GitHub，并恢复云端开发。本轮先按要求使用 GPT-6.1 Sol 完成数据库/Docker/DNS 批次；随后用户为节约额度改用 **GPT-6 Luna、Max 推理强度** 继续 PHP/Supervisor 闭环，由主 Agent 统一审查和集成。已从 `refine` 同步 `b893eef`，保留本地安装恢复与 Web 迁移实现。第二阶段继续进行，第三阶段未开始；下方旧批次保留为历史记录。
 
+## 当前产品方向更新（2026-10-16）
+
+用户随后批准全新 Debian 13 / Ubuntu 24.04 amd64 主机作为首发目标。首次启动可选 **Nginx + PHP** 或 **OpenResty + PHP**；选择后不可直接切换，必须先移除当前栈的网站配置、卸载当前栈，再安装另一栈，网站内容默认保留。Nginx 使用系统签名仓库原生包；不要求预先存在 Nginx。Nginx 包的默认 `nginx.service` 会被面板安装流程停用，由面板的受管配置与 service unit 接管监听端口。
+
+2026-10-16 范围收敛：首次网站栈配置后可分别选择是否安装 MySQL、PostgreSQL，两者都不自动安装、可同时选装；旧版数据迁移取消。47 个第三阶段插件延后，保留面板内部扩展注册接口，不做第三方插件导入、动态菜单或任意 Hook 执行器。FTP 停止新增开发，现有源码和本地改动保留。
+
+Next.js / Go 应用服务已有模板创建、独立系统用户、受控构建、systemd 控制、日志、网站反向代理、tar.gz 与 Git 源码导入。Git 支持公开 HTTPS 与 SHA256 主机指纹固定的 SSH 地址；导入操作接入持久任务、资源授权和审计，私有仓库凭据不在当前实现范围。面板内置 SSH 客户端已支持固定主机密钥的远程 PTY、密码/密钥目标与授权操作；真实主机连接、凭据保护及权限矩阵仍待验收。公网 CA/DNS、SSH 服务端配置管理、MongoDB、phpMyAdmin/pgAdmin 与第三阶段插件保持未验收/待开发；先完成核心托管及其验收，再按 [范围与剩余工作盘点](PHASE2-REMAINING-20261015.md) 排队。
+
+本机是 macOS arm64：Linux amd64 交叉编译和前端类型检查可以作为源码检查，但不等于 Debian/Ubuntu 原生服务验收。上一段 dev.24 记录早于本轮 Nginx/应用改动；新验证结果按本轮源码单独记录，未通过的环境项继续保持未验收。
+
+## 2026-10-16 当前开发验证增量
+
+当前源码检查通过：Linux amd64 `go vet ./...`、`internal/plugins` 与 `cmd/powerlinux` 的 Linux amd64 测试编译、`internal/plugins` 的 Linux arm64 测试编译；前端 **82/82**、`make rewrite-ui` 类型检查与静态导出、嵌套 MySQL race 检查通过。当前源码 amd64/arm64 可执行文件构建成功，SHA-256 与边界见[检查证据](evidence/phase2-hosting-core-source-checks-20261016.json)。这不代表 Go 测试已在 Linux 执行或安装包已生成。
+
+`make rewrite-test` 在 macOS 因缺少 `flock` 且系统锁语义不同而失败；本机 `go test ./internal/plugins` 因仓库 Linux 专用 syscall/build-tag 依赖无法编译。Debian 13 / Ubuntu 24.04 amd64 原生 QA 未运行，Nginx 原生安装、PHP/Next.js/Go 实际链路、权限与任务审计、重启升级回退及数据保留均保持未验收。第二阶段未完成，第三阶段未开始。
+
+首次设置界面已新增可选 MySQL/PostgreSQL 安装项，按所选顺序逐一提交软件安装任务。该本地改动尚未运行验证；整体验收仍受 Debian/Ubuntu 原生 QA 缺失阻塞。
+
+本次继续接入 Git 源码导入：新增 Git/OpenSSH 受管软件项、持久任务操作及逐应用仓库表单；SSH 连接固定用户提交的 SHA256 主机指纹，源码在应用非特权用户下克隆并校验仓库条目。按用户要求，本轮不运行测试或构建；代码状态和 SSH 导入边界尚未验证。
+
+本轮还补上应用永久清理：普通“删除”仍只停用并保留内容；单独的清理任务要求输入 `DELETE <应用编号>`，检查受管 unit 已停用，持久记录 `purging` 阶段，并可在账户或目录清理中断后重试。若旧 UID 被分配给其他系统用户则拒绝继续，避免误删其文件。该新路径没有测试或原生验证。
+
 日期：2026-10-13（Asia/Singapore）。所有检查只代表记录的环境与当前代码，不代表尚未运行的发行版或第三方服务已经兼容。
+
+## 历史基线（ARM64 方向，早于当前产品方向）：dev.24 候选（2026-10-16）
+
+当前 `refine-local` 已合并最新 `origin/refine` 收尾基线至 `72273255a3a41bc0a42900d04f2d9c2014b1a0ee`，本地提交和工作区 WIP 均保留，原始 WIP 快照为 `stash@{0}`。PostgreSQL 慢日志解析增加 `parse`、`bind`、`execute` 格式及参数脱敏、无匹配数据库、日志权限测试；概览页显示核心测试版可用、暂缓和不可用范围，并说明范围状态不是验收结果。
+
+Debian 13 ARM64 隔离 QA 源码全量 race（14 包）、`go vet ./...`、安装器 31 项与 root 策略来源 2 项、嵌套 MySQL race 均通过。前端 82 项测试、类型检查和静态导出通过；双架构 `0.1.0-dev.24` 构建通过，工件 SHA-256 见[候选包清单](../../dist/rewrite-dev24-candidate-20261016/CHECKSUMS.txt)。构建元数据明确 `working_tree_dirty=true`。
+
+用户已将本轮首发验收目标收敛为 Debian 13 ARM64；amd64 与 Ubuntu 不作为完成条件。当前 ARM64 源码 race 和双架构构建通过，但来宾 APT DNS 不可用，未安装并原生运行候选包，也未做真实 Web/PHP/数据库生命周期、浏览器/MCP 同权限矩阵、独立目标恢复或重启/升级/回退/卸载闭环。性能与系统修改基线也需在目标 ARM64 环境记录。第二阶段仍未完成、第三阶段未开始。详细状态与证据见[核心版收尾说明](PHASE2-CLOSEOUT-20261015.md)及 [dev.24 检查记录](evidence/phase2-closeout-dev24-20261016.json)。
 
 ## Luna 并行续开发：dev.23（2026-10-15）
 

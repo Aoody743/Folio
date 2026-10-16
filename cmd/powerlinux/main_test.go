@@ -68,7 +68,7 @@ func TestStdioDoesNotAllowMissingIdentity(t *testing.T) {
 }
 
 func TestServeRejectsRemotePlaintext(t *testing.T) {
-	err := run([]string{"serve", "--data-dir", t.TempDir(), "--listen", "0.0.0.0:0", "--allow-root"})
+	err := run([]string{"serve", "--data-dir", t.TempDir(), "--listen", "0.0.0.0:0", "--allow-root", "--server-config", ""})
 	if err == nil || !strings.Contains(err.Error(), "plaintext HTTP must bind a loopback") {
 		t.Fatalf("remote plaintext listener was not rejected: %v", err)
 	}

@@ -87,8 +87,31 @@ func reviewedPostgreSQLMajor(pins []PackagePin) (int, error) {
 // Site snippets and per-site FPM pools belong to the sites module. Software
 // uninstall must not erase its independent root receipts/configuration.
 func (e *PrivilegedExecutor) requireRuntimeUnused(instance Instance) error {
+	if isHostedAppRuntime(instance.PluginID) {
+		entries, err := os.ReadDir(filepath.Join(e.config.StateDir, "private"))
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasPrefix(entry.Name(), "application_") || !strings.HasSuffix(entry.Name(), ".json") {
+				continue
+			}
+			id := strings.TrimSuffix(strings.TrimPrefix(entry.Name(), "application_"), ".json")
+			if !hostedAppValidID(id) {
+				return failure("record_invalid", "Hosted application state contains an invalid identity; runtime uninstall was blocked", 412)
+			}
+			receipt, receiptErr := e.hostedAppReceipt(id)
+			if receiptErr != nil {
+				return receiptErr
+			}
+			if receipt.RuntimeInstance == instance.ID && receipt.Status != "retained" {
+				return failure("runtime_in_use", "Delete or stop relying on hosted applications before uninstalling their Node.js or Go runtime", 409)
+			}
+		}
+		return nil
+	}
 	directory := ""
-	if instance.PluginID == "openresty" {
+	if instance.PluginID == "openresty" || instance.PluginID == "nginx" {
 		directory = filepath.Join(instance.Paths.ConfigDir, "sites")
 	} else if isPHPRuntime(instance.PluginID) {
 		directory = filepath.Join(instance.Paths.ConfigDir, "pools")

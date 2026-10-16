@@ -166,16 +166,21 @@ export function SitesView({
     ...(instances.data
       ? {
           web_instance: list(instances.data)
-            .filter((item) => item.plugin_id === "openresty")
+            .filter(
+              (item) =>
+                ["nginx", "openresty"].includes(item.plugin_id) &&
+                item.status !== "uninstalled",
+            )
             .map((item) => ({
               value: item.id,
-              label: `OpenResty · ${item.instance_id}`,
+              label: `${item.plugin_id === "nginx" ? "Nginx" : "OpenResty"} · ${item.instance_id}`,
             })),
           php_instance: [
             { value: "", label: "静态内容，不绑定PHP" },
             ...list(instances.data)
               .filter((item) =>
-                ["php", "php-apt", "php-yum"].includes(item.plugin_id),
+                ["php", "php-apt", "php-yum"].includes(item.plugin_id) &&
+                item.status !== "uninstalled",
               )
               .map((item) => ({
                 value: item.id,
@@ -471,6 +476,14 @@ export function SitesView({
           <ActionForm
             capability={create}
             references={references}
+            preset={{
+              ...(references.web_instance?.[0]
+                ? { web_instance: references.web_instance[0].value }
+                : {}),
+              ...(references.php_instance?.[1]
+                ? { php_instance: references.php_instance[1].value }
+                : {}),
+            }}
             onExecuted={() => {
               refresh();
             }}

@@ -93,7 +93,7 @@ func (o *oauthIssuer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !method(w, r, http.MethodGet) {
 			return
 		}
-		writeJSON(w, 200, map[string]any{"resource": o.resource, "authorization_servers": []string{o.origin}, "bearer_methods_supported": []string{"header"}, "resource_name": "PowerLinux MCP", "scopes_supported": o.scopes()})
+		writeJSON(w, 200, map[string]any{"resource": o.resource, "authorization_servers": []string{o.origin}, "bearer_methods_supported": []string{"header"}, "resource_name": "Folio MCP", "scopes_supported": o.scopes()})
 	case "/.well-known/oauth-authorization-server":
 		if !method(w, r, http.MethodGet) {
 			return
@@ -340,7 +340,7 @@ func (o *oauthIssuer) parseAuthorization(values url.Values) (authorizationReques
 	return result, nil
 }
 
-var consentPage = template.Must(template.New("consent").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Authorize PowerLinux</title><style>body{font-family:system-ui;background:#111318;color:#e9ebf0;margin:0;padding:32px}main{max-width:520px;margin:8vh auto;background:#1b1e25;border:1px solid #353a44;border-radius:24px;padding:32px}h1{font-size:24px}p,li{line-height:1.6}code{color:#c6b9ff}button{font:inherit;border:0;border-radius:12px;padding:12px 18px;margin:16px 8px 0 0;background:#c6b9ff;color:#1b1729}.secondary{background:#353a44;color:#e9ebf0}a{color:#c6b9ff}</style></head><body><main><p>PowerLinux · MCP access</p><h1>Authorize {{.ClientName}}?</h1><p>Signed in as <strong>{{.UserName}}</strong>. This external client can use these action scopes on your resources until access expires or you revoke it:</p><ul>{{range .Scopes}}<li><code>{{.}}</code></li>{{end}}</ul><p>Resource: <code>{{.Resource}}</code></p><p>Access expires in one hour. Your password is never shared. Notes and logs do not grant further permission.</p><form method="post" action="/oauth/authorize">{{range $key,$value := .Fields}}<input type="hidden" name="{{$key}}" value="{{$value}}">{{end}}<button name="decision" value="allow">Allow access</button><button class="secondary" name="decision" value="deny">Deny</button></form></main></body></html>`))
+var consentPage = template.Must(template.New("consent").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Authorize Folio</title><style>body{font-family:system-ui;background:#111318;color:#e9ebf0;margin:0;padding:32px}main{max-width:520px;margin:8vh auto;background:#1b1e25;border:1px solid #353a44;border-radius:24px;padding:32px}h1{font-size:24px}p,li{line-height:1.6}code{color:#c6b9ff}button{font:inherit;border:0;border-radius:12px;padding:12px 18px;margin:16px 8px 0 0;background:#c6b9ff;color:#1b1729}.secondary{background:#353a44;color:#e9ebf0}a{color:#c6b9ff}</style></head><body><main><p>Folio · 折纸面板 · MCP access</p><h1>Authorize {{.ClientName}}?</h1><p>Signed in as <strong>{{.UserName}}</strong>. This external client can use these action scopes on your resources until access expires or you revoke it:</p><ul>{{range .Scopes}}<li><code>{{.}}</code></li>{{end}}</ul><p>Resource: <code>{{.Resource}}</code></p><p>Access expires in one hour. Your password is never shared. Notes and logs do not grant further permission.</p><form method="post" action="/oauth/authorize">{{range $key,$value := .Fields}}<input type="hidden" name="{{$key}}" value="{{$value}}">{{end}}<button name="decision" value="allow">Allow access</button><button class="secondary" name="decision" value="deny">Deny</button></form></main></body></html>`))
 
 func (o *oauthIssuer) authorize(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
@@ -367,7 +367,7 @@ func (o *oauthIssuer) authorize(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			http.Redirect(w, r, "/?return_to="+url.QueryEscape(r.URL.RequestURI()), http.StatusSeeOther)
 		} else {
-			oauthError(w, 401, "login_required", "Sign in to PowerLinux before authorizing a client")
+			oauthError(w, 401, "login_required", "Sign in to Folio before authorizing a client")
 		}
 		return
 	}

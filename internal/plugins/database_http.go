@@ -15,16 +15,20 @@ import (
 )
 
 type databaseResourceHandler struct {
-	service *core.Service
-	slots   chan struct{}
+	service     *core.Service
+	slots       chan struct{}
+	importSlots chan struct{}
 }
 
 // DatabaseResourceHandler joins the HTTP adapter's authenticated stream hook;
 // it must be composed there, rather than mounted as an unauthenticated route.
 func (m *Manager) DatabaseResourceHandler(service *core.Service) httpapi.ResourceHandler {
-	return &databaseResourceHandler{service: service, slots: make(chan struct{}, 8)}
+	return &databaseResourceHandler{service: service, slots: make(chan struct{}, 8), importSlots: make(chan struct{}, 2)}
 }
 func (h *databaseResourceHandler) HandleResource(w http.ResponseWriter, r *http.Request, a core.Actor) bool {
+	if r.URL.Path == "/api/v1/databases/backups/imports" {
+		return h.handleImport(w, r, a)
+	}
 	if r.URL.Path != "/api/v1/databases/backups/download" {
 		return false
 	}

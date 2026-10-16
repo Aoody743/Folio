@@ -159,12 +159,13 @@ export function SiteMigration({
   const targetChoices = webInstances
     .filter(
       (instance) =>
-        instance.plugin_id === "openresty" &&
-        instance.id !== site.web_instance,
+        ["nginx", "openresty"].includes(instance.plugin_id) &&
+        instance.id !== site.web_instance &&
+        instance.status !== "uninstalled",
     )
     .map((instance) => ({
       value: instance.id,
-      label: `OpenResty · ${instance.instance_id}`,
+          label: `${instance.plugin_id === "nginx" ? "Nginx" : "OpenResty"} · ${instance.instance_id}`,
     }));
   const canApply =
     !!reviewedPlan &&

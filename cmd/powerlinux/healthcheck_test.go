@@ -19,10 +19,9 @@ func TestHealthcheckRequiresActualReadinessAndExpectedVersion(t *testing.T) {
 		w.Write([]byte(body.Load().(string)))
 	}))
 	defer server.Close()
-	args := []string{"--listen", strings.TrimPrefix(server.URL, "http://"), "--server-config", defaultServerConfig}
-	// Explicit configuration must exist; optional defaults remain usable for
-	// isolated ordinary-user installs whose configuration is CLI-only.
-	args = args[:2]
+	// Keep this CLI-only probe independent of the machine's optional system
+	// configuration, which may be unreadable to an ordinary user.
+	args := []string{"--listen", strings.TrimPrefix(server.URL, "http://"), "--server-config", ""}
 	if err := healthcheck(args); err != nil {
 		t.Fatal(err)
 	}

@@ -82,7 +82,7 @@ func (r siteRuntimes) Web(ctx context.Context, id string) (sites.WebRuntime, err
 	if t.NginxConf == "" || t.SitesDir == "" {
 		return sites.WebRuntime{}, errors.New("selected instance is not a Web runtime")
 	}
-	return sites.WebRuntime{ID: id, Program: t.Instance.Service.Program, MainConfig: t.NginxConf, SnippetsDir: t.SitesDir, Prefix: t.Prefix, WorkerUser: t.WorkerUser, WorkerGroup: t.WorkerGroup}, nil
+	return sites.WebRuntime{ID: id, Program: t.Instance.Service.Program, MainConfig: t.NginxConf, SnippetsDir: t.SitesDir, Prefix: t.Prefix, WorkerUser: t.WorkerUser, WorkerGroup: t.WorkerGroup, SupportsLua: t.Instance.PluginID == "openresty"}, nil
 }
 func (r siteRuntimes) PHP(ctx context.Context, id string) (sites.PHPRuntime, error) {
 	t, err := r.software.ReadRuntimeTarget(ctx, id)

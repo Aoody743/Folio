@@ -35,7 +35,7 @@ func (e *PrivilegedExecutor) ReadRuntimeTarget(ctx context.Context, id string) (
 	}
 	target := RuntimeTarget{Instance: instance, Prefix: instance.Paths.Root, WorkerUser: e.config.RunUser, WorkerGroup: group}
 	switch instance.PluginID {
-	case "openresty":
+	case "openresty", "nginx":
 		target.NginxConf = filepath.Join(instance.Paths.ConfigDir, "nginx.conf")
 		target.SitesDir = filepath.Join(instance.Paths.ConfigDir, "sites")
 	case "php", "php-apt", "php-yum":
@@ -122,7 +122,7 @@ func runtimeEnvironment(instance Instance) []string {
 }
 func (e *PrivilegedExecutor) credential(instance Instance) *syscall.Credential {
 	// Root masters open protected site configs/keys and drop worker privileges.
-	if instance.PluginID == "openresty" || instance.PluginID == "docker" || instance.PluginID == "pureftp" || isPHPRuntime(instance.PluginID) || os.Geteuid() != 0 {
+	if instance.PluginID == "openresty" || instance.PluginID == "nginx" || instance.PluginID == "docker" || instance.PluginID == "pureftp" || isPHPRuntime(instance.PluginID) || os.Geteuid() != 0 {
 		return nil
 	}
 	return &syscall.Credential{Uid: e.uid, Gid: e.gid}
@@ -166,15 +166,24 @@ func (e *PrivilegedExecutor) configureWithInstallJournal(ctx context.Context, in
 		return writeAtomicRoot(instance.Paths.ConfigDir, relative, []byte(body), 0640, int(e.gid))
 	}
 	switch instance.PluginID {
-	case "openresty":
+	case "openresty", "nginx":
 		if err := os.MkdirAll(filepath.Join(instance.Paths.ConfigDir, "sites"), 0700); err != nil {
 			return err
+		}
+		for _, name := range []string{"client_body", "proxy", "fastcgi", "uwsgi", "scgi"} {
+			directory := filepath.Join(instance.Paths.RunDir, name)
+			if err := os.MkdirAll(directory, 0700); err != nil {
+				return err
+			}
+			if err := e.setRuntimeDirectory(directory, 0700, e.uid, true); err != nil {
+				return err
+			}
 		}
 		generation, err := newWebGeneration()
 		if err != nil {
 			return err
 		}
-		body := e.renderOpenRestyConfiguration(*instance, generation)
+		body := e.renderManagedWebConfiguration(*instance, generation)
 		if err := write("nginx.conf", body); err != nil {
 			return err
 		}
@@ -324,8 +333,14 @@ func unitQuote(value string) string {
 
 func (e *PrivilegedExecutor) serviceArgs(instance Instance, command string) ([]string, error) {
 	switch instance.PluginID {
-	case "openresty":
-		args := []string{"-p", instance.Paths.Root + "/", "-c", filepath.Join(instance.Paths.ConfigDir, "nginx.conf")}
+	case "openresty", "nginx":
+		prefix := instance.Paths.Root + "/"
+		if instance.PluginID == "nginx" {
+			// The signed distro package places dynamic modules and MIME metadata
+			// under /etc/nginx relative to Nginx's prefix.
+			prefix = "/etc/nginx/"
+		}
+		args := []string{"-p", prefix, "-c", filepath.Join(instance.Paths.ConfigDir, "nginx.conf")}
 		switch command {
 		case "check":
 			return append(args, "-t"), nil
@@ -427,8 +442,8 @@ func (e *PrivilegedExecutor) controlLocked(ctx context.Context, input ServiceInp
 		}
 		return e.controlLocked(ctx, ServiceInput{ID: input.ID, Command: "start"}, instance)
 	}
-	if input.Command == "reload" && instance.PluginID == "openresty" {
-		generation, err := e.reloadOpenResty(ctx, instance)
+	if input.Command == "reload" && (instance.PluginID == "openresty" || instance.PluginID == "nginx") {
+		generation, err := e.reloadWebRuntime(ctx, instance)
 		if err != nil {
 			return nil, err
 		}
@@ -448,7 +463,7 @@ func (e *PrivilegedExecutor) controlLocked(ctx context.Context, input ServiceInp
 			return nil, err
 		}
 	} else if input.Command == "stop" || input.Command == "reload" {
-		if instance.PluginID == "openresty" {
+		if instance.PluginID == "openresty" || instance.PluginID == "nginx" {
 			args, err := e.serviceArgs(instance, input.Command)
 			if err != nil {
 				return nil, err
@@ -588,7 +603,7 @@ func ownedProcessID(instance Instance) (int, error) {
 	if instance.PluginID == "redis" || instance.PluginID == "valkey" {
 		belongs = belongs || strings.Contains(string(cmdline), ":"+strconv.Itoa(setting(instance.Config, "port", 0)))
 	}
-	if os.Geteuid() == 0 && (instance.PluginID == "openresty" || isPHPRuntime(instance.PluginID) || instance.PluginID == "docker" || instance.PluginID == "pureftp") {
+	if os.Geteuid() == 0 && (instance.PluginID == "openresty" || instance.PluginID == "nginx" || isPHPRuntime(instance.PluginID) || instance.PluginID == "docker" || instance.PluginID == "pureftp") {
 		status, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(pid), "status"))
 		if err != nil {
 			return 0, err
@@ -689,13 +704,13 @@ func (e *PrivilegedExecutor) probe(ctx context.Context, instance Instance) Healt
 		return e.utilityProbe(probeCtx, instance)
 	}
 	address := net.JoinHostPort(bind, strconv.Itoa(port))
-	if instance.PluginID == "openresty" {
+	if instance.PluginID == "openresty" || instance.PluginID == "nginx" {
 		file, err := readProfileFile(instance.Paths.ConfigDir, "nginx.conf")
 		if err != nil {
 			return health
 		}
 		generation, err := e.webGeneration(instance, file.Body)
-		if err == nil && probeWebGeneration(probeCtx, address, generation) == nil {
+		if err == nil && probeManagedWebGeneration(probeCtx, address, generation, webRuntimeBanner(instance)) == nil {
 			health.Status = "healthy"
 			health.Reason = ""
 		}

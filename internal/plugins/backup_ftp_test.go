@@ -346,3 +346,23 @@ func TestFTPPlaintextRemoteTransportIsRejected(t *testing.T) {
 		t.Fatal("remote plaintext FTP allowed", err)
 	}
 }
+
+func TestFTPProtocolCredentialsRejectControlCharactersBeforeConnecting(t *testing.T) {
+	profile := FTPDestination{Host: "127.0.0.1", Port: 21, TLSMode: "loopback", Username: "safe-user"}
+	for _, test := range []struct {
+		name     string
+		profile  FTPDestination
+		password string
+	}{
+		{name: "username carriage return", profile: FTPDestination{Host: profile.Host, Port: profile.Port, TLSMode: profile.TLSMode, Username: "user\rNOOP"}, password: "safe-password"},
+		{name: "username newline", profile: FTPDestination{Host: profile.Host, Port: profile.Port, TLSMode: profile.TLSMode, Username: "user\nPASS x"}, password: "safe-password"},
+		{name: "password newline", profile: profile, password: "safe\nNOOP"},
+		{name: "password NUL", profile: profile, password: "safe\x00password"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := ftpDialLimited(context.Background(), test.profile, test.password, 1024); core.ErrorCode(err) != "invalid_credentials" {
+				t.Fatalf("FTP command injection control character was not rejected before dialing: %v", err)
+			}
+		})
+	}
+}

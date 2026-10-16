@@ -30,6 +30,7 @@ import (
 type PrivilegedConfig struct {
 	RootDir              string                    `json:"root_dir"`
 	StateDir             string                    `json:"state_dir"`
+	ApplicationsRootDir  string                    `json:"applications_root_dir,omitempty"`
 	RunUser              string                    `json:"run_user"`
 	RunGroup             string                    `json:"run_group,omitempty"`
 	APIUser              string                    `json:"api_user"`
@@ -68,13 +69,15 @@ type PrivilegedExecutor struct {
 	healthMu                  sync.Mutex
 	healthCache               map[string]cachedHealth
 	privateCipher             cipher.AEAD
-	profileControl            func(context.Context, Instance, string) error // private trusted test dependency
+	profileControl            func(context.Context, Instance, string) error              // private trusted test dependency
+	utilityApplyHook          func(context.Context, Instance, utilityRecord, bool) error // private utility transaction test dependency
+	utilitySaveHook           func(Instance, utilityRecord) error                        // private utility transaction test dependency
 }
 
 var validAccount = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}\$?$`)
 
 func Operations() []string {
-	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "php_maintenance", "utility_action", "supervisor_log_action", "docker_action", "docker_exec", "docker_exec_status", "docker_image_archive_action", "docker_image_archive_artifact", "backup_artifact", "database_action", "database_admin_action", "database_binlog_action", "database_replication_action", "database_table_maintenance_action", "database_postgresql_maintenance_action", "database_artifact"}
+	return []string{"plugin_list", "plugin_get", "plugin_plan", "plugin_apply", "plugin_service_control", "plugin_autostart", "plugin_recovery_inspect", "plugin_recovery_action", "php_action", "php_maintenance", "utility_action", "supervisor_log_action", "docker_action", "docker_exec", "docker_exec_status", "docker_image_archive_action", "docker_image_archive_artifact", "backup_artifact", "database_action", "database_admin_action", "database_binlog_action", "database_replication_action", "database_table_maintenance_action", "database_postgresql_maintenance_action", "database_artifact", "database_import_artifact", "hosted_app_list", "hosted_app_create", "hosted_app_build", "hosted_app_deploy", "hosted_app_control", "hosted_app_logs", "hosted_app_delete", "hosted_app_source_upload", "hosted_app_git_import", "hosted_app_purge"}
 }
 
 // ValidatePrivilegedConfig performs read-only policy validation. In particular
@@ -82,6 +85,11 @@ func Operations() []string {
 func ValidatePrivilegedConfig(config PrivilegedConfig) error {
 	if !filepath.IsAbs(config.RootDir) || !filepath.IsAbs(config.StateDir) || filepath.Clean(config.RootDir) == "/" || filepath.Clean(config.StateDir) == "/" || filepath.Clean(config.RootDir) == filepath.Clean(config.StateDir) {
 		return errors.New("software and Agent state require distinct absolute non-root directories")
+	}
+	if config.ApplicationsRootDir != "" {
+		if !filepath.IsAbs(config.ApplicationsRootDir) || filepath.Clean(config.ApplicationsRootDir) == "/" || pathsOverlap(config.ApplicationsRootDir, config.RootDir) || pathsOverlap(config.ApplicationsRootDir, config.StateDir) {
+			return errors.New("hosted applications require a distinct absolute non-root directory")
+		}
 	}
 	for _, name := range []string{config.RunUser, config.APIUser, config.RunGroup, config.BuildUser, config.BuildGroup} {
 		if name != "" && !validAccount.MatchString(name) {
@@ -132,7 +140,11 @@ func ValidatePrivilegedConfig(config PrivilegedConfig) error {
 	if err := validateSourceBuildConfig(config); err != nil {
 		return err
 	}
-	for _, dir := range []string{config.RootDir, config.StateDir} {
+	protectedDirs := []string{config.RootDir, config.StateDir}
+	if config.ApplicationsRootDir != "" {
+		protectedDirs = append(protectedDirs, config.ApplicationsRootDir)
+	}
+	for _, dir := range protectedDirs {
 		if os.Geteuid() == 0 {
 			for parent := filepath.Dir(dir); ; parent = filepath.Dir(parent) {
 				info, err := os.Lstat(parent)
@@ -234,9 +246,17 @@ func NewPrivilegedExecutorWithOptions(config PrivilegedConfig, options Privilege
 		}
 		config.RunGroup = group.Name
 	}
-	for _, dir := range []string{config.RootDir, config.StateDir} {
+	protectedDirs := []string{config.RootDir, config.StateDir}
+	if config.ApplicationsRootDir != "" {
+		protectedDirs = append(protectedDirs, config.ApplicationsRootDir)
+	}
+	for _, dir := range protectedDirs {
 		if err = os.MkdirAll(dir, 0700); err != nil {
 			return nil, err
+		}
+		mode := os.FileMode(0700)
+		if dir == config.ApplicationsRootDir {
+			mode = 0755
 		}
 		if err = realDirectory(dir); err != nil {
 			return nil, err
@@ -247,6 +267,9 @@ func NewPrivilegedExecutorWithOptions(config PrivilegedConfig, options Privilege
 		}
 		if stat, ok := info.Sys().(*syscall.Stat_t); !ok || stat.Uid != uint32(os.Geteuid()) {
 			return nil, errors.New("Agent root directories must belong to its service UID")
+		}
+		if err = os.Chmod(dir, mode); err != nil {
+			return nil, err
 		}
 	}
 	for _, part := range []string{"receipts", "plans", "snapshots", "locks", "artifacts", "private"} {
@@ -407,6 +430,8 @@ func (e *PrivilegedExecutor) Validate(request agent.Request) error {
 		return e.ValidatePostgreSQLMaintenance(request.Input)
 	case "database_artifact":
 		return e.validateDatabaseArtifact(request.Input)
+	case "database_import_artifact":
+		return validDatabaseImportStream(request.Input)
 	case "backup_artifact":
 		var input struct {
 			ID            string `json:"id"`
@@ -423,6 +448,8 @@ func (e *PrivilegedExecutor) Validate(request agent.Request) error {
 		if input.ExpectedBytes < 0 || input.ExpectedBytes > maxExtractedBytes {
 			return failure("invalid_input", "Backup artifact size is outside its bounds", 400)
 		}
+	case "hosted_app_list", "hosted_app_create", "hosted_app_build", "hosted_app_deploy", "hosted_app_control", "hosted_app_logs", "hosted_app_delete", "hosted_app_source_upload", "hosted_app_git_import", "hosted_app_purge":
+		return e.validateHostedApp(request)
 	default:
 		return agent.ErrUnauthorized
 	}
@@ -506,8 +533,10 @@ func (e *PrivilegedExecutor) Run(ctx context.Context, request agent.Request) (re
 		output, err = e.databaseTableMaintenance(ctx, request)
 	case "database_postgresql_maintenance_action":
 		output, err = e.RunPostgreSQLMaintenance(ctx, request.Input)
-	case "backup_artifact", "database_artifact", "docker_image_archive_artifact":
+	case "backup_artifact", "database_artifact", "docker_image_archive_artifact", "database_import_artifact", "hosted_app_source_upload":
 		return result, failure("stream_required", "Backup artifacts must use the authenticated streaming transport", 400)
+	case "hosted_app_list", "hosted_app_create", "hosted_app_build", "hosted_app_deploy", "hosted_app_control", "hosted_app_logs", "hosted_app_delete", "hosted_app_git_import", "hosted_app_purge":
+		output, err = e.runHostedApp(ctx, request)
 	}
 	if err != nil {
 		return result, err
@@ -656,6 +685,48 @@ func (e *PrivilegedExecutor) save(kind, id string, value any) error {
 	}
 	return err
 }
+
+func (e *PrivilegedExecutor) removeRecord(kind, id string) error {
+	if kind != "receipts" && kind != "plans" && kind != "private" {
+		return errors.New("unknown private Agent record kind")
+	}
+	if !validInstanceID(id) && !validPlanID(id) {
+		return failure("invalid_input", "Invalid Agent record identity", 400)
+	}
+	dir := filepath.Join(e.config.StateDir, kind)
+	path := filepath.Join(dir, id+".json")
+	file, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return err
+	}
+	info, statErr := file.Stat()
+	if statErr != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 {
+		_ = file.Close()
+		return failure("ownership_invalid", "Managed record permissions or format are invalid", 412)
+	}
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok || stat.Uid != uint32(os.Geteuid()) {
+		_ = file.Close()
+		return failure("ownership_invalid", "Managed record must belong to the Agent service UID", 412)
+	}
+	if err = file.Close(); err != nil {
+		return err
+	}
+	if err = os.Remove(path); err != nil {
+		return err
+	}
+	directory, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	err = directory.Sync()
+	closeErr := directory.Close()
+	if err == nil {
+		err = closeErr
+	}
+	return err
+}
+
 func (e *PrivilegedExecutor) load(kind, id string, value any) error {
 	if !validInstanceID(id) && !validPlanID(id) {
 		return failure("invalid_input", "Invalid Agent record ID", 400)

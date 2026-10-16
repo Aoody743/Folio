@@ -377,6 +377,120 @@
       }
     },
     {
+      "id": "nginx",
+      "name": "Nginx",
+      "description": "标准 Nginx 网站服务，可与受管 PHP-FPM 配合使用",
+      "category": "web",
+      "integration_version": "1.0.0",
+      "versions": [
+        {
+          "id": "distribution",
+          "version": "resolved_from_signed_repository",
+          "default": true,
+          "source": {
+            "kind": "signed_package",
+            "trust": "repository_signature",
+            "packages": ["nginx"]
+          },
+          "verification": {
+            "status": "not_tested",
+            "reason": "The package is selected from the host's signature-verified distribution repositories; native runtime acceptance is pending."
+          }
+        }
+      ],
+      "platforms": [
+        {"os": "linux", "arch": "amd64", "distro": "debian", "release": "13"},
+        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"},
+        {"os": "linux", "arch": "arm64", "distro": "debian", "release": "13"},
+        {"os": "linux", "arch": "arm64", "distro": "ubuntu", "release": "24.04"}
+      ],
+      "capabilities": [],
+      "coexist": false,
+      "service": {
+        "programs": ["nginx"],
+        "unit_base": "powerlinux-plugin-nginx",
+        "health": "nginx",
+        "default_port": 18081,
+        "config_kind": "nginx"
+      },
+      "verification": {
+        "status": "not_tested",
+        "reason": "Native package installation, isolated configuration, site management and public listener checks are pending."
+      }
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "description": "系统 Git 客户端，用于受管 Next.js 与 Go 应用的仓库导入",
+      "category": "runtime",
+      "integration_version": "1.0.0",
+      "versions": [{
+        "id": "distribution",
+        "version": "distribution",
+        "default": true,
+        "source": {"kind": "signed_package", "trust": "repository_signature", "packages": ["git", "openssh-client"]},
+        "verification": {"status": "not_tested", "reason": "Native Git/OpenSSH installation and pinned-host-key repository import are pending."}
+      }],
+      "platforms": [
+        {"os": "linux", "arch": "amd64", "distro": "debian", "release": "13"},
+        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"},
+        {"os": "linux", "arch": "arm64", "distro": "debian", "release": "13"},
+        {"os": "linux", "arch": "arm64", "distro": "ubuntu", "release": "24.04"}
+      ],
+      "capabilities": [],
+      "coexist": true,
+      "service": {"programs": ["git"], "health": "cli", "config_kind": "native"},
+      "verification": {"status": "not_tested", "reason": "The signed distribution package source is declared; installation and managed Git import acceptance are pending."}
+    },
+    {
+      "id": "nodejs",
+      "name": "Node.js",
+      "description": "签名仓库提供的 Node.js 与 npm 运行环境，用于受管 Next.js 应用",
+      "category": "runtime",
+      "integration_version": "1.0.0",
+      "versions": [{
+        "id": "distribution",
+        "version": "distribution",
+        "default": true,
+        "source": {"kind": "signed_package", "trust": "repository_signature", "packages": ["nodejs", "npm"]},
+        "verification": {"status": "not_tested", "reason": "Native Node.js/npm installation and Next.js application lifecycle acceptance are pending."}
+      }],
+      "platforms": [
+        {"os": "linux", "arch": "amd64", "distro": "debian", "release": "13"},
+        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"},
+        {"os": "linux", "arch": "arm64", "distro": "debian", "release": "13"},
+        {"os": "linux", "arch": "arm64", "distro": "ubuntu", "release": "24.04"}
+      ],
+      "capabilities": [],
+      "coexist": true,
+      "service": {"programs": ["node"], "health": "cli", "config_kind": "native"},
+      "verification": {"status": "not_tested", "reason": "The signed distribution package source is declared; installation and managed Next.js runtime acceptance are pending."}
+    },
+    {
+      "id": "golang",
+      "name": "Go",
+      "description": "签名仓库提供的 Go 编译器，用于构建受管 Go 应用",
+      "category": "runtime",
+      "integration_version": "1.0.0",
+      "versions": [{
+        "id": "distribution",
+        "version": "distribution",
+        "default": true,
+        "source": {"kind": "signed_package", "trust": "repository_signature", "packages": ["golang-go"]},
+        "verification": {"status": "not_tested", "reason": "Native Go installation and Go application lifecycle acceptance are pending."}
+      }],
+      "platforms": [
+        {"os": "linux", "arch": "amd64", "distro": "debian", "release": "13"},
+        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"},
+        {"os": "linux", "arch": "arm64", "distro": "debian", "release": "13"},
+        {"os": "linux", "arch": "arm64", "distro": "ubuntu", "release": "24.04"}
+      ],
+      "capabilities": [],
+      "coexist": true,
+      "service": {"programs": ["go"], "health": "cli", "config_kind": "native"},
+      "verification": {"status": "not_tested", "reason": "The signed distribution package source is declared; installation and managed Go application acceptance are pending."}
+    },
+    {
       "id": "php",
       "name": "PHP",
       "description": "PHP是世界上最好的编程语言",

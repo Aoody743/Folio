@@ -5,10 +5,11 @@
   "plugins": {
     "root_dir": "/opt/powerlinux-software",
     "state_dir": "/var/lib/powerlinux-agent/software",
+    "applications_root_dir": "/srv/powerlinux-apps",
     "run_user": "powerlinux-services",
     "run_group": "powerlinux-services",
     "api_user": "powerlinux",
-    "enable_system_packages": false,
+    "enable_system_packages": true,
     "use_systemd": true
   },
   "sites": {

@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-16",
+  "source_commit": "72273255a3a41bc0a42900d04f2d9c2014b1a0ee",
+  "working_tree_dirty": true,
+  "host": {
+    "os": "darwin",
+    "architecture": "arm64",
+    "native_linux_qa_available": false
+  },
+  "checks": {
+    "linux_amd64_vet": {
+      "result": "PASS",
+      "command": "GOOS=linux GOARCH=amd64 go vet ./..."
+    },
+    "linux_amd64_test_compilation": {
+      "result": "PASS",
+      "packages": [
+        "./internal/plugins",
+        "./cmd/powerlinux"
+      ],
+      "note": "Tests were compiled for Linux, not executed."
+    },
+    "linux_arm64_test_compilation": {
+      "result": "PASS",
+      "packages": [
+        "./internal/plugins"
+      ],
+      "note": "Tests were compiled for Linux, not executed."
+    },
+    "frontend_tests": {
+      "result": "PASS",
+      "passed": 82,
+      "failed": 0,
+      "command": "npm test --prefix frontend"
+    },
+    "rewrite_ui": {
+      "result": "PASS",
+      "typecheck": "PASS",
+      "static_export": "PASS",
+      "command": "make rewrite-ui"
+    },
+    "nested_mysql_race": {
+      "result": "PASS",
+      "command": "go -C third_party/mysql test -mod=readonly -race -count=1 ./..."
+    },
+    "linux_binary_builds": {
+      "result": "PASS",
+      "note": "These are cross-compiled executables, not release packages or native runtime evidence.",
+      "artifacts": {
+        "linux-amd64": {
+          "path": "/tmp/powerlinux-dev24-linux-amd64-current",
+          "sha256": "7f3b68131f11f2de82d5a24d07b16f97bf556ee47af59006a17899097a7eeda7"
+        },
+        "linux-arm64": {
+          "path": "/tmp/powerlinux-dev24-linux-arm64-current",
+          "sha256": "082bbb18f8fb386913fbfcce8cf0961ec045cc05607e75f24e497a09705c6d82"
+        }
+      }
+    },
+    "rewrite_test": {
+      "result": "BLOCKED_ON_HOST",
+      "command": "make rewrite-test",
+      "installer_python_tests": {
+        "total": 31,
+        "failed": 22,
+        "skipped": 3,
+        "cause": "macOS host does not provide flock required by the Linux installer fixtures"
+      },
+      "production_data_lock_tests": {
+        "cause": "Linux file-lock semantics differ from Darwin"
+      }
+    },
+    "native_go_plugin_tests": {
+      "result": "BLOCKED_ON_HOST",
+      "command": "go test ./internal/plugins",
+      "cause": "Repository package depends on Linux-only syscall fields and Linux build-tag implementations."
+    }
+  },
+  "native_acceptance": {
+    "debian_13_amd64": "NOT_RUN",
+    "ubuntu_24_04_amd64": "NOT_RUN",
+    "nginx_native_package_install": "NOT_RUN",
+    "php_nextjs_go_user_flows": "NOT_RUN",
+    "browser_mcp_permission_and_audit_matrix": "NOT_RUN",
+    "upgrade_rollback_and_data_retention": "NOT_RUN",
+    "release_package": "NOT_PRODUCED_IN_THIS_HOST_CHECK"
+  },
+  "release_decision": "Keep Nginx and hosted application work unverified until native Debian/Ubuntu QA and package lifecycle acceptance pass. Stage 2 remains incomplete; stage 3 has not started."
+}

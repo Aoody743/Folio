@@ -17,6 +17,10 @@ const BackupFTPMaintenance = dynamic(
   () => import("./backup-ftp").then((m) => m.BackupFTPMaintenance),
   { ssr: false },
 );
+const HostedApplications = dynamic(
+  () => import("./hosted-applications").then((m) => m.HostedApplications),
+  { ssr: false },
+);
 import { hasInstanceResources } from "./instance-resources";
 const PHPMaintenance = dynamic(
   () => import("./php-maintenance").then((m) => m.PHPMaintenance),
@@ -190,6 +194,7 @@ export function SoftwareView({
           { id: "catalog", label: "软件目录" },
           { id: "database", label: "数据库连接" },
           { id: "cache", label: "缓存空间" },
+          { id: "applications", label: "应用服务" },
           { id: "backup-ftp", label: "远程备份" },
         ].map((tab) => (
           <button
@@ -204,6 +209,12 @@ export function SoftwareView({
       </div>
       {resourcePage === "backup-ftp" ? (
         <BackupFTPMaintenance
+          capabilities={capabilities}
+          onExecuted={onExecuted}
+          active={active}
+        />
+      ) : resourcePage === "applications" ? (
+        <HostedApplications
           capabilities={capabilities}
           onExecuted={onExecuted}
           active={active}

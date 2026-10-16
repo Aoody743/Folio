@@ -618,7 +618,11 @@ func TestPostgreSQLSlowlogPollingCancelsInflightOpen(t *testing.T) {
 func TestPostgreSQLSlowlogReadIsFixedPathBoundedAndRedactsStatements(t *testing.T) {
 	logDir := t.TempDir()
 	log := "2026-10-15 11:12:12.123 UTC [41] other_user@other_db LOG:  duration: 999.00 ms  statement: SELECT 'other database secret';\n" +
-		"2026-10-15 11:12:13.123 UTC [42] app_user@app_db LOG:  duration: 124.50 ms  statement: SELECT * FROM users WHERE id = 424242 AND email = 'person@example.invalid' AND password='secret-value';\n"
+		"2026-10-15 11:12:13.123 UTC [42] app_user@app_db LOG:  duration: 124.50 ms  statement: SELECT * FROM users WHERE id = 424242 AND email = 'person@example.invalid' AND password='secret-value';\n" +
+		"2026-10-15 11:12:14.123 UTC [44] app_user@app_db LOG:  duration: 1.25 ms  parse stmtcache_42: SELECT pg_sleep(0.1);\n" +
+		"2026-10-15 11:12:15.123 UTC [44] app_user@app_db LOG:  duration: 2.50 ms  bind stmtcache_42: SELECT pg_sleep($1); parameters: $1 = 'secret-bind-value';\n" +
+		"2026-10-15 11:12:16.123 UTC [44] app_user@app_db LOG:  duration: 3.75 ms  execute stmtcache_42: SELECT pg_sleep($1);\n" +
+		"2026-10-15 11:12:17.123 UTC [45] other_user@other_db LOG:  duration: 8 ms  parse stmtcache_43: SELECT 'other database secret';\n"
 	if err := os.WriteFile(filepath.Join(logDir, "postgresql.log"), []byte(log), 0600); err != nil {
 		t.Fatal("could not prepare protected slow-log fixture", err)
 	}
@@ -628,11 +632,27 @@ func TestPostgreSQLSlowlogReadIsFixedPathBoundedAndRedactsStatements(t *testing.
 	}
 	var truncatedEntries bool
 	entries := parsePostgreSQLSlowlogEntries(data, "app_db", 5, &truncatedEntries)
-	if len(entries) != 1 || entries[0].DurationMS != 124.5 || entries[0].Role != "app_user" || entries[0].Database != "app_db" || !strings.Contains(entries[0].Statement, "[REDACTED]") {
+	if len(entries) != 4 || entries[0].DurationMS != 124.5 || entries[0].Role != "app_user" || entries[0].Database != "app_db" || !strings.Contains(entries[0].Statement, "[REDACTED]") {
 		t.Fatal("slow-log entry was not decoded into bounded typed fields", entries)
 	}
 	if strings.Contains(entries[0].Statement, "person@example.invalid") || strings.Contains(entries[0].Statement, "secret-value") || strings.Contains(entries[0].Statement, "424242") {
 		t.Fatal("literal secret material escaped slow-log redaction", entries[0].Statement)
+	}
+	for index, operation := range []string{"parse", "bind", "execute"} {
+		entry := entries[index+1]
+		if entry.DurationMS != float64(index+1)*1.25 || !strings.HasPrefix(entry.Statement, operation+": ") {
+			t.Fatalf("extended-protocol %s record was not exposed as a redacted slow-log entry: %#v", operation, entry)
+		}
+		if operation != "execute" && !strings.Contains(entry.Statement, "[REDACTED]") {
+			t.Fatalf("extended-protocol %s record did not redact SQL literals: %s", operation, entry.Statement)
+		}
+		if strings.Contains(entry.Statement, "stmtcache_42") || strings.Contains(entry.Statement, "secret-bind-value") || strings.Contains(entry.Statement, "0.1") {
+			t.Fatalf("extended-protocol %s record exposed a prepared name or parameter literal: %s", operation, entry.Statement)
+		}
+	}
+	var noMatchTruncated bool
+	if noMatches := parsePostgreSQLSlowlogEntries(data, "missing_db", 5, &noMatchTruncated); len(noMatches) != 0 || noMatchTruncated {
+		t.Fatalf("unmatched database logs were returned or reported as truncated: %#v", noMatches)
 	}
 	longLine := "2026-10-15 11:12:14.123 UTC [43] app_user@app_db LOG:  duration: 12 ms  statement: SELECT $tag$cutoff-secret" + strings.Repeat("private-token-", 1800) + "$tag$\n"
 	var longLineTruncated bool
@@ -652,5 +672,31 @@ func TestPostgreSQLSlowlogReadIsFixedPathBoundedAndRedactsStatements(t *testing.
 	}
 	if _, _, _, err = readPostgreSQLSlowlogFile(Instance{Paths: Paths{LogDir: logDir}}, os.Geteuid()); core.ErrorCode(err) != "log_unavailable" {
 		t.Fatal("slow-log reader followed a caller-controlled symlink", core.ErrorCode(err))
+	}
+}
+
+func TestPostgreSQLSlowlogReadEnforcesFileAccessPermissions(t *testing.T) {
+	logDir := t.TempDir()
+	path := filepath.Join(logDir, "postgresql.log")
+	if err := os.WriteFile(path, []byte("slow query\n"), 0600); err != nil {
+		t.Fatal("could not prepare protected slow-log fixture", err)
+	}
+	instance := Instance{Paths: Paths{LogDir: logDir}}
+	if _, _, _, err := readPostgreSQLSlowlogFile(instance, os.Geteuid()+1); core.ErrorCode(err) != "log_unavailable" {
+		t.Fatalf("slow-log reader accepted a file owned by a different service account: %v", err)
+	}
+	if err := os.Chmod(path, 0660); err != nil {
+		t.Fatal("could not prepare group-writable slow-log fixture", err)
+	}
+	if _, _, _, err := readPostgreSQLSlowlogFile(instance, os.Geteuid()); core.ErrorCode(err) != "log_unavailable" {
+		t.Fatalf("slow-log reader accepted a group-writable file: %v", err)
+	}
+	if os.Geteuid() != 0 {
+		if err := os.Chmod(path, 0000); err != nil {
+			t.Fatal("could not prepare unreadable slow-log fixture", err)
+		}
+		if _, _, _, err := readPostgreSQLSlowlogFile(instance, os.Geteuid()); core.ErrorCode(err) != "log_unavailable" {
+			t.Fatalf("slow-log reader accepted an unreadable file: %v", err)
+		}
 	}
 }

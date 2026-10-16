@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/agent"
@@ -52,12 +53,16 @@ var utilityName = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,31}$`)
 
 func utilityStateID(instance Instance) string { return "utility_" + instance.ID }
 func (e *PrivilegedExecutor) utilityRecord(instance Instance) (utilityRecord, error) {
+	record, _, err := e.utilityRecordState(instance)
+	return record, err
+}
+func (e *PrivilegedExecutor) utilityRecordState(instance Instance) (utilityRecord, bool, error) {
 	record := utilityRecord{Revision: 1, Items: map[string]utilityAccount{}}
 	err := e.load("private", utilityStateID(instance), &record)
 	if core.ErrorCode(err) == "not_found" {
-		return record, nil
+		return record, false, nil
 	}
-	return record, err
+	return record, err == nil, err
 }
 func (e *PrivilegedExecutor) validateUtility(raw json.RawMessage) error {
 	var input UtilityInput
@@ -187,10 +192,13 @@ func (e *PrivilegedExecutor) utilityProbe(ctx context.Context, instance Instance
 	return health
 }
 func (e *PrivilegedExecutor) writeRsync(instance Instance) error {
-	record, err := e.utilityRecord(instance)
+	record, _, err := e.utilityRecordState(instance)
 	if err != nil {
 		return err
 	}
+	return e.writeRsyncRecord(instance, record)
+}
+func (e *PrivilegedExecutor) writeRsyncRecord(instance Instance, record utilityRecord) error {
 	bind, _ := instance.Config["bind"].(string)
 	body := "uid = " + strconv.FormatUint(uint64(e.uid), 10) + "\ngid = " + strconv.FormatUint(uint64(e.gid), 10) + "\nuse chroot = no\naddress = " + bind + "\nport = " + strconv.Itoa(setting(instance.Config, "port", 18873)) + "\npid file = " + filepath.Join(instance.Paths.RunDir, "server.pid") + "\nlog file = " + filepath.Join(instance.Paths.LogDir, "rsync.log") + "\nmax connections = 16\n"
 	secrets := ""
@@ -202,13 +210,8 @@ func (e *PrivilegedExecutor) writeRsync(instance Instance) error {
 	for _, name := range names {
 		account := record.Items[name]
 		directory := filepath.Join(instance.Paths.DataDir, "modules", name)
-		if err = os.MkdirAll(directory, 0750); err != nil {
+		if err := e.ensureUtilityDataDirectory(instance, filepath.Join("modules", name)); err != nil {
 			return err
-		}
-		if os.Geteuid() == 0 {
-			if err = os.Chown(directory, int(e.uid), int(e.gid)); err != nil {
-				return err
-			}
 		}
 		readOnly := "yes"
 		if !account.ReadOnly {
@@ -217,7 +220,7 @@ func (e *PrivilegedExecutor) writeRsync(instance Instance) error {
 		body += "\n[" + name + "]\npath = " + directory + "\nread only = " + readOnly + "\nlist = yes\nauth users = " + name + "\nsecrets file = " + filepath.Join(instance.Paths.ConfigDir, "rsync.secrets") + "\nstrict modes = yes\n"
 		secrets += name + ":" + account.Password + "\n"
 	}
-	if err = writeAtomicRoot(instance.Paths.ConfigDir, "rsync.secrets", []byte(secrets), 0440, int(e.gid)); err != nil {
+	if err := writeAtomicRoot(instance.Paths.ConfigDir, "rsync.secrets", []byte(secrets), 0440, int(e.gid)); err != nil {
 		return err
 	}
 	return writeAtomicRoot(instance.Paths.ConfigDir, "rsyncd.conf", []byte(body), 0640, int(e.gid))
@@ -230,6 +233,9 @@ func (e *PrivilegedExecutor) writeSupervisor(instance Instance) error {
 	if err != nil {
 		return err
 	}
+	return e.writeSupervisorRecord(instance, record)
+}
+func (e *PrivilegedExecutor) writeSupervisorRecord(instance Instance, record utilityRecord) error {
 	socket := filepath.Join(instance.Paths.RunDir, "supervisor.sock")
 	body := "[unix_http_server]\nfile=" + socket + "\nchmod=0700\n[supervisord]\nlogfile=" + filepath.Join(instance.Paths.LogDir, "supervisord.log") + "\nlogfile_maxbytes=10MB\nlogfile_backups=3\npidfile=" + filepath.Join(instance.Paths.RunDir, "server.pid") + "\nchildlogdir=" + instance.Paths.LogDir + "\n[rpcinterface:supervisor]\nsupervisor.rpcinterface_factory=supervisor.rpcinterface:make_main_rpcinterface\n[supervisorctl]\nserverurl=unix://" + socket + "\n"
 	names := []string{}
@@ -263,6 +269,76 @@ func (e *PrivilegedExecutor) writeSupervisor(instance Instance) error {
 	}
 	return writeAtomicRoot(instance.Paths.ConfigDir, "supervisord.conf", []byte(body), 0640, int(e.gid))
 }
+
+func (e *PrivilegedExecutor) ensureUtilityDataDirectory(instance Instance, relative string) error {
+	if !filepath.IsLocal(relative) {
+		return failure("invalid_path", "Utility data path must remain inside its managed instance", 400)
+	}
+	root, err := os.OpenRoot(instance.Paths.DataDir)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	if _, err = inspectUtilityDataPath(root, relative); err != nil {
+		return err
+	}
+	if err = root.MkdirAll(relative, 0750); err != nil {
+		return err
+	}
+	if _, err = inspectUtilityDataPath(root, relative); err != nil {
+		return err
+	}
+	directory, err := root.OpenFile(relative, os.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return failure("ownership_invalid", "Utility data directory must be a real directory inside its managed instance", 412)
+	}
+	defer directory.Close()
+	info, err := directory.Stat()
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return failure("ownership_invalid", "Utility data path is not a directory", 412)
+	}
+	if os.Geteuid() == 0 {
+		if err = directory.Chown(int(e.uid), int(e.gid)); err != nil {
+			return err
+		}
+		if err = directory.Chmod(0750); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *PrivilegedExecutor) setUtilityDataDirectory(instance Instance, relative string, uid, gid int, mode os.FileMode) error {
+	if !filepath.IsLocal(relative) {
+		return failure("invalid_path", "Utility data path must remain inside its managed instance", 400)
+	}
+	root, err := os.OpenRoot(instance.Paths.DataDir)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	exists, err := inspectUtilityDataPath(root, relative)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return failure("not_found", "Utility data directory does not exist", 404)
+	}
+	directory, err := root.OpenFile(relative, os.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return failure("ownership_invalid", "Utility data directory must be a real directory inside its managed instance", 412)
+	}
+	defer directory.Close()
+	if os.Geteuid() == 0 {
+		if err = directory.Chown(uid, gid); err != nil {
+			return err
+		}
+	}
+	return directory.Chmod(mode)
+}
 func (e *PrivilegedExecutor) supervisorRPC(ctx context.Context, instance Instance, method, name string) (string, error) {
 	var escaped bytes.Buffer
 	_ = xml.EscapeText(&escaped, []byte(name))
@@ -290,11 +366,275 @@ func (e *PrivilegedExecutor) supervisorRPC(ctx context.Context, instance Instanc
 	if err != nil {
 		return "", err
 	}
+	if strings.Contains(string(data), "<fault>") && strings.Contains(string(data), "BAD_NAME") {
+		return "", failure("supervisor_program_missing", "Supervisor program group is not loaded", 404)
+	}
 	if response.StatusCode != 200 || strings.Contains(string(data), "<fault>") {
 		return "", failure("supervisor_operation_failed", "Supervisor rejected the typed program operation", 502)
 	}
 	return string(data), nil
 }
+
+func supervisorProcessState(response string) (string, error) {
+	decoder := xml.NewDecoder(strings.NewReader(response))
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", err
+		}
+		start, ok := token.(xml.StartElement)
+		if !ok || start.Name.Local != "member" {
+			continue
+		}
+		var member struct {
+			Name  string `xml:"name"`
+			Value struct {
+				Text string `xml:"string"`
+			} `xml:"value"`
+		}
+		if err := decoder.DecodeElement(&member, &start); err != nil {
+			return "", err
+		}
+		if member.Name == "statename" {
+			if member.Value.Text == "" {
+				break
+			}
+			return member.Value.Text, nil
+		}
+	}
+	return "", failure("supervisor_response_invalid", "Supervisor omitted the program state", 502)
+}
+
+func (e *PrivilegedExecutor) supervisorProcessState(ctx context.Context, instance Instance, name string) (string, bool, error) {
+	response, err := e.supervisorRPC(ctx, instance, "supervisor.getProcessInfo", name)
+	if err != nil {
+		if core.ErrorCode(err) == "supervisor_program_missing" {
+			return "", false, nil
+		}
+		return "", false, err
+	}
+	state, err := supervisorProcessState(response)
+	if err != nil {
+		return "", false, err
+	}
+	return state, true, nil
+}
+
+func (e *PrivilegedExecutor) supervisorProgramRunning(ctx context.Context, instance Instance, name string) (bool, error) {
+	state, exists, err := e.supervisorProcessState(ctx, instance, name)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
+		return false, failure("supervisor_program_missing", "Supervisor program group is not loaded", 404)
+	}
+	switch state {
+	case "RUNNING":
+		return true, nil
+	case "STOPPED", "EXITED", "FATAL", "BACKOFF":
+		return false, nil
+	default:
+		return false, failure("supervisor_process_busy", "Supervisor program is changing state; retry after it settles", 409)
+	}
+}
+
+func (e *PrivilegedExecutor) applyRsyncUtilityRecord(ctx context.Context, instance Instance, record utilityRecord, running bool) error {
+	if e.utilityApplyHook != nil {
+		return e.utilityApplyHook(ctx, instance, record, running)
+	}
+	if !running {
+		return nil
+	}
+	_, err := e.controlLocked(ctx, ServiceInput{ID: instance.ID, Command: "restart"}, instance)
+	return err
+}
+
+func (e *PrivilegedExecutor) applySupervisorUtilityRecord(ctx context.Context, instance Instance, record utilityRecord, serviceRunning, processExisted, processRunning bool, name, command string) error {
+	if e.utilityApplyHook != nil {
+		return e.utilityApplyHook(ctx, instance, record, serviceRunning)
+	}
+	if !serviceRunning {
+		return nil
+	}
+	if _, err := e.supervisorRPC(ctx, instance, "supervisor.reloadConfig", ""); err != nil {
+		return err
+	}
+	if processExisted && processRunning && (command == "update" || command == "delete") {
+		if _, err := e.supervisorRPC(ctx, instance, "supervisor.stopProcessGroup", name); err != nil {
+			return err
+		}
+	}
+	if command == "delete" || command == "update" {
+		if _, err := e.supervisorRPC(ctx, instance, "supervisor.removeProcessGroup", name); err != nil {
+			return err
+		}
+	}
+	if command == "create" || command == "update" {
+		if _, err := e.supervisorRPC(ctx, instance, "supervisor.addProcessGroup", name); err != nil {
+			return err
+		}
+	}
+	if processExisted && command == "update" && processRunning {
+		_, err := e.supervisorRPC(ctx, instance, "supervisor.startProcessGroup", name)
+		return err
+	}
+	return nil
+}
+
+func (e *PrivilegedExecutor) restoreSupervisorUtilityState(ctx context.Context, instance Instance, oldRecord utilityRecord, serviceRunning, processExisted, processRunning bool, name string) error {
+	if e.utilityApplyHook != nil {
+		return e.utilityApplyHook(ctx, instance, oldRecord, serviceRunning)
+	}
+	if !serviceRunning {
+		return nil
+	}
+	if _, err := e.supervisorRPC(ctx, instance, "supervisor.reloadConfig", ""); err != nil {
+		return err
+	}
+	state, exists, err := e.supervisorProcessState(ctx, instance, name)
+	if err != nil {
+		return err
+	}
+	if processExisted {
+		if exists {
+			if state == "RUNNING" {
+				if _, err = e.supervisorRPC(ctx, instance, "supervisor.stopProcessGroup", name); err != nil {
+					return err
+				}
+			}
+			if _, err = e.supervisorRPC(ctx, instance, "supervisor.removeProcessGroup", name); err != nil {
+				return err
+			}
+		}
+		if _, err = e.supervisorRPC(ctx, instance, "supervisor.addProcessGroup", name); err != nil {
+			return err
+		}
+		if processRunning {
+			_, err = e.supervisorRPC(ctx, instance, "supervisor.startProcessGroup", name)
+			return err
+		}
+		return nil
+	}
+	if exists {
+		if state == "RUNNING" {
+			if _, err = e.supervisorRPC(ctx, instance, "supervisor.stopProcessGroup", name); err != nil {
+				return err
+			}
+		}
+		_, err = e.supervisorRPC(ctx, instance, "supervisor.removeProcessGroup", name)
+	}
+	return err
+}
+
+func (e *PrivilegedExecutor) mutateRsyncRecord(ctx context.Context, instance Instance, oldRecord utilityRecord, oldRecordPresent bool, nextRecord utilityRecord, input UtilityInput) error {
+	privateSnapshot, err := snapshotUtilityFile(filepath.Join(e.config.StateDir, "private"), utilityStateID(instance)+".json")
+	if err != nil {
+		return err
+	}
+	if privateSnapshot.Exists != oldRecordPresent {
+		return failure("operation_conflict", "Utility metadata changed while the instance lock was held", 409)
+	}
+	running, err := e.utilityRuntimeRunning(instance)
+	if err != nil {
+		return err
+	}
+	cleanup := []string{}
+	if input.Command == "create" {
+		dataDirectory := filepath.Join("modules", input.Name)
+		if err := requireUtilityDataTargetAbsent(instance, dataDirectory); err != nil {
+			return err
+		}
+		cleanup = append(cleanup, dataDirectory)
+	}
+	return e.commitUtilityMutation(instance, privateSnapshot, nextRecord, []string{"rsync.secrets", "rsyncd.conf"},
+		func() error { return e.writeRsyncRecord(instance, nextRecord) },
+		func(record utilityRecord) error { return e.applyRsyncUtilityRecord(ctx, instance, record, running) },
+		func() error { return e.applyRsyncUtilityRecord(ctx, instance, oldRecord, running) }, cleanup)
+}
+
+func (e *PrivilegedExecutor) mutateSupervisorRecord(ctx context.Context, instance Instance, oldRecord utilityRecord, oldRecordPresent bool, nextRecord utilityRecord, input UtilityInput) error {
+	privateSnapshot, err := snapshotUtilityFile(filepath.Join(e.config.StateDir, "private"), utilityStateID(instance)+".json")
+	if err != nil {
+		return err
+	}
+	if privateSnapshot.Exists != oldRecordPresent {
+		return failure("operation_conflict", "Utility metadata changed while the instance lock was held", 409)
+	}
+	serviceRunning, err := e.utilityRuntimeRunning(instance)
+	if err != nil {
+		return err
+	}
+	processExisted := input.Command != "create"
+	processRunning := false
+	if serviceRunning && processExisted {
+		processRunning, err = e.supervisorProgramRunning(ctx, instance, input.Name)
+		if err != nil {
+			return err
+		}
+	}
+	cleanup := []string{}
+	if input.Command == "create" {
+		dataDirectory := filepath.Join("programs", input.Name)
+		if err := requireUtilityDataTargetAbsent(instance, dataDirectory); err != nil {
+			return err
+		}
+		cleanup = append(cleanup, dataDirectory)
+	}
+	apply := func(record utilityRecord) error {
+		return e.applySupervisorUtilityRecord(ctx, instance, record, serviceRunning, processExisted, processRunning, input.Name, input.Command)
+	}
+	return e.commitUtilityMutation(instance, privateSnapshot, nextRecord, []string{"supervisord.conf"},
+		func() error { return e.writeSupervisorRecord(instance, nextRecord) }, apply,
+		func() error {
+			return e.restoreSupervisorUtilityState(ctx, instance, oldRecord, serviceRunning, processExisted, processRunning, input.Name)
+		}, cleanup)
+}
+
+func (e *PrivilegedExecutor) mutatePureFTPRecord(ctx context.Context, instance Instance, oldRecord utilityRecord, oldRecordPresent bool, nextRecord utilityRecord, input UtilityInput) error {
+	privateSnapshot, err := snapshotUtilityFile(filepath.Join(e.config.StateDir, "private"), utilityStateID(instance)+".json")
+	if err != nil {
+		return err
+	}
+	if privateSnapshot.Exists != oldRecordPresent {
+		return failure("operation_conflict", "Utility metadata changed while the instance lock was held", 409)
+	}
+	dataDirectory := filepath.Join("users", input.Name)
+	directorySnapshot := utilityDirectorySnapshot{}
+	cleanup := []string{}
+	switch input.Command {
+	case "create":
+		if err = requireUtilityDataTargetAbsent(instance, dataDirectory); err != nil {
+			return err
+		}
+		cleanup = append(cleanup, dataDirectory)
+	case "update":
+		directorySnapshot, err = snapshotUtilityDataDirectory(instance, dataDirectory)
+		if err != nil {
+			return err
+		}
+		if !directorySnapshot.Exists || directorySnapshot.GID != int(e.gid) || (directorySnapshot.UID != int(e.uid) && directorySnapshot.UID != 0) {
+			return failure("ownership_invalid", "PureFTP account data directory is not owned by this managed instance", 412)
+		}
+	}
+	apply := func(record utilityRecord) error {
+		if e.utilityApplyHook != nil {
+			return e.utilityApplyHook(ctx, instance, record, false)
+		}
+		return e.pureFTPAccount(ctx, instance, input)
+	}
+	restore := func() error {
+		if input.Command == "update" {
+			return restoreUtilityDataDirectory(instance, dataDirectory, directorySnapshot)
+		}
+		return nil
+	}
+	return e.commitUtilityMutation(instance, privateSnapshot, nextRecord, []string{"pureftpd.passwd", "pureftpd.pdb"},
+		func() error { return nil }, apply, restore, cleanup)
+}
+
 func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (any, error) {
 	var input UtilityInput
 	_ = json.Unmarshal(raw, &input)
@@ -318,7 +658,7 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 	if (input.Command == "pause" || input.Command == "resume" || input.Command == "legacy_recover") && instance.PluginID != "pureftp" {
 		return nil, failure("unsupported_action", "This per-account action is specific to managed PureFTP", 412)
 	}
-	record, err := e.utilityRecord(instance)
+	record, recordPresent, err := e.utilityRecordState(instance)
 	if err != nil {
 		return nil, err
 	}
@@ -398,6 +738,8 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 	if len(record.Items) >= 256 && input.Command == "create" {
 		return nil, failure("capacity_exceeded", "At most 256 accounts/programs are supported per instance", 429)
 	}
+	oldRecord := cloneUtilityRecord(record)
+	nextRecord := cloneUtilityRecord(record)
 	old := record.Items[input.Name]
 	if instance.PluginID == "pureftp" && input.ReadOnly && (input.Command == "create" || input.Command == "update") {
 		return nil, failure("unsupported_action", "PureFTP per-account read-only access is unavailable until existing-file writes can be denied", 412)
@@ -452,73 +794,46 @@ func (e *PrivilegedExecutor) utility(ctx context.Context, raw json.RawMessage) (
 				}
 			}
 			entry.FTPEnabled = ftpAccountEnabledValue(enabled)
-		default:
-			if err = e.pureFTPAccount(ctx, instance, input); err != nil {
-				return nil, err
-			}
-			if input.Command == "update" && !ftpAccountEnabled(entry) {
-				if err = e.setPureFTPAccountEnabled(ctx, instance, input.Name, false, true); err != nil {
-					return nil, err
-				}
-			}
 		}
 		entry.Password = ""
 	}
 	if input.Command == "delete" {
-		delete(record.Items, input.Name)
+		delete(nextRecord.Items, input.Name)
 	} else {
-		record.Items[input.Name] = entry
+		nextRecord.Items[input.Name] = entry
 	}
-	record.Revision++
-	if err = e.save("private", utilityStateID(instance), record); err != nil {
-		return nil, err
-	}
-	if instance.PluginID == "pureftp" && input.Command == "resume" {
-		if err = e.removePureFTPStateJournal(instance, input.Name); err != nil {
-			return nil, err
-		}
-	}
+	nextRecord.Revision++
 	if instance.PluginID == "rsyncd" {
-		if err = e.writeRsync(instance); err != nil {
+		if err = e.mutateRsyncRecord(ctx, instance, oldRecord, recordPresent, nextRecord, input); err != nil {
 			return nil, err
 		}
-		if _, err = e.controlLocked(ctx, ServiceInput{ID: instance.ID, Command: "restart"}, instance); err != nil {
-			return nil, err
-		}
+		return map[string]any{"id": instance.ID, "name": input.Name, "command": input.Command, "revision": nextRecord.Revision}, nil
 	}
 	if instance.PluginID == "supervisor" {
-		if err = e.writeSupervisor(instance); err != nil {
+		if err = e.mutateSupervisorRecord(ctx, instance, oldRecord, recordPresent, nextRecord, input); err != nil {
 			return nil, err
 		}
-		if _, err = e.supervisorRPC(ctx, instance, "supervisor.reloadConfig", ""); err != nil {
+		return map[string]any{"id": instance.ID, "name": input.Name, "command": input.Command, "revision": nextRecord.Revision}, nil
+	}
+	if input.Command == "pause" || input.Command == "resume" {
+		if err = e.save("private", utilityStateID(instance), nextRecord); err != nil {
 			return nil, err
 		}
-		if input.Command == "create" {
-			if _, err = e.supervisorRPC(ctx, instance, "supervisor.addProcessGroup", input.Name); err != nil {
+		if input.Command == "resume" {
+			if err = e.removePureFTPStateJournal(instance, input.Name); err != nil {
 				return nil, err
 			}
 		}
-		if input.Command == "delete" {
-			_, _ = e.supervisorRPC(ctx, instance, "supervisor.stopProcessGroup", input.Name)
-			if _, err = e.supervisorRPC(ctx, instance, "supervisor.removeProcessGroup", input.Name); err != nil {
-				return nil, err
-			}
-		}
-		if input.Command == "update" {
-			_, _ = e.supervisorRPC(ctx, instance, "supervisor.stopProcessGroup", input.Name)
-			if _, err = e.supervisorRPC(ctx, instance, "supervisor.removeProcessGroup", input.Name); err != nil {
-				return nil, err
-			}
-			if _, err = e.supervisorRPC(ctx, instance, "supervisor.addProcessGroup", input.Name); err != nil {
-				return nil, err
-			}
-		}
+		return map[string]any{"id": instance.ID, "name": input.Name, "command": input.Command, "revision": nextRecord.Revision, "enabled": ftpAccountEnabled(entry)}, nil
 	}
-	result := map[string]any{"id": instance.ID, "name": input.Name, "command": input.Command, "revision": record.Revision}
-	if instance.PluginID == "pureftp" {
-		result["enabled"] = ftpAccountEnabled(entry)
+	entry.Password = ""
+	if input.Command != "delete" {
+		nextRecord.Items[input.Name] = entry
 	}
-	return result, nil
+	if err = e.mutatePureFTPRecord(ctx, instance, oldRecord, recordPresent, nextRecord, input); err != nil {
+		return nil, err
+	}
+	return map[string]any{"id": instance.ID, "name": input.Name, "command": input.Command, "revision": nextRecord.Revision}, nil
 }
 func (e *PrivilegedExecutor) pureFTPAccount(ctx context.Context, instance Instance, input UtilityInput) error {
 	if input.ReadOnly && (input.Command == "create" || input.Command == "update") {
@@ -531,20 +846,13 @@ func (e *PrivilegedExecutor) pureFTPAccount(ctx context.Context, instance Instan
 		args = []string{"userdel", input.Name, "-f", passwd}
 	case "create":
 		directory := filepath.Join(instance.Paths.DataDir, "users", input.Name)
-		if err := os.MkdirAll(directory, 0750); err != nil {
-			return err
-		}
-		if err := os.Chown(directory, int(e.uid), int(e.gid)); err != nil {
+		if err := e.ensureUtilityDataDirectory(instance, filepath.Join("users", input.Name)); err != nil {
 			return err
 		}
 		args = []string{"useradd", input.Name, "-f", passwd, "-u", strconv.FormatUint(uint64(e.uid), 10), "-g", strconv.FormatUint(uint64(e.gid), 10), "-d", directory}
 	case "update":
 		if input.Password == "" {
-			directory := filepath.Join(instance.Paths.DataDir, "users", input.Name)
-			if err := os.Chown(directory, int(e.uid), int(e.gid)); err != nil {
-				return err
-			}
-			return os.Chmod(directory, 0750)
+			return e.setUtilityDataDirectory(instance, filepath.Join("users", input.Name), int(e.uid), int(e.gid), 0750)
 		}
 		args = []string{"passwd", input.Name, "-f", passwd}
 	default:
@@ -562,10 +870,7 @@ func (e *PrivilegedExecutor) pureFTPAccount(ctx context.Context, instance Instan
 	}
 	_, err = runFixed(ctx, "/usr/bin/pure-pw", []string{"mkdb", filepath.Join(instance.Paths.ConfigDir, "pureftpd.pdb"), "-f", passwd}, 15*time.Second, nil)
 	if err == nil && input.Command != "delete" {
-		directory := filepath.Join(instance.Paths.DataDir, "users", input.Name)
-		if err = os.Chown(directory, int(e.uid), int(e.gid)); err == nil {
-			err = os.Chmod(directory, 0750)
-		}
+		err = e.setUtilityDataDirectory(instance, filepath.Join("users", input.Name), int(e.uid), int(e.gid), 0750)
 	}
 	return err
 }

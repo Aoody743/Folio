@@ -1,4 +1,4 @@
-name: PowerLinux rewrite checks
+name: Folio rewrite checks
 on:
   push:
     paths: ['cmd/**', 'internal/**', 'third_party/**', 'frontend/**', 'integration/**', 'tests/rewrite/**', 'scripts/rewrite/**', 'go.mod', 'go.sum', 'Makefile', '.github/workflows/rewrite*.yml']
@@ -47,7 +47,7 @@ jobs:
       - name: Run the actual amd64 package in an isolated prefix
         run: python3 scripts/rewrite/test-package.py dist/rewrite/powerlinux-dev-${GITHUB_SHA::12}-linux-amd64.tar.gz
       - name: Build provenance
-        if: github.event_name != 'pull_request' && github.repository == 'Aoody743/PowerLinux'
+        if: github.event_name != 'pull_request' && github.repository == 'Aoody743/Folio'
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: 'dist/rewrite/*.tar.gz'

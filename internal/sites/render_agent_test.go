@@ -133,6 +133,21 @@ func TestQARenderIDNAIPv6TLSBindingsHaveUniqueHTTPSNames(t *testing.T) {
 	}
 }
 
+func TestWebsiteExpiryRequiresOpenRestyLuaRuntime(t *testing.T) {
+	site := qaRenderSite()
+	site.ExpiresAt = "2027-01-02T03:04:05Z"
+	if _, err := renderWebsite(site, qaRenderPaths(), WebRuntime{MainConfig: "/opt/web/nginx.conf"}, "", time.Now()); core.ErrorCode(err) != "invalid_input" {
+		t.Fatalf("Nginx accepted an OpenResty-only expiry directive: %v", err)
+	}
+	config, err := renderWebsite(site, qaRenderPaths(), WebRuntime{MainConfig: "/opt/web/nginx.conf", SupportsLua: true}, "", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(config, "server_rewrite_by_lua_block") {
+		t.Fatal("OpenResty expiry directive was not rendered for a Lua-capable runtime")
+	}
+}
+
 func TestQARenderRejectsUntrustedNginxAndPHPInputs(t *testing.T) {
 	tests := []struct {
 		name   string

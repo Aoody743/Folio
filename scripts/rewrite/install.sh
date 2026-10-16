@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PowerLinux rewrite installer. No compilation or third-party service installs.
+# Folio rewrite installer. No compilation or third-party service installs.
 set -Eeuo pipefail
 umask 077
 
@@ -16,17 +16,17 @@ users/directories; they require --enable-agent and an explicit trusted policy.
 --enable-source-build also requires --enable-software and prepares a separate
 compiler identity/cache; source builds remain explicitly controlled by policy.
 
-Production requires root and running systemd; only PowerLinux-owned paths,
+Production requires root and running systemd; only Folio-owned paths,
 user and unit are changed. --prefix is nonprivileged, creates no user/service,
 and requires the caller to stop a running instance before update or rollback.
 Data is preserved during uninstall. Delete preserved data manually after backup.
-Remote packages are fetched from github.com/Aoody743/PowerLinux over HTTPS.
+Remote packages are fetched from github.com/Aoody743/Folio over HTTPS.
 --sha256 must be obtained through a trusted release channel; a same-channel
 checksum alone does not authenticate a malicious publisher. --attestation
 additionally verifies the GitHub build attestation with an installed gh CLI.
 EOF
 }
-die() { printf 'PowerLinux: %s\n' "$*" >&2; exit 1; }
+die() { printf 'Folio: %s\n' "$*" >&2; exit 1; }
 archive= version= expected_hash= prefix= mode=install attestation=0
 enable_agent=0 enable_terminal=0 enable_software=0 enable_sites=0 enable_source_build=0 agent_policy=
 while (($#)); do
@@ -386,6 +386,7 @@ EOF
     if (( enable_software )); then
       module_user powerlinux-services /var/lib/powerlinux-services
       owned_module_directory /opt/powerlinux-software 0755
+      owned_module_directory /srv/powerlinux-apps 0755
     fi
     if (( enable_source_build )); then
       module_user powerlinux-build /var/lib/powerlinux-build
@@ -583,14 +584,14 @@ if [[ "$mode" == install ]]; then
     command -v curl >/dev/null || die 'curl is required for HTTPS downloads'
     archive="$stage/release.tar.gz"
     curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 --retry 2 \
-      --output "$archive" "https://github.com/Aoody743/PowerLinux/releases/download/$version/powerlinux-$version-linux-$architecture.tar.gz"
+      --output "$archive" "https://github.com/Aoody743/Folio/releases/download/$version/powerlinux-$version-linux-$architecture.tar.gz"
   fi
   [[ -f "$archive" ]] || die 'Archive does not exist'
   actual_hash=$(sha256sum -- "$archive"); actual_hash=${actual_hash%% *}
   [[ "${actual_hash,,}" == "${expected_hash,,}" ]] || die 'Archive SHA256 does not match the trusted pin'
   if (( attestation )); then
     command -v gh >/dev/null || die '--attestation requires GitHub CLI'
-    gh attestation verify "$archive" --repo Aoody743/PowerLinux --signer-workflow Aoody743/PowerLinux/.github/workflows/rewrite-ci.yml || die 'Release build attestation is invalid'
+    gh attestation verify "$archive" --repo Aoody743/Folio --signer-workflow Aoody743/Folio/.github/workflows/rewrite-ci.yml || die 'Release build attestation is invalid'
   fi
   # The release format is deliberately flat and permits regular files only.
   # Reject links, devices, absolute/parent paths, duplicate and unknown members.
@@ -740,7 +741,7 @@ if (( production )); then
   cat > "$api_unit_stage" <<EOF
 # Managed by PowerLinux rewrite installer
 [Unit]
-Description=PowerLinux lightweight panel
+Description=Folio lightweight Linux server visualization panel
 After=network.target
 
 [Service]
@@ -777,7 +778,7 @@ if [[ -n "$previous_target" ]]; then
   printf '%s\n' "backups/$(basename "$transaction")" > "$base/rollback-target.tmp"
   mv -f -- "$base/rollback-target.tmp" "$base/rollback-target"
 fi
-printf 'Installed PowerLinux %s. Preserved data: %s\n' "$version" "$data"
+printf 'Installed Folio %s. Preserved data: %s\n' "$version" "$data"
 if (( production )); then
   printf 'Service uses preserved root-owned %s/server.json; new installs default to loopback.\n' "$config"
 else

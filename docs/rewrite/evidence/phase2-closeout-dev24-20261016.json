@@ -1,0 +1,145 @@
+{
+  "date": "2026-10-16",
+  "candidate_version": "0.1.0-dev.24",
+  "source_commit": "72273255a3a41bc0a42900d04f2d9c2014b1a0ee",
+  "working_tree_dirty": true,
+  "stage_2_complete": false,
+  "source_alignment": {
+    "upstream_ref": "origin/refine",
+    "upstream_commit": "2a1e945b0087a9f3768d3637fabae889f56c994c",
+    "merge_commit": "72273255a3a41bc0a42900d04f2d9c2014b1a0ee",
+    "preserved_local_parent": "f613aa411cfd84119c4da7c797ceb0ba05f92833",
+    "preserved_wip_snapshot": "stash@{0}",
+    "note": "Existing staged, unstaged, and untracked work remains in the checkout. Out-of-scope MongoDB/FTP work was not counted as first-release acceptance."
+  },
+  "implemented": {
+    "postgresql_slowlog_extended_protocol": [
+      "statement",
+      "parse",
+      "bind",
+      "execute"
+    ],
+    "postgresql_slowlog_redaction": "SQL literals and bind parameter text are redacted; prepared statement names are omitted.",
+    "postgresql_slowlog_tests": [
+      "matching and non-matching databases",
+      "empty result with log available",
+      "file owner and mode checks",
+      "unreadable file check as non-root"
+    ],
+    "entrypoint_scope_labels": "Overview labels core scope as available, deferred work as deferred, unsupported scope as unavailable, and states that scope is not verification.",
+    "test_fixture_repairs": [
+      "CLI-only command tests no longer depend on unreadable ambient /etc configuration",
+      "MySQL import validator no longer treats VALUES row separators as function calls",
+      "FTP credentials with protocol control characters are rejected before connecting"
+    ]
+  },
+  "checks": {
+    "linux_full_go_race": {
+      "result": "PASS",
+      "tested_packages": 14,
+      "no_test_packages": 2,
+      "environment": "Debian 13 ARM64 isolated QA VM",
+      "command": "go test -race -count=1 ./..."
+    },
+    "go_vet": {
+      "result": "PASS",
+      "command": "go vet ./..."
+    },
+    "installer_unit_tests": {
+      "result": "PASS",
+      "passed": 31,
+      "skipped": 2,
+      "skipped_reason": "root-owned policy source cases were run separately as root in the disposable QA VM"
+    },
+    "installer_root_policy_tests": {
+      "result": "PASS",
+      "passed": 2
+    },
+    "nested_mysql_race": {
+      "result": "PASS",
+      "command": "go -C third_party/mysql test -mod=readonly -race -count=1 ./..."
+    },
+    "frontend_tests": {
+      "result": "PASS",
+      "passed": 82
+    },
+    "rewrite_ui": {
+      "result": "PASS",
+      "typecheck": "PASS",
+      "static_export": "PASS",
+      "command": "make rewrite-ui"
+    },
+    "git_diff_check": "PASS",
+    "linux_dual_arch_build": {
+      "result": "PASS",
+      "command": "make rewrite-build REWRITE_VERSION=0.1.0-dev.24 REWRITE_ARCHITECTURES=amd64,arm64 REWRITE_BUILD_FLAGS='--skip-frontend --skip-install' (Debian QA guest; static export already built)",
+      "source_date_epoch": 1792140788,
+      "working_tree_dirty": true,
+      "artifacts": "../../../dist/rewrite-dev24-candidate-20261016/",
+      "archive_sha256": {
+        "linux-amd64": "344ac2e770af4ddebd8a23c4e0dcc4c223cac0ce3fde71de733e245ebf42c9dd",
+        "linux-arm64": "12c753dab3a630a2623119c292b757fb8a90d04b8b2a99d18e2943ab73f2edce"
+      }
+    }
+  },
+  "qa_environment": {
+    "available": "Debian 13 ARM64 disposable VM, 2 vCPU, 2 GiB RAM",
+    "target_scope": "Debian 13 ARM64 only for this closeout; amd64 and Ubuntu are not acceptance requirements per user direction on 2026-10-16.",
+    "apt_network": "Guest could not resolve configured Debian package mirrors; runtime service installation was not attempted.",
+    "native_package_acceptance": "NOT RUN",
+    "browser_mcp_runtime_matrix": "NOT RUN"
+  },
+  "acceptance_blockers": [
+    "The ARM64 candidate package was built but not installed and launched natively on the Debian 13 ARM64 QA guest.",
+    "Web/PHP install, site/database/upload/live access, managed certificate import/bind, independent-target restore, Docker daemon, PHP extensions, MariaDB/PostgreSQL/Redis/Supervisor service lifecycles were not revalidated on ARM64 for this candidate.",
+    "Browser and MCP allow/deny/revoke/task/audit assertions were not run against a live ARM64 dev24 service.",
+    "Restart, reinstall, upgrade, rollback, uninstall data retention, ARM64 performance/memory baselines, and system modification inventory remain unverified.",
+    "The current candidate was built from a dirty working tree and must be reproduced from the selected release source snapshot before freezing its checksum."
+  ],
+  "remaining_unverified": [
+    "ARM64 native package lifecycle",
+    "Debian 13 ARM64 end-to-end core user chain and service matrix",
+    "Browser/MCP parity and permission matrix on ARM64",
+    "ARM64 restart/upgrade/rollback/reinstall/uninstall data retention",
+    "ARM64 performance/memory and system modification baseline",
+    "Clean reproducible ARM64 release artifact and install/upgrade/rollback instructions"
+  ],
+  "unverified_out_of_scope": [
+    "public CA/DNS",
+    "production SSH/SSL",
+    "MongoDB",
+    "phpMyAdmin/pgAdmin",
+    "PureFTP/FTP remote backup",
+    "rsync/lsyncd file sync",
+    "third-stage work"
+  ],
+  "out_of_scope_platforms": [
+    "Debian 13 amd64",
+    "Ubuntu 24.04 amd64"
+  ],
+  "evidence_logs": {
+    "install_mysql_checks": {
+      "path": "docs/rewrite/evidence/phase2-closeout-20261016/install-mysql-checks.log",
+      "sha256": "9c83a2164bdaadd57aefdda4b38a4cbfe96e66b50dcc93824d1aad413e339049"
+    },
+    "linux_race_vet": {
+      "path": "docs/rewrite/evidence/phase2-closeout-20261016/linux-race-vet.log",
+      "sha256": "a8696a55328cacbf17a0c472d47c2d39d128ead9be724c86b3ef337b7a6f312b"
+    },
+    "frontend_tests": {
+      "path": "docs/rewrite/evidence/phase2-closeout-20261016/frontend-tests.log",
+      "sha256": "1acc8868b38aab5a78caa8b7626fbabacbee56c4e9174a5c86a3e21f3045c80a"
+    },
+    "rewrite_ui": {
+      "path": "docs/rewrite/evidence/phase2-closeout-20261016/rewrite-ui.log",
+      "sha256": "c84c63523064b6a804cf94257a602223ba639018afbd4115665a4f0096f36014"
+    },
+    "linux_build": {
+      "path": "docs/rewrite/evidence/phase2-closeout-20261016/linux-build-dev24.log",
+      "sha256": "94a26c3027d9fe7688686cf121e23fd6f47fa78c21a7abdaa8c53b454f6fc7b3"
+    }
+  },
+  "source_snapshot_sha256": "54611c20b9e2ff25114c423bba1ddbcca1dc31533043e3024f9156730df5d776",
+  "git_metadata_snapshot_sha256": "d668645f0ba5a55af6f3a5e75ba21ad0fa0c5037255134d0c7e1e1a19c8eb016",
+  "release_decision": "Candidate packages were built and hashed, but this is not a frozen or verified core test release. Keep stage_2_complete false until native Debian 13 ARM64 package, service, user-chain, permission, lifecycle, and release-freeze acceptance pass. amd64 and Ubuntu are out of scope for this closeout."
+}

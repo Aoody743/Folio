@@ -86,7 +86,6 @@ func pipeHandler(executor Executor) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		controller := http.NewResponseController(w)
 		controller.EnableFullDuplex()
-		controller.SetReadDeadline(time.Now().Add(30 * time.Minute))
 		w.Header().Set("Content-Type", "application/x-ndjson")
 		body := http.MaxBytesReader(w, r.Body, (64<<30)+(64<<10))
 		reader := bufio.NewReaderSize(body, 64<<10)
@@ -123,6 +122,16 @@ func pipeHandler(executor Executor) http.HandlerFunc {
 			json.NewEncoder(w).Encode(wireResponse{Error: "This Agent operation does not support binary streaming", Code: "unsupported"})
 			return
 		}
+		if longLivedStreamOperation(request.Operation) {
+			// Keep the normal server read timeout for connection setup and
+			// validation. Only a valid, explicitly bounded artifact operation may
+			// extend the body deadline, and it remains capped at 30 minutes.
+			if err := controller.SetReadDeadline(time.Now().Add(30 * time.Minute)); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(wireResponse{Error: "Agent could not establish the bounded artifact stream deadline", Code: "stream_deadline_unavailable"})
+				return
+			}
+		}
 		w.WriteHeader(200)
 		json.NewEncoder(w).Encode(pipeFrame{Type: "start"})
 		controller.Flush()
@@ -140,6 +149,15 @@ func pipeHandler(executor Executor) http.HandlerFunc {
 		json.NewEncoder(w).Encode(frame)
 		controller.Flush()
 		mu.Unlock()
+	}
+}
+
+func longLivedStreamOperation(operation string) bool {
+	switch operation {
+	case "backup_artifact", "database_artifact", "database_import_artifact":
+		return true
+	default:
+		return false
 	}
 }
 

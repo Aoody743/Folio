@@ -1,4 +1,4 @@
-# PowerLinux rewrite build and installation
+# Folio rewrite build and installation
 
 These scripts operate the new Go/Next.js runtime. They never invoke the legacy
 Python panel, its installers, or its update URLs. Run in the existing isolated
@@ -136,9 +136,16 @@ exposes only an operator-selected `/srv/powerlinux-files` directory for reading.
 Create that dedicated directory as root before checking this policy; the
 installer does not create arbitrary file roots or enable host-wide access.
 [`agent-policy-software-sites.json`](examples/agent-policy-software-sites.json)
-enables receipt-backed software and sites with `--enable-software --enable-sites`;
-it does not enable system packages, a terminal, host configuration or full-host
-files. Website runtimes must still be installed through explicit software plans.
+enables receipt-backed software, sites and hosted applications with
+`--enable-software --enable-sites`. This reviewed policy also allows software
+plans to install packages from the host's signature-verified distribution
+repositories, including the native Nginx package selected during first-run
+setup. It does not enable a terminal, host configuration or full-host files.
+Website runtimes must still be installed through explicit software plans.
+The software module also creates the protected `/srv/powerlinux-apps` data root
+for hosted Next.js and Go projects; `applications_root_dir` in the reviewed
+policy must point to that path. This root is preserved on rollback and
+uninstall.
 Optional ACME executable/server and DNS endpoints belong in reviewed root policy;
 the basic template grants none of these external integrations.
 

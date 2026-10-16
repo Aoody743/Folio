@@ -25,6 +25,10 @@ func newWebGeneration() (string, error) {
 }
 
 func (e *PrivilegedExecutor) renderOpenRestyConfiguration(instance Instance, generation string) string {
+	return e.renderManagedWebConfiguration(instance, generation)
+}
+
+func (e *PrivilegedExecutor) renderManagedWebConfiguration(instance Instance, generation string) string {
 	group := e.config.RunGroup
 	if group == "" {
 		group = e.config.RunUser
@@ -37,13 +41,23 @@ func (e *PrivilegedExecutor) renderOpenRestyConfiguration(instance Instance, gen
 	if generation != "" {
 		proof = " add_header " + webGenerationHeader + " '" + generation + "' always;"
 	}
-	return fmt.Sprintf("user %s %s;\nworker_processes %d;\npid %s;\nerror_log %s warn;\nevents { worker_connections %d; }\nhttp {\n default_type application/octet-stream;\n access_log %s;\n client_max_body_size %dm;\n server { listen %s; server_name _; location / { default_type text/plain;%s return 200 'PowerLinux OpenResty\\n'; } }\n include %s;\n}\n", e.config.RunUser, group, setting(instance.Config, "worker_processes", 1), nginxQuote(instance.Paths.RunDir+"/server.pid"), nginxQuote(instance.Paths.LogDir+"/error.log"), setting(instance.Config, "worker_connections", 1024), nginxQuote(instance.Paths.LogDir+"/access.log"), setting(instance.Config, "client_max_body_size_mb", 20), net.JoinHostPort(bind, strconv.Itoa(setting(instance.Config, "port", 18080))), proof, nginxQuote(instance.Paths.ConfigDir+"/sites/*.conf"))
+	product := "OpenResty"
+	nativePackageIncludes := ""
+	if instance.PluginID == "nginx" {
+		product = "Nginx"
+		nativePackageIncludes = "include /etc/nginx/modules-enabled/*.conf;\n"
+	}
+	nativeTypes := ""
+	if instance.PluginID == "nginx" {
+		nativeTypes = " include /etc/nginx/mime.types;\n"
+	}
+	return fmt.Sprintf("%suser %s %s;\nworker_processes %d;\npid %s;\nerror_log %s warn;\nevents { worker_connections %d; }\nhttp {\n default_type application/octet-stream;\n%s access_log %s;\n client_max_body_size %dm;\n client_body_temp_path %s/client_body 1 2;\n proxy_temp_path %s/proxy 1 2;\n fastcgi_temp_path %s/fastcgi 1 2;\n uwsgi_temp_path %s/uwsgi 1 2;\n scgi_temp_path %s/scgi 1 2;\n server { listen %s; server_name _; location / { default_type text/plain;%s return 200 'PowerLinux %s\\n'; } }\n include %s;\n}\n", nativePackageIncludes, e.config.RunUser, group, setting(instance.Config, "worker_processes", 1), nginxQuote(instance.Paths.RunDir+"/server.pid"), nginxQuote(instance.Paths.LogDir+"/error.log"), setting(instance.Config, "worker_connections", 1024), nativeTypes, nginxQuote(instance.Paths.LogDir+"/access.log"), setting(instance.Config, "client_max_body_size_mb", 20), nginxQuote(instance.Paths.RunDir), nginxQuote(instance.Paths.RunDir), nginxQuote(instance.Paths.RunDir), nginxQuote(instance.Paths.RunDir), nginxQuote(instance.Paths.RunDir), net.JoinHostPort(bind, strconv.Itoa(setting(instance.Config, "port", 18080))), proof, product, nginxQuote(instance.Paths.ConfigDir+"/sites/*.conf"))
 }
 
 // Only the exact protected factory main config is modified. Independent site
 // snippets, including administrator-supplied advanced snippets, stay intact.
 func (e *PrivilegedExecutor) webGeneration(instance Instance, body []byte) (string, error) {
-	if string(body) == e.renderOpenRestyConfiguration(instance, "") {
+	if string(body) == e.renderManagedWebConfiguration(instance, "") {
 		return "", nil // Exact owned profile created before generation support.
 	}
 	prefix := " add_header " + webGenerationHeader + " '"
@@ -51,7 +65,7 @@ func (e *PrivilegedExecutor) webGeneration(instance Instance, body []byte) (stri
 	if ok {
 		generation, _, found := strings.Cut(remainder, "'")
 		decoded, err := hex.DecodeString(generation)
-		if found && err == nil && len(decoded) == 16 && generation == strings.ToLower(generation) && string(body) == e.renderOpenRestyConfiguration(instance, generation) {
+		if found && err == nil && len(decoded) == 16 && generation == strings.ToLower(generation) && string(body) == e.renderManagedWebConfiguration(instance, generation) {
 			return generation, nil
 		}
 	}
@@ -72,6 +86,10 @@ func webHealthAddress(instance Instance) string {
 // A healthy old cycle cannot acknowledge a new nonce. Keep-alive is disabled
 // so a connection accepted by an old worker cannot persist across checks.
 func probeWebGeneration(ctx context.Context, address, generation string) error {
+	return probeManagedWebGeneration(ctx, address, generation, "PowerLinux OpenResty\n")
+}
+
+func probeManagedWebGeneration(ctx context.Context, address, generation, banner string) error {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+address+"/", nil)
 	if err != nil {
 		return err
@@ -88,7 +106,7 @@ func probeWebGeneration(ctx context.Context, address, generation string) error {
 	if err != nil {
 		return err
 	}
-	if response.StatusCode != http.StatusOK || string(body) != "PowerLinux OpenResty\n" || response.Header.Get(webGenerationHeader) != generation {
+	if response.StatusCode != http.StatusOK || string(body) != banner || response.Header.Get(webGenerationHeader) != generation {
 		return failure("reload_not_applied", "The owned Web runtime has not served the requested configuration generation", 502)
 	}
 	return nil
@@ -126,7 +144,7 @@ func waitWebGeneration(ctx context.Context, instance Instance, master int, gener
 			return failure("runtime_identity_changed", "Owned Web master changed during configuration publication", 409)
 		}
 		probeCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
-		err = probeWebGeneration(probeCtx, webHealthAddress(instance), generation)
+		err = probeManagedWebGeneration(probeCtx, webHealthAddress(instance), generation, webRuntimeBanner(instance))
 		cancel()
 		if err == nil {
 			return nil
@@ -139,7 +157,18 @@ func waitWebGeneration(ctx context.Context, instance Instance, master int, gener
 	}
 }
 
-func (e *PrivilegedExecutor) reloadOpenResty(ctx context.Context, instance Instance) (generation string, returned error) {
+func webRuntimeBanner(instance Instance) string {
+	if instance.PluginID == "nginx" {
+		return "PowerLinux Nginx\n"
+	}
+	return "PowerLinux OpenResty\n"
+}
+
+func (e *PrivilegedExecutor) reloadOpenResty(ctx context.Context, instance Instance) (string, error) {
+	return e.reloadWebRuntime(ctx, instance)
+}
+
+func (e *PrivilegedExecutor) reloadWebRuntime(ctx context.Context, instance Instance) (generation string, returned error) {
 	master, err := ownedProcessID(instance)
 	if err != nil {
 		return "", err
@@ -156,7 +185,7 @@ func (e *PrivilegedExecutor) reloadOpenResty(ctx context.Context, instance Insta
 	if err != nil {
 		return "", err
 	}
-	if err = writeAtomicRoot(instance.Paths.ConfigDir, "nginx.conf", []byte(e.renderOpenRestyConfiguration(instance, generation)), 0640, int(e.gid)); err != nil {
+	if err = writeAtomicRoot(instance.Paths.ConfigDir, "nginx.conf", []byte(e.renderManagedWebConfiguration(instance, generation)), 0640, int(e.gid)); err != nil {
 		return "", err
 	}
 	defer func() {
@@ -174,7 +203,7 @@ func (e *PrivilegedExecutor) reloadOpenResty(ctx context.Context, instance Insta
 		// A failed advanced snippet may still prevent another cycle. The old
 		// cycle serving its exact nonce already proves the previous runtime.
 		probeCtx, stop := context.WithTimeout(recovery, 500*time.Millisecond)
-		previousLive := probeWebGeneration(probeCtx, webHealthAddress(instance), previous) == nil
+		previousLive := probeManagedWebGeneration(probeCtx, webHealthAddress(instance), previous, webRuntimeBanner(instance)) == nil
 		stop()
 		if !previousLive {
 			if err := e.signalWebReload(recovery, instance); err != nil {

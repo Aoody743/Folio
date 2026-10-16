@@ -2,6 +2,23 @@
 
 最新范围调整：用户允许暂缓无用软件，优先以 [核心版收尾清单](PHASE2-CLOSEOUT-20261015.md) 决定首发范围；下方完整旧功能盘点作为参考，不再将全部可选插件强制算作当前退出阻塞。
 
+## 2026-10-16 当前范围与开发顺序
+
+后续用户指示已将首发目标更新为全新 Debian 13 / Ubuntu 24.04 amd64 主机：首次启动互斥选择 Nginx + PHP 或 OpenResty + PHP；网站栈完成后，可分别选装 MySQL 和 PostgreSQL，默认不安装且可同时安装。已选 Web 栈只可在卸载后更换。内置 SSH 客户端保留；旧版数据迁移取消；47 个旧插件延后，只保留面板内部扩展注册接口。源码/交叉构建和 API/MCP 注册不代替真实安装与浏览器验收。
+
+| 顺序 | 项目 | 当前处理 |
+| --- | --- | --- |
+| P0 | Nginx + PHP / OpenResty + PHP | 首次选择、锁定、签名原生 Nginx 包、配置及 service unit 接线；Debian/Ubuntu amd64 原生验收待做 |
+| P0 | MySQL / PostgreSQL | 首次网站栈设置后分别可选安装；建库、权限、导入、备份恢复及原生验收仍待关闭 |
+| P0 | Next.js / Go | 模板、独立服务身份、构建与生命周期、日志、反代入口、tar.gz 与 HTTPS/固定 SSH 主机密钥的 Git 源码导入已有工作区代码；私有仓库凭据与原生部署验收仍缺 |
+| P1 | 内置 SSH / TLS | SSH 客户端与固定主机密钥校验已有代码；真实连接、权限和凭据保护待验。证书导入/绑定为首发范围，公网签发与 SSH 服务端配置管理可后置 |
+| P2 | MongoDB、phpMyAdmin、pgAdmin | 保留源码和可信安装审查；放在核心托管实测通过之后再实施 |
+| P3 | 扩展与旧插件 | 保留面板内部 typed action/provider 扩展接口；47 个插件和第三方插件导入、动态菜单、Hook 延后 |
+| 移除 | 旧版数据迁移 | 面向全新服务器首装，用户确认不实施 |
+| 移出 | FTP | 用户明确停止新增开发；已有实现/WIP 保留，但不作为当前验收目标 |
+
+旧 [feature-inventory.json](feature-inventory.json) 是原有插件/动作的只读盘点，不是当前新范围的完成台账；本表与 closeout 记录优先说明当前顺序。未原生验证项目保持待验收状态。
+
 初版为只读源码盘点；随后按已冻结的 Luna Max 批次补入 PHP runtime 日志/session 与 Supervisor job 日志实现。包含本轮新增的 DB administrator、Docker registry、DNSPod International 改动。依据 [DEVELOPMENT-PLAN](DEVELOPMENT-PLAN.md) 的 P2-01～09 和七项退出标准，交叉读取 [feature-inventory](feature-inventory.json)、[migration-tracker](migration-tracker.json)、实际 Go bindings/执行器与 `plugins/<id>/index.py`。盘点本身不运行构建、测试或 guest 操作；验证结论只引用对应批次证据。
 
 `planned`、旧动作字符串数、catalog capability 声明均不是剩余功能数量；不据此计算百分比。下表的“已有”指具体源码能力，不表示整插件验收完成。错误返回、策略限制与缺功能分别保留，不能用通用 SQL、终端或可编辑配置替代专用用户管理闭环。

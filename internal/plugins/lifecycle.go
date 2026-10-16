@@ -36,6 +36,20 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 		label = "default"
 	}
 	id := manifest.ID + "-" + label
+	if isHostedAppRuntime(manifest.ID) {
+		unlockRuntime, lockErr := e.lockContext(ctx, "hosted-app-runtimes")
+		if lockErr != nil {
+			return Plan{}, lockErr
+		}
+		defer unlockRuntime()
+	}
+	if isManagedWebEngine(manifest.ID) {
+		unlockStack, lockErr := e.lockContext(ctx, "managed-web-stack")
+		if lockErr != nil {
+			return Plan{}, lockErr
+		}
+		defer unlockStack()
+	}
 	unlock, err := e.lockContext(ctx, id)
 	if err != nil {
 		return Plan{}, err
@@ -55,6 +69,14 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 	}
 	if input.Operation == "install" && loadErr == nil && current.Status != "uninstalled" {
 		return Plan{}, failure("already_installed", "This managed instance already exists", 409)
+	}
+	if input.Operation == "install" && isManagedWebEngine(manifest.ID) {
+		if err := e.ensureWebEngineAvailable(ctx, manifest.ID); err != nil {
+			return Plan{}, err
+		}
+	}
+	if manifest.ID == "nginx" && !e.config.UseSystemd {
+		return Plan{}, failure("service_manager_required", "The managed Nginx stack requires systemd to isolate its distribution service", 412)
 	}
 	if input.Operation != "install" && loadErr != nil {
 		return Plan{}, failure("not_found", "A managed instance is required for this operation", 404)
@@ -173,6 +195,20 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	if err := e.load("plans", input.PlanID, &plan); err != nil {
 		return instance, err
 	}
+	if isHostedAppRuntime(plan.PluginID) {
+		unlockRuntime, lockErr := e.lockContext(ctx, "hosted-app-runtimes")
+		if lockErr != nil {
+			return instance, lockErr
+		}
+		defer unlockRuntime()
+	}
+	if isManagedWebEngine(plan.PluginID) {
+		unlockStack, lockErr := e.lockContext(ctx, "managed-web-stack")
+		if lockErr != nil {
+			return instance, lockErr
+		}
+		defer unlockStack()
+	}
 	unlock, err := e.lockContext(ctx, plan.InstanceID)
 	if err != nil {
 		return instance, err
@@ -220,6 +256,11 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 		return instance, failure("revision_conflict", "Software state changed after planning", 412)
 	}
 	if plan.Operation == "install" {
+		if isManagedWebEngine(plan.PluginID) {
+			if err := e.ensureWebEngineAvailable(ctx, plan.PluginID); err != nil {
+				return instance, err
+			}
+		}
 		if priorJournal, journalErr := e.loadInstallJournal(plan.InstanceID); journalErr == nil {
 			if priorJournal.Phase != "completed" || loadErr != nil || current.Status != "uninstalled" {
 				return instance, failure("operation_recovery_required", "A protected install journal already exists; inspect it before any recovery action", 409)
@@ -393,6 +434,11 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 					if err = e.packages.install(ctx, plan.Packages); err != nil {
 						return instance, err
 					}
+					if plan.PluginID == "nginx" {
+						if err = e.isolateDistributionNginxService(ctx); err != nil {
+							return instance, err
+						}
+					}
 					if install != nil {
 						if err = e.saveNextInstallJournal(ctx, install, "package_install_completed"); err != nil {
 							return instance, err
@@ -468,6 +514,11 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 			}
 			if err = e.packages.install(ctx, plan.Packages); err != nil {
 				return instance, err
+			}
+			if plan.PluginID == "nginx" {
+				if err = e.isolateDistributionNginxService(ctx); err != nil {
+					return instance, err
+				}
 			}
 			if install != nil {
 				if err = e.saveNextInstallJournal(ctx, install, "package_install_completed"); err != nil {
@@ -572,7 +623,7 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 		if plan.Operation == "config" {
 			if _, runningErr := ownedProcessID(current); runningErr == nil {
 				command = "restart"
-				if current.PluginID == "openresty" || isPHPRuntime(current.PluginID) {
+				if isManagedWebEngine(current.PluginID) || isPHPRuntime(current.PluginID) {
 					command = "reload"
 				}
 			}
@@ -664,6 +715,27 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	return instance, nil
 }
 
+func isManagedWebEngine(plugin string) bool {
+	return plugin == "openresty" || plugin == "nginx"
+}
+
+func (e *PrivilegedExecutor) ensureWebEngineAvailable(ctx context.Context, requested string) error {
+	instances, err := e.list(ctx)
+	if err != nil {
+		return err
+	}
+	return validateManagedWebEngineAvailable(requested, instances)
+}
+
+func validateManagedWebEngineAvailable(requested string, instances []Instance) error {
+	for _, instance := range instances {
+		if instance.Status != "uninstalled" && isManagedWebEngine(instance.PluginID) && instance.PluginID != requested {
+			return failure("web_engine_conflict", "Nginx and OpenResty are mutually exclusive managed website stacks; remove the active stack's website configurations, uninstall that stack, then install the other. Website content is retained by default when removed.", 409)
+		}
+	}
+	return nil
+}
+
 func cloneConfig(input map[string]any) map[string]any {
 	raw, _ := json.Marshal(input)
 	var output map[string]any
@@ -741,7 +813,7 @@ func resolvePackageProgram(manifest Manifest, version Version, pins []PackagePin
 }
 
 func defaultConfig(plugin string) map[string]any {
-	ports := map[string]int{"openresty": 18080, "mysql": 18306, "mysql-community": 18307, "mariadb": 18308, "postgresql": 18432, "mongodb": 18017, "redis": 18379, "valkey": 18380, "memcached": 18211, "pureftp": 18221, "rsyncd": 18873}
+	ports := map[string]int{"openresty": 18080, "nginx": 18081, "mysql": 18306, "mysql-community": 18307, "mariadb": 18308, "postgresql": 18432, "mongodb": 18017, "redis": 18379, "valkey": 18380, "memcached": 18211, "pureftp": 18221, "rsyncd": 18873}
 	config := map[string]any{"bind": "127.0.0.1"}
 	if port := ports[plugin]; port != 0 {
 		config["port"] = port
@@ -764,7 +836,7 @@ func validateConfiguration(plugin string, config map[string]any) error {
 			allowed[key] = true
 		}
 	}
-	if plugin == "openresty" {
+	if isManagedWebEngine(plugin) {
 		allowed["worker_processes"] = true
 		allowed["worker_connections"] = true
 		allowed["client_max_body_size_mb"] = true
@@ -886,7 +958,7 @@ func (e *PrivilegedExecutor) rollback(ctx context.Context, current Instance) (In
 	}
 	_, _ = e.controlLocked(ctx, ServiceInput{ID: current.ID, Command: "stop"}, current)
 	pairs := [][2]string{{prior.Runtime, filepath.Join(current.Paths.Root, "runtime")}}
-	if !isPHPRuntime(current.PluginID) && current.PluginID != "openresty" {
+	if !isPHPRuntime(current.PluginID) && !isManagedWebEngine(current.PluginID) {
 		pairs = append(pairs, [2]string{prior.Config, current.Paths.ConfigDir})
 	}
 	for _, pair := range pairs {
@@ -900,7 +972,7 @@ func (e *PrivilegedExecutor) rollback(ctx context.Context, current Instance) (In
 			return current, err
 		}
 	}
-	if isPHPRuntime(current.PluginID) || current.PluginID == "openresty" {
+	if isPHPRuntime(current.PluginID) || isManagedWebEngine(current.PluginID) {
 		if err := e.restoreOwnWebConfiguration(ctx, prior.Instance, prior.Config); err != nil {
 			return current, err
 		}

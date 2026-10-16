@@ -155,6 +155,7 @@ type RuntimeVerifier interface {
 type WebRuntime struct {
 	ID, Program, MainConfig, SnippetsDir, Prefix string
 	WorkerUser, WorkerGroup                      string
+	SupportsLua                                  bool
 }
 type PHPRuntime struct{ ID, Program, MainConfig, PoolDir, Prefix, CLIProgram, CLIConfig string }
 type AgentConfig struct {
@@ -178,8 +179,8 @@ type request struct {
 	PlanID              string            `json:"plan_id,omitempty"`
 	TargetWebInstance   string            `json:"target_web_instance,omitempty"`
 	ExpectedRevision    int64             `json:"expected_revision,omitempty"`
-	OlderThanSeconds   int64             `json:"older_than_seconds,omitempty"`
-	PreviewID          string            `json:"preview_id,omitempty"`
+	OlderThanSeconds    int64             `json:"older_than_seconds,omitempty"`
+	PreviewID           string            `json:"preview_id,omitempty"`
 	Site                *Site             `json:"site,omitempty"`
 	Certificate         *Certificate      `json:"certificate,omitempty"`
 	CertPEM             string            `json:"cert_pem,omitempty"`
