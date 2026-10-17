@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"strconv"
@@ -35,6 +36,7 @@ func registry() []Action {
 		{Name: "notes_delete", Description: "Permanently delete a note and its revisions", InputSchema: object(revision, "id", "expected_revision"), Scope: "notes:delete"},
 		{Name: "notes_history", Description: "Read up to 100 latest note revisions", InputSchema: object(id, "id"), ReadOnly: true, Scope: "notes:read"},
 		{Name: "audit_list", Description: "Read bounded operation records scoped to authorized resources", InputSchema: object(map[string]any{"limit": integer(), "offset": integer()}), ReadOnly: true, Scope: "audit:read"},
+		{Name: "audit_get", Description: "Read one authorized operation record", InputSchema: object(id, "id"), ReadOnly: true, Scope: "audit:read"},
 		{Name: "tasks_list", Description: "List durable jobs in authorized filesystem roots", InputSchema: object(map[string]any{}), ReadOnly: true, Scope: "tasks:read"},
 		{Name: "tasks_get", Description: "Read the durable result and state of a job", InputSchema: object(id, "id"), ReadOnly: true, Scope: "tasks:read"},
 		{Name: "tasks_cancel", Description: "Request cancellation of a running job", InputSchema: object(id, "id"), Scope: "tasks:write"},
@@ -259,6 +261,17 @@ func (s *Service) executeOnce(ctx context.Context, a Actor, name string, raw jso
 			return nil, e
 		}
 		return s.auditList(ctx, a, input.Limit, input.Offset)
+	case "audit_get":
+		var input struct {
+			ID string `json:"id"`
+		}
+		if e := decodeInput(raw, &input); e != nil {
+			return nil, e
+		}
+		if input.ID == "" {
+			return nil, invalid("id is required")
+		}
+		return s.auditGet(ctx, a, input.ID)
 	case "tasks_list":
 		var input struct{}
 		if e := decodeInput(raw, &input); e != nil {
@@ -351,4 +364,24 @@ func (s *Service) auditList(ctx context.Context, a Actor, limit, offset int) (an
 		return nil, internal()
 	}
 	return out, nil
+}
+
+func (s *Service) auditGet(ctx context.Context, a Actor, id string) (any, error) {
+	var entry Audit
+	var actor, summary string
+	err := s.db.QueryRowContext(ctx, "SELECT id,action,actor,resource,status,error_code,summary,created_at FROM audit WHERE id=?", id).
+		Scan(&entry.ID, &entry.Action, &actor, &entry.Resource, &entry.Status, &entry.ErrorCode, &summary, &entry.CreatedAt)
+	if err == sql.ErrNoRows {
+		return nil, missing("Audit event")
+	}
+	if err != nil {
+		return nil, internal()
+	}
+	if !hasResource(a, entry.Resource) {
+		return nil, denied()
+	}
+	if json.Unmarshal([]byte(actor), &entry.Actor) != nil || json.Unmarshal([]byte(summary), &entry.Summary) != nil {
+		return nil, internal()
+	}
+	return entry, nil
 }
