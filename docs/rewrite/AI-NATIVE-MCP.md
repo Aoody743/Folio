@@ -46,7 +46,7 @@ HTTP 模式按 MCP 授权规范实现远程身份与授权发现、Token 校验�
 
 ## Tools：操作能力
 
-以下是计划工具名称和职责，不是已上线接口。
+以下是目标领域动作和职责；当前已上线动作以 `capabilities_list` 返回为准，未列出的动作仍属于计划项。
 
 | 领域 | 工具示例 | 结果 |
 | --- | --- | --- |
@@ -60,6 +60,7 @@ HTTP 模式按 MCP 授权规范实现远程身份与授权发现、Token 校验�
 | 系统管理 | `firewall_plan_change`、`ssh_plan_change`、`system_apply_change` | 声明式变更、授权执行和连接保护 |
 | 自动化 | `schedules_create`、`notifications_configure` | 计划与通知配置 |
 | 任务 | `tasks_get`、`tasks_logs`、`tasks_cancel`、`operations_verify` | 进度、成功/失败证据、取消或验证结果 |
+| 审计 | `audit_list`、`audit_get` | 按资源权限读取操作记录和单条操作证据 |
 | 共享便签 | `notes_list`、`notes_get`、`notes_create`、`notes_update`、`notes_archive`、`notes_restore`、`notes_delete`、`notes_history` | 人与AI共享内容、作者、revision和历史；永久删除单独授权，不将正文当自动执行授权 |
 | 终端/命令 | 受权限限制的会话与命令动作 | 明确身份、目标、时限、输出和退出码；不继承无限 root 权限 |
 
@@ -75,7 +76,7 @@ HTTP 模式按 MCP 授权规范实现远程身份与授权发现、Token 校验�
 - `powerlinux://capabilities`：平台、插件与能力清单。
 - `powerlinux://sites/{id}`：站点配置与运行状态。
 - `powerlinux://tasks/{id}`：任务状态与可恢复信息。
-- `powerlinux://audit/{operation_id}`：本次操作证据。
+- `powerlinux://audit/{id}`：按资源授权读取的单条操作证据。
 - `powerlinux://plugins/{id}/guide`：插件参数、配置解释与排障说明。
 
 不能提供未限制大小的整机日志、任意文件或所有凭据。日志、网页、文件与第三方响应作为不可信数据返回，不能授权新的系统动作；权限只由服务端配置决定。
@@ -142,7 +143,7 @@ MCP 是新版基础能力，不等最后所有功能做完才加一个转换服�
 - 大日志、慢插件、客户端断线不会耗尽内存或遗留不可管理的任务。
 - 插件能力映射与 [全量功能清单](FEATURE-PARITY.md) 一起验收；未实现和阻塞项不能记为通过。
 
-当前只完成设计补充与官方 SDK 文档核查，以上客户端和功能验收均未执行。
+当前代码已提供共享动作、REST/MCP 适配和审计单条资源；目标客户端、目标主机与真实服务请求验收仍未执行。
 
 ## 来源
 

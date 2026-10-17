@@ -104,10 +104,11 @@ logs. Keep the browser's origin consistent with the configured allowed origins;
 an alternative forwarded port requires its exact origin in the reviewed server
 configuration. Do not put credentials in URL query strings or shell arguments.
 
-## Optional privileged Agent
+## Optional privileged host executor
 
-The API stays an ordinary user. An Agent is enabled only by a reviewed root-only
-policy; absent typed modules remain disabled. Review
+The API stays an ordinary user. The optional host executor is enabled only by a
+reviewed root-only policy; it is a typed operating-system dispatcher, not an AI
+agent and not a model runtime. Absent typed modules remain disabled. Review
 [`examples/agent-policy-v2.json`](examples/agent-policy-v2.json), adapt known local
 program paths, and install a private copy outside the API-owned data directory.
 The example enables only the panel service/configuration, isolated scripts and

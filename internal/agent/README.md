@@ -1,8 +1,9 @@
-# Scoped Linux Agent
+# Scoped Linux host executor
 
-The Agent is a trusted operation dispatcher, not a remote shell. Web and MCP
-authorization belongs to their common business layer. The Agent separately
-restricts peer UID, operation names and filesystem roots.
+This package is a trusted operating-system operation dispatcher, not an AI or
+remote shell. Web and MCP authorization belongs to their common business layer.
+The host executor separately restricts peer UID, operation names and filesystem
+roots.
 
 Native phase-one operations:
 
@@ -20,7 +21,7 @@ device/FIFO reads and external symlink escapes are rejected. The limit defaults
 to 8 MiB per file and 1 MiB per operation JSON. Atomic writes complete as one
 operation; canceling after commit does not undo committed data.
 
-An Agent policy, with paths and UID set by the installer:
+A host-executor policy, with paths and UID set by the installer:
 
 ```json
 {

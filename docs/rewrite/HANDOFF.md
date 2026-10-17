@@ -1,10 +1,10 @@
 # 本地 Codex 开发交接
 
-更新：2026-10-13。用户要求暂停本轮扩展开发，将全部当前源码与文档交付到 GitHub `refine` 分支，由本地 Codex 继续。此次分支交付取代此前“全部三个阶段完成后才推送”的安排；三阶段目标与功能范围保持。
+更新：2026-10-17。Folio 新版继续在 GitHub `main` 分支开发；旧版 PowerLinux 文档与实现保留，不随新版 branding 改名。三阶段目标与功能范围保持，当前仍按源码实现收尾，不把未执行的环境验收写成通过。
 
-仓库：https://github.com/Aoody743/PowerLinux
+仓库：https://github.com/Aoody743/Folio
 
-分支：https://github.com/Aoody743/PowerLinux/tree/refine
+分支：https://github.com/Aoody743/Folio/tree/main
 
 ## 从这里开始
 
@@ -17,7 +17,7 @@
 ## 固定目标
 
 - Next.js 16.4、React 19、TypeScript、Meta Astryx 0.6.8；实际设计系统：https://astryx.atmeta.com/ 。以 lockfile 为准。
-- Go 后端、SQLite、独立 root Agent；Next 静态产物嵌入 Go。用户 Linux 安装后无需常驻 Node、Python 或模型进程。
+- Go 后端、SQLite、独立 root host executor；Next 静态产物嵌入 Go。host executor 只负责受控主机操作，不是内置 AI。用户 Linux 安装后无需常驻 Node、Python 或模型进程。
 - 轻量、快速响应、低侵入；精简四卡首页、五项底部导航、五套配色，支持移动端。
 - 共享便签由人和外部 AI 修改；原生 MCP 支持 Streamable HTTP 与 stdio，共用真实动作、权限、任务、审计。
 - 面板不内置聊天或模型选择界面。Ollama 仅作为旧有受管软件按需迁移。
@@ -31,7 +31,7 @@
 | 第二阶段 | 开发中，尚未退出 | 文件/终端及部分真实数据库、网站与软件操作已验证；生命周期、故障恢复和其余核心能力仍需完成 |
 | 第三阶段 | 尚未开始 | 47 插件、完整迁移、多平台、性能/长期运行、正式发行 |
 
-新版位于 `cmd/powerlinux`、`internal/`、`frontend/`、`scripts/rewrite/`、`tests/rewrite/`、`third_party/mysql/`。旧 `web/`、`plugins/`、Python 安装器保留供功能与数据迁移参考；新版不得回调旧安装器实现管理操作。
+新版位于 `cmd/powerlinux`、`internal/`、`frontend/`、`scripts/rewrite/`、`tests/rewrite/`、`third_party/mysql/`。旧 `web/`、`plugins/`、Python 安装器保留供功能参考；新版不得回调旧安装器实现管理操作。
 
 ### 已验证的固定包与当前源码不同
 
@@ -67,7 +67,7 @@ dev.10 实际失败仍需新包复验：MariaDB 工具 banner 格式解析、Pos
 4. 构建新的固定 dev.11 或后续版本，在独立 Debian/Ubuntu VM 复验 MariaDB/PostgreSQL 安装、工具备份恢复、managed Web/PHP 真正 reboot 自启、CSS 恢复权限、默认/代理/TLS、更新/停启/卸载保留数据/重装。保持原失败记录；新的通过应引用新版本与源码。
 5. 完成剩余第二阶段能力：Web 实例显式迁移与旧/新资源授权；advanced 原配置备份恢复；数据库 root 轮换/外部导入/同名重建 CAS/复制与日志/SSH 同步；缓存特有管理；Docker/FTP/rsync/脚本/计划任务/防火墙/SSH/NTP 等按原矩阵核对。系统操作 VM harness 已准备，不能把 harness 文件当作实际验收。
 6. 将动作/UI/权限/测试/证据映射回 137 组矩阵与 235 路由/70 插件台账；所有第二阶段退出标准通过后进入第三阶段。
-7. 第三阶段完成其余 47 插件、旧数据干跑/导入/切换/恢复、多平台/架构真实检查、性能/长期运行及正式发布。最终继续在新分支提交，不直接写 main。
+7. 第三阶段完成其余 47 插件、旧数据干跑/导入/切换/恢复、多平台/架构真实检查、性能/长期运行及正式发布。当前主线为 `main`，提交和发布按用户明确指示进行。
 
 ## 本地环境重建
 
@@ -76,8 +76,8 @@ dev.10 实际失败仍需新包复验：MariaDB 工具 banner 格式解析、Pos
 不要复用云端 `/workspace` 路径。工具版本与 npm 锁文件应严格验证，不要为了快速通过悄悄降级 Go/Next/Astryx，或关闭 TLS/签名/校验。
 
 ```bash
-git clone --branch refine https://github.com/Aoody743/PowerLinux.git
-cd PowerLinux
+git clone --branch main https://github.com/Aoody743/Folio.git
+cd Folio
 export GO_BIN=/absolute/path/to/go-1.27.2/bin/go
 export GOTOOLCHAIN=local
 export GOMAXPROCS=2

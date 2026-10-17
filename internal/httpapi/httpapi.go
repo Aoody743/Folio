@@ -333,6 +333,17 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if action == "" && e == nil {
 				return
 			}
+		} else if strings.HasPrefix(path, "audit/") {
+			if !method(w, r, http.MethodGet) {
+				return
+			}
+			id := strings.TrimPrefix(path, "audit/")
+			if id == "" || strings.Contains(id, "/") {
+				e = &core.Error{Code: "not_found", Message: "Endpoint not found", Status: 404}
+				break
+			}
+			action = "audit_get"
+			input, _ = json.Marshal(map[string]string{"id": id})
 		} else if strings.HasPrefix(path, "tasks/") {
 			suffix := strings.Split(strings.TrimPrefix(path, "tasks/"), "/")
 			if len(suffix) < 1 || len(suffix) > 2 || suffix[0] == "" {

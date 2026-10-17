@@ -10,6 +10,8 @@ __pycache__/
 .Python
 develop-eggs/
 dist/
+!internal/webassets/dist/
+!internal/webassets/dist/README.txt
 downloads/
 eggs/
 .eggs/
