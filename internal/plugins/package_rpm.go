@@ -136,7 +136,7 @@ func (p *packageBackend) inspectRPM(ctx context.Context, name string) (PackagePi
 	}
 	arch := map[string]string{"amd64": "x86_64", "arm64": "aarch64"}[runtime.GOARCH]
 	if fields[2] != arch && fields[2] != "noarch" {
-		return pin, failure("unsupported_platform", "Signed RPM architecture does not match this Agent", 412)
+		return pin, failure("unsupported_platform", "Signed RPM architecture does not match this privileged host executor", 412)
 	}
 	file, err := os.OpenFile(name, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
 	if err != nil {

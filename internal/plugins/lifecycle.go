@@ -99,7 +99,7 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 	}
 	platform := CurrentPlatform()
 	if version.Source.OS != "" && version.Source.OS != platform.OS || version.Source.Architecture != "" && version.Source.Architecture != platform.Arch {
-		return Plan{}, failure("unsupported_platform", "Trusted artifact does not match this Agent operating system and architecture", 412)
+		return Plan{}, failure("unsupported_platform", "Trusted artifact does not match this privileged host executor operating system and architecture", 412)
 	}
 	if version.Source.Kind == "unavailable" {
 		return Plan{}, failure("artifact_unavailable", version.Verification.Reason, 412)

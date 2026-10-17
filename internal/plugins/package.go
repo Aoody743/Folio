@@ -176,7 +176,7 @@ func (p *packageBackend) resolveExactAPT(ctx context.Context, name, version stri
 	}
 	arch := fields["Architecture"]
 	if arch != "all" && arch != runtime.GOARCH {
-		return PackagePin{}, failure("unsupported_platform", "Package architecture does not match this Agent", 412)
+		return PackagePin{}, failure("unsupported_platform", "Package architecture does not match this privileged host executor", 412)
 	}
 	uris, err := runFixed(ctx, "/usr/bin/apt-get", append(p.options(), "--print-uris", "download", name+"="+version), time.Minute, nil)
 	if err != nil {
