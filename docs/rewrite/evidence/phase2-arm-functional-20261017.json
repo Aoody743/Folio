@@ -24,7 +24,7 @@
   "passed": [
     "Candidate archive copied into the guest and SHA-256 matched.",
     "Packaged installer completed with the archive and expected SHA-256.",
-    "Installed ARM64 binary reported version 0.1.0-dev.24.",
+    "Installed ARM64 binary from the first candidate reported version 0.1.0-dev.24.",
     "Server started with --allow-root in the disposable guest.",
     "HTTP /healthz returned status ok, expected version, and ready=true.",
     "HTTP session endpoint reported initialized=false and authenticated=false.",
