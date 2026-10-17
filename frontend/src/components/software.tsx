@@ -269,7 +269,7 @@ export function SoftwareView({
           )}
           {installed.data?.availability === "agent_not_configured" && (
             <div className="notice warning">
-              当前未配置软件管理Agent，无法读取真实安装状态或执行安装变更。
+              当前未配置软件管理主机特权执行器，无法读取真实安装状态或执行安装变更。
             </div>
           )}
           {!capabilities.some((c) => c.name === "plugins_catalog") ? (
@@ -328,7 +328,7 @@ export function SoftwareView({
                           ? "状态无法读取"
                           : installed.data?.availability ===
                               "agent_not_configured"
-                            ? "Agent未配置"
+                            ? "主机特权执行器未配置"
                             : associated(item).length
                               ? `${associated(item).length} 个可见实例`
                               : "暂无可见实例"}

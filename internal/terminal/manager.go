@@ -190,7 +190,7 @@ func resolveProfile(p LocalProfile, apiUID, apiGID uint32, enableRoot, unsafeTes
 		return resolvedProfile{}, err
 	}
 	if !unsafeTest && os.Geteuid() != 0 {
-		return resolvedProfile{}, errors.New("isolated local terminals must be launched by the privileged Agent")
+		return resolvedProfile{}, errors.New("isolated local terminals must be launched by the privileged host executor")
 	}
 	shell, err := filepath.EvalSymlinks(p.Shell)
 	if err != nil {

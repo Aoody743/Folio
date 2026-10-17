@@ -347,7 +347,7 @@ export function OperationsView({
                 title={`暂无${title}`}
                 detail={
                   tab === "services"
-                    ? "仅列出受信任Agent策略中明确管理的服务。"
+                    ? "仅列出受信任主机策略中明确管理的服务。"
                     : "创建后由网页与MCP共同管理。"
                 }
               />

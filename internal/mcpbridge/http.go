@@ -119,7 +119,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				challenge += `, resource_metadata="` + h.origin + `/.well-known/oauth-protected-resource/mcp"`
 			}
 			w.Header().Set("WWW-Authenticate", challenge)
-			writeError(w, &core.Error{Code: "unauthorized", Message: "A valid scoped PowerLinux bearer token is required", Status: 401})
+			writeError(w, &core.Error{Code: "unauthorized", Message: "A valid scoped Folio bearer token is required", Status: 401})
 			return
 		}
 		h.stream.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), actorContextKey{}, actor)))

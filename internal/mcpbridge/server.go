@@ -192,7 +192,7 @@ func readResource(ctx context.Context, source actionSource, uri, name string, in
 func resourceID(raw, host, suffix string) (string, error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "powerlinux" || u.Host != host || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
-		return "", &core.Error{Code: "invalid_resource", Message: "Invalid PowerLinux resource URI", Status: 400}
+		return "", &core.Error{Code: "invalid_resource", Message: "Invalid Folio resource URI", Status: 400}
 	}
 	if !strings.HasSuffix(u.Path, suffix) {
 		return "", &core.Error{Code: "invalid_resource", Message: "Invalid resource path", Status: 400}

@@ -99,7 +99,7 @@ func (p *Provider) scriptBindings() []core.Binding {
 }
 func (p *Provider) scriptProfiles(ctx context.Context, a core.Actor) ([]ScriptProfileView, error) {
 	if p.options.Agent == nil {
-		return nil, unavailable("Script execution requires an explicitly configured privileged Agent")
+		return nil, unavailable("Script execution requires an explicitly configured privileged host executor")
 	}
 	raw, _ := json.Marshal(scriptAgentInput{ActorID: a.ID})
 	result, err := p.options.Agent.Run(ctx, agent.Request{Operation: "system_script_profiles", Input: raw})

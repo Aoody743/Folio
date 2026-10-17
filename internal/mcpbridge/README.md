@@ -1,6 +1,11 @@
-# Native MCP adapter
+# Folio Native MCP Adapter
 
-The official Go SDK v1.7.0 exposes the shared core action registry through tools,
+Folio is the panel and MCP server; the AI agent lives outside the panel. An
+external MCP client supplies the model, planning and conversation layer, then
+uses Folio's authenticated tools. Folio does not start a model, provide an
+embedded chat window, or treat its privileged host executor as an AI agent.
+
+The official Go SDK v1.7.0 exposes Folio's shared core action registry through tools,
 readable resources and a read-only status-review prompt. No shell wrapper, model
 runtime or second business database is involved.
 

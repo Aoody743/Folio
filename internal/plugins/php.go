@@ -194,7 +194,7 @@ func (e *PrivilegedExecutor) php(ctx context.Context, raw json.RawMessage) (any,
 	}
 	switch input.Command {
 	case "configuration", "guard_status":
-		return map[string]any{"id": instance.ID, "revision": instance.Revision, "values": instance.Config, "pool_dir": filepath.Join(instance.Paths.ConfigDir, "pools"), "worker_isolation": "per-site pools supplied by protected sites Agent"}, nil
+		return map[string]any{"id": instance.ID, "revision": instance.Revision, "values": instance.Config, "pool_dir": filepath.Join(instance.Paths.ConfigDir, "pools"), "worker_isolation": "per-site pools supplied by the protected host executor"}, nil
 	case "status":
 		program, err := phpCLI(instance)
 		if err != nil {

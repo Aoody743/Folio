@@ -101,7 +101,7 @@ func serve(args []string) error {
 	secureCookie := flags.Bool("secure-cookies", false, "require HTTPS cookies when TLS is terminated by a trusted reverse proxy")
 	allowRoot := flags.Bool("allow-root", false, "explicitly allow root for isolated testing; production API should run as powerlinux user")
 	configPath := flags.String("server-config", defaultServerConfig, "root-owned server configuration; explicit CLI flags take precedence")
-	agentSocket := flags.String("agent-socket", "", "optional root-owned privileged Agent socket")
+	agentSocket := flags.String("agent-socket", "", "optional root-owned privileged host executor socket")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func serve(args []string) error {
 			done <- server.Serve(listener)
 		}
 	}()
-	log.Printf("PowerLinux %s listening on %s", version, listener.Addr())
+	log.Printf("Folio %s listening on %s", version, listener.Addr())
 	if !svc.Initialized(ctx) {
 		log.Printf("Administrator setup required; local bootstrap token stored at %s (private file)", svc.SetupSecretFile())
 	}
@@ -294,7 +294,7 @@ func initialize(args []string) error {
 func stdio(args []string) error {
 	flags := flag.NewFlagSet("mcp", flag.ContinueOnError)
 	mode := flags.Bool("stdio", false, "serve MCP on stdin/stdout")
-	endpoint := flags.String("endpoint", "http://127.0.0.1:9000", "existing protected PowerLinux service")
+	endpoint := flags.String("endpoint", "http://127.0.0.1:9000", "existing protected Folio service")
 	tokenFile := flags.String("token-file", "", "private file containing scoped access token")
 	if err := flags.Parse(args); err != nil {
 		return err

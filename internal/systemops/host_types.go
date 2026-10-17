@@ -162,7 +162,7 @@ func LoadHostConfig(path string) (HostConfig, error) {
 	}
 	st, ok := info.Sys().(*syscall.Stat_t)
 	if !ok || st.Uid != uint32(os.Geteuid()) || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 {
-		return HostConfig{}, errors.New("system policy must be private and owned by Agent UID")
+		return HostConfig{}, errors.New("system policy must be private and owned by the privileged host executor UID")
 	}
 	value, err := io.ReadAll(io.LimitReader(file, 64<<10+1))
 	if err != nil {
@@ -214,7 +214,7 @@ func privateDir(path string) error {
 	}
 	st, ok := info.Sys().(*syscall.Stat_t)
 	if !ok || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 || info.Mode().Perm()&0077 != 0 || st.Uid != uint32(os.Geteuid()) {
-		return errors.New("Agent state must be an owned private real directory")
+		return errors.New("privileged host executor state must be an owned private real directory")
 	}
 	return nil
 }
@@ -235,7 +235,7 @@ func trustedProgram(path string) error {
 	}
 	st, ok := info.Sys().(*syscall.Stat_t)
 	if !ok || st.Uid != uint32(os.Geteuid()) || !info.Mode().IsRegular() || info.Mode().Perm()&0111 == 0 || info.Mode().Perm()&0022 != 0 {
-		return fmt.Errorf("program is not trusted by Agent UID: %s", path)
+		return fmt.Errorf("program is not trusted by the privileged host executor UID: %s", path)
 	}
 	return nil
 }

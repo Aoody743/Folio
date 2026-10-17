@@ -218,7 +218,7 @@ export function HostingStackSetup({ capabilities }: { capabilities: Capability[]
       <Card className="panel-card">
         <div className="card-heading"><h2>网站运行栈状态不可用</h2></div>
         <div className="notice warning" role="alert">
-          {installed.error}。请先确认 Agent 可连接，再刷新软件状态。
+          {installed.error}。请先确认主机特权执行器可连接，再刷新软件状态。
         </div>
         <Button label="重新读取" variant="ghost" onClick={() => void installed.reload()} />
       </Card>

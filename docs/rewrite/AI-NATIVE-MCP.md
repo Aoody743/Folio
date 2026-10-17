@@ -1,10 +1,10 @@
-# PowerLinux：AI Native 与原生 MCP
+# Folio：AI Native 与原生 MCP
 
-更新：2026-10-13（Asia/Singapore）。这是全新重构方案的必选能力，尚未实现或发布 MCP 服务。
+更新：2026-10-17（Asia/Singapore）。这是全新重构方案的必选能力，MCP 服务已接入 Folio 代码；目标主机和第三方客户端的最终验收另行进行。
 
 ## 目标
 
-AI 能通过标准 MCP 查询、规划、执行、验证和恢复 PowerLinux 操作。现有面板功能仍全部进入迁移范围；网页、REST、CLI 与 MCP 调用同一业务动作和任务层。
+外部 AI 客户端能通过标准 MCP 查询、规划、执行、验证和恢复 Folio 操作。Folio 负责服务器状态、授权、任务、审计和工具执行；模型、对话和规划都在面板外部完成。现有面板功能仍全部进入迁移范围；网页、REST、CLI 与 MCP 调用同一业务动作和任务层。
 
 原生 MCP 使用官方 Go SDK `github.com/modelcontextprotocol/go-sdk`，集成在 Go 发行包中。提供 MCP 不需要运行本地大模型，也不需要核心安装器索取模型 API Key。外部 AI 客户端负责模型推理；按最新产品要求，面板不内置聊天或模型界面，专注状态、管理和共享便签。
 
@@ -21,8 +21,8 @@ flowchart LR
     MCP --> CORE
     CORE --> JOB[任务、资源锁、审计]
     CORE --> READ[状态、配置、指标快照]
-    JOB --> AGENT[受控 Linux Agent]
-    AGENT --> HOST[网站、软件、文件、数据库及插件]
+    JOB --> EXEC[受控 Linux 主机特权执行器]
+    EXEC --> HOST[网站、软件、文件、数据库及插件]
 ```
 
 业务动作注册表是唯一来源：输入/输出 schema、权限范围、资源范围、前置条件、执行方式、幂等策略、结果验证与审计标签一起定义。REST 与 MCP 是不同协议适配器，共享这些定义。
@@ -34,7 +34,7 @@ flowchart LR
 | 方式 | 设计 | 使用场景 |
 | --- | --- | --- |
 | Streamable HTTP | 主 Go 服务的 `/mcp` 路由，与 REST 共用服务基础设施，按 MCP 协议处理请求与响应 | 云端或远程 AI 客户端 |
-| stdio | 同一二进制的计划命令 `powerlinux mcp --stdio`，通过受权限控制的本地连接访问业务服务 | 本机/SSH 场景的桌面客户端或 CLI Agent |
+| stdio | 同一二进制的计划命令 `powerlinux mcp --stdio`，通过受权限控制的本地连接访问业务服务 | 本机/SSH 场景的桌面 MCP 客户端或 CLI AI Agent |
 
 stdio 模式仅向 stdout 写 MCP 协议消息，日志写 stderr。该模式不能绕过主服务身份验证，也不直接启动第二套数据库/任务执行器；按本地身份和连接配置获得有限权限。
 

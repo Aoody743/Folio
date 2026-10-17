@@ -408,7 +408,7 @@ export function TerminalView({
           <Unavailable
             title="终端服务暂不可用"
             icon="terminal"
-            detail="只有受信任的Agent配置提供目标后，才允许连接。"
+            detail="只有受信任的主机策略提供目标后，才允许连接。"
           />
         ) : (
           <>

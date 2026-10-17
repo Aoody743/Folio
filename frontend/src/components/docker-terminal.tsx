@@ -602,7 +602,7 @@ export function DockerTerminalManagement({
           {session && (
             <>
               <p className="muted">
-                会话 <code>{session.session_id}</code> · {attached ? "浏览器已连接" : "浏览器未连接"} · Agent流 {session.stream_started ? "已启动" : "等待启动"}
+                会话 <code>{session.session_id}</code> · {attached ? "浏览器已连接" : "浏览器未连接"} · 主机执行流 {session.stream_started ? "已启动" : "等待启动"}
                 {session.attached ? " · 服务端已附着" : " · 服务端未附着"}
               </p>
               {session.execution_state === "exited" && running && (

@@ -18,7 +18,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// ProxyOptions uses an existing PowerLinux service. Token is a scoped core API
+// ProxyOptions uses an existing Folio service. Token is a scoped core API
 // token, never an identity supplied by tool arguments. Do not put tokens in CLI
 // arguments or logs: load them from protected configuration in the caller.
 type ProxyOptions struct{ Endpoint, Token string }
@@ -34,7 +34,7 @@ func newHTTPSource(options ProxyOptions) (*httpSource, error) {
 		return nil, err
 	}
 	if strings.TrimSpace(options.Token) == "" || strings.ContainsAny(options.Token, "\r\n") {
-		return nil, errors.New("a scoped PowerLinux API token is required")
+		return nil, errors.New("a scoped Folio API token is required")
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	// Ignore ambient HTTP_PROXY for the local authenticated connection.
@@ -45,7 +45,7 @@ func newHTTPSource(options ProxyOptions) (*httpSource, error) {
 func validatedEndpoint(raw string) (*url.URL, error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") {
-		return nil, errors.New("endpoint must be a PowerLinux HTTP(S) origin without credentials, query or path")
+		return nil, errors.New("endpoint must be a Folio HTTP(S) origin without credentials, query or path")
 	}
 	if u.Scheme == "https" {
 		return u, nil
@@ -80,7 +80,7 @@ func (s *httpSource) request(ctx context.Context, method, path string, input jso
 	}
 	response, err := s.client.Do(req)
 	if err != nil {
-		return &core.Error{Code: "backend_unavailable", Message: "Cannot reach the configured PowerLinux backend", Status: 503}
+		return &core.Error{Code: "backend_unavailable", Message: "Cannot reach the configured Folio backend", Status: 503}
 	}
 	defer response.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(response.Body, MaxRequestBytes+1))
@@ -145,7 +145,7 @@ func ServeIO(ctx context.Context, options ProxyOptions, reader io.ReadCloser, wr
 	defer source.client.CloseIdleConnections()
 	server, err := newServer(ctx, source)
 	if err != nil {
-		return fmt.Errorf("connect authorized PowerLinux registry: %w", safeError(err))
+		return fmt.Errorf("connect authorized Folio registry: %w", safeError(err))
 	}
 	return server.Run(ctx, &mcp.IOTransport{Reader: &lineBoundedReader{ReadCloser: reader}, Writer: writer})
 }

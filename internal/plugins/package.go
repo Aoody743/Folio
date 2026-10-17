@@ -186,9 +186,8 @@ func (p *packageBackend) resolveExactAPT(ctx context.Context, name, version stri
 	for _, line := range strings.Split(uris, "\n") {
 		if strings.HasPrefix(line, "'") {
 			raw, _, _ := strings.Cut(strings.TrimPrefix(line, "'"), "'")
-			u, err := url.Parse(raw)
-			if err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != "" {
-				origin = u.Scheme + "://" + u.Host
+			if candidate := aptURIOrigin(raw); candidate != "" {
+				origin = candidate
 				break
 			}
 		}
@@ -197,6 +196,53 @@ func (p *packageBackend) resolveExactAPT(ctx context.Context, name, version stri
 		return PackagePin{}, failure("package_metadata_untrusted", "APT did not identify the signed package origin", 412)
 	}
 	return PackagePin{Name: name, Version: version, Architecture: arch, Repository: origin, SHA256: fields["SHA256"]}, nil
+}
+
+// aptURIOrigin normalizes apt-get's --print-uris output. Newer Debian APT
+// versions can preserve a configured mirror as mirror+file:/path/to/list/...,
+// where the actual signed mirror is stored in the referenced mirror-list file.
+// The package plan records only that HTTPS origin, never the local resolver URI.
+func aptURIOrigin(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return ""
+	}
+	if (u.Scheme == "http" || u.Scheme == "https") && u.Host != "" {
+		return u.Scheme + "://" + u.Host
+	}
+	if u.Scheme != "mirror+file" || u.Host != "" {
+		return ""
+	}
+	path := filepath.Clean(u.Path)
+	if !filepath.IsAbs(path) {
+		return ""
+	}
+	for {
+		info, statErr := os.Lstat(path)
+		if statErr == nil && info.Mode().IsRegular() && info.Mode()&os.ModeSymlink == 0 {
+			data, readErr := os.ReadFile(path)
+			if readErr != nil {
+				return ""
+			}
+			for _, line := range strings.Split(string(data), "\n") {
+				line = strings.TrimSpace(line)
+				if line == "" || strings.HasPrefix(line, "#") {
+					continue
+				}
+				mirror, parseErr := url.Parse(line)
+				if parseErr == nil && (mirror.Scheme == "http" || mirror.Scheme == "https") && mirror.Host != "" {
+					return mirror.Scheme + "://" + mirror.Host
+				}
+				return ""
+			}
+			return ""
+		}
+		parent := filepath.Dir(path)
+		if parent == path {
+			return ""
+		}
+		path = parent
+	}
 }
 
 var aptSimulationChange = regexp.MustCompile(`^(?:Inst|Conf) ([a-z0-9][a-z0-9+.-]*)(?::([a-z0-9]+))? (?:\[[^\r\n\]]+\] )?\(([0-9A-Za-z.+:~_-]+)(?: |\))`)
