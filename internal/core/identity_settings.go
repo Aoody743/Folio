@@ -43,7 +43,7 @@ func (s *Service) PanelSettings(ctx context.Context) (PanelSettings, error) {
 	return loadPanelSettings(ctx, s.db)
 }
 func loadPanelSettings(ctx context.Context, conn sqlState) (PanelSettings, error) {
-	p := PanelSettings{PanelName: "PowerLinux", Footer: "PowerLinux", APIEnabled: true}
+	p := PanelSettings{PanelName: "Folio · 折纸面板", Footer: "Folio · 折纸面板", APIEnabled: true}
 	var raw string
 	var revision int64
 	err := conn.QueryRowContext(ctx, "SELECT payload,revision FROM identity_settings WHERE id='panel'").Scan(&raw, &revision)

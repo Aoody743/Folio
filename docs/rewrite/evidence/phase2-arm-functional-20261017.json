@@ -1,0 +1,53 @@
+{
+  "product": "Folio",
+  "display_name_zh": "折纸面板",
+  "scope": "ARM64 functional acceptance only",
+  "not_a_support_claim_for": [
+    "amd64",
+    "Ubuntu 24.04",
+    "performance",
+    "production hardware"
+  ],
+  "source_commit": "b13f35f8a26bd9cd2051df385782ee4f75eff888",
+  "candidate_build_dirty": true,
+  "candidate_version": "0.1.0-arm-qa.2",
+  "candidate_archive": "powerlinux-0.1.0-arm-qa.2-linux-arm64.tar.gz",
+  "candidate_sha256": "fc669c6e76bba607085fe442779f0c321b8261f9342808f683b0882e5ed8f7d9",
+  "environment": {
+    "host": "macOS arm64",
+    "guest": "Debian 13 arm64",
+    "kernel": "6.12.111+deb13-cloud-arm64",
+    "virtualization": "Apple Virtualization.framework",
+    "resources": "2 vCPU, 2 GiB RAM",
+    "guest_is_disposable": true
+  },
+  "passed": [
+    "Candidate archive copied into the guest and SHA-256 matched.",
+    "Packaged installer completed with the archive and expected SHA-256.",
+    "Installed ARM64 binary reported version 0.1.0-dev.24.",
+    "Server started with --allow-root in the disposable guest.",
+    "HTTP /healthz returned status ok, expected version, and ready=true.",
+    "HTTP session endpoint reported initialized=false and authenticated=false.",
+    "HTTP root returned 200 with security headers including a nonce CSP.",
+    "Typed healthcheck command reported the candidate healthy.",
+    "A user data file survived a guest reboot.",
+    "Linux ARM64 cross-build of internal/plugins, internal/core, and cmd/powerlinux completed.",
+    "macOS package rebuild completed after adding BSD tar, shasum, and no-flock fallbacks."
+  ],
+  "observations": [
+    "The normal server path correctly refuses root execution; the isolated QA run used --allow-root explicitly.",
+    "A second install while the package-managed server is still running is protected by the installer lock and must be tested after a clean stop.",
+    "The host macOS build was not used as acceptance evidence because the build script requires Linux flock semantics."
+  ],
+  "not_tested": [
+    "Nginx or OpenResty installation and website lifecycle",
+    "PHP lifecycle",
+    "MySQL and PostgreSQL installation and backup/restore",
+    "Web/MCP permission matrix",
+    "Browser acceptance",
+    "Upgrade and rollback",
+    "Clean uninstall retention after stopping all managed processes",
+    "Performance or memory baseline"
+  ],
+  "decision": "ARM functional acceptance is partially passed. Keep stage_2_complete=false and do not mark amd64 or Ubuntu as verified."
+}

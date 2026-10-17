@@ -138,7 +138,11 @@ func parseHostedAppGitRemote(input hostedAppGitInput) (hostedAppGitRemote, error
 			return remote, failure("invalid_input", "HTTPS Git URLs cannot contain credentials or an SSH host-key fingerprint", 400)
 		}
 	} else {
-		if parsed.User == nil || parsed.User.Username() != "git" || parsed.User.Password() != "" {
+		password, hasPassword := "", false
+		if parsed.User != nil {
+			password, hasPassword = parsed.User.Password()
+		}
+		if parsed.User == nil || parsed.User.Username() != "git" || hasPassword || password != "" {
 			return remote, failure("invalid_input", "SSH Git URLs must use the public-repository git account and no embedded credentials", 400)
 		}
 		if !strings.HasPrefix(remote.Fingerprint, "SHA256:") {

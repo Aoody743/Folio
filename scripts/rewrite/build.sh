@@ -31,7 +31,17 @@ export GOCACHE="${GOCACHE:-$cache/go-build}" GOMODCACHE="${GOMODCACHE:-$cache/go
 mkdir -p "$GOCACHE" "$GOMODCACHE" "$cache/npm" "$output"
 mkdir -p "$root/.cache/rewrite"
 exec 7>"$root/.cache/rewrite/build.lock"
-flock -n 7 || { echo 'Another release build is refreshing/using the embedded assets' >&2; exit 1; }
+lock_dir=
+if command -v flock >/dev/null 2>&1; then
+  flock -n 7 || { echo 'Another release build is refreshing/using the embedded assets' >&2; exit 1; }
+else
+  # macOS does not ship flock. Keep a portable mkdir lock for local builds.
+  lock_dir="$root/.cache/rewrite/build.lock.d"
+  if ! mkdir "$lock_dir" 2>/dev/null; then
+    echo 'Another release build is refreshing/using the embedded assets' >&2
+    exit 1
+  fi
+fi
 if (( !skip_frontend )); then
   if (( !skip_install )); then npm ci --prefix frontend --cache "$cache/npm" --no-audit --no-fund; fi
   npm run typecheck --prefix frontend
@@ -48,7 +58,7 @@ if [[ -z $(git status --porcelain --untracked-files=normal) ]]; then dirty=false
 epoch=${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD)}
 [[ "$epoch" =~ ^[0-9]+$ ]] || { echo 'Invalid SOURCE_DATE_EPOCH' >&2; exit 2; }
 stage=$(mktemp -d "$cache/release.XXXXXX")
-trap 'rm -rf -- "$stage"' EXIT
+trap 'rm -rf -- "$stage"; if [[ -n "$lock_dir" ]]; then rmdir "$lock_dir" 2>/dev/null || true; fi' EXIT
 IFS=, read -r -a arch_list <<< "$architectures"
 for arch in "${arch_list[@]}"; do
   [[ "$arch" == amd64 || "$arch" == arm64 ]] || { printf 'Unsupported architecture: %s\n' "$arch" >&2; exit 2; }
@@ -64,14 +74,29 @@ for arch in "${arch_list[@]}"; do
   chmod 0755 "$package/powerlinux" "$package/install.sh"
   chmod 0644 "$package/VERSION" "$package/PLATFORM" "$package/BUILDINFO" "$package/README.txt"
   name="powerlinux-$version-linux-$arch.tar.gz"
-  tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner -C "$package" \
-    -cf - BUILDINFO PLATFORM README.txt VERSION install.sh powerlinux | gzip -n > "$output/$name.tmp"
+  tar_args=(-C "$package")
+  if tar --help 2>&1 | grep -q -- '--mtime'; then
+    tar_args+=(--mtime="@$epoch")
+  fi
+  if tar --help 2>&1 | grep -q -- '--owner'; then
+    tar_args+=(--owner=0 --group=0 --numeric-owner)
+  fi
+  if tar --help 2>&1 | grep -q -- '--sort=name'; then
+    tar_args+=(--sort=name)
+  fi
+  tar "${tar_args[@]}" -cf - BUILDINFO PLATFORM README.txt VERSION install.sh powerlinux | gzip -n > "$output/$name.tmp"
   mv -f -- "$output/$name.tmp" "$output/$name"
 done
 (
   cd "$output"
   : > CHECKSUMS.txt.tmp
-  for arch in "${arch_list[@]}"; do sha256sum -- "powerlinux-$version-linux-$arch.tar.gz" >> CHECKSUMS.txt.tmp; done
+  for arch in "${arch_list[@]}"; do
+    if command -v sha256sum >/dev/null 2>&1; then
+      sha256sum -- "powerlinux-$version-linux-$arch.tar.gz" >> CHECKSUMS.txt.tmp
+    else
+      shasum -a 256 "powerlinux-$version-linux-$arch.tar.gz" >> CHECKSUMS.txt.tmp
+    fi
+  done
   mv -f CHECKSUMS.txt.tmp CHECKSUMS.txt
 )
 printf 'Built version %s in %s (Linux build outputs; target execution remains separate).\n' "$version" "$output"

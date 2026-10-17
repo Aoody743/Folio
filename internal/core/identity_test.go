@@ -61,6 +61,20 @@ func TestPanelBrandingCASAndAccountRenamePreserveIdentity(t *testing.T) {
 		t.Fatal(loaded, e)
 	}
 }
+
+func TestDefaultPanelBrandingUsesFolio(t *testing.T) {
+	s, _ := testService(t)
+	defer s.Close()
+
+	settings, err := s.PublicPanelSettings(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if settings["panel_name"] != "Folio · 折纸面板" || settings["footer"] != "Folio · 折纸面板" {
+		t.Fatalf("unexpected default branding: %#v", settings)
+	}
+}
+
 func TestApplicationPeerScopesRevocationAndEncryptedRetry(t *testing.T) {
 	s, a := testService(t)
 	ctx := WithPeerIP(context.Background(), "127.0.0.1:1234")
