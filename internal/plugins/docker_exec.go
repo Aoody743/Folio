@@ -925,6 +925,10 @@ func decodeDockerExecFrames(reader io.Reader, outputLimit int) (stdout, stderr [
 			return stdout, stderr, stdoutBytes, stderrBytes, truncated, nil
 		}
 		if err != nil {
+			var networkErr net.Error
+			if errors.As(err, &networkErr) && networkErr.Timeout() {
+				return stdout, stderr, stdoutBytes, stderrBytes, truncated, err
+			}
 			return stdout, stderr, stdoutBytes, stderrBytes, truncated, failure("invalid_response", "Docker exec stream ended in a partial frame", 502)
 		}
 		if header[1] != 0 || header[2] != 0 || header[3] != 0 {
@@ -942,6 +946,10 @@ func decodeDockerExecFrames(reader io.Reader, outputLimit int) (stdout, stderr [
 			}
 			count, readErr := io.ReadFull(reader, buffer[:int(want)])
 			if readErr != nil {
+				var networkErr net.Error
+				if errors.As(readErr, &networkErr) && networkErr.Timeout() {
+					return stdout, stderr, stdoutBytes, stderrBytes, truncated, readErr
+				}
 				return stdout, stderr, stdoutBytes, stderrBytes, truncated, failure("invalid_response", "Docker exec stream ended in a partial frame", 502)
 			}
 			if stream == 3 {

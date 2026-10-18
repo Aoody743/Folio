@@ -3,9 +3,11 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -14,12 +16,36 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/Aoody743/PowerLinux/internal/agent"
 	"github.com/Aoody743/PowerLinux/internal/core"
 	"github.com/Aoody743/PowerLinux/internal/jobs"
 )
+
+type unpublishedDockerDeadline struct{ context.Context }
+
+func (unpublishedDockerDeadline) Deadline() (time.Time, bool) {
+	return time.Now().Add(-time.Second), true
+}
+
+func TestDockerExecFrameTimeoutSurvivesBeforeContextTimerPublishes(t *testing.T) {
+	var header [8]byte
+	header[0] = 1
+	binary.BigEndian.PutUint32(header[4:], 4)
+	for _, prefix := range [][]byte{nil, header[:]} {
+		reader := io.MultiReader(bytes.NewReader(prefix), iotest.ErrReader(os.ErrDeadlineExceeded))
+		_, _, _, _, _, err := decodeDockerExecFrames(reader, 1024)
+		if !errors.Is(err, os.ErrDeadlineExceeded) {
+			t.Fatal("frame decoder hid the socket deadline behind a partial-frame error", err)
+		}
+		ctx := unpublishedDockerDeadline{context.Background()}
+		if ctx.Err() != nil || !errors.Is(dockerExecContextError(ctx, err), context.DeadlineExceeded) {
+			t.Fatal("elapsed socket deadline was not classified before the context timer published its error")
+		}
+	}
+}
 
 func TestDockerExecValidatesBoundedArgvEnvCWDStdinTimeoutAndOutput(t *testing.T) {
 	base := `{"id":"docker-test","name":"web","argv":["printf","ok"],"timeout_seconds":30,"output_limit_bytes":1024}`
