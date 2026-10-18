@@ -102,10 +102,13 @@ func jobAllowed(a Actor, j jobs.Job) bool {
 }
 func (s *Service) loadTaskMetadata(ctx context.Context, id string) (taskMetadata, bool) {
 	var actor, resources, action string
-	var meta taskMetadata
 	if err := s.db.QueryRowContext(ctx, "SELECT actor,resources,action FROM task_metadata WHERE id=?", id).Scan(&actor, &resources, &action); err != nil {
-		return meta, false
+		return taskMetadata{}, false
 	}
+	return decodeTaskMetadata(actor, resources, action)
+}
+func decodeTaskMetadata(actor, resources, action string) (taskMetadata, bool) {
+	var meta taskMetadata
 	if json.Unmarshal([]byte(actor), &meta.Actor) != nil || json.Unmarshal([]byte(resources), &meta.Resources) != nil {
 		return meta, false
 	}
@@ -120,6 +123,36 @@ func (s *Service) loadTaskMetadata(ctx context.Context, id string) (taskMetadata
 	meta.Scope = source.Scope
 	return meta, true
 }
+
+// Request-local batching avoids three metadata queries per visible task. No
+// authorization or identity cache survives the request; resource checks still
+// use the caller's current grants and the same protected metadata as Get.
+func (s *Service) loadTaskMetadataBatch(ctx context.Context, batch []jobs.Job) (map[string]taskMetadata, error) {
+	metadata := make(map[string]taskMetadata, len(batch))
+	if len(batch) == 0 {
+		return metadata, nil
+	}
+	args := make([]any, len(batch))
+	for i, job := range batch {
+		args[i] = job.ID
+	}
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(batch)), ",")
+	rows, err := s.db.QueryContext(ctx, "SELECT id,actor,resources,action FROM task_metadata WHERE id IN ("+placeholders+")", args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, actor, resources, action string
+		if err := rows.Scan(&id, &actor, &resources, &action); err != nil {
+			return nil, err
+		}
+		if meta, ok := decodeTaskMetadata(actor, resources, action); ok {
+			metadata[id] = meta
+		}
+	}
+	return metadata, rows.Err()
+}
 func (s *Service) taskResources(ctx context.Context, j jobs.Job) []string {
 	if meta, ok := s.loadTaskMetadata(ctx, j.ID); ok {
 		return meta.Resources
@@ -133,7 +166,10 @@ func (s *Service) taskResources(ctx context.Context, j jobs.Job) []string {
 	return resources
 }
 func (s *Service) canAccessJob(ctx context.Context, a Actor, j jobs.Job) bool {
-	for _, resource := range s.taskResources(ctx, j) {
+	return canAccessJobResources(a, s.taskResources(ctx, j))
+}
+func canAccessJobResources(a Actor, resources []string) bool {
+	for _, resource := range resources {
 		if !hasResource(a, resource) {
 			return false
 		}
@@ -177,12 +213,24 @@ func (s *Service) listJobs(ctx context.Context, a Actor) (any, error) {
 		return nil, internal()
 	}
 	out := []map[string]any{}
-	for _, j := range all {
-		if s.canAccessJob(ctx, a, j) {
-			out = append(out, s.jobView(ctx, j))
+	for start := 0; start < len(all) && len(out) < 100; start += 128 {
+		end := min(start+128, len(all))
+		metadata, err := s.loadTaskMetadataBatch(ctx, all[start:end])
+		if err != nil {
+			return nil, internal()
 		}
-		if len(out) >= 100 {
-			break
+		for _, j := range all[start:end] {
+			if meta, ok := metadata[j.ID]; ok {
+				if canAccessJobResources(a, meta.Resources) {
+					out = append(out, resolvedJobView(j, meta.Actor.Public(), meta.Resources))
+				}
+			} else if s.canAccessJob(ctx, a, j) {
+				// Preserve the existing legacy/malformed-metadata fallback.
+				out = append(out, s.jobView(ctx, j))
+			}
+			if len(out) >= 100 {
+				break
+			}
 		}
 	}
 	return out, nil
