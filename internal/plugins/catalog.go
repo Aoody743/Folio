@@ -95,7 +95,46 @@ func BuiltinCatalog() (*Catalog, error) {
 		return nil, err
 	}
 	defer file.Close()
-	return DecodeCatalog(file)
+	catalog, err := DecodeCatalog(file)
+	if err != nil {
+		return nil, err
+	}
+	catalog.useDistributionPHPDefault(CurrentPlatform())
+	return catalog, nil
+}
+
+// First-run PHP installation uses the distribution's signed PHP ABI, which
+// also matches the native extension recipes. Explicit version choices remain
+// available for hosts whose administrator has configured another signed source.
+func (c *Catalog) useDistributionPHPDefault(platform Platform) {
+	recipe, ok := phpExtensionPlatform(platform)
+	if !ok {
+		return
+	}
+	index, ok := c.byID["php-apt"]
+	if !ok {
+		return
+	}
+	versions := c.Items[index].Versions
+	selected := -1
+	for i, version := range versions {
+		if version.Version == recipe.Minor && version.Source.Kind == "signed_package" {
+			selected = i
+			break
+		}
+	}
+	if selected < 0 {
+		return
+	}
+	for i := range versions {
+		versions[i].Default = i == selected
+	}
+	if platform.Distro == "ubuntu" {
+		versions[selected].Source.Repository = "https://archive.ubuntu.com/ubuntu/"
+	} else {
+		versions[selected].Source.Repository = "https://deb.debian.org/debian/"
+	}
+	versions[selected].Source.RepositoryKeyURL = ""
 }
 
 // DecodeCatalog is for trusted configuration only. Uploads/API inputs cannot
