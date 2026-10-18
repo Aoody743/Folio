@@ -2812,6 +2812,12 @@
           "arch": "arm64",
           "distro": "debian",
           "release": "13"
+        },
+        {
+          "os": "linux",
+          "arch": "amd64",
+          "distro": "ubuntu",
+          "release": "24.04"
         }
       ],
       "dependencies": [],
@@ -3722,6 +3728,12 @@
           "arch": "arm64",
           "distro": "debian",
           "release": "13"
+        },
+        {
+          "os": "linux",
+          "arch": "amd64",
+          "distro": "ubuntu",
+          "release": "24.04"
         }
       ],
       "dependencies": [],
@@ -5608,6 +5620,12 @@
           "arch": "arm64",
           "distro": "debian",
           "release": "13"
+        },
+        {
+          "os": "linux",
+          "arch": "amd64",
+          "distro": "ubuntu",
+          "release": "24.04"
         }
       ],
       "dependencies": [],
