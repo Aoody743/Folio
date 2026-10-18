@@ -1,6 +1,6 @@
 # 本地 Codex 开发交接
 
-更新：2026-10-17。Folio 新版继续在 GitHub `main` 分支开发；旧版 PowerLinux 文档与实现保留，不随新版 branding 改名。三阶段目标与功能范围保持，当前仍按源码实现收尾，不把未执行的环境验收写成通过。
+更新：2026-10-18。Folio 新版继续在 GitHub `main` 分支开发；旧版 PowerLinux 文档与实现保留，不随新版 branding 改名。当前范围、首发差距和执行顺序以[上线前差距清单](LAUNCH-READINESS-20261018.md)为准；本文件中的早期要求如与它或[第二阶段收尾说明](PHASE2-CLOSEOUT-20261015.md)冲突，按后两者的当前范围执行。未执行的环境验收不得写成通过。
 
 仓库：https://github.com/Aoody743/Folio
 
@@ -8,11 +8,12 @@
 
 ## 从这里开始
 
-1. 本文件与 [接续 prompt](CONTINUE-PROMPT.md)：当前事实、工作顺序和本地重建条件。
-2. [三阶段计划](DEVELOPMENT-PLAN.md) 与 [范围补充](SCOPE-CORRECTIONS.md)：目标、依赖和退出标准。
-3. [进度记录](PROGRESS.md) 与 [第一阶段验收](PHASE1-ACCEPTANCE.md)：实际通过、失败和未执行项。
-4. [第二阶段验收与证据](../../tests/rewrite/phase2/README.md)、[137 组验收矩阵](../../tests/rewrite/phase2/acceptance-matrix.json)、[迁移台账](migration-tracker.json)：逐项续做。矩阵多数状态仍为 `planned`，尚未将分散证据逐项回填，不能由这些状态计算真实完成百分比。
-5. [技术栈](TECH-STACK.md)、[UI](UI-SPEC.md)、[MCP](AI-NATIVE-MCP.md)、[实现契约](IMPLEMENTATION-CONTRACT.md)、[第二阶段契约](PHASE2-CONTRACT.md)、[审计](AUDIT.md)。
+1. [上线前差距清单](LAUNCH-READINESS-20261018.md)：当前首发范围、阻塞项和交付顺序。
+2. 本文件与 [接续 prompt](CONTINUE-PROMPT.md)：仓库、本地重建条件与接续背景。
+3. [三阶段计划](DEVELOPMENT-PLAN.md) 与 [范围补充](SCOPE-CORRECTIONS.md)：历史目标、依赖和迁移索引；当前首发以差距清单为准。
+4. [进度记录](PROGRESS.md)、[第二阶段收尾](PHASE2-CLOSEOUT-20261015.md) 与 [第一阶段验收](PHASE1-ACCEPTANCE.md)：实际通过、失败和未执行项。
+5. [第二阶段验收运行手册](PHASE2-ACCEPTANCE-RUNBOOK.md)、[验收矩阵](../../tests/rewrite/phase2/acceptance-matrix.json)、[迁移台账](migration-tracker.json)：逐项续做。历史矩阵状态不能代替新候选包证据或计算真实完成百分比。
+6. [技术栈](TECH-STACK.md)、[UI](UI-SPEC.md)、[MCP](AI-NATIVE-MCP.md)、[实现契约](IMPLEMENTATION-CONTRACT.md)、[第二阶段契约](PHASE2-CONTRACT.md)、[审计](AUDIT.md)。
 
 ## 固定目标
 
@@ -21,7 +22,7 @@
 - 轻量、快速响应、低侵入；精简四卡首页、五项底部导航、五套配色，支持移动端。
 - 共享便签由人和外部 AI 修改；原生 MCP 支持 Streamable HTTP 与 stdio，共用真实动作、权限、任务、审计。
 - 面板不内置聊天或模型选择界面。Ollama 仅作为旧有受管软件按需迁移。
-- 保留全部有效旧功能及 70 个插件：第二阶段 23 个核心插件，第三阶段剩余 47 个。不要因接续收尾删除范围或降低验收标准。
+- 当前核心首发范围、明确暂缓项和退出条件见[上线前差距清单](LAUNCH-READINESS-20261018.md)及[第二阶段收尾说明](PHASE2-CLOSEOUT-20261015.md)。旧功能与 70 个插件清单保留作历史迁移索引；第三阶段 47 个插件和旧版数据迁移不阻塞本轮核心版。
 
 ## 当前状态
 
