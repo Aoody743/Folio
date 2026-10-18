@@ -507,12 +507,20 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 				}
 			}
 		case "signed_package":
+			distributionBefore, captureErr := e.captureDistributionServices(ctx, plan)
+			if captureErr != nil {
+				return instance, captureErr
+			}
 			if install != nil {
+				install.DistributionServices = distributionBefore
 				if err = e.saveNextInstallJournal(ctx, install, "package_install_started"); err != nil {
 					return instance, err
 				}
 			}
 			if err = e.packages.install(ctx, plan.Packages); err != nil {
+				return instance, err
+			}
+			if err = isolateNewDistributionServices(ctx, distributionBefore); err != nil {
 				return instance, err
 			}
 			if plan.PluginID == "nginx" {

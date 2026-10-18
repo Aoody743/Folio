@@ -51,22 +51,23 @@ type installRecoveryView struct {
 }
 
 type installJournal struct {
-	Version        int        `json:"version"`
-	ID             string     `json:"id"`
-	Revision       int64      `json:"revision"`
-	Phase          string     `json:"phase"`
-	Plan           Plan       `json:"plan"`
-	Instance       Instance   `json:"instance"`
-	Previous       *Instance  `json:"previous_receipt,omitempty"`
-	Nonce          string     `json:"nonce"`
-	IdempotencySHA string     `json:"idempotency_sha256"`
-	DesiredBoot    *bool      `json:"desired_boot,omitempty"`
-	ProgramProof   *fileProof `json:"program_proof,omitempty"`
-	ConfigSHA256   string     `json:"config_sha256,omitempty"`
-	UnitSHA256     string     `json:"unit_sha256,omitempty"`
-	FailureCode    string     `json:"failure_code,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	Version              int                                   `json:"version"`
+	ID                   string                                `json:"id"`
+	Revision             int64                                 `json:"revision"`
+	Phase                string                                `json:"phase"`
+	Plan                 Plan                                  `json:"plan"`
+	Instance             Instance                              `json:"instance"`
+	Previous             *Instance                             `json:"previous_receipt,omitempty"`
+	Nonce                string                                `json:"nonce"`
+	IdempotencySHA       string                                `json:"idempotency_sha256"`
+	DesiredBoot          *bool                                 `json:"desired_boot,omitempty"`
+	DistributionServices map[string]distributionNginxUnitState `json:"distribution_services_before_packages,omitempty"`
+	ProgramProof         *fileProof                            `json:"program_proof,omitempty"`
+	ConfigSHA256         string                                `json:"config_sha256,omitempty"`
+	UnitSHA256           string                                `json:"unit_sha256,omitempty"`
+	FailureCode          string                                `json:"failure_code,omitempty"`
+	CreatedAt            time.Time                             `json:"created_at"`
+	UpdatedAt            time.Time                             `json:"updated_at"`
 }
 
 type fileProof struct {
