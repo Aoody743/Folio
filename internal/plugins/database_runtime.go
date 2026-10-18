@@ -61,6 +61,9 @@ func (e *PrivilegedExecutor) configureDatabase(ctx context.Context, instance *In
 			return err
 		}
 	}
+	if err := e.prepareMySQLAppArmor(ctx, *instance); err != nil {
+		return err
+	}
 	if err := os.Chmod(instance.Paths.RunDir, 0700); err != nil {
 		return err
 	}
@@ -127,6 +130,9 @@ func (e *PrivilegedExecutor) configureDatabase(ctx context.Context, instance *In
 			}
 		}
 		body := fmt.Sprintf("[mysqld]\nbind-address=%s\nport=%d\ndatadir=%s\nsocket=%s\npid-file=%s\nlog-error=%s\nskip-name-resolve\nlocal-infile=0\n[client]\nsocket=%s\n", bind, port, mysqlOptionQuote(instance.Paths.DataDir), mysqlOptionQuote(filepath.Join(instance.Paths.RunDir, "mysql.sock")), mysqlOptionQuote(filepath.Join(instance.Paths.RunDir, "server.pid")), mysqlOptionQuote(filepath.Join(instance.Paths.LogDir, "mysql.log")), mysqlOptionQuote(filepath.Join(instance.Paths.RunDir, "mysql.sock")))
+		if instance.PluginID != "mariadb" {
+			body = strings.Replace(body, "[mysqld]\n", "[mysqld]\nmysqlx=0\n", 1)
+		}
 		if err := writeAtomicRoot(instance.Paths.ConfigDir, "my.cnf", []byte(body), 0640, int(e.gid)); err != nil {
 			return err
 		}
@@ -205,6 +211,9 @@ func (e *PrivilegedExecutor) initializeMySQL(ctx context.Context, instance Insta
 	}
 	socket := filepath.Join(instance.Paths.RunDir, "bootstrap-mysql.sock")
 	args := []string{"--no-defaults", "--skip-networking", "--datadir=" + instance.Paths.DataDir, "--socket=" + socket, "--pid-file=" + filepath.Join(instance.Paths.RunDir, "bootstrap.pid"), "--log-error=" + filepath.Join(instance.Paths.LogDir, "bootstrap-mysql.log")}
+	if instance.PluginID != "mariadb" {
+		args = append(args, "--mysqlx=0")
+	}
 	stop, err := e.startDatabaseBootstrap(ctx, instance, args)
 	if err != nil {
 		return err
