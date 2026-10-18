@@ -13,8 +13,8 @@
 | 门槛 | RC7 结果 | 发布判断 |
 | --- | --- | --- |
 | G0 源码与候选包 | 固定源码提交、amd64 构建、全部源检查、包 smoke、独立重建一致；提交是当前 GitHub `main` 后代 | 通过 |
-| G1 PostgreSQL | Debian RC7 慢日志四种协议、筛选、脱敏、停用和备份恢复通过；Ubuntu PostgreSQL 计划成功，但 `postgresql-common` 安装配置失败，无实际 Ubuntu 集群 | 部分通过 |
-| G2 Web 与数据库安装 | Ubuntu PostgreSQL 包安装未完成；PHP/Sury 网络失败、PHP 站点/TLS 未测、MySQL 源未开放；RC7 只复验既有 Nginx/OpenResty 服务，没有完成干净双系统 Web/DB 矩阵 | 未通过 |
+| G1 PostgreSQL | Debian RC7 慢日志四种协议、筛选、脱敏、停用和备份恢复通过；Folio 的 Ubuntu 安装路径在不完整 QA 镜像中 `postgresql-common` 配置失败，尚无通过 Folio 管理的 Ubuntu 集群及日志验收。官方 Ubuntu OCI 中系统包配置和手动 SQL 冒烟已通过，但未调用 Folio 插件 | 部分通过 |
+| G2 Web 与数据库安装 | Folio 的 Ubuntu PostgreSQL 安装未完成；PHP/Sury 与 MySQL 上游源仍因当前执行器代理 403 无法复验，PHP 站点/TLS 未测；RC7 只复验既有 Nginx/OpenResty 服务，没有完成干净双系统 Web/DB 矩阵 | 未通过 |
 | G3 网页/MCP/任务/审计 | Debian/Ubuntu Agent 文件测试各 4/4，Ubuntu 终端 3/3；更完整的网页/MCP 权限、任务恢复及审计矩阵未完成 | 部分通过 |
 | G4 生命周期与数据保护 | Debian RC6→RC7 升级、SIGKILL 后中断升级恢复、RC7→RC6 回滚再升级、卸载/重装后 Folio 登录与 PostgreSQL canary 保留通过；Ubuntu RC7 重启恢复通过。两台 2 vCPU/2 GiB guest 均记录了空闲健康接口延迟与服务 RSS；Ubuntu 卸载、代表性并发负载和系统变更清单仍未完成 | 部分通过 |
 | G5 发布冻结 | G1–G4 仍有未完成项，不能把 RC7 标成首发完成 | 未通过 |
@@ -47,7 +47,7 @@ RC6 修复了 Next.js 随机 build ID 使相同源码产物不一致的问题。
 | G4 系统生命周期与数据保护 | RC6 在 Debian/Ubuntu 升级通过；Ubuntu 完整重启后 API/Agent/OpenResty 恢复；Debian PostgreSQL 备份恢复通过。RC6 回滚、中断升级、数据保留卸载和 2 vCPU/2 GiB 性能基线未做 | 部分通过 |
 | G5 发布冻结 | G1–G4 尚未全部通过同一候选包 | 未通过 |
 
-当前 RC7 的源码快照和 amd64 包已经固定，阻塞点是实机门槛而非无法执行 Git 分支操作。云环境设置中已有包含 `cloud-images.ubuntu.com`、`packages.sury.org`、`repo.mysql.com` 的受限网络配置草稿，但草稿还未应用；onboarding 配置工具明确说明“Saving does not apply or publish”，需要你在环境设置检查并保存草稿，再发布环境。发布后用官方干净 Ubuntu 镜像复验 PostgreSQL postinst、PHP/MySQL 源及完整 Web/数据库矩阵，再完成 G3/G4 剩余项和 G5。分支操作仍按你的条件，验收全部通过后执行；当前 GitHub `main` 保持不变。
+当前 RC7 的源码快照和 amd64 包已经固定，阻塞点是实机门槛而非无法执行 Git 分支操作。你已确认云环境发布成功，读取到的已发布配置包含 `cloud-images.ubuntu.com`、`packages.sury.org`、`repo.mysql.com`。但当前执行容器经配置的 HTTPS 代理访问这三个域名均在 CONNECT 阶段收到 403，而预置的 `archive.ubuntu.com` 返回 200；探测证据见 [published egress probe](evidence/published-egress-probe-20261018.json)。因此本轮无法下载官方 Ubuntu cloud image，也无法复验 PHP/MySQL 外部源。补充的官方 Ubuntu 24.04 OCI 包检查中，`postgresql-common` 配置、PostgreSQL 16 集群初始化、手动启动和 SQL canary 均通过；该容器没有 systemd 作为 PID 1，也没有运行 Folio 插件，不能替代实机门槛。当前执行器还没有 QEMU、`qemu-img` 或 debootstrap 工具。需要在已发布出口规则确实可用、且具备 VM 工具的执行环境继续验收，不需要重复发布。G1–G4 的其余缺项仍未完成；GitHub `main` 与 `legacy` 分支保持原样，只有全部门槛通过后才执行分支迁移。
 
 接续基线是 GitHub [`main`](https://github.com/Aoody743/Folio/tree/main)。另有一份为保留本地 WIP 而上传的[历史快照分支](https://github.com/Aoody743/Folio/tree/handoff/pre-closeout-wip-20261016)，提交 `c93eac3f3819bdcd66b30fec2a84948bc4ad3f97`。该快照基于较早的 `refine-local` 状态，供比对遗留草稿；它不是当前源码或发行基线，不要整体合并到 `main`。
 

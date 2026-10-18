@@ -1,0 +1,54 @@
+{
+  "observed_at_utc": "2026-10-18T15:47:49.795119+00:00",
+  "method": "curl through configured execution-environment HTTPS proxy; no alternate route",
+  "checks": {
+    "cloud-images.ubuntu.com": {
+      "http_status": "000",
+      "elapsed_seconds": "0.024156",
+      "curl_exit": 56,
+      "error": "curl: (56) CONNECT tunnel failed, response 403"
+    },
+    "packages.sury.org": {
+      "http_status": "000",
+      "elapsed_seconds": "0.006098",
+      "curl_exit": 56,
+      "error": "curl: (56) CONNECT tunnel failed, response 403"
+    },
+    "repo.mysql.com": {
+      "http_status": "000",
+      "elapsed_seconds": "0.005106",
+      "curl_exit": 56,
+      "error": "curl: (56) CONNECT tunnel failed, response 403"
+    },
+    "archive.ubuntu.com": {
+      "http_status": "200",
+      "elapsed_seconds": "0.550475",
+      "curl_exit": 0,
+      "error": null
+    }
+  },
+  "supplementary_official_ubuntu_oci_postgresql_probe": {
+    "result": "passed for official Ubuntu 24.04 package configuration and a live PostgreSQL SQL canary; supplemental only",
+    "image": "docker.io/library/ubuntu@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac",
+    "platform": "linux/amd64; Ubuntu 24.04.5 LTS",
+    "packages": {
+      "postgresql-common": "257build1.1",
+      "postgresql-16": "16.15-0ubuntu0.24.04.1"
+    },
+    "checks": [
+      "APT update and package installation through the configured HTTPS proxy from the preapproved archive.ubuntu.com and security.ubuntu.com hosts",
+      "postgresql-common configured successfully and PostgreSQL 16/main cluster initialized",
+      "cluster started manually, accepted a local connection, and completed CREATE DATABASE, CREATE TABLE, INSERT, and SELECT returning 7",
+      "dpkg --audit returned no incomplete packages"
+    ],
+    "limitations": "Official Ubuntu OCI user space only; PID 1 was not systemd, package policy blocked automatic service start, and no Folio PostgreSQL plugin was exercised. This does not satisfy the official cloud image or systemd guest acceptance gate.",
+    "external_log": "/workspace/tools/qa-acceptance/active-release-test/ubuntu-official-oci-postgresql-20261018.log"
+  },
+  "current_executor_capabilities": {
+    "qemu_system_x86_64": false,
+    "qemu_img": false,
+    "debootstrap": false,
+    "mmdebstrap": false,
+    "docker": true
+  }
+}

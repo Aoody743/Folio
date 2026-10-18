@@ -116,8 +116,20 @@
         "external_install_record": "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/postgresql-install-rc7.json",
         "external_recovery_record": "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/postgresql-recovery-inspect-rc7.private.json"
       },
+      "official_ubuntu_oci_postgresql_probe": {
+        "result": "supplementary package/runtime probe passed; not a systemd guest or Folio plugin acceptance",
+        "image": "docker.io/library/ubuntu@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac",
+        "platform": "linux/amd64; Ubuntu 24.04.5 LTS",
+        "packages": {
+          "postgresql-common": "257build1.1",
+          "postgresql-16": "16.15-0ubuntu0.24.04.1"
+        },
+        "checks": "APT through the configured proxy to approved Ubuntu archives; postinst and cluster initialization passed; manually started PostgreSQL, created a database/table, inserted and selected value 7; dpkg --audit was clean",
+        "limitations": "The container had no systemd PID 1; policy-rc.d blocked automatic service start. No Folio plugin operations, reboot, or systemd service recovery were tested.",
+        "external_log": "/workspace/tools/qa-acceptance/active-release-test/ubuntu-official-oci-postgresql-20261018.log"
+      },
       "php": "not passed: PHP/Sury package plan remains blocked by source/signature network failure; PHP site and TLS are not verified",
-      "mysql": "not installed or verified; repo.mysql.com access is not active until the saved cloud environment draft is published",
+      "mysql": "not installed or verified; cloud-environment publication is confirmed and repo.mysql.com is in the active config, but the current execution proxy returns HTTP CONNECT 403 for the host",
       "openresty": "existing service and reboot recovery passed; its signed source was manually configured in the disposable guest",
       "external_logs": [
         "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/rc7-upgrade.log",
@@ -161,8 +173,8 @@
   },
   "release_gates": {
     "G0": "passed for the local amd64 candidate: clean source build, full source checks, package smoke and byte-for-byte reproducible rebuild passed; source commit descends from current GitHub main",
-    "G1": "partial: Debian RC7 PostgreSQL live logs and backup/restore passed; Ubuntu PostgreSQL catalog plan now resolves signed packages, but install failed on the nonofficial incomplete guest and no live Ubuntu PostgreSQL service was available",
-    "G2": "blocked: no official clean Ubuntu image; Ubuntu PostgreSQL postinst failed on the OCI-derived image; PHP/Sury source, PHP site/TLS, MySQL repository install, and fresh RC7 Nginx install are incomplete",
+    "G1": "partial: Debian RC7 PostgreSQL live logs and backup/restore passed; Ubuntu PostgreSQL catalog plan resolves signed packages, but the Folio install path failed on the incomplete QA guest and Ubuntu PostgreSQL logs through Folio remain untested. A separate official Ubuntu OCI package/runtime probe passed only as supplementary evidence",
+    "G2": "blocked: no official clean Ubuntu cloud image; Folio PostgreSQL postinst failed on the incomplete QA guest, though stock PostgreSQL packages now configure in the separate official Ubuntu OCI probe; PHP/Sury source, PHP site/TLS, MySQL repository install, and fresh RC7 Nginx install are incomplete. The published config contains cloud-images.ubuntu.com, packages.sury.org and repo.mysql.com, but the current execution proxy returns CONNECT 403 for all three; archive.ubuntu.com returns 200",
     "G3": "partial: RC7 Agent files passed on Debian and Ubuntu; RC7 terminal passed on Ubuntu; full web/MCP scope and authorization, task recovery, revocation and audit matrix remains incomplete",
     "G4": "partial: RC7 upgrade, actual interrupted-upgrade recovery, rollback/re-upgrade and data-preserving uninstall/reinstall passed on Debian; Ubuntu RC7 reboot and idle health/RSS baselines on both guests passed; Ubuntu uninstall, representative workload measurements and system-change inventory remain outstanding",
     "G5": "blocked: G1-G4 are not complete on this one final candidate"
@@ -176,6 +188,7 @@
   },
   "external_evidence": {
     "directory": "/workspace/tools/qa-acceptance/active-release-test/",
-    "note": "QEMU disks, private fixtures, account credentials and raw guest logs remain outside Git. This record contains no credentials."
+    "published_egress_probe": "docs/rewrite/evidence/published-egress-probe-20261018.json",
+    "note": "QEMU disks, private fixtures, account credentials and raw guest logs remain outside Git. The published-egress probe records only sanitized host/status data. This record contains no credentials."
   }
 }
