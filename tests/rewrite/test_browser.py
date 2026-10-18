@@ -86,7 +86,7 @@ def main():
                 assert "人类交接信息" in observed["content"]
                 ai_note = tool_data(mcp.call("notes_update", {"id": note["id"], "expected_revision": 1,
                                                              "content": "外部 AI 更新了这条便签"}))
-                expect(page.get_by_text("外部 AI 更新了这条便签", exact=True)).to_be_visible(timeout=5000)
+                expect(page.get_by_text("外部 AI 更新了这条便签", exact=True).filter(visible=True)).to_be_visible(timeout=5000)
                 page.get_by_role("button", name="浏览器共享便签").click()
                 dialog = page.get_by_role("dialog", name="便签详情")
                 expect(dialog.get_by_text("AI · Browser QA external AI", exact=False)).to_be_visible()
@@ -141,7 +141,7 @@ def main():
                 current = data(automated.get("/api/v1/notes/" + note["id"]))
                 api_note = data(automated.patch("/api/v1/notes/" + note["id"], {"expected_revision": current["revision"], "content": "由真实 API 身份修改"}))
                 assert api_note["updated_by"]["kind"] == "api"
-                expect(page.get_by_text("由真实 API 身份修改", exact=True)).to_be_visible(timeout=5000)
+                expect(page.get_by_text("由真实 API 身份修改", exact=True).filter(visible=True)).to_be_visible(timeout=5000)
                 page.get_by_role("button", name="浏览器共享便签").click()
                 api_dialog = page.get_by_role("dialog", name="便签详情")
                 expect(api_dialog.get_by_text("客户端 · Browser QA API client", exact=False)).to_be_visible()
