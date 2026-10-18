@@ -29,11 +29,11 @@ func TestWebsiteVerifierRequiresActuallyServedRevision(t *testing.T) {
 		if r.Host != "panel.example" || r.URL.Path != "/.__powerlinux_health" {
 			t.Error("untrusted probe target", r.Host, r.URL.Path)
 		}
-		w.Header().Set("X-PowerLinux-Site", "site")
+		w.Header().Set("X-Folio-Site", "site")
 		if revision.Load() == 2 {
-			w.Header().Set("X-PowerLinux-Revision", "2")
+			w.Header().Set("X-Folio-Revision", "2")
 		} else {
-			w.Header().Set("X-PowerLinux-Revision", "1")
+			w.Header().Set("X-Folio-Revision", "1")
 		}
 		w.WriteHeader(204)
 	}))
@@ -51,6 +51,20 @@ func TestWebsiteVerifierRequiresActuallyServedRevision(t *testing.T) {
 	}
 	if requests.Load() < 2 {
 		t.Fatal("running server was not probed")
+	}
+}
+
+func TestWebsiteVerifierAcceptsLegacyManagedSiteHeadersDuringUpgrade(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-PowerLinux-Site", "legacy-site")
+		w.Header().Set("X-PowerLinux-Revision", "4")
+		w.WriteHeader(204)
+	}))
+	defer server.Close()
+	port := server.URL[strings.LastIndex(server.URL, ":")+1:]
+	site := sites.Site{ID: "legacy-site", Revision: 4, Domains: []string{"legacy.example:" + port}}
+	if err := (siteRuntimes{}).VerifySite(context.Background(), site); err != nil {
+		t.Fatalf("legacy generated site was not accepted for upgrade: %v", err)
 	}
 }
 

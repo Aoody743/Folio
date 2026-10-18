@@ -1,4 +1,4 @@
-# PowerLinux frontend
+# Folio frontend
 
 Next.js static export with React 19 and official Astryx 0.6.8 components. All runtime data comes from the Go service at `/api/v1`; there is no built-in model, chat UI, fixture database, or production Node server.
 

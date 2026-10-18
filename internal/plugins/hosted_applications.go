@@ -658,7 +658,7 @@ func hostedAppUnit(receipt hostedAppReceipt) []byte {
 			command += " " + unitQuote(arg)
 		}
 	}
-	return []byte("[Unit]\nDescription=PowerLinux application " + receipt.ID + "\nAfter=network-online.target\nWants=network-online.target\n[Service]\nType=simple\nUser=" + receipt.User + "\nGroup=" + receipt.User + "\nWorkingDirectory=" + unitQuote(receipt.ProjectDir) + "\nEnvironment=HOME=" + unitQuote(filepath.Join(receipt.ProjectDir, ".home")) + "\nEnvironment=DATA_DIR=" + unitQuote(receipt.DataDir) + "\nEnvironment=PATH=/usr/local/bin:/usr/bin:/bin\nEnvironment=PORT=" + strconv.Itoa(receipt.Port) + "\nEnvironment=NODE_ENV=production\nExecStart=" + command + "\nRestart=on-failure\nRestartSec=3\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(receipt.ProjectDir) + " " + unitQuote(receipt.DataDir) + "\n[Install]\nWantedBy=multi-user.target\n")
+	return []byte("[Unit]\nDescription=Folio application " + receipt.ID + "\nAfter=network-online.target\nWants=network-online.target\n[Service]\nType=simple\nUser=" + receipt.User + "\nGroup=" + receipt.User + "\nWorkingDirectory=" + unitQuote(receipt.ProjectDir) + "\nEnvironment=HOME=" + unitQuote(filepath.Join(receipt.ProjectDir, ".home")) + "\nEnvironment=DATA_DIR=" + unitQuote(receipt.DataDir) + "\nEnvironment=PATH=/usr/local/bin:/usr/bin:/bin\nEnvironment=PORT=" + strconv.Itoa(receipt.Port) + "\nEnvironment=NODE_ENV=production\nExecStart=" + command + "\nRestart=on-failure\nRestartSec=3\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(receipt.ProjectDir) + " " + unitQuote(receipt.DataDir) + "\n[Install]\nWantedBy=multi-user.target\n")
 }
 
 func hostedAppUnitName(id string) string { return "powerlinux-app-" + id + ".service" }
@@ -681,7 +681,7 @@ func (e *PrivilegedExecutor) ensureHostedAppUnit(ctx context.Context, receipt ho
 	} else if err != nil {
 		return "", err
 	} else if string(current) != string(body) {
-		return "", failure("ownership_conflict", "Application systemd unit changed outside PowerLinux; it was preserved", 409)
+		return "", failure("ownership_conflict", "Application systemd unit changed outside Folio; it was preserved", 409)
 	}
 	if _, err = runFixed(ctx, "/usr/bin/systemctl", []string{"daemon-reload"}, 20*time.Second, nil); err != nil {
 		return "", failure("service_reload_failed", "systemd could not reload the verified application service", 502)
@@ -699,7 +699,7 @@ func (e *PrivilegedExecutor) hostedAppRunning(ctx context.Context, receipt hoste
 	}
 	current, err := os.ReadFile(path)
 	if err != nil || string(current) != string(hostedAppUnit(receipt)) {
-		return false, failure("ownership_conflict", "Application systemd unit changed outside PowerLinux; it was preserved", 409)
+		return false, failure("ownership_conflict", "Application systemd unit changed outside Folio; it was preserved", 409)
 	}
 	result, err := runFixedResult(ctx, "/usr/bin/systemctl", []string{"show", "--property=ActiveState", "--value", hostedAppUnitName(receipt.ID)}, 15*time.Second, nil, nil)
 	if err != nil || result.ExitCode != 0 || result.Truncated || result.Canceled || result.TimedOut || result.Stderr != "" {
@@ -766,7 +766,7 @@ func (e *PrivilegedExecutor) controlHostedApp(ctx context.Context, input hostedA
 		if _, statErr := os.Lstat(unitPath); statErr == nil {
 			current, readErr := os.ReadFile(unitPath)
 			if readErr != nil || string(current) != string(hostedAppUnit(receipt)) {
-				return empty, failure("ownership_conflict", "Application systemd unit changed outside PowerLinux; application files were preserved", 409)
+				return empty, failure("ownership_conflict", "Application systemd unit changed outside Folio; application files were preserved", 409)
 			}
 			if _, err = runFixed(ctx, "/usr/bin/systemctl", []string{"disable", "--now", hostedAppUnitName(receipt.ID)}, 30*time.Second, nil); err != nil {
 				return empty, err

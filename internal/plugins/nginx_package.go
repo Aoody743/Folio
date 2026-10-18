@@ -59,7 +59,7 @@ func distributionNginxUnitStateRead(ctx context.Context) (distributionNginxUnitS
 }
 
 // The signed distro package ships nginx.service with the host's default
-// configuration. PowerLinux runs the same native binary under its own unit
+// configuration. Folio runs the same native binary under its own unit
 // and isolated config tree, so keep the package-provided unit from claiming
 // public listeners on a fresh panel host.
 func (e *PrivilegedExecutor) isolateDistributionNginxService(ctx context.Context) error {

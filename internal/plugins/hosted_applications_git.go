@@ -453,7 +453,7 @@ func validateHostedGitProject(project, manifest string, uid, gid uint32) error {
 		relative = filepath.ToSlash(relative)
 		first := strings.Split(relative, "/")[0]
 		if first == ".home" || first == ".next" || strings.HasPrefix(first, ".next.") || strings.HasPrefix(first, ".powerlinux-app") {
-			return failure("application_git_reserved_path", "Git repository contains a reserved PowerLinux runtime path", 400)
+			return failure("application_git_reserved_path", "Git repository contains a reserved Folio runtime path", 400)
 		}
 		info, err := os.Lstat(path)
 		if err != nil {

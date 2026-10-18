@@ -53,7 +53,7 @@ if (( enable_source_build )); then (( enable_software )) || die '--enable-source
 if (( enable_agent )); then [[ -n "$agent_policy" ]] || die '--enable-agent requires an explicit --agent-policy'; fi
 [[ -z "$agent_policy" || "$enable_agent" == 1 ]] || die '--agent-policy requires --enable-agent'
 [[ "$mode" == install || "$enable_agent" == 0 ]] || die 'Deployment flags apply only to install/upgrade'
-for command in sha256sum tar flock realpath cp mv find mktemp; do command -v "$command" >/dev/null || die "Required command missing: $command"; done
+for command in sha256sum tar flock realpath cp mv find mktemp cmp; do command -v "$command" >/dev/null || die "Required command missing: $command"; done
 [[ $(uname -s) == Linux ]] || die 'Linux is required'
 case "$(uname -m)" in x86_64) architecture=amd64 ;; aarch64|arm64) architecture=arm64 ;; *) die 'Supported architectures: amd64 and arm64' ;; esac
 production=1
@@ -412,9 +412,9 @@ EOF
     mv -f -- "$policy_stage" "$config/agent-policy.json"
     agent_unit_stage=$(mktemp /etc/systemd/system/.powerlinux-agent.XXXXXX)
     cat > "$agent_unit_stage" <<EOF
-# Managed by PowerLinux rewrite installer
+# Managed by Folio rewrite installer
 [Unit]
-Description=PowerLinux typed privileged Agent
+Description=Folio typed privileged Agent
 After=network.target
 
 [Service]
@@ -528,6 +528,11 @@ check_release() {
   local release_dir=$1
   [[ -f "$release_dir/powerlinux.sha256" ]] || die 'Prior release lacks integrity metadata'
   (cd "$release_dir" && sha256sum --check --status powerlinux.sha256) || die 'Prior release binary was modified'
+  if [[ -e "$release_dir/folio" ]]; then
+    [[ -f "$release_dir/folio.sha256" ]] || die 'Prior Folio command lacks integrity metadata'
+    (cd "$release_dir" && sha256sum --check --status folio.sha256) || die 'Prior Folio command was modified'
+    cmp -s "$release_dir/powerlinux" "$release_dir/folio" || die 'Prior Folio command differs from its compatibility binary'
+  fi
 }
 [[ ! -L "$base" && ! -L "$data" && ! -L "$config" ]] || die 'Managed paths must not be symbolic links'
 for path in "$base/releases" "$base/backups" "$base/.install-lock" "$base/pending-transaction" "$base/rollback-target" "$base/agent-recovery-required" "$data/.powerlinux-managed" "$config/.powerlinux-managed"; do
@@ -558,7 +563,8 @@ if (( production )); then
       [[ -f "$owned_unit" && $(stat -c '%u' "$owned_unit") == 0 ]] || die "Existing unit must be a root-owned regular file: $owned_unit"
       unit_permissions=$(stat -c '%a' "$owned_unit")
       (( (8#$unit_permissions & 0022) == 0 )) || die "Existing unit permits untrusted modification: $owned_unit"
-      head -1 "$owned_unit" | grep -Fxq '# Managed by PowerLinux rewrite installer' || die "Existing unit is unmanaged: $owned_unit"
+      managed_unit_header=$(head -1 "$owned_unit")
+      [[ "$managed_unit_header" == '# Managed by Folio rewrite installer' || "$managed_unit_header" == '# Managed by PowerLinux rewrite installer' ]] || die "Existing unit is unmanaged: $owned_unit"
     fi
     # A vendor unit under /usr/lib or /lib is also an existing deployment;
     # do not silently override it merely because our /etc filename is absent.
@@ -584,7 +590,7 @@ if [[ "$mode" == install ]]; then
     command -v curl >/dev/null || die 'curl is required for HTTPS downloads'
     archive="$stage/release.tar.gz"
     curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 --retry 2 \
-      --output "$archive" "https://github.com/Aoody743/Folio/releases/download/$version/powerlinux-$version-linux-$architecture.tar.gz"
+      --output "$archive" "https://github.com/Aoody743/Folio/releases/download/$version/folio-$version-linux-$architecture.tar.gz"
   fi
   [[ -f "$archive" ]] || die 'Archive does not exist'
   actual_hash=$(sha256sum -- "$archive"); actual_hash=${actual_hash%% *}
@@ -597,12 +603,14 @@ if [[ "$mode" == install ]]; then
   # Reject links, devices, absolute/parent paths, duplicate and unknown members.
   declare -A seen=()
   while IFS= read -r member; do
-    case "$member" in powerlinux|VERSION|PLATFORM|install.sh|BUILDINFO|README.txt) ;;
+    case "$member" in folio|powerlinux|VERSION|PLATFORM|install.sh|BUILDINFO|README.txt) ;;
       *) die "Unsafe or unexpected archive member: $member" ;; esac
     [[ -z "${seen[$member]:-}" ]] || die "Duplicate archive member: $member"
     seen[$member]=1
   done < <(tar -tzf "$archive")
-  [[ ${#seen[@]} == 6 ]] || die 'Incomplete release package'
+  [[ ${#seen[@]} == 6 || ${#seen[@]} == 7 ]] || die 'Incomplete release package'
+  for member in VERSION PLATFORM install.sh BUILDINFO README.txt; do [[ -n "${seen[$member]:-}" ]] || die "Release package is missing $member"; done
+  [[ -n "${seen[folio]:-}${seen[powerlinux]:-}" ]] || die 'Release package is missing its executable'
   while IFS= read -r member; do [[ "$member" == -* ]] || die 'Release archive contains a non-regular file'; done < <(tar -tvzf "$archive")
   mkdir "$stage/package"
   tar --no-same-owner --no-same-permissions -xzf "$archive" -C "$stage/package"
@@ -611,8 +619,11 @@ if [[ "$mode" == install ]]; then
   [[ -z "$version" || "$version" == "$package_version" ]] || die 'Requested and packaged version differ'
   version=$package_version
   [[ $(cat "$stage/package/PLATFORM") == "linux-$architecture" ]] || die 'Release platform does not match this machine'
-  chmod 0755 "$stage/package/powerlinux"
+  if [[ ! -e "$stage/package/powerlinux" ]]; then cp "$stage/package/folio" "$stage/package/powerlinux"; fi
+  if [[ ! -e "$stage/package/folio" ]]; then cp "$stage/package/powerlinux" "$stage/package/folio"; fi
+  chmod 0755 "$stage/package/folio" "$stage/package/powerlinux"
   [[ $("$stage/package/powerlinux" version) == "$version" ]] || die 'Binary and package version differ'
+  [[ $("$stage/package/folio" version) == "$version" ]] && cmp -s "$stage/package/powerlinux" "$stage/package/folio" || die 'Folio and compatibility binaries differ'
   health_binary="$stage/package/powerlinux"
 fi
 
@@ -721,9 +732,9 @@ if [[ -e "$release_dir" ]]; then
 else
   cp -a "$stage/package" "$base/releases/.stage-$version-$$"
   printf '%s\n' "$actual_hash" > "$base/releases/.stage-$version-$$/archive.sha256"
-  (cd "$base/releases/.stage-$version-$$" && sha256sum powerlinux > powerlinux.sha256)
+  (cd "$base/releases/.stage-$version-$$" && sha256sum powerlinux > powerlinux.sha256 && sha256sum folio > folio.sha256)
   chmod -R go-w "$base/releases/.stage-$version-$$"
-  chmod 0755 "$base" "$base/releases" "$base/releases/.stage-$version-$$" "$base/releases/.stage-$version-$$/powerlinux"
+  chmod 0755 "$base" "$base/releases" "$base/releases/.stage-$version-$$" "$base/releases/.stage-$version-$$/folio" "$base/releases/.stage-$version-$$/powerlinux"
   mv -T -- "$base/releases/.stage-$version-$$" "$release_dir"
 fi
 if [[ "$previous_target" == "releases/$version" && "$enable_agent" == 0 ]]; then
@@ -739,7 +750,7 @@ if (( production )); then
   if [[ -f "$agent_unit" ]]; then agent_argument=" --agent-socket $agent_socket"; fi
   api_unit_stage=$(mktemp /etc/systemd/system/.powerlinux-api.XXXXXX)
   cat > "$api_unit_stage" <<EOF
-# Managed by PowerLinux rewrite installer
+# Managed by Folio rewrite installer
 [Unit]
 Description=Folio lightweight Linux server visualization panel
 After=network.target

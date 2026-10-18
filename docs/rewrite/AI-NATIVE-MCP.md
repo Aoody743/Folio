@@ -8,7 +8,7 @@
 
 原生 MCP 使用官方 Go SDK `github.com/modelcontextprotocol/go-sdk`，集成在 Go 发行包中。提供 MCP 不需要运行本地大模型，也不需要核心安装器索取模型 API Key。外部 AI 客户端负责模型推理；按最新产品要求，面板不内置聊天或模型界面，专注状态、管理和共享便签。
 
-人和AI通过同一便签数据交接信息，设计见 [UI-SPEC.md](UI-SPEC.md)。MCP新增notes读取/编辑/归档/恢复/历史动作及 `powerlinux://notes/{id}` 资源，使用相同权限、版本冲突处理和审计，界面显示真实编辑来源。
+人和AI通过同一便签数据交接信息，设计见 [UI-SPEC.md](UI-SPEC.md)。MCP新增notes读取/编辑/归档/恢复/历史动作及 `folio://notes/{id}` 资源，使用相同权限、版本冲突处理和审计，界面显示真实编辑来源。
 
 ## 架构
 
@@ -72,12 +72,12 @@ HTTP 模式按 MCP 授权规范实现远程身份与授权发现、Token 校验�
 
 资源用于给 AI 提供状态与操作依据，读取本身也做授权和脱敏。例如：
 
-- `powerlinux://system/status`：主机和核心服务快照。
-- `powerlinux://capabilities`：平台、插件与能力清单。
-- `powerlinux://sites/{id}`：站点配置与运行状态。
-- `powerlinux://tasks/{id}`：任务状态与可恢复信息。
-- `powerlinux://audit/{id}`：按资源授权读取的单条操作证据。
-- `powerlinux://plugins/{id}/guide`：插件参数、配置解释与排障说明。
+- `folio://system/status`：主机和核心服务快照。
+- `folio://capabilities`：平台、插件与能力清单。
+- `folio://sites/{id}`：站点配置与运行状态。
+- `folio://tasks/{id}`：任务状态与可恢复信息。
+- `folio://audit/{id}`：按资源授权读取的单条操作证据。
+- `folio://plugins/{id}/guide`：插件参数、配置解释与排障说明。
 
 不能提供未限制大小的整机日志、任意文件或所有凭据。日志、网页、文件与第三方响应作为不可信数据返回，不能授权新的系统动作；权限只由服务端配置决定。
 

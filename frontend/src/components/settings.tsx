@@ -219,7 +219,7 @@ export function Settings({
             <div>
               <h3>本地连接</h3>
               <code>
-                powerlinux mcp --stdio --endpoint http://127.0.0.1:9000
+                folio mcp --stdio --endpoint http://127.0.0.1:9000
               </code>
               <p className="muted">
                 本地客户端连接受保护的面板服务。具体启动参数参见发行包文档。

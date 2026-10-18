@@ -89,7 +89,7 @@ func TestNginxUsesIsolatedConfigAndReloadProfile(t *testing.T) {
 	executor := &PrivilegedExecutor{config: PrivilegedConfig{RunUser: "powerlinux", RunGroup: "powerlinux"}}
 	generation := strings.Repeat("a", 32)
 	body := executor.renderManagedWebConfiguration(instance, generation)
-	if strings.Contains(body, "lua") || !strings.Contains(body, "PowerLinux Nginx") || !strings.Contains(body, "X-PowerLinux-Runtime-Generation") || !strings.Contains(body, "127.0.0.1:18081") || !strings.Contains(body, "include /etc/nginx/mime.types") || !strings.Contains(body, "client_body_temp_path") || !strings.Contains(body, "/run/client_body 1 2") {
+	if strings.Contains(body, "lua") || !strings.Contains(body, "Folio Nginx") || !strings.Contains(body, "X-Folio-Runtime-Generation") || !strings.Contains(body, "127.0.0.1:18081") || !strings.Contains(body, "include /etc/nginx/mime.types") || !strings.Contains(body, `client_body_temp_path "/opt/powerlinux-software/nginx/default/run/client_body" 1 2`) {
 		t.Fatalf("Nginx profile is not isolated or generation-verifiable:\n%s", body)
 	}
 	parsed, err := executor.webGeneration(instance, []byte(body))

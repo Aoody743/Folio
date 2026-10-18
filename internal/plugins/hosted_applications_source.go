@@ -426,7 +426,7 @@ func hostedArchivePath(name string, directory bool) (string, error) {
 		return "", failure("application_archive_unsafe_path", "Application source archive contains a path traversal entry", 400)
 	}
 	if !strings.Contains(clean, "/") && (clean == ".home" || clean == ".next" || strings.HasPrefix(clean, ".next.") || strings.HasPrefix(clean, ".powerlinux-app")) {
-		return "", failure("application_archive_reserved_path", "Application source archive contains a reserved PowerLinux runtime path", 400)
+		return "", failure("application_archive_reserved_path", "Application source archive contains a reserved Folio runtime path", 400)
 	}
 	return clean, nil
 }

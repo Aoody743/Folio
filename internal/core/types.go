@@ -1,4 +1,4 @@
-// Package core owns PowerLinux identities, authorization, and persisted actions.
+// Package core owns Folio identities, authorization, and persisted actions.
 // Both HTTP and MCP use this service; protocol adapters never supply identities
 // from untrusted action parameters.
 package core

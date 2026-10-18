@@ -13,11 +13,11 @@ bash scripts/rewrite/build.sh --version dev --architectures "$architecture" --ou
 (cd "$cache/dev-build" && sha256sum --check --status CHECKSUMS.txt)
 runtime_stage=$(mktemp -d "$cache/dev-extract.XXXXXX")
 trap 'rm -rf -- "$runtime_stage"' EXIT
-tar --no-same-owner --no-same-permissions -xzf "$cache/dev-build/powerlinux-dev-linux-$architecture.tar.gz" -C "$runtime_stage" powerlinux
-chmod 0755 "$runtime_stage/powerlinux"
-[[ $("$runtime_stage/powerlinux" version) == dev ]] || { echo 'Development binary version mismatch' >&2; exit 1; }
+tar --no-same-owner --no-same-permissions -xzf "$cache/dev-build/folio-dev-linux-$architecture.tar.gz" -C "$runtime_stage" folio
+chmod 0755 "$runtime_stage/folio"
+[[ $("$runtime_stage/folio" version) == dev ]] || { echo 'Development binary version mismatch' >&2; exit 1; }
 mkdir -p "$cache/dev-runtime"
-mv -f -- "$runtime_stage/powerlinux" "$cache/dev-runtime/powerlinux"
+mv -f -- "$runtime_stage/folio" "$cache/dev-runtime/folio"
 rm -rf -- "$runtime_stage"
 trap - EXIT
-exec "$cache/dev-runtime/powerlinux" serve --server-config '' --data-dir "${POWERLINUX_DATA_DIR:-$cache/dev-data}" --listen "${POWERLINUX_LISTEN:-127.0.0.1:9000}"
+exec "$cache/dev-runtime/folio" serve --server-config '' --data-dir "${POWERLINUX_DATA_DIR:-$cache/dev-data}" --listen "${POWERLINUX_LISTEN:-127.0.0.1:9000}"

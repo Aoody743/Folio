@@ -112,6 +112,9 @@ func TestHostedAppArchiveRejectsTraversalLinksAndMissingManifest(t *testing.T) {
 }
 
 func TestHostedAppSourceRollbackSwapsOwnedProjectDirectories(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("root-owned rollback fixtures require root")
+	}
 	root := t.TempDir()
 	project := filepath.Join(root, "project")
 	previous := filepath.Join(root, ".project.previous")

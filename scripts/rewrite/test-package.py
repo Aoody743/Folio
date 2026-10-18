@@ -32,17 +32,23 @@ def main():
         raise SystemExit("Usage: python3 scripts/rewrite/test-package.py ARCHIVE")
     archive = Path(sys.argv[1]).resolve()
     sha = hashlib.sha256(archive.read_bytes()).hexdigest()
-    with tempfile.TemporaryDirectory(prefix="powerlinux-package-smoke-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="folio-package-smoke-") as temporary:
         # Exercise the installer shipped with this immutable binary instead of
         # silently mixing a newer checkout script with an older release.
         installer = Path(temporary) / "packaged-install.sh"
         with tarfile.open(archive, "r:gz") as package:
+            members = package.getmembers()
+            expected = {"folio", "powerlinux", "VERSION", "PLATFORM", "install.sh", "BUILDINFO", "README.txt"}
+            if len(members) != 7 or {item.name for item in members} != expected or not all(item.isfile() for item in members):
+                raise AssertionError("Folio package must contain seven flat regular release files")
+            if package.extractfile("folio").read() != package.extractfile("powerlinux").read():
+                raise AssertionError("Folio command must match its upgrade-compatibility binary")
             members = [item for item in package if item.name == "install.sh"]
             if len(members) != 1 or not members[0].isfile() or members[0].size > 1 << 20:
                 raise AssertionError("Package must contain one bounded regular installer")
             installer.write_bytes(package.extractfile(members[0]).read())
         installer.chmod(0o600)
-        prefix = Path(temporary) / "powerlinux"
+        prefix = Path(temporary) / "folio"
         base_command = ["bash", str(installer), "--prefix", str(prefix)]
 
         def install(*options, success=True):
@@ -54,12 +60,13 @@ def main():
         artifact_args = ["--archive", str(archive), "--sha256", sha]
         install(*artifact_args)
         install(*artifact_args)
+        assert (prefix / "current/folio").read_bytes() == (prefix / "current/powerlinux").read_bytes()
         version = (prefix / "current/VERSION").read_text().strip()
         with socket.socket() as available:
             available.bind(("127.0.0.1", 0))
             port = available.getsockname()[1]
         endpoint = f"http://127.0.0.1:{port}"
-        command = [str(prefix / "current/powerlinux"), "serve", "--data-dir", str(prefix / "data"), "--listen", f"127.0.0.1:{port}"]
+        command = [str(prefix / "current/folio"), "serve", "--data-dir", str(prefix / "data"), "--listen", f"127.0.0.1:{port}"]
         modern_config = b"healthcheck --server-config" in installer.read_bytes()
         if modern_config:
             command += ["--server-config", ""]
@@ -82,7 +89,7 @@ def main():
                 # Typed deployment health CLI is part of phase-two artifacts.
                 # Legacy immutable phase-one packages still validate HTTP above.
                 if modern_config:
-                    subprocess.run([str(prefix / "current/powerlinux"), "healthcheck", "--server-config", "", "--listen", f"127.0.0.1:{port}", "--expected-version", version, "--timeout", "3s"], check=True, capture_output=True, timeout=5)
+                    subprocess.run([str(prefix / "current/folio"), "healthcheck", "--server-config", "", "--listen", f"127.0.0.1:{port}", "--expected-version", version, "--timeout", "3s"], check=True, capture_output=True, timeout=5)
                 with urlopen(endpoint + "/api/v1/session", timeout=3) as response:
                     session = json.load(response)
                 assert session["data"]["initialized"] is False, session
@@ -94,6 +101,7 @@ def main():
                 parser.feed(page)
                 assert parser.sources, "Packaged UI has no Next.js scripts (placeholder or incorrect embed)"
                 assert "Folio" in page, "Packaged UI must identify the product"
+                assert "PowerLinux" not in page, "Packaged UI must not show the retired product name"
                 static = next(source for source in parser.sources if "/_next/static/" in source)
                 with urlopen(endpoint + static, timeout=3) as response:
                     assert len(response.read()) > 100
@@ -117,7 +125,7 @@ def main():
         install("--uninstall")
         assert persistent.read_text() == "retained after uninstall"
         assert (prefix / "data/powerlinux.db").is_file()
-        print(f"Actual Linux package {version}: prefix install/repeat, HTTP health/session, embedded Next assets, live lock, SIGTERM, reinstall and retained-data uninstall passed. Systemd/VM and other architecture execution remain separate.")
+        print(f"Actual Folio Linux package {version}: Folio/compatibility commands, prefix install/repeat, HTTP health/session, embedded Next assets, live lock, SIGTERM, reinstall and retained-data uninstall passed. Systemd/VM and other architecture execution remain separate.")
 
 
 if __name__ == "__main__":

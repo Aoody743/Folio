@@ -49,7 +49,7 @@ func (m *Manager) openPTY(s *session, profile resolvedProfile) error {
 	}
 	cmd := exec.Command(profile.Shell, args...)
 	cmd.Dir = profile.WorkDir
-	cmd.Env = []string{"PATH=/usr/local/bin:/usr/bin:/bin", "HOME=" + profile.Home, "USER=" + profile.User, "LOGNAME=" + profile.User, "TERM=xterm-256color", "LANG=C.UTF-8", "LC_ALL=C.UTF-8", "PS1=PowerLinux\\$ "}
+	cmd.Env = []string{"PATH=/usr/local/bin:/usr/bin:/bin", "HOME=" + profile.Home, "USER=" + profile.User, "LOGNAME=" + profile.User, "TERM=xterm-256color", "LANG=C.UTF-8", "LC_ALL=C.UTF-8", "PS1=Folio\\$ "}
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = slave, slave, slave
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
 	if os.Geteuid() == 0 {

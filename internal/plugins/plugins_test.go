@@ -48,13 +48,23 @@ func TestCoreCatalogHasEveryLegacyPluginAndHonestSources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.Items) != 23 {
+	if len(catalog.Items) != 27 {
 		t.Fatalf("catalog plugin count %d", len(catalog.Items))
 	}
+	legacyPlugins := map[string]bool{}
+	for _, id := range []string{
+		"openresty", "php", "php-apt", "php-yum", "php-guard", "phpmyadmin",
+		"mysql", "mysql-community", "mariadb", "postgresql", "mongodb", "pgadmin",
+		"data_query", "redis", "valkey", "memcached", "docker", "pureftp", "rsyncd",
+		"backup_ftp", "acme_pandominassl_apply", "supervisor", "webssh",
+	} {
+		legacyPlugins[id] = true
+	}
 	for _, item := range catalog.Items {
-		if len(item.Capabilities) == 0 {
+		if legacyPlugins[item.ID] && len(item.Capabilities) == 0 {
 			t.Fatalf("%s loses legacy capability ledger", item.ID)
 		}
+		delete(legacyPlugins, item.ID)
 		for _, version := range item.Versions {
 			if version.Source.Kind == "unavailable" && version.Verification.Reason == "" {
 				t.Fatal("unavailable version conceals blocker")
@@ -63,6 +73,9 @@ func TestCoreCatalogHasEveryLegacyPluginAndHonestSources(t *testing.T) {
 				t.Fatal("unpinned artifact")
 			}
 		}
+	}
+	if len(legacyPlugins) != 0 {
+		t.Fatalf("catalog lost legacy plugins: %v", legacyPlugins)
 	}
 	php, err := catalog.Get("php")
 	if err != nil {

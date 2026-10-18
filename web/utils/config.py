@@ -17,8 +17,8 @@ import thisdb
 
 def _normalize_title(title):
     title = str(title or '').strip()
-    if title in ('PowerLinux Pro Max', 'Powerlinux Pro Max', ''):
-        return 'PowerLinux 3'
+    if title in ('PowerLinux Pro Max', 'Powerlinux Pro Max', 'PowerLinux 3', ''):
+        return 'Folio'
     return title
 
 
@@ -69,7 +69,7 @@ def getGlobalVar():
     获取全局变量
     '''
     data = {}
-    stored_title = thisdb.getOption('title', default='PowerLinux 3')
+    stored_title = thisdb.getOption('title', default='Folio')
     data['title'] = _normalize_title(stored_title)
     if data['title'] != stored_title:
         thisdb.setOption('title', data['title'])

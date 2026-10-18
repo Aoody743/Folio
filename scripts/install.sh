@@ -152,7 +152,7 @@ if [ "$LOCAL_ADDR" != "common" ];then
 fi
 
 if [ -f /etc/motd ];then
-    echo "welcome to PowerLinux panel" > /etc/motd
+    echo "welcome to Folio panel" > /etc/motd
 fi
 
 startTime=`date +%s`

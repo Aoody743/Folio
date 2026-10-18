@@ -24,9 +24,9 @@ class InstallTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.prefix = self.root / "installed"
 
-    def package(self, version="0.1.0-test", extra=None, change=None):
+    def package(self, version="0.1.0-test", extra=None, change=None, include_folio=False):
         path = self.root / f"{version}.tar.gz"
-        if path.exists() and extra is None and change is None:
+        if path.exists() and extra is None and change is None and not include_folio:
             return path, hashlib.sha256(path.read_bytes()).hexdigest()
         members = {
             "powerlinux": f"#!/bin/bash\nif [[ $1 == version ]]; then echo '{version}'; else exit 31; fi\n".encode(),
@@ -36,12 +36,14 @@ class InstallTests(unittest.TestCase):
             "BUILDINFO": b"fixture=true\n",
             "README.txt": b"Fixture package; not a production application.\n",
         }
+        if include_folio:
+            members["folio"] = members["powerlinux"]
         if change:
             members.update(change)
         with tarfile.open(path, "w:gz", format=tarfile.USTAR_FORMAT) as archive:
             for name, value in members.items():
                 info = tarfile.TarInfo(name)
-                info.mode = 0o755 if name == "powerlinux" else 0o644
+                info.mode = 0o755 if name in ("folio", "powerlinux") else 0o644
                 info.size = len(value)
                 archive.addfile(info, io.BytesIO(value))
             if extra:
@@ -73,6 +75,15 @@ class InstallTests(unittest.TestCase):
         self.assertFalse((self.prefix / "powerlinux.service").exists())
         binary = self.prefix / "current" / "powerlinux"
         self.assertEqual(subprocess.check_output([binary, "version"], text=True).strip(), "0.1.0-test")
+        self.assertEqual((self.prefix / "current/folio").read_bytes(), binary.read_bytes())
+
+    def test_new_package_with_folio_and_compatibility_commands_installs_both(self):
+        path, sha = self.package(include_folio=True)
+        self.run_installer("--archive", path, "--sha256", sha)
+        folio = self.prefix / "current/folio"
+        compatibility = self.prefix / "current/powerlinux"
+        self.assertEqual(folio.read_bytes(), compatibility.read_bytes())
+        self.assertEqual(subprocess.check_output([folio, "version"], text=True).strip(), "0.1.0-test")
 
     def test_idempotent_install_preserves_data_and_snapshot_count(self):
         self.install()
@@ -221,6 +232,13 @@ class InstallTests(unittest.TestCase):
         (self.prefix / "current" / "powerlinux").write_text("tampered")
         result = self.run_installer("--archive", path, "--sha256", sha, success=False)
         self.assertIn("modified", result.stdout)
+
+    def test_installed_folio_command_tampering_is_detected(self):
+        path, sha = self.package(include_folio=True)
+        self.run_installer("--archive", path, "--sha256", sha)
+        (self.prefix / "current/folio").write_text("tampered")
+        result = self.run_installer("--archive", path, "--sha256", sha, success=False)
+        self.assertIn("Folio command was modified", result.stdout)
 
     def test_upgrade_rollback_restores_previous_snapshot_and_preserves_new_data(self):
         self.install()

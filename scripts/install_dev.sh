@@ -28,8 +28,8 @@ if [ -f /www/server/mdserver-web/tools.py ];then
 	exit 0
 fi
 
-echo -e "您正在安装的是\033[31mPowerLinux测试版\033[0m，非开发测试用途请使用正式版 install.sh ！"
-echo -e "You are installing\033[31m PowerLinux dev version\033[0m, normally use install.sh for production.\n"
+echo -e "您正在安装的是\033[31mFolio测试版\033[0m，非开发测试用途请使用正式版 install.sh ！"
+echo -e "You are installing\033[31m Folio dev version\033[0m, normally use install.sh for production.\n"
 sleep 1
 
 LOG_FILE=/var/log/mw-install.log
@@ -156,7 +156,7 @@ if [ "$LOCAL_ADDR" != "common" ];then
 fi
 
 if [ -f /etc/motd ];then
-    echo "welcome to PowerLinux panel" > /etc/motd
+    echo "welcome to Folio panel" > /etc/motd
 fi
 
 startTime=`date +%s`

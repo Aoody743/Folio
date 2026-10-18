@@ -11,7 +11,7 @@
 # ---------------------------------------------------------------------------------
 
 # UI中显示的应用程序的名称
-APP_NAME = 'PowerLinux 3'
+APP_NAME = 'Folio'
 APP_ICON = 'icon'
 
 APP_LOG_NAME = 'panel'

@@ -66,14 +66,15 @@ for arch in "${arch_list[@]}"; do
   mkdir -p "$package"
   CGO_ENABLED=0 GOOS=linux GOARCH="$arch" "$go_bin" build -p "$parallelism" -mod=readonly -trimpath -buildvcs=false \
     -ldflags="-s -w -X main.version=$version" -o "$package/powerlinux" ./cmd/powerlinux
+  cp "$package/powerlinux" "$package/folio"
   printf '%s\n' "$version" > "$package/VERSION"
   printf 'linux-%s\n' "$arch" > "$package/PLATFORM"
   printf 'commit=%s\nworking_tree_dirty=%s\ngo=%s\nsource_date_epoch=%s\n' "$commit" "$dirty" "$actual_go" "$epoch" > "$package/BUILDINFO"
   cp scripts/rewrite/install.sh "$package/install.sh"
   cp scripts/rewrite/README.md "$package/README.txt"
-  chmod 0755 "$package/powerlinux" "$package/install.sh"
+  chmod 0755 "$package/folio" "$package/powerlinux" "$package/install.sh"
   chmod 0644 "$package/VERSION" "$package/PLATFORM" "$package/BUILDINFO" "$package/README.txt"
-  name="powerlinux-$version-linux-$arch.tar.gz"
+  name="folio-$version-linux-$arch.tar.gz"
   tar_args=(-C "$package")
   if tar --help 2>&1 | grep -q -- '--mtime'; then
     tar_args+=(--mtime="@$epoch")
@@ -84,7 +85,7 @@ for arch in "${arch_list[@]}"; do
   if tar --help 2>&1 | grep -q -- '--sort=name'; then
     tar_args+=(--sort=name)
   fi
-  tar "${tar_args[@]}" -cf - BUILDINFO PLATFORM README.txt VERSION install.sh powerlinux | gzip -n > "$output/$name.tmp"
+  tar "${tar_args[@]}" -cf - BUILDINFO PLATFORM README.txt VERSION install.sh folio powerlinux | gzip -n > "$output/$name.tmp"
   mv -f -- "$output/$name.tmp" "$output/$name"
 done
 (
@@ -92,9 +93,9 @@ done
   : > CHECKSUMS.txt.tmp
   for arch in "${arch_list[@]}"; do
     if command -v sha256sum >/dev/null 2>&1; then
-      sha256sum -- "powerlinux-$version-linux-$arch.tar.gz" >> CHECKSUMS.txt.tmp
+      sha256sum -- "folio-$version-linux-$arch.tar.gz" >> CHECKSUMS.txt.tmp
     else
-      shasum -a 256 "powerlinux-$version-linux-$arch.tar.gz" >> CHECKSUMS.txt.tmp
+      shasum -a 256 "folio-$version-linux-$arch.tar.gz" >> CHECKSUMS.txt.tmp
     fi
   done
   mv -f CHECKSUMS.txt.tmp CHECKSUMS.txt

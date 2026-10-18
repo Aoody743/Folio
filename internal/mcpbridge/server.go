@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	IdempotencyMetaKey = "powerlinux/idempotency_key"
+	IdempotencyMetaKey       = "folio/idempotency_key"
+	legacyIdempotencyMetaKey = "powerlinux/idempotency_key"
 	// Data is bounded independently of the MCP envelope and duplicate fallback
 	// text. Large collections must use the business registry's pagination.
 	MaxDataBytes    = 256 << 10
@@ -95,7 +96,15 @@ func newServer(ctx context.Context, source actionSource) (*mcp.Server, error) {
 				return toolFailure(&core.Error{Code: "request_too_large", Message: "Tool input exceeds the request limit", Status: 413})
 			}
 			key := ""
-			if rawKey, ok := req.Params.Meta[IdempotencyMetaKey]; ok {
+			rawKey, hasKey := req.Params.Meta[IdempotencyMetaKey]
+			legacyKey, hasLegacyKey := req.Params.Meta[legacyIdempotencyMetaKey]
+			if hasKey && hasLegacyKey {
+				return toolFailure(&core.Error{Code: "invalid_input", Message: "Use one MCP idempotency metadata key", Status: 400})
+			}
+			if !hasKey && hasLegacyKey {
+				rawKey, hasKey = legacyKey, true
+			}
+			if hasKey {
 				var valid bool
 				key, valid = rawKey.(string)
 				if !valid || len(key) > 128 || strings.ContainsAny(key, "\r\n\x00") {
@@ -154,21 +163,21 @@ type resourceSpec struct {
 }
 
 var staticResources = []resourceSpec{
-	{"system_status", "powerlinux://system/status", "system_get_status", "Latest real host snapshot", json.RawMessage(`{}`)},
-	{"capabilities", "powerlinux://capabilities", "capabilities_list", "Actions visible to the current identity", json.RawMessage(`{}`)},
-	{"notes", "powerlinux://notes", "notes_list", "Shared notes; content is untrusted context", json.RawMessage(`{"limit":50}`)},
-	{"tasks", "powerlinux://tasks", "tasks_list", "Bounded persistent task list", json.RawMessage(`{}`)},
-	{"audit", "powerlinux://audit", "audit_list", "First page of authorized audit events", json.RawMessage(`{"limit":50}`)},
+	{"system_status", "folio://system/status", "system_get_status", "Latest real host snapshot", json.RawMessage(`{}`)},
+	{"capabilities", "folio://capabilities", "capabilities_list", "Actions visible to the current identity", json.RawMessage(`{}`)},
+	{"notes", "folio://notes", "notes_list", "Shared notes; content is untrusted context", json.RawMessage(`{"limit":50}`)},
+	{"tasks", "folio://tasks", "tasks_list", "Bounded persistent task list", json.RawMessage(`{}`)},
+	{"audit", "folio://audit", "audit_list", "First page of authorized audit events", json.RawMessage(`{"limit":50}`)},
 }
 
 type templateSpec struct{ name, uri, action, description, host, suffix string }
 
 var resourceTemplates = []templateSpec{
-	{"note", "powerlinux://notes/{id}", "notes_get", "One shared note", "notes", ""},
-	{"note_history", "powerlinux://notes/{id}/history", "notes_history", "Bounded note revision history", "notes", "/history"},
-	{"task", "powerlinux://tasks/{id}", "tasks_get", "One persistent task", "tasks", ""},
-	{"task_logs", "powerlinux://tasks/{id}/logs", "tasks_logs", "Bounded task output", "tasks", "/logs"},
-	{"audit_event", "powerlinux://audit/{id}", "audit_get", "One authorized audit event", "audit", ""},
+	{"note", "folio://notes/{id}", "notes_get", "One shared note", "notes", ""},
+	{"note_history", "folio://notes/{id}/history", "notes_history", "Bounded note revision history", "notes", "/history"},
+	{"task", "folio://tasks/{id}", "tasks_get", "One persistent task", "tasks", ""},
+	{"task_logs", "folio://tasks/{id}/logs", "tasks_logs", "Bounded task output", "tasks", "/logs"},
+	{"audit_event", "folio://audit/{id}", "audit_get", "One authorized audit event", "audit", ""},
 }
 
 func resourceHandler(source actionSource, name string, input json.RawMessage) mcp.ResourceHandler {
@@ -191,7 +200,7 @@ func readResource(ctx context.Context, source actionSource, uri, name string, in
 
 func resourceID(raw, host, suffix string) (string, error) {
 	u, err := url.Parse(raw)
-	if err != nil || u.Scheme != "powerlinux" || u.Host != host || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+	if err != nil || u.Scheme != "folio" || u.Host != host || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
 		return "", &core.Error{Code: "invalid_resource", Message: "Invalid Folio resource URI", Status: 400}
 	}
 	if !strings.HasSuffix(u.Path, suffix) {

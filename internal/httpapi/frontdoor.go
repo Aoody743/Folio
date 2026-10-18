@@ -122,7 +122,7 @@ func (h *frontdoor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("WWW-Authenticate", "Bearer")
 		}
 	} else {
-		w.Header().Set("WWW-Authenticate", `Basic realm="PowerLinux", charset="UTF-8"`)
+		w.Header().Set("WWW-Authenticate", `Basic realm="Folio", charset="UTF-8"`)
 	}
 	fail(w, &core.Error{Code: "unauthorized", Message: "Entry authentication required", Status: 401})
 }

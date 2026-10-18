@@ -14,7 +14,8 @@ import (
 	"time"
 )
 
-const webGenerationHeader = "X-PowerLinux-Runtime-Generation"
+const webGenerationHeader = "X-Folio-Runtime-Generation"
+const legacyWebGenerationHeader = "X-PowerLinux-Runtime-Generation"
 
 func newWebGeneration() (string, error) {
 	var nonce [16]byte
@@ -51,22 +52,34 @@ func (e *PrivilegedExecutor) renderManagedWebConfiguration(instance Instance, ge
 	if instance.PluginID == "nginx" {
 		nativeTypes = " include /etc/nginx/mime.types;\n"
 	}
-	return fmt.Sprintf("%suser %s %s;\nworker_processes %d;\npid %s;\nerror_log %s warn;\nevents { worker_connections %d; }\nhttp {\n default_type application/octet-stream;\n%s access_log %s;\n client_max_body_size %dm;\n client_body_temp_path %s/client_body 1 2;\n proxy_temp_path %s/proxy 1 2;\n fastcgi_temp_path %s/fastcgi 1 2;\n uwsgi_temp_path %s/uwsgi 1 2;\n scgi_temp_path %s/scgi 1 2;\n server { listen %s; server_name _; location / { default_type text/plain;%s return 200 'PowerLinux %s\\n'; } }\n include %s;\n}\n", nativePackageIncludes, e.config.RunUser, group, setting(instance.Config, "worker_processes", 1), nginxQuote(instance.Paths.RunDir+"/server.pid"), nginxQuote(instance.Paths.LogDir+"/error.log"), setting(instance.Config, "worker_connections", 1024), nativeTypes, nginxQuote(instance.Paths.LogDir+"/access.log"), setting(instance.Config, "client_max_body_size_mb", 20), nginxQuote(instance.Paths.RunDir), nginxQuote(instance.Paths.RunDir), nginxQuote(instance.Paths.RunDir), nginxQuote(instance.Paths.RunDir), nginxQuote(instance.Paths.RunDir), net.JoinHostPort(bind, strconv.Itoa(setting(instance.Config, "port", 18080))), proof, product, nginxQuote(instance.Paths.ConfigDir+"/sites/*.conf"))
+	return fmt.Sprintf("%suser %s %s;\nworker_processes %d;\npid %s;\nerror_log %s warn;\nevents { worker_connections %d; }\nhttp {\n default_type application/octet-stream;\n%s access_log %s;\n client_max_body_size %dm;\n client_body_temp_path %s 1 2;\n proxy_temp_path %s 1 2;\n fastcgi_temp_path %s 1 2;\n uwsgi_temp_path %s 1 2;\n scgi_temp_path %s 1 2;\n server { listen %s; server_name _; location / { default_type text/plain;%s return 200 'Folio %s\\n'; } }\n include %s;\n}\n", nativePackageIncludes, e.config.RunUser, group, setting(instance.Config, "worker_processes", 1), nginxQuote(instance.Paths.RunDir+"/server.pid"), nginxQuote(instance.Paths.LogDir+"/error.log"), setting(instance.Config, "worker_connections", 1024), nativeTypes, nginxQuote(instance.Paths.LogDir+"/access.log"), setting(instance.Config, "client_max_body_size_mb", 20), nginxQuote(instance.Paths.RunDir+"/client_body"), nginxQuote(instance.Paths.RunDir+"/proxy"), nginxQuote(instance.Paths.RunDir+"/fastcgi"), nginxQuote(instance.Paths.RunDir+"/uwsgi"), nginxQuote(instance.Paths.RunDir+"/scgi"), net.JoinHostPort(bind, strconv.Itoa(setting(instance.Config, "port", 18080))), proof, product, nginxQuote(instance.Paths.ConfigDir+"/sites/*.conf"))
 }
 
 // Only the exact protected factory main config is modified. Independent site
 // snippets, including administrator-supplied advanced snippets, stay intact.
 func (e *PrivilegedExecutor) webGeneration(instance Instance, body []byte) (string, error) {
-	if string(body) == e.renderManagedWebConfiguration(instance, "") {
-		return "", nil // Exact owned profile created before generation support.
-	}
-	prefix := " add_header " + webGenerationHeader + " '"
-	_, remainder, ok := strings.Cut(string(body), prefix)
-	if ok {
-		generation, _, found := strings.Cut(remainder, "'")
-		decoded, err := hex.DecodeString(generation)
-		if found && err == nil && len(decoded) == 16 && generation == strings.ToLower(generation) && string(body) == e.renderManagedWebConfiguration(instance, generation) {
-			return generation, nil
+	for _, legacy := range []bool{false, true} {
+		render := e.renderManagedWebConfiguration
+		header := webGenerationHeader
+		if legacy {
+			render = func(instance Instance, generation string) string {
+				body := e.renderManagedWebConfiguration(instance, generation)
+				body = strings.ReplaceAll(body, "Folio ", "PowerLinux ")
+				return strings.ReplaceAll(body, webGenerationHeader, legacyWebGenerationHeader)
+			}
+			header = legacyWebGenerationHeader
+		}
+		if string(body) == render(instance, "") {
+			return "", nil // Exact owned profile created before generation support.
+		}
+		prefix := " add_header " + header + " '"
+		_, remainder, ok := strings.Cut(string(body), prefix)
+		if ok {
+			generation, _, found := strings.Cut(remainder, "'")
+			decoded, err := hex.DecodeString(generation)
+			if found && err == nil && len(decoded) == 16 && generation == strings.ToLower(generation) && string(body) == render(instance, generation) {
+				return generation, nil
+			}
 		}
 	}
 	return "", failure("runtime_profile_unknown", "Web main configuration differs from its owned factory profile; it was preserved", 412)
@@ -86,7 +99,7 @@ func webHealthAddress(instance Instance) string {
 // A healthy old cycle cannot acknowledge a new nonce. Keep-alive is disabled
 // so a connection accepted by an old worker cannot persist across checks.
 func probeWebGeneration(ctx context.Context, address, generation string) error {
-	return probeManagedWebGeneration(ctx, address, generation, "PowerLinux OpenResty\n")
+	return probeManagedWebGeneration(ctx, address, generation, "Folio OpenResty\n")
 }
 
 func probeManagedWebGeneration(ctx context.Context, address, generation, banner string) error {
@@ -159,9 +172,9 @@ func waitWebGeneration(ctx context.Context, instance Instance, master int, gener
 
 func webRuntimeBanner(instance Instance) string {
 	if instance.PluginID == "nginx" {
-		return "PowerLinux Nginx\n"
+		return "Folio Nginx\n"
 	}
-	return "PowerLinux OpenResty\n"
+	return "Folio OpenResty\n"
 }
 
 func (e *PrivilegedExecutor) reloadOpenResty(ctx context.Context, instance Instance) (string, error) {

@@ -39,7 +39,9 @@ are excluded by a checkout-local lock while they refresh/use embedded assets.
 
 `build.sh` constructs the Next static export, copies it into
 `internal/webassets/dist`, and compiles CGO-free Linux amd64/arm64 binaries with
-embedded assets. Packages include a version, platform, source commit and Go
+embedded assets. Each package exposes the `folio` command and includes a
+byte-identical `powerlinux` executable for existing service and upgrade paths.
+Archives are named `folio-VERSION-linux-ARCH.tar.gz`. Packages include a version, platform, source commit and Go
 compiler record, plus an explicit working-tree-dirty flag so an uncommitted
 development build is not represented as the exact commit's code. Deterministic tar timestamps come from `SOURCE_DATE_EPOCH` or
 the current commit. Build output reproducibility is separate from source
@@ -51,16 +53,17 @@ Download and review `install.sh` from a trusted project revision. Obtain the
 artifact hash from a trusted release record before running the installer.
 
 ```sh
-bash scripts/rewrite/install.sh --archive /path/to/powerlinux-VERSION-linux-amd64.tar.gz \
+bash scripts/rewrite/install.sh --archive /path/to/folio-VERSION-linux-amd64.tar.gz \
   --sha256 SHA256_FROM_TRUSTED_RELEASE --prefix /absolute/path/to/powerlinux-test
 ```
 
 For systemd hosts, omit `--prefix` and run the reviewed script as root. A remote
 release can use `--version VERSION --sha256 TRUSTED_HASH`; only project GitHub
-HTTPS release URLs are fetched and TLS checking stays enabled. Release archives
-must contain exactly six regular, flat members; links, unknown files, traversal,
-duplicate members, wrong platforms and hash/version mismatches are rejected
-before installing their executable. A GitHub-published build attestation can be
+HTTPS release URLs are fetched and TLS checking stays enabled. New release
+archives contain exactly seven regular, flat members. Six-member legacy RC
+archives remain accepted and are normalized to include the `folio` command.
+Links, unknown files, traversal, duplicate members, wrong platforms and
+hash/version mismatches are rejected before installing either executable. A GitHub-published build attestation can be
 verified with `--attestation` when a GitHub CLI supporting attestations is present.
 The expected signer workflow is `.github/workflows/rewrite-ci.yml` in this repo.
 CI uploads development packages and provenance; it does not publish a release.
@@ -90,7 +93,7 @@ After installation, inspect `systemctl status powerlinux.service` and run the
 typed health check against the preserved production configuration:
 
 ```sh
-/opt/powerlinux/current/powerlinux healthcheck \
+/opt/powerlinux/current/folio healthcheck \
   --server-config /etc/powerlinux/server.json \
   --expected-version VERSION_FROM_TRUSTED_RELEASE --timeout 3s
 ssh -L 9000:127.0.0.1:9000 your-user@your-server
@@ -250,10 +253,10 @@ ordinary service user so database and encryption-key ownership stay consistent:
 
 ```sh
 systemctl stop powerlinux.service
-runuser -u powerlinux -- /opt/powerlinux/current/powerlinux recover-access \
+runuser -u powerlinux -- /opt/powerlinux/current/folio recover-access \
   --data-dir /var/lib/powerlinux
 systemctl start powerlinux.service
-/opt/powerlinux/current/powerlinux healthcheck \
+/opt/powerlinux/current/folio healthcheck \
   --server-config /etc/powerlinux/server.json \
   --expected-version VERSION_FROM_TRUSTED_RELEASE --timeout 3s
 ```

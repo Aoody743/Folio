@@ -28,14 +28,14 @@ var version = "0.1.0-dev"
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
-		log.Printf("powerlinux: %v", err)
+		log.Printf("Folio: %v", err)
 		os.Exit(1)
 	}
 }
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: powerlinux serve|init|mcp|agent|healthcheck|agent-healthcheck|recover-access|version")
+		return errors.New("usage: folio serve|init|mcp|agent|healthcheck|agent-healthcheck|recover-access|version")
 	}
 	switch args[0] {
 	case "version", "--version":

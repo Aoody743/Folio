@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-18",
+  "product": "Folio",
+  "candidate": {
+    "version": "0.1.0-rc.4",
+    "architecture": "amd64",
+    "sha256": "497fa0e3bdbad31617ecc27361a2012736cecabefc33f950be41bcf542246081",
+    "source_branch": "work",
+    "source_commit": "037b80832fe7e57ebfc08d3a8eef8f655fed70e1",
+    "working_tree_clean": false,
+    "release_status": "local QA candidate; not a frozen release artifact",
+    "archive_path_in_qa_workspace": "/workspace/tools/qa-acceptance/release-candidate-rc4/folio-0.1.0-rc.4-linux-amd64.tar.gz"
+  },
+  "source_checks": {
+    "go_race_tests": "passed: go test -race -count=1 ./...",
+    "mysql_race_tests": "passed: third_party/mysql go test -mod=readonly -race -count=1 ./...",
+    "installer_python_tests": "passed: 33 tests; 2 root-only cases skipped outside the owned VM",
+    "frontend_tests": "passed: 82 tests",
+    "frontend_typecheck": "passed: tsc --noEmit",
+    "production_frontend_build": "passed",
+    "release_package_smoke": "passed: archive validation, install/repeat, health/session, embedded assets, lock, SIGTERM, reinstall and data-preserving uninstall",
+    "qa_harness_python_syntax": "passed: four modified Python harness files compiled"
+  },
+  "targets": {
+    "debian13_amd64": {
+      "environment": "QEMU TCG, systemd PID 1, 2 vCPU, 2 GiB, kernel 6.12.107+deb13-amd64",
+      "api_agent_install_and_policy": "passed",
+      "fresh_repeat_install_and_data_preservation": "passed",
+      "terminal": "passed: 3 real VM tests, including local PTY, MCP/WebSocket shared session and revocation, SSH PTY and host-key rejection",
+      "files": "passed: 4 real VM tests, including identity/scope, unsafe tree rollback, protected paths, HTTP transfer and MCP/history/restart",
+      "upgrade_recovery_rollback": "passed: actual RC3 to RC4 upgrade, interrupted transaction recovery, manual rollback and re-upgrade",
+      "api_agent_reboot": "passed",
+      "managed_nginx": "passed: signed Debian packages installed and managed; service enabled/active after reboot; nginx -t passed; managed HTTP returned 200",
+      "php_install": "failed in the test image during php8.4-common post-install configuration; the image dpkg status database lacks Maintainer/Description metadata for base packages. Retry on a clean official image is required; no release pass is claimed.",
+      "actual_php_site_and_tls": "not tested",
+      "openresty": "not tested",
+      "postgresql_slow_logs": "passed on Debian 13 with RC4 installed: enabled and disabled settings were verified from live pg_settings; 14 records were read; statement, parse, bind and execute record types were observed; selected-database filtering and redaction of bind/literal sentinels passed. Ubuntu remains untested.",
+      "postgresql_cold_install_plan": "no response within 360 seconds on a 2 vCPU/2 GiB QEMU TCG Debian 13 overlay while resolving the exact signed PostgreSQL package plan. The client timed out; package installation was not attempted. A separate RC4-upgraded image with PostgreSQL already installed was used to complete the slow-log behavior test.",
+      "database_selection_backup_restore": "not tested",
+      "resource_baseline": "not tested"
+    },
+    "ubuntu2404_amd64": {
+      "status": "not tested with RC4"
+    }
+  },
+  "release_gates": {
+    "G0": "blocked: dirty source tree; no frozen clean build",
+    "G1": "partial: Debian RC4 live slow-log behavior passed; Ubuntu verification remains untested",
+    "G2": "partial: Debian managed Nginx path passed; PHP failed in the malformed test image; exact PostgreSQL package planning exceeded 360 seconds under 2 vCPU/2 GiB QEMU TCG before install; actual site, OpenResty, Ubuntu and database matrix remain untested",
+    "G3": "partial: real Debian files and terminal paths passed; full web/MCP permission, revocation, task and audit matrix remains incomplete",
+    "G4": "partial: key Debian install, upgrade, recovery, rollback, service restart and data-preserving uninstall paths passed; Ubuntu, PHP recovery, database recovery and performance baseline remain incomplete",
+    "G5": "blocked: G0-G4 are not all complete on one frozen candidate"
+  },
+  "external_evidence": {
+    "directory": "/workspace/tools/qa-acceptance/logs/",
+    "files": [
+      "release-gates-source-tests-cache3-20261018.log",
+      "release-gates-build-rc4-20261018.log",
+      "release-gates-rc4-package-smoke-20261018.log",
+      "release-gates-debian-rc4-clean-install-20261018.log",
+      "release-gates-debian-rc4-agent-install-software-20261018.log",
+      "release-gates-debian-rc4-terminal-20261018.log",
+      "release-gates-debian-rc4-files-20261018-retry.log",
+      "release-gates-debian-rc4-upgrade-20261018.log",
+      "release-gates-debian-rc4-apt-update-20261018.log",
+      "release-gates-debian-rc4-postgresql-slowlog-protocols-20261018.log",
+      "../active-release-test/debian-rc4-postgresql-existing/postgresql-g1-live-rc4-evidence.json"
+    ],
+    "note": "Raw VM logs and private fixtures remain outside the repository; this file contains no credentials."
+  }
+}

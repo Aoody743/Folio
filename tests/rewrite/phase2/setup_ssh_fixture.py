@@ -29,6 +29,7 @@ def main():
         return result.stdout
     identity=remote("cat /proc/1/comm; systemd-detect-virt").decode().splitlines()
     assert identity[:2]==["systemd","qemu"],"Target must be owned actual QEMU/systemd"
+    platform=remote('. /etc/os-release; printf "%s %s\\n" "$ID" "$VERSION_ID"').decode().strip()
     key=base/"id_ed25519"
     if not key.exists():
         subprocess.run(["ssh-keygen","-q","-t","ed25519","-N","","-C","PowerLinux disposable terminal QA","-f",str(key)],check=True,capture_output=True,timeout=30)
@@ -69,7 +70,7 @@ test ! -L "$qa_home/.ssh/authorized_keys"
     path=base/"credentials.json"
     path.write_text(json.dumps(config,indent=2)+"\n")
     path.chmod(0o600)
-    print(json.dumps({"actual_VM":"Ubuntu24.04 QEMU/systemd","actual_daemon":"OpenSSH","key_auth":True,
+    print(json.dumps({"actual_VM":platform+" QEMU/systemd","actual_daemon":"OpenSSH","key_auth":True,
                      "actual_PTY":True,"UID":int(rows[1]),"private_fixture_file":str(path),"sshd_configuration_changed":False,
                      "not_verified":"PowerLinux Agent/terminal/WS/MCP integration"}))
 

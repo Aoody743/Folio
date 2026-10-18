@@ -1,4 +1,4 @@
-# PowerLinux 面板制作文档与设计规范
+# Folio 面板制作文档与设计规范
 
 版本：0.1 · 更新：2026-10-13（Asia/Singapore）· 状态：制作规范，尚未实现界面。
 
@@ -35,7 +35,7 @@
 桌面布局示意：
 
 ```text
-PowerLinux     当前主机 · 在线                  搜索  任务
+Folio          当前主机 · 在线                  搜索  任务
 
 ┌──────────────────────────┬──────────────────────────┐
 │ 主机总览                 │ 共享便签                 │
@@ -130,7 +130,7 @@ PowerLinux     当前主机 · 在线                  搜索  任务
 
 ### 4.4 MCP 映射
 
-新增计划工具：`notes_list`、`notes_get`、`notes_create`、`notes_update`、`notes_archive`、`notes_restore`、`notes_delete`、`notes_history`；读取资源为 `powerlinux://notes/{id}`。永久删除使用独立权限。
+新增计划工具：`notes_list`、`notes_get`、`notes_create`、`notes_update`、`notes_archive`、`notes_restore`、`notes_delete`、`notes_history`；读取资源为 `folio://notes/{id}`。永久删除使用独立权限。
 
 输入带资源范围与版本约束，输出为结构化便签和revision；作者从MCP认证身份生成。提供read/write/archive等可配置权限，授权范围内直接执行，不要求每次编辑都去网页确认。
 
@@ -163,7 +163,7 @@ PowerLinux     当前主机 · 在线                  搜索  任务
 
 ### 5.3 组件
 
-以Astryx为基础，统一Theme、按钮、表单、表格、弹窗、导航和反馈。PowerLinux定义语义token，再映射至Astryx主题和业务CSS模块。
+以Astryx为基础，统一Theme、按钮、表单、表格、弹窗、导航和反馈。Folio定义语义token，再映射至Astryx主题和业务CSS模块。
 
 - 主按钮一个操作区最多一个；其他用次级/文字按钮。
 - 图标统一风格、常用尺寸18/20px；底栏图标与文字共同出现。

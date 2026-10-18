@@ -114,7 +114,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		token := bearerToken(r)
 		actor, err := h.service.AuthenticateTokenForAudience(r.Context(), token, h.options.PublicURL)
 		if token == "" || err != nil {
-			challenge := `Bearer realm="powerlinux"`
+			challenge := `Bearer realm="Folio"`
 			if h.origin != "" {
 				challenge += `, resource_metadata="` + h.origin + `/.well-known/oauth-protected-resource/mcp"`
 			}

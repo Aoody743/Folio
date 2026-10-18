@@ -217,7 +217,7 @@ if [ -f /tmp/dev.tar.gz ];then
 	rm -rf /tmp/dev.tar.gz
 fi
 
-echo "update PowerLinux dev code start"
+echo "update Folio dev code start"
 
 curl --insecure -sSLo /tmp/dev.tar.gz ${HTTP_PREFIX}github.com/${REPO_OWNER}/${REPO_NAME}/archive/refs/heads/${REPO_BRANCH}.tar.gz
 TARBALL_DIR=$(tar -tf /tmp/dev.tar.gz | head -1 | cut -d/ -f1)
@@ -226,7 +226,7 @@ $CP_CMD -rf /tmp/${TARBALL_DIR}/* /www/server/mdserver-web
 rm -rf /tmp/dev.tar.gz
 rm -rf /tmp/${TARBALL_DIR}
 
-echo "update PowerLinux dev code end"
+echo "update Folio dev code end"
 
 
 #pip uninstall public

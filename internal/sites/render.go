@@ -112,7 +112,7 @@ func renderWebsite(site Site, paths renderedPaths, web WebRuntime, fpmAddress st
 		tlsNames = slices.Compact(tlsNames)
 		writeServerHeader(&out, 443, site.Default, site.IPv6, true, tlsNames)
 		fmt.Fprintf(&out, "    ssl_certificate %s;\n    ssl_certificate_key %s;\n    ssl_protocols TLSv1.2 TLSv1.3;\n", nginxString(paths.Certificate), nginxString(paths.PrivateKey))
-		out.WriteString("    ssl_session_cache shared:PowerLinuxTLS:1m;\n    ssl_session_timeout 10m;\n")
+		out.WriteString("    ssl_session_cache shared:FolioTLS:1m;\n    ssl_session_timeout 10m;\n")
 		renderServerBody(&out, site, paths, web, fpmAddress, tag, now)
 		out.WriteString("}\n")
 	}
@@ -278,7 +278,7 @@ func renderHealthHeaders(out *strings.Builder, site Site, paths renderedPaths) {
 	if paths.ParentID != "" {
 		id = paths.ParentID
 	}
-	fmt.Fprintf(out, "    add_header X-PowerLinux-Site %s always;\n    add_header X-PowerLinux-Revision %d always;\n", nginxString(id), site.Revision)
+	fmt.Fprintf(out, "    add_header X-Folio-Site %s always;\n    add_header X-Folio-Revision %d always;\n", nginxString(id), site.Revision)
 	out.WriteString("    location = /.__powerlinux_health { auth_basic off; access_log off; return 204; }\n")
 }
 func renderPool(site Site, paths renderedPaths, worker Identity, web WebRuntime) (string, error) {

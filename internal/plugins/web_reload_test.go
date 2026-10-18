@@ -15,7 +15,7 @@ func TestWebReloadGenerationRejectsHealthyOldCycleAndRedirect(t *testing.T) {
 	requested := strings.Repeat("b", 32)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(webGenerationHeader, old)
-		_, _ = w.Write([]byte("PowerLinux OpenResty\n"))
+		_, _ = w.Write([]byte("Folio OpenResty\n"))
 	}))
 	defer server.Close()
 	address := strings.TrimPrefix(server.URL, "http://")
@@ -29,6 +29,19 @@ func TestWebReloadGenerationRejectsHealthyOldCycleAndRedirect(t *testing.T) {
 	defer redirect.Close()
 	if err := probeWebGeneration(context.Background(), strings.TrimPrefix(redirect.URL, "http://"), old); core.ErrorCode(err) != "reload_not_applied" {
 		t.Fatal("unowned redirected responder acknowledged configuration", err)
+	}
+}
+
+func TestWebMainGenerationAcceptsExactLegacyPowerLinuxProfileForMigration(t *testing.T) {
+	e := testAgent(t)
+	instance := Instance{ID: "openresty-web", PluginID: "openresty", Paths: e.instancePaths("openresty", "web"), Config: defaultConfig("openresty")}
+	generation := strings.Repeat("c", 32)
+	legacy := e.renderManagedWebConfiguration(instance, generation)
+	legacy = strings.ReplaceAll(legacy, "Folio ", "PowerLinux ")
+	legacy = strings.ReplaceAll(legacy, webGenerationHeader, legacyWebGenerationHeader)
+	actual, err := e.webGeneration(instance, []byte(legacy))
+	if err != nil || actual != generation {
+		t.Fatalf("legacy managed profile was not accepted for migration: %q, %v", actual, err)
 	}
 }
 

@@ -198,7 +198,8 @@ class AgentFileTransfers(unittest.TestCase):
         self.assertEqual(self.execute("fs_read", {"root": "host", "path": public}, host)["content"], "controlled public fixture")
         for path in ("var/lib/powerlinux/encryption-key", "var/lib/powerlinux/powerlinux.db",
                      "etc/powerlinux/agent-policy.json", "etc/ssh/ssh_host_ed25519_key"):
-            self.assertEqual(host.post("/api/v1/actions/fs_read", {"root": "host", "path": path})[0], 403)
+            self.assertEqual(host.post("/api/v1/actions/fs_read", {"root": "host", "path": path})[0], 403,
+                             "Protected host path was readable: " + path)
         link = self.shared_path + "/" + self.prefix + "/private-link"
         self.remote("ln -s /var/lib/powerlinux " + shlex.quote(link))
         self.assertEqual(self.api.post("/api/v1/actions/fs_read", {

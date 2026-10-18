@@ -132,7 +132,15 @@ def main():
     remote("systemctl stop powerlinux.service; cat > /etc/powerlinux/server.json",content=(json.dumps(config)+"\n").encode())
     assert config_stat==remote("stat -c '%u %g %a' /etc/powerlinux/server.json").stdout,"QA endpoint update changed trusted configuration ownership/mode"
     remote("systemctl start powerlinux.service",timeout=60)
-    remote("/opt/powerlinux/current/powerlinux healthcheck --server-config /etc/powerlinux/server.json --expected-version "+shlex.quote(version),timeout=45)
+    health_command="/opt/powerlinux/current/powerlinux healthcheck --server-config /etc/powerlinux/server.json --expected-version "+shlex.quote(version)+" --timeout 3s"
+    health_deadline=time.monotonic()+45
+    while True:
+        health=remote(health_command,timeout=12,allowed_failure=True)
+        if health.returncode==0:
+            break
+        if time.monotonic()>=health_deadline:
+            raise AssertionError("Actual production API did not become healthy after systemd start")
+        time.sleep(.2)
     active=remote("systemctl is-active powerlinux.service powerlinux-agent.service; systemctl show powerlinux.service -p User --value; systemctl show powerlinux-agent.service -p User --value; id -u powerlinux; id -u powerlinux-terminal").stdout.decode().splitlines()
     assert active[:4]==["active","active","powerlinux","root"],"Production API/Agent identities or services mismatch"
     assert active[4]!=active[5] and active[5]!="0","Terminal UID must be independent from API/root"

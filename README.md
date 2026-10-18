@@ -1,79 +1,36 @@
-> **新版 `main` 分支**：Folio（折纸面板）是 AI 时代的 Linux 服务器可视化工具。Next.js + Astryx / Go / 原生 MCP 的新版源码和三阶段计划位于本分支。第一阶段已验收，第二阶段进行中，第三阶段尚未开始；当前不是正式发行版。接续开发与上线验收先读 [上线前差距清单](docs/rewrite/LAUNCH-READINESS-20261018.md)、[本地开发交接](docs/rewrite/HANDOFF.md)、[接续 Codex prompt](docs/rewrite/CONTINUE-PROMPT.md) 和 [当前进度](docs/rewrite/PROGRESS.md)。新版构建与安装见 [scripts/rewrite/README.md](scripts/rewrite/README.md)；下方介绍与安装命令属于保留的旧实现。
+# Folio · 折纸面板
 
-<p align="center">
-  <img src="./web/static/logo.png" width="120" alt="PowerLinux 3" />
-</p>
+![Folio](./frontend/public/icon.svg)
 
-# PowerLinux 3.0
+Folio 是一款面向 Linux 服务器的管理面板。它提供主机状态、网站与软件管理、文件与终端、任务记录，以及可与同一权限和审计体系协作的 MCP 接口。
 
-#### 更现代、更统一的 Linux 控制面板
+新版使用 Next.js 静态界面、Go 服务和可选的独立主机执行器。服务器不需要常驻 Node.js、Python 或 AI 模型进程。
 
-PowerLinux 3.0 是 PowerLinux 的第三代界面与体验升级版本。它延续了原有的安装、更新与卸载方式，在不改变使用习惯的前提下，重新梳理了首页、软件、网站、文件、日志与设置等核心页面，让整体视觉更统一，交互更顺手，也更适合浅色 / 深色 / 自定义背景图的使用场景。
+## 当前状态
 
-## 3.0 版本亮点
+当前分支仍处于首发候选阶段，**尚未正式发布**。发行范围、验收结果和未完成门槛见[首发就绪清单](docs/rewrite/LAUNCH-READINESS-20261018.md)。
 
-- 面板默认标题统一为 `PowerLinux 3`
-- 全局视觉语言重做，统一卡片、按钮、状态展示与层级关系
-- 支持浅色 / 深色 / 跟随系统
-- 支持背景图、自定义透明度与更柔和的主题色
-- 首页状态、软件管理、网站管理、文件管理、日志与设置页全面优化
-- 保留原有插件生态与常用命令，不改变安装和升级习惯
-- 更适合长期使用的阅读体验与信息密度
+## 本地开发
 
-## 截图
-
-<img width="2884" height="1680" alt="WX20260505-135644@2x" src="https://github.com/user-attachments/assets/92e088ab-a8b9-40e7-9f36-0b36652cb04e" />
-
-
-
-
-## 安装 / 更新 / 卸载
-
-
-- **一键安装**
-
-```bash
-bash <(curl --insecure -fsSL https://cdn.jsdelivr.net/gh/AndyXeCM/PowerLinux@main/scripts/install.sh)
+```sh
+make rewrite-deps
+make rewrite-test
+make rewrite-build REWRITE_VERSION=dev
+make rewrite-dev
 ```
 
-- **更新**
+构建、安装、升级和恢复说明见[新版构建与安装手册](scripts/rewrite/README.md)。正式发行前，请勿将开发构建安装到生产主机。
 
-```bash
-bash <(curl --insecure -fsSL https://cdn.jsdelivr.net/gh/AndyXeCM/PowerLinux@main/scripts/update.sh)
-```
+## 产品文档
 
-- **卸载**
+- [开发计划](docs/rewrite/DEVELOPMENT-PLAN.md)
+- [上线前差距清单](docs/rewrite/LAUNCH-READINESS-20261018.md)
+- [MCP 接入设计](docs/rewrite/AI-NATIVE-MCP.md)
+- [界面设计规范](docs/rewrite/UI-SPEC.md)
+- [本地开发交接](docs/rewrite/HANDOFF.md)
 
-```bash
-wget --no-check-certificate -O uninstall.sh https://cdn.jsdelivr.net/gh/AndyXeCM/PowerLinux@main/scripts/uninstall.sh && bash uninstall.sh
-```
-
-## 文档入口
-
-- [兼容性测试报告](./compatibility.md)
-- [常用命令说明](./cmd.md)
-
-## 生态说明
-
-PowerLinux 3.0 继续兼容原有插件体系，常用能力包括但不限于：
-
-- OpenResty
-- PHP
-- MySQL / MariaDB
-- MongoDB
-- PostgreSQL
-- Redis
-- Memcached
-- phpMyAdmin
-- Docker
-- 其他第三方插件
-
-欢迎继续通过 Issue 和 Pull Request 补充插件、修复问题和优化体验。
-
-## 致谢
-
-PowerLinux 3.0 基于 MWPanel 继续演进而来，由于需要被搜索的原因，现已脱离原项目fork分支，感谢原项目贡献！
+仓库仍包含上一代实现和安装兼容标识；新版界面、产品名称及新发行命令统一使用 **Folio**。兼容标识不作为产品展示名称。
 
 ## License
 
-本项目采用 Apache 开源授权许可证，完整授权说明请见 [LICENSE](./LICENSE)。
+本项目采用 Apache License 2.0，详见 [LICENSE](./LICENSE)。

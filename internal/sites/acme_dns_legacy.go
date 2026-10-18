@@ -449,7 +449,7 @@ func (p *legacyDNSClient) request(ctx context.Context, method string, endpoint *
 	if request.Header == nil {
 		request.Header = make(http.Header)
 	}
-	request.Header.Set("User-Agent", "PowerLinux/2 DNS (https://github.com/Aoody743/PowerLinux)")
+	request.Header.Set("User-Agent", "Folio/2 DNS (https://github.com/Aoody743/Folio)")
 	response, err := p.http.Do(request)
 	if err != nil {
 		if ctx.Err() != nil {

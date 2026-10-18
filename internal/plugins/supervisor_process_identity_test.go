@@ -26,6 +26,14 @@ func startSupervisorProcessFixture(t *testing.T, argsForConfig func(string) []st
 	if err != nil {
 		t.Skip("Python 3 interpreter is unavailable")
 	}
+	interpreterInfo, err := os.Stat(interpreter)
+	if err != nil {
+		t.Skip("Python 3 interpreter cannot be inspected")
+	}
+	interpreterOwner, ok := statOf(interpreterInfo)
+	if !ok || interpreterOwner.Uid != 0 {
+		t.Skip("trusted process identity fixtures require a root-owned Python interpreter")
+	}
 	if filepath.Dir(interpreter) != "/usr/bin" {
 		t.Skip("host Python interpreter is outside the Debian trusted path")
 	}

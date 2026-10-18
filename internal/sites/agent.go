@@ -492,7 +492,7 @@ func (e *AgentExecutor) identity(ctx context.Context, id string) (Identity, erro
 	}
 	name := "plsite_" + siteTag(id)
 	if _, err = user.Lookup(name); err == nil {
-		return owned, failure("identity_conflict", "Website identity exists without a PowerLinux ownership receipt", 409)
+		return owned, failure("identity_conflict", "Website identity exists without a Folio ownership receipt", 409)
 	} else if !isUnknownUserError(err) {
 		return owned, err
 	}

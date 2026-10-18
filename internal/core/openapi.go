@@ -15,7 +15,7 @@ func (s *Service) OpenAPI(actor Actor) map[string]any {
 		}
 		paths["/api/v1/actions/"+action.Name] = map[string]any{"post": operation}
 	}
-	return map[string]any{"openapi": "3.1.0", "info": map[string]any{"title": "PowerLinux shared action API", "version": "0.2.0-dev"}, "paths": paths, "components": map[string]any{"securitySchemes": map[string]any{"bearerAuth": map[string]any{"type": "http", "scheme": "bearer"}, "sessionCookie": map[string]any{"type": "apiKey", "in": "cookie", "name": "pl_session", "description": "Cookie writes also require X-CSRF-Token"}}, "schemas": map[string]any{"ErrorEnvelope": map[string]any{"type": "object", "required": []string{"error"}, "properties": map[string]any{"error": map[string]any{"type": "object", "required": []string{"code", "message"}, "properties": map[string]any{"code": str(), "message": str(), "details": map[string]any{}}}}}}}}
+	return map[string]any{"openapi": "3.1.0", "info": map[string]any{"title": "Folio shared action API", "version": "0.2.0-dev"}, "paths": paths, "components": map[string]any{"securitySchemes": map[string]any{"bearerAuth": map[string]any{"type": "http", "scheme": "bearer"}, "sessionCookie": map[string]any{"type": "apiKey", "in": "cookie", "name": "pl_session", "description": "Cookie writes also require X-CSRF-Token"}}, "schemas": map[string]any{"ErrorEnvelope": map[string]any{"type": "object", "required": []string{"error"}, "properties": map[string]any{"error": map[string]any{"type": "object", "required": []string{"code", "message"}, "properties": map[string]any{"code": str(), "message": str(), "details": map[string]any{}}}}}}}}
 }
 
 // StatusSnapshot is for trusted internal background samplers, without inventing

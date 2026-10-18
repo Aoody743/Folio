@@ -551,7 +551,7 @@ func (s *Service) BeginTOTP(ctx context.Context, a Actor, password, otp string) 
 	if _, e = s.db.ExecContext(ctx, "UPDATE users SET totp_pending=? WHERE id=?", encrypted, a.ID); e != nil {
 		return TOTPEnrollment{}, internal()
 	}
-	uri := "otpauth://totp/" + url.PathEscape("PowerLinux:"+a.Name) + "?secret=" + secret + "&issuer=PowerLinux&algorithm=SHA1&digits=6&period=30"
+	uri := "otpauth://totp/" + url.PathEscape("Folio:"+a.Name) + "?secret=" + secret + "&issuer=Folio&algorithm=SHA1&digits=6&period=30"
 	return TOTPEnrollment{secret, uri}, nil
 }
 func (s *Service) ConfirmTOTP(ctx context.Context, a Actor, code string) error {

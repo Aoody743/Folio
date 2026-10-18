@@ -157,7 +157,7 @@ func (e *AgentExecutor) acmeClient(ctx context.Context, in ACMEInput) (*acme.Cli
 	if err != nil {
 		return nil, err
 	}
-	client := &acme.Client{Key: key, DirectoryURL: in.Server, HTTPClient: &http.Client{Timeout: 30 * time.Second}, UserAgent: "PowerLinux"}
+	client := &acme.Client{Key: key, DirectoryURL: in.Server, HTTPClient: &http.Client{Timeout: 30 * time.Second}, UserAgent: "Folio"}
 	if e.acmeHTTPClient != nil {
 		client.HTTPClient = e.acmeHTTPClient
 	}

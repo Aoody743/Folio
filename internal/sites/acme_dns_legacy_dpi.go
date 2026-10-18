@@ -68,7 +68,7 @@ func (d *legacyDPIBackend) call(ctx context.Context, action string, form url.Val
 	form.Set(d.authField, d.client.options.Credentials["DPI_Id"]+","+d.client.options.Credentials["DPI_Key"])
 	form.Set("format", "json")
 	form.Set("error_on_empty", "yes")
-	data, _, err := d.client.request(ctx, http.MethodPost, &endpoint, http.Header{"Content-Type": {"application/x-www-form-urlencoded"}, "Accept": {"application/json"}, "User-Agent": {"PowerLinux/1.0 (https://github.com/Aoody743/PowerLinux)"}}, []byte(form.Encode()))
+	data, _, err := d.client.request(ctx, http.MethodPost, &endpoint, http.Header{"Content-Type": {"application/x-www-form-urlencoded"}, "Accept": {"application/json"}, "User-Agent": {"Folio/1.0 (https://github.com/Aoody743/Folio)"}}, []byte(form.Encode()))
 	var response legacyDPIResponse
 	if err != nil {
 		return response, err

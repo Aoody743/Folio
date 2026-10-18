@@ -57,7 +57,7 @@ var phpCLIFunctions = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*(,[A-Za-z_][A-Z
 
 func phpCLIQuote(value string) string { return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'" }
 func phpCLIWrapper(program, selection string) []byte {
-	return []byte("#!/bin/sh\n# PowerLinux owned PHP CLI entry point.\nunset PHPRC\nPHP_INI_SCAN_DIR=" + phpCLIQuote(filepath.Join(selection, "conf.d")) + "\nexport PHP_INI_SCAN_DIR\nexec " + phpCLIQuote(program) + " -c " + phpCLIQuote(filepath.Join(selection, "php.ini")) + " \"$@\"\n")
+	return []byte("#!/bin/sh\n# Folio owned PHP CLI entry point.\nunset PHPRC\nPHP_INI_SCAN_DIR=" + phpCLIQuote(filepath.Join(selection, "conf.d")) + "\nexport PHP_INI_SCAN_DIR\nexec " + phpCLIQuote(program) + " -c " + phpCLIQuote(filepath.Join(selection, "php.ini")) + " \"$@\"\n")
 }
 func phpCLIDigest(data []byte) string { sum := sha256.Sum256(data); return hex.EncodeToString(sum[:]) }
 

@@ -949,7 +949,7 @@ function formatVipRemain(seconds) {
 function showVipInfo() {
     var expireAt = new Date('2038-01-19T03:14:07+08:00').getTime();
     var content = '<div class="pd20" style="line-height:1.9;">' +
-        '<div style="font-size:18px;font-weight:600;color:' + MW_STAT_SUCCESS + ';">PowerLinux 3 · 永久尊享</div>' +
+        '<div style="font-size:18px;font-weight:600;color:' + MW_STAT_SUCCESS + ';">Folio · 永久尊享</div>' +
         '<div style="margin-top:8px;color:#666;">您已经是永久VIP，感谢长期支持。</div>' +
         '<hr style="margin:12px 0;">' +
         '<div><b>会员到期时间：</b>2038年1月19日03:14:07</div>' +
@@ -967,7 +967,7 @@ function showVipInfo() {
 
     layer.open({
         type: 1,
-        title: 'PowerLinux 3 会员信息',
+        title: 'Folio 会员信息',
         area: ['520px', '430px'],
         closeBtn: 1,
         icon: 1,

@@ -60,7 +60,7 @@ func New(dataDir string) (*Service, error) {
 		return nil, err
 	}
 	if abs == "/" || abs == "/tmp" || abs == "/workspace" {
-		return nil, errors.New("choose a dedicated private PowerLinux data directory")
+		return nil, errors.New("choose a dedicated private Folio data directory")
 	}
 	if err := os.MkdirAll(dataDir, 0700); err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func New(dataDir string) (*Service, error) {
 		return nil, errors.New("data directory cannot be a symlink")
 	}
 	if info.Mode().Perm()&0077 != 0 {
-		return nil, errors.New("PowerLinux data directory must be private (0700)")
+		return nil, errors.New("Folio data directory must be private (0700)")
 	}
 	key, err := loadOrCreateSecret(filepath.Join(abs, "encryption-key"), 32)
 	if err != nil {
@@ -122,7 +122,7 @@ func New(dataDir string) (*Service, error) {
 	workspaceInfo, err := os.Lstat(workspace)
 	if err != nil || !workspaceInfo.IsDir() || workspaceInfo.Mode()&os.ModeSymlink != 0 || workspaceInfo.Mode().Perm()&0077 != 0 {
 		db.Close()
-		return nil, errors.New("workspace must be a private real directory inside PowerLinux data")
+		return nil, errors.New("workspace must be a private real directory inside Folio data")
 	}
 	fs, err := agent.NewFilesystem([]agent.RootSpec{{ID: "workspace", Path: workspace}}, 8<<20)
 	if err != nil {

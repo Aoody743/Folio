@@ -1170,7 +1170,7 @@ func systemdUnitBytes(e *PrivilegedExecutor, instance Instance, nonce string) ([
 	for _, variable := range runtimeEnvironment(instance) {
 		environment += "Environment=" + unitQuote(variable) + "\n"
 	}
-	unit := "[Unit]\nDescription=PowerLinux managed " + instance.ID + "\nAfter=network.target\n[Service]\nType=simple\n" + identity + environment + "ExecStart=" + command + "\n" + reload + "Restart=on-failure\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(instance.Paths.Root) + " -/srv/powerlinux-sites\n[Install]\nWantedBy=multi-user.target\n"
+	unit := "[Unit]\nDescription=Folio managed " + instance.ID + "\nAfter=network.target\n[Service]\nType=simple\n" + identity + environment + "ExecStart=" + command + "\n" + reload + "Restart=on-failure\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(instance.Paths.Root) + " -/srv/powerlinux-sites\n[Install]\nWantedBy=multi-user.target\n"
 	if nonce != "" {
 		unit += "# PowerLinux install journal nonce: " + nonce + "\n"
 	}

@@ -122,7 +122,7 @@ def getServerInfo():
     import urllib.request
     import ssl
     headers = {
-        'User-Agent': 'PowerLinux-Updater/1.0',
+        'User-Agent': 'Folio-Updater/1.0',
         'Accept': 'application/vnd.github+json',
     }
     upAddrList = [PANEL_RELEASE_API, PANEL_RELEASE_PAGE]

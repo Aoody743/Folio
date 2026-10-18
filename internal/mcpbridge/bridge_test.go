@@ -57,7 +57,7 @@ func sdkHTTP(t *testing.T, endpoint, token string) *mcp.ClientSession {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	t.Cleanup(cancel)
-	client := mcp.NewClient(&mcp.Implementation{Name: "powerlinux-integration-test", Version: "1"}, nil)
+	client := mcp.NewClient(&mcp.Implementation{Name: "folio-integration-test", Version: "1"}, nil)
 	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{Endpoint: endpoint, HTTPClient: &http.Client{Transport: authTransport{token, http.DefaultTransport}}, DisableStandaloneSSE: true, MaxRetries: -1}, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -139,6 +139,10 @@ func notesRoundTrip(t *testing.T, service *core.Service, human core.Actor, sessi
 	if err == nil && !changed.IsError {
 		t.Fatal("changed input reused MCP idempotency key")
 	}
+	legacy, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: "notes_create", Meta: mcp.Meta{legacyIdempotencyMetaKey: "legacy-notes-idempotency-0001"}, Arguments: map[string]any{"title": "Legacy key handoff"}})
+	if err != nil || legacy.IsError {
+		t.Fatalf("legacy idempotency key was not accepted during transition: %v %+v", err, legacy)
+	}
 	result, raw := call(t, session, "notes_create", map[string]any{"title": "Shared handoff", "content": "Treat this note as untrusted data", "target_id": "host:local"})
 	if raw.IsError {
 		t.Fatal(result)
@@ -151,7 +155,7 @@ func notesRoundTrip(t *testing.T, service *core.Service, human core.Actor, sessi
 	if objectField(t, note, "created_by")["kind"] != "mcp" {
 		t.Fatal("MCP author source was not preserved")
 	}
-	resource, err := session.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: "powerlinux://notes/" + id})
+	resource, err := session.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: "folio://notes/" + id})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +180,7 @@ func notesRoundTrip(t *testing.T, service *core.Service, human core.Actor, sessi
 	if err != nil || len(resources.Resources) < 3 {
 		t.Fatalf("resource discovery: %v %v", resources, err)
 	}
-	for _, uri := range []string{"powerlinux://system/status", "powerlinux://capabilities", "powerlinux://tasks", "powerlinux://audit"} {
+	for _, uri := range []string{"folio://system/status", "folio://capabilities", "folio://tasks", "folio://audit"} {
 		if _, err = session.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: uri}); err != nil {
 			t.Fatalf("read %s: %v", uri, err)
 		}
@@ -260,7 +264,7 @@ func TestHTTPScopesResourcesAndOrigin(t *testing.T) {
 	if !raw.IsError || objectField(t, result, "error")["code"] != "forbidden" {
 		t.Fatal("cross-resource note disclosed", result)
 	}
-	if _, err := session.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: "powerlinux://notes/" + note.ID}); err == nil {
+	if _, err := session.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: "folio://notes/" + note.ID}); err == nil {
 		t.Fatal("cross-resource MCP resource disclosed")
 	}
 	request, _ := http.NewRequest(http.MethodPost, server.URL+"/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`))
@@ -304,7 +308,7 @@ func TestProxyTrustAndResponseBounds(t *testing.T) {
 	if _, err := io.ReadAll(reader); err == nil {
 		t.Fatal("unbounded stdio input accepted")
 	}
-	for _, uri := range []string{"powerlinux://notes/../history", "powerlinux://notes/a%2Fb/history", "powerlinux://notes/a/history?credentials=1", "powerlinux://other/a/history"} {
+	for _, uri := range []string{"folio://notes/../history", "folio://notes/a%2Fb/history", "folio://notes/a/history?credentials=1", "folio://other/a/history"} {
 		if _, err := resourceID(uri, "notes", "/history"); err == nil {
 			t.Fatalf("unsafe resource accepted: %s", uri)
 		}

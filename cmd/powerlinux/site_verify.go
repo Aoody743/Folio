@@ -97,7 +97,15 @@ func (r siteRuntimes) VerifySite(ctx context.Context, site sites.Site) error {
 				}
 				response, err := client.Do(request)
 				if err == nil {
-					matched = response.Header.Get("X-PowerLinux-Site") == site.ID && response.Header.Get("X-PowerLinux-Revision") == strconv.FormatInt(site.Revision, 10)
+					siteHeader := response.Header.Get("X-Folio-Site")
+					if siteHeader == "" {
+						siteHeader = response.Header.Get("X-PowerLinux-Site") // Older generated sites remain manageable during upgrade.
+					}
+					revisionHeader := response.Header.Get("X-Folio-Revision")
+					if revisionHeader == "" {
+						revisionHeader = response.Header.Get("X-PowerLinux-Revision")
+					}
+					matched = siteHeader == site.ID && revisionHeader == strconv.FormatInt(site.Revision, 10)
 					// Advanced configuration is explicitly authorized root code. Its
 					// headers are user controlled; TLS still must serve the exact leaf.
 					if site.ConfigurationMode == "advanced" {

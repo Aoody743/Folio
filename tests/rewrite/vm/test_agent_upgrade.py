@@ -84,9 +84,11 @@ class Acceptance:
             raise RuntimeError("Candidate archive failed the independently supplied trusted SHA256")
         with tarfile.open(self.archive, "r:gz") as package:
             members = package.getmembers()
-            expected = {"powerlinux", "VERSION", "PLATFORM", "install.sh", "BUILDINFO", "README.txt"}
-            if len(members) != 6 or {m.name for m in members} != expected or not all(m.isfile() for m in members):
-                raise RuntimeError("Candidate must have exactly six distinct flat regular release files")
+            expected = {"folio", "powerlinux", "VERSION", "PLATFORM", "install.sh", "BUILDINFO", "README.txt"}
+            if len(members) != 7 or {m.name for m in members} != expected or not all(m.isfile() for m in members):
+                raise RuntimeError("Candidate must have exactly seven distinct flat regular Folio release files")
+            if package.extractfile("folio").read() != package.extractfile("powerlinux").read():
+                raise RuntimeError("Folio command differs from the compatibility executable")
             self.version = package.extractfile("VERSION").read().decode().strip()
             if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,100}", self.version):
                 raise RuntimeError("Unsafe candidate version")

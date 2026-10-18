@@ -9,4 +9,4 @@ SHA256 verification, privately extracted without enabling a global nft service.
 The test normalizes only the temporary table/comment names. Actual kernel
 expression JSON remains unchanged. This catches nft's direct state-list format
 and is evidence for parser compatibility; it does not establish an end-to-end
-PowerLinux firewall installation/confirmation/reboot test.
+Folio firewall installation/confirmation/reboot test.

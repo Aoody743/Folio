@@ -11,7 +11,7 @@ import (
 )
 
 const phpHealthPath = "/powerlinux-health"
-const phpHealthResponse = "PowerLinux PHP-FPM"
+const phpHealthResponse = "Folio PHP-FPM"
 
 func fastCGIRecord(kind byte, data []byte) []byte {
 	record := make([]byte, 8+len(data))

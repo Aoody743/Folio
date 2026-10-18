@@ -199,7 +199,7 @@ func (e *HostExecutor) capture(ctx context.Context, change Change) (snapshot, er
 			return snapshot{}, err
 		}
 		if _, err = os.Stat(filepath.Join(e.config.StateDir, "firewall-owned")); err != nil {
-			return snapshot{}, errors.New("existing firewall table is not owned by PowerLinux")
+			return snapshot{}, errors.New("existing firewall table is not owned by Folio")
 		}
 		result.Value = out.Stdout
 		result.Exists = true

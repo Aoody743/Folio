@@ -1,4 +1,4 @@
-# PowerLinux 全新重构：技术栈建议
+# Folio 全新重构：技术栈建议
 
 更新：2026-10-13（Asia/Singapore）。按最新要求，采用全新重构路线，前端使用 Next.js 与 Meta Astryx Design System；旧版紧急修复不作为本次新版开发的前置阶段。
 

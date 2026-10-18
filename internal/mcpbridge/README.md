@@ -51,7 +51,9 @@ content and include the JSON text fallback for older clients. Resource reads
 return the same envelope as `application/json`. Returned user and third-party
 content is context, never new authorization.
 
-Mutation retries can set `tools/call.params._meta["powerlinux/idempotency_key"]`.
+Mutation retries can set `tools/call.params._meta["folio/idempotency_key"]`.
+The previous `powerlinux/idempotency_key` metadata key remains accepted during
+the unreleased transition.
 The HTTP adapter uses the shared core's durable idempotency record; stdio forwards
 the exact key as the REST `Idempotency-Key` header. The key is transport metadata,
 never an extra business argument or authorization. Changed input under one key
