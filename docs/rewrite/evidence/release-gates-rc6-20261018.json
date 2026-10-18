@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-18",
+  "product": "Folio",
+  "candidate": {
+    "version": "0.1.0-rc.6",
+    "architecture": "amd64",
+    "sha256": "290b4465b04f9506812f63c58163c5614abdc4c2373476fda2baa1130b887d7a",
+    "source_branch": "work",
+    "source_commit": "0da6e18473815301621f862bf543fe49ed9d9f3a",
+    "descends_from_current_github_main": true,
+    "working_tree_clean_at_build": true,
+    "release_status": "local reproducible QA candidate; G1-G5 are not all complete; not published",
+    "archive_path_in_qa_workspace": "/workspace/tools/qa-acceptance/release-candidate-rc6/folio-0.1.0-rc.6-linux-amd64.tar.gz",
+    "build_info": {
+      "go": "1.27.2",
+      "source_date_epoch": 1792331229,
+      "byte_for_byte_rebuild_comparison": "passed: independently rebuilt from the same clean commit; SHA-256 and archive bytes match"
+    }
+  },
+  "source_checks": {
+    "go_race_tests": "passed: go test -mod=readonly -race -p 2 -count=1 ./...",
+    "mysql_driver_race_tests": "passed: go -C third_party/mysql test -mod=readonly -race -p 2 -count=1 ./...",
+    "installer_python_tests": "passed: 33 tests; two root-owned policy cases skipped outside the guest",
+    "frontend_tests": "passed: 82 tests",
+    "frontend_typecheck": "passed: npm run typecheck --prefix frontend",
+    "release_package_smoke": "passed: checksum/archive validation, install and repeat, HTTP health/session, embedded assets, live lock, SIGTERM, reinstall and data-preserving uninstall",
+    "source_test_log": "/workspace/tools/qa-acceptance/logs/release-gates-source-tests-rc6-final-20261018.log"
+  },
+  "targets": {
+    "debian13_amd64": {
+      "environment": "isolated Debian 13 QEMU TCG guest, 2 vCPU, 2 GiB; managed PostgreSQL instance already present",
+      "rc6_upgrade": "passed from RC5 using the exact RC6 archive hash; API and privileged Agent active at 0.1.0-rc.6; existing Agent policy preserved and healthcheck passed",
+      "postgresql_slow_logs": {
+        "result": "passed",
+        "record_type_counts": {"bind": 5, "execute": 3, "parse": 6, "statement": 4},
+        "database_filter": "passed",
+        "literal_and_bind_redaction": "passed",
+        "disable_and_reload_settled": "passed",
+        "external_evidence": "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/postgresql-g1-live-rc6-evidence.json",
+        "external_log": "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/postgresql-g1-protocols-rc6.log"
+      },
+      "agent_files": "passed: 4/4 actual Agent filesystem REST/MCP tests, including scope boundaries, unsafe symlinks, HTTP range/chunk transfers, history, task/audit identity and restart persistence",
+      "database_backup_restore": {
+        "result": "passed",
+        "test_database": "rc6backupqa",
+        "canary_restored": true,
+        "backup_bytes": 1930,
+        "backup_sha256": "3736f04b5ad17be9a6da73874947d7e92bc269c9d0e13f8fb5859c9a3501600f",
+        "external_evidence": "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/database-backup-restore-rc6.json"
+      },
+      "nginx_php_and_mysql": "not verified on RC6 in this Debian guest"
+    },
+    "ubuntu2404_amd64": {
+      "environment": "Ubuntu 24.04 amd64 OCI-derived systemd guest, QEMU TCG, 2 vCPU, 2 GiB; not a clean official Ubuntu cloud image",
+      "rc6_upgrade": "passed from RC5 using the exact RC6 archive hash; API and Agent active at 0.1.0-rc.6; existing policy preserved and healthcheck passed",
+      "agent_files": "passed: 4/4 actual Agent filesystem REST/MCP tests",
+      "terminal": "passed: 3/3 actual local/OpenSSH PTY, MCP/WebSocket sharing, revocation, host-key rejection and audit-redaction tests",
+      "full_reboot": {
+        "result": "API and Agent active and healthy; OpenResty active/enabled; managed HTTP returned 200; OpenResty config valid",
+        "fixture_adjustment": "The OCI-derived guest lacked /bin/sleep although /usr/bin/sleep existed. Added the conventional symlink in the disposable guest, then repeated a full guest reboot.",
+        "external_evidence": "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/evidence-rc6.json"
+      },
+      "nginx": "Managed Nginx installation and HTTP 200 were verified on RC5; not repeated on RC6",
+      "php": "blocked: PHP/Sury plan returned HTTP 412 for package signature/network failure; actual PHP site and TLS not tested",
+      "postgresql_and_mysql": "blocked: Ubuntu software plans returned HTTP 412 unsupported_platform; Ubuntu database install and G1 matrix not available",
+      "openresty": "RC6 guest reboot and service recovery passed after the documented fixture repair; its signed source was manually configured in the disposable guest",
+      "external_logs": [
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/test-agent-files-rc6.log",
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/test-terminal-rc6.log",
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/rc6-post-reboot-final.log",
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/php-plan-rc5.json",
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/web-database-plans-rc5.json"
+      ]
+    }
+  },
+  "release_gates": {
+    "G0": "passed for the local amd64 candidate: clean build, full source checks, package smoke and byte-for-byte reproducible rebuild passed; source commit descends from current GitHub main",
+    "G1": "partial: Debian 13 RC6 slow-log protocols passed; Ubuntu database plans are unsupported_platform, so Ubuntu G1 remains unverified",
+    "G2": "blocked: Ubuntu PHP source/network failure, Ubuntu PostgreSQL/MySQL unsupported_platform, no PHP site/TLS, and no official clean Ubuntu cloud-image run; Nginx was tested on RC5 rather than RC6",
+    "G3": "partial: RC6 files passed on Debian and Ubuntu; RC6 terminal passed on Ubuntu; broader web/MCP authorization, task, revocation and audit matrix remains incomplete",
+    "G4": "partial: RC6 upgrades and Ubuntu reboot passed; Debian PostgreSQL backup/restore passed; RC6 rollback, interrupted-upgrade recovery, data-preserving uninstall and performance baseline remain outstanding",
+    "G5": "blocked: G1-G4 are not complete on one final candidate"
+  },
+  "branch_transition": {
+    "requested": "After acceptance, preserve the prior GitHub main as legacy and promote this candidate to main",
+    "current_github_main": "037b80832fe7e57ebfc08d3a8eef8f655fed70e1",
+    "legacy_branch_exists_on_origin": false,
+    "executed": false,
+    "reason": "Acceptance is conditional and G1-G5 have not all passed; no remote branch was written"
+  },
+  "external_evidence": {
+    "directory": "/workspace/tools/qa-acceptance/active-release-test/",
+    "note": "VM images, raw serial logs, QA credentials and private fixtures remain outside Git; this record contains no credentials."
+  }
+}
