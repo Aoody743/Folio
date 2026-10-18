@@ -24,6 +24,7 @@ go_bin=${GO_BIN:-go}
 required_go=$(awk '$1 == "go" { print $2 }' go.mod)
 actual_go=$("$go_bin" version | awk '{ sub(/^go/, "", $3); print $3 }')
 [[ "$actual_go" == "$required_go" ]] || { printf 'Use Go %s (found %s)\n' "$required_go" "$actual_go" >&2; exit 1; }
+commit=$(git rev-parse HEAD)
 cache=${POWERLINUX_BUILD_CACHE:-$root/.cache/rewrite}
 parallelism=${POWERLINUX_BUILD_PARALLELISM:-2}
 [[ "$parallelism" =~ ^([1-9]|[12][0-9]|3[0-2])$ ]] || { echo 'POWERLINUX_BUILD_PARALLELISM must be 1..32' >&2; exit 2; }
@@ -45,14 +46,13 @@ fi
 if (( !skip_frontend )); then
   if (( !skip_install )); then npm ci --prefix frontend --cache "$cache/npm" --no-audit --no-fund; fi
   npm run typecheck --prefix frontend
-  NEXT_TELEMETRY_DISABLED=1 npm run build --prefix frontend
+  NEXT_BUILD_ID="$commit" NEXT_TELEMETRY_DISABLED=1 npm run build --prefix frontend
 fi
 [[ -s frontend/out/index.html ]] || { echo 'Build frontend/out first; placeholder UI cannot be packaged' >&2; exit 1; }
 mkdir -p internal/webassets/dist
 # Only this owned generated asset directory is refreshed, never the checkout.
 find internal/webassets/dist -mindepth 1 -maxdepth 1 ! -name README.txt -exec rm -rf -- {} +
 cp -a frontend/out/. internal/webassets/dist/
-commit=$(git rev-parse HEAD)
 dirty=true
 if [[ -z $(git status --porcelain --untracked-files=normal) ]]; then dirty=false; fi
 epoch=${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD)}
