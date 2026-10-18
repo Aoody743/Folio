@@ -1,0 +1,104 @@
+{
+  "platform": "Ubuntu 24.04 amd64 official cloud image",
+  "virtualization": "QEMU TCG",
+  "candidate_version": "0.1.0-rc.15",
+  "candidate_sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
+  "postgresql_instance": "postgresql-g1qa4",
+  "postgresql_version": null,
+  "postgresql_port": 18433,
+  "package_source": "distribution",
+  "packages": [
+    {
+      "name": "postgresql",
+      "version": "16+257build1.1",
+      "architecture": "all",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "postgresql-client",
+      "version": "16+257build1.1",
+      "architecture": "all",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "libjson-perl",
+      "version": "4.10000-1",
+      "architecture": "all",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "libllvm17t64",
+      "version": "1:17.0.6-9ubuntu1",
+      "architecture": "amd64",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "libpq5",
+      "version": "16.15-0ubuntu0.24.04.1",
+      "architecture": "amd64",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "postgresql-16",
+      "version": "16.15-0ubuntu0.24.04.1",
+      "architecture": "amd64",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "postgresql-client-16",
+      "version": "16.15-0ubuntu0.24.04.1",
+      "architecture": "amd64",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "postgresql-client-common",
+      "version": "257build1.1",
+      "architecture": "all",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "postgresql-common",
+      "version": "257build1.1",
+      "architecture": "all",
+      "repository": "http://archive.ubuntu.com"
+    },
+    {
+      "name": "ssl-cert",
+      "version": "1.1.2ubuntu1",
+      "architecture": "all",
+      "repository": "http://archive.ubuntu.com"
+    }
+  ],
+  "initial_slowlog_state": "settled",
+  "enable": {
+    "enabled": true,
+    "minimum_duration_ms": 1,
+    "configuration_state": "settled",
+    "reload_applied": true
+  },
+  "live_query_records": 15,
+  "redacted_bind_and_literal_sentinels": true,
+  "managed_database_connection_profile_used": true,
+  "disable": {
+    "enabled": false,
+    "minimum_duration_ms": 1,
+    "configuration_state": "settled",
+    "reload_applied": true
+  },
+  "configuration_after_disable_is_managed_disabled_block": true,
+  "record_type_counts": {
+    "bind": 6,
+    "execute": 3,
+    "parse": 6,
+    "statement": 1
+  },
+  "record_types_verified": [
+    "statement",
+    "parse",
+    "bind",
+    "execute"
+  ],
+  "database_filter_verified": true,
+  "test_sql_literals_and_bind_redacted": true,
+  "live_disable_reload_verified": true
+}

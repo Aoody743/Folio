@@ -1,0 +1,43 @@
+{
+  "candidate_version": "0.1.0-rc.15",
+  "candidate_archive_sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
+  "actual_platform": [
+    "6.8.0-147-generic",
+    "ubuntu 24.04"
+  ],
+  "steps": [
+    {
+      "check": "strict package/guest identity and actual initial API+Agent health",
+      "result": "PASS"
+    },
+    {
+      "check": "real production data flock blocks DB replacement/snapshot and preserves inode",
+      "result": "PASS"
+    },
+    {
+      "check": "actual candidate EADDRINUSE before Agent attempt restores original policy/units/API health",
+      "result": "PASS"
+    },
+    {
+      "check": "SIGKILL actual installer after durable snapshot; next invocation recovers with real old health",
+      "result": "PASS"
+    },
+    {
+      "check": "actual API peer denial after Agent attempt retains policy/ledger, recovers API, disables Agent with marker",
+      "result": "PASS"
+    },
+    {
+      "check": "actual distinct-version upgrade and explicit reviewed policy recovery, API+Agent health and shared note",
+      "result": "PASS"
+    },
+    {
+      "check": "real manual rollback restores API binary/config/units/pre-upgrade note snapshot while retaining latest Agent policy/ledger",
+      "result": "PASS"
+    },
+    {
+      "check": "actual distinct-version upgrade and explicit reviewed policy recovery, API+Agent health and shared note",
+      "result": "PASS"
+    }
+  ],
+  "failure": null
+}

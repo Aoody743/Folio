@@ -1,0 +1,132 @@
+{
+  "version": "0.1.0-rc.15",
+  "environment": "official Ubuntu 24.04 amd64; QEMU TCG; 2 vCPU / 2 GiB",
+  "transport": "authenticated human session; persistent HTTP/1.1 connections through the strict loopback SSH forward",
+  "cached_readonly_p95_target_ms": 100,
+  "scenarios": [
+    {
+      "scenario": "cached_status",
+      "concurrency": 1,
+      "seconds": 1.093,
+      "requests_per_second": 109.83,
+      "aggregate": {
+        "requests": 120,
+        "http_200": 120,
+        "p50_ms": 8.409,
+        "p95_ms": 14.217,
+        "max_ms": 17.388,
+        "response_bytes": 61513
+      },
+      "endpoints": {
+        "cached_status": {
+          "requests": 120,
+          "http_200": 120,
+          "p50_ms": 8.409,
+          "p95_ms": 14.217,
+          "max_ms": 17.388,
+          "response_bytes": 61513
+        }
+      },
+      "p95_target_met": true
+    },
+    {
+      "scenario": "cached_status",
+      "concurrency": 4,
+      "seconds": 0.844,
+      "requests_per_second": 237.04,
+      "aggregate": {
+        "requests": 200,
+        "http_200": 200,
+        "p50_ms": 15.766,
+        "p95_ms": 27.362,
+        "max_ms": 41.956,
+        "response_bytes": 102658
+      },
+      "endpoints": {
+        "cached_status": {
+          "requests": 200,
+          "http_200": 200,
+          "p50_ms": 15.766,
+          "p95_ms": 27.362,
+          "max_ms": 41.956,
+          "response_bytes": 102658
+        }
+      },
+      "p95_target_met": true
+    },
+    {
+      "scenario": "cached_status",
+      "concurrency": 20,
+      "seconds": 0.917,
+      "requests_per_second": 218.2,
+      "aggregate": {
+        "requests": 200,
+        "http_200": 200,
+        "p50_ms": 80.904,
+        "p95_ms": 195.219,
+        "max_ms": 251.059,
+        "response_bytes": 103000
+      },
+      "endpoints": {
+        "cached_status": {
+          "requests": 200,
+          "http_200": 200,
+          "p50_ms": 80.904,
+          "p95_ms": 195.219,
+          "max_ms": 251.059,
+          "response_bytes": 103000
+        }
+      },
+      "p95_target_met": false
+    },
+    {
+      "scenario": "readonly_mix",
+      "concurrency": 20,
+      "seconds": 3.423,
+      "requests_per_second": 70.12,
+      "aggregate": {
+        "requests": 240,
+        "http_200": 240,
+        "p50_ms": 251.41,
+        "p95_ms": 548.822,
+        "max_ms": 711.374,
+        "response_bytes": 5576191
+      },
+      "endpoints": {
+        "cached_status": {
+          "requests": 60,
+          "http_200": 60,
+          "p50_ms": 186.198,
+          "p95_ms": 372.498,
+          "max_ms": 495.872,
+          "response_bytes": 30751
+        },
+        "notes": {
+          "requests": 60,
+          "http_200": 60,
+          "p50_ms": 270.852,
+          "p95_ms": 480.831,
+          "max_ms": 671.754,
+          "response_bytes": 395400
+        },
+        "tasks": {
+          "requests": 60,
+          "http_200": 60,
+          "p50_ms": 368.915,
+          "p95_ms": 588.982,
+          "max_ms": 711.374,
+          "response_bytes": 5146140
+        },
+        "files": {
+          "requests": 60,
+          "http_200": 60,
+          "p50_ms": 205.325,
+          "p95_ms": 466.266,
+          "max_ms": 539.026,
+          "response_bytes": 3900
+        }
+      }
+    }
+  ],
+  "limitations": "TCG measures this virtualized acceptance guest and SSH transport, not native hardware capacity; the mixed uncached workload is reported separately from the cached-readonly target. The QA guest has two managed PHP runtimes from version-selection tests."
+}

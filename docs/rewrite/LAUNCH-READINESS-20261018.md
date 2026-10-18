@@ -1,12 +1,31 @@
 # Folio 首发上线前差距清单
 
-更新：2026-10-18（UTC）。本文是接续开发和首发验收的当前执行清单；[第二阶段核心版收尾](PHASE2-CLOSEOUT-20261015.md)保留详细范围与退出条件。早期交接、阶段计划和 ARM64 记录中的历史目标不覆盖本文确认的首发范围。
+更新：2026-10-19（Asia/Singapore；本轮执行日志为 10-18 UTC）。当前状态以本节及 [RC15 证据](evidence/release-gates-rc15-20261019.json)为准，下方 RC7 及更早检查点均为历史记录。
 
 ## 当前结论
 
-**RC7 已冻结为可复现的 amd64 候选，但首发验收尚未完成。** 产品源码提交 `20866c12870adde1ff1d0136e1b621ee2da4ac42` 是当前 GitHub `main` 的后代；干净构建包与独立重建包 SHA-256 均为 `ce35662bffd2349f938cca4034cc2a9b9331ddc254e2f8cd6046394284f5b69b`，源码检查和包 smoke 全部通过。RC7 在 Debian 13 克隆上通过升级、回滚/重升级、卸载/重装数据保留、Agent 文件、PostgreSQL 慢日志与备份恢复；Ubuntu 24.04 OCI 派生 guest 上通过升级、文件/终端及完整重启后的 API、Agent、OpenResty 验收。Ubuntu PostgreSQL 软件计划已修复并解析出 20 个签名包，但安装在该不完整 dpkg 镜像的 `postgresql-common` postinst 失败；这不能代替官方干净 Ubuntu cloud image 上的验收。PHP 源、MySQL 仓库、PHP 站点/TLS 和 G3/G4 剩余矩阵仍未通过，G5 未通过。GitHub `main` 仍为 `037b80832fe7e57ebfc08d3a8eef8f655fed70e1`，远端尚无 `legacy`；按你的条件，G1–G5 通过前没有改写远端分支。
+**RC15 可复现候选已冻结，首发验收仍未全部通过，未发布、未修改远端分支。** 源码 `d38e3de398d677ce39b241209658f95dcaceadfa`，amd64 包 SHA-256 `392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6`。RC15 全量 Go race、vet、前端构建/类型检查、发行包 smoke、独立重建字节一致均通过。安装器 33 项（2 root-policy skip）、前端 82 项和嵌套 MySQL driver race 分别执行于本轮更早的未改动组件版本，不能记成 RC15 重跑。
 
-### 2026-10-18 RC7 当前验收检查点
+本轮修复发行版默认 PHP 版本、tar 探测 SIGPIPE 导致的不稳定归档、MySQL 客户端路径、AppArmor 精确授权和多余 X 监听、单连接导入死锁、新装软件 vendor unit 自启冲突、Docker 超时识别，以及任务列表逐条查询性能问题。AppArmor 保持 enforce；保留原有 vendor unit 使用意图。
+
+| 门槛 | 当前证据 | 判断 |
+| --- | --- | --- |
+| G0 | RC15 干净源码、双构建、全量 race/vet、包 smoke 通过 | 本地候选通过 |
+| G1 | 官方 Ubuntu RC15 实测 PostgreSQL 四种协议慢日志、筛选、脱敏、启停 reload | Ubuntu 通过；新 Debian 待测 |
+| G2 | 官方 Ubuntu 上 RC7–RC14 分阶段通过原生 PG/MySQL/PHP、Nginx/OpenResty PHP+验证 TLS、失败配置回滚、备份恢复 | 同一候选双系统完整矩阵未完成 |
+| G3 | RC14 文件 4/4、终端 3/3、浏览器宽度/主题/SSE/冲突/离线/XSS、真实任务中断；RC15 实测 REST/MCP 任务资源隔离与撤权 | 部分通过 |
+| G4 | RC15 真实锁、端口冲突、SIGKILL、peer denial、14→15 升级/回滚/再升级；RC14 重启及卸载保留数据 | 性能门槛及最终变更清单仍未完成 |
+| G5 | G1–G4 尚未在同一冻结包、两种干净目标系统全部完成 | 未通过 |
+
+官方 Ubuntu cloud image 已下载并校验，QEMU 工具也已找到并成功运行，原先“无 VM 工具/Ubuntu 源不可达”的结论已过时。当前 Debian 官方镜像重定向到 `gemmei.ftp.acc.umu.se` 后被代理 403 拦截，已请求追加白名单，尚未收到发布确认。旧 RC7 Debian 证据保留，但不能替代新候选验收。
+
+并发测试使用固定 2 vCPU/2 GiB QEMU TCG、持久认证连接和 SSH 转发，串行运行，最初重叠采样已排除。并发 20 混合只读 p95 从 RC14 的 3434.094ms 降到 RC15 的 548.822ms，240 请求全部 200；缓存状态接口 RC15 在并发 1/4/20 的 p95 分别为 14.217/27.362/195.219ms。并发 20 仍超过既定 100ms，不下调门槛；TCG 结果也不能代替原生硬件性能证明。
+
+证据边界：MySQL/OpenResty 签名源由 QA 预先配置；旧 guest 中已启用但未运行的 vendor units 经显式 QA 基线修正后禁用，新装 OpenResty 单独验证了产品隔离。PostgreSQL 独立目标恢复使用原生 pg_restore，并非可选 JSON 导入功能验收。资源记录是主进程 RSS，guest 保留两套 PHP 测试实例。宽泛功能测试发生于 RC7–RC14，未冒充 RC15 全量冷安装。完整数据库“不装/仅一种/同时安装”选择矩阵仍需补齐。
+
+截至本轮检查，远端 main 仍为 `037b80832fe7e57ebfc08d3a8eef8f655fed70e1`，legacy 不存在；所有门槛通过前不写远端。`stage_2_complete=false`。
+
+### 2026-10-18 RC7 历史验收检查点（已由 RC15 替代）
 
 完整结果见 [RC7 证据](evidence/release-gates-rc7-20261018.json)。候选包 build info 记录 Go `1.27.2`、`working_tree_dirty=false`；RC7 全量 Go race、MySQL driver race、安装器 33 项、前端 82 项、类型检查、包 smoke 和双构建字节比较通过。
 
@@ -47,7 +66,7 @@ RC6 修复了 Next.js 随机 build ID 使相同源码产物不一致的问题。
 | G4 系统生命周期与数据保护 | RC6 在 Debian/Ubuntu 升级通过；Ubuntu 完整重启后 API/Agent/OpenResty 恢复；Debian PostgreSQL 备份恢复通过。RC6 回滚、中断升级、数据保留卸载和 2 vCPU/2 GiB 性能基线未做 | 部分通过 |
 | G5 发布冻结 | G1–G4 尚未全部通过同一候选包 | 未通过 |
 
-当前 RC7 的源码快照和 amd64 包已经固定，阻塞点是实机门槛而非无法执行 Git 分支操作。你已确认云环境发布成功，读取到的已发布配置包含 `cloud-images.ubuntu.com`、`packages.sury.org`、`repo.mysql.com`。但当前执行容器经配置的 HTTPS 代理访问这三个域名均在 CONNECT 阶段收到 403，而预置的 `archive.ubuntu.com` 返回 200；探测证据见 [published egress probe](evidence/published-egress-probe-20261018.json)。因此本轮无法下载官方 Ubuntu cloud image，也无法复验 PHP/MySQL 外部源。补充的官方 Ubuntu 24.04 OCI 包检查中，`postgresql-common` 配置、PostgreSQL 16 集群初始化、手动启动和 SQL canary 均通过；该容器没有 systemd 作为 PID 1，也没有运行 Folio 插件，不能替代实机门槛。当前执行器还没有 QEMU、`qemu-img` 或 debootstrap 工具。需要在已发布出口规则确实可用、且具备 VM 工具的执行环境继续验收，不需要重复发布。G1–G4 的其余缺项仍未完成；GitHub `main` 与 `legacy` 分支保持原样，只有全部门槛通过后才执行分支迁移。
+【历史 RC7 环境记录；当前工具和网络状态见顶部 RC15】当时 RC7 的源码快照和 amd64 包已经固定，阻塞点是实机门槛而非无法执行 Git 分支操作。你已确认云环境发布成功，读取到的已发布配置包含 `cloud-images.ubuntu.com`、`packages.sury.org`、`repo.mysql.com`。但当前执行容器经配置的 HTTPS 代理访问这三个域名均在 CONNECT 阶段收到 403，而预置的 `archive.ubuntu.com` 返回 200；探测证据见 [published egress probe](evidence/published-egress-probe-20261018.json)。因此本轮无法下载官方 Ubuntu cloud image，也无法复验 PHP/MySQL 外部源。补充的官方 Ubuntu 24.04 OCI 包检查中，`postgresql-common` 配置、PostgreSQL 16 集群初始化、手动启动和 SQL canary 均通过；该容器没有 systemd 作为 PID 1，也没有运行 Folio 插件，不能替代实机门槛。当前执行器还没有 QEMU、`qemu-img` 或 debootstrap 工具。需要在已发布出口规则确实可用、且具备 VM 工具的执行环境继续验收，不需要重复发布。G1–G4 的其余缺项仍未完成；GitHub `main` 与 `legacy` 分支保持原样，只有全部门槛通过后才执行分支迁移。
 
 接续基线是 GitHub [`main`](https://github.com/Aoody743/Folio/tree/main)。另有一份为保留本地 WIP 而上传的[历史快照分支](https://github.com/Aoody743/Folio/tree/handoff/pre-closeout-wip-20261016)，提交 `c93eac3f3819bdcd66b30fec2a84948bc4ad3f97`。该快照基于较早的 `refine-local` 状态，供比对遗留草稿；它不是当前源码或发行基线，不要整体合并到 `main`。
 
@@ -59,7 +78,7 @@ RC6 修复了 Next.js 随机 build ID 使相同源码产物不一致的问题。
 - **核心验收：** 安装与重复安装、网站/PHP、数据库管理与备份恢复、文件和终端、网页与 MCP 共用权限/任务/审计、重启和失败恢复、升级回退、卸载后保留用户数据，以及发布所需的性能和系统变更基线。
 - **暂缓范围：** Next.js/Go 托管及 Git/归档导入按 2026-10-17 决策列为可选扩展；若作为首发能力对外提供，则须先完成对应验收。MongoDB、phpMyAdmin/pgAdmin、FTP、旧版数据迁移、公网 CA/DNS、SSH 服务端配置和第三阶段 47 个插件不阻塞当前核心版。
 
-## 上线前必须完成
+## 上线前必须完成（以下为 RC7 时点清单，当前进展见顶部 RC15）
 
 ### G0：冻结当前源码并建立可复现候选包
 

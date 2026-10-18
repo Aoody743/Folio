@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0-rc.15",
+  "actual_file_and_site_tasks_completed": true,
+  "REST_MCP_list_consistent": true,
+  "foreign_site_task_hidden_and_get_denied": true,
+  "inputs_and_actor_grants_omitted": true,
+  "revoked_token_denied_on_REST_and_MCP": true,
+  "authorized_visible_tasks": 7
+}
