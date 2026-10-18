@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-18",
+  "product": "Folio",
+  "candidate": {
+    "version": "0.1.0-rc.7",
+    "architecture": "amd64",
+    "sha256": "ce35662bffd2349f938cca4034cc2a9b9331ddc254e2f8cd6046394284f5b69b",
+    "source_branch": "work",
+    "source_commit": "20866c12870adde1ff1d0136e1b621ee2da4ac42",
+    "descends_from_current_github_main": true,
+    "working_tree_clean_at_build": true,
+    "release_status": "local reproducible QA candidate; G1-G5 are not all complete; not published",
+    "archive_path_in_qa_workspace": "/workspace/tools/qa-acceptance/release-candidate-rc7/folio-0.1.0-rc.7-linux-amd64.tar.gz",
+    "build_info": {
+      "go": "1.27.2",
+      "source_date_epoch": 1792332672,
+      "byte_for_byte_rebuild_comparison": "passed: independent rebuild had the same SHA-256 and archive bytes"
+    }
+  },
+  "source_checks": {
+    "go_race_tests": "passed: go test -mod=readonly -race -p 2 -count=1 ./...",
+    "mysql_driver_race_tests": "passed: go -C third_party/mysql test -mod=readonly -race -p 2 -count=1 ./...",
+    "installer_python_tests": "passed: 33 tests; two root-owned policy cases skipped outside the guest",
+    "frontend_tests": "passed: 82 tests",
+    "frontend_typecheck": "passed: npm run typecheck --prefix frontend",
+    "release_package_smoke": "passed: checksum/archive validation, install and repeat, HTTP health/session, embedded assets, live lock, SIGTERM, reinstall and data-preserving uninstall",
+    "source_test_log": "/workspace/tools/qa-acceptance/logs/release-gates-source-tests-rc7-final-20261018.log"
+  },
+  "targets": {
+    "debian13_amd64": {
+      "environment": "isolated Debian 13 QEMU TCG clone, 2 vCPU, 2 GiB, kernel 6.12.107+deb13-amd64; cloned from an RC6 PostgreSQL fixture",
+      "upgrade": "passed from 0.1.0-rc.6 using exact RC7 archive SHA-256; Folio API, Agent, managed PostgreSQL and Nginx services active; exact-version healthcheck passed; Agent policy SHA-256 preserved",
+      "agent_files": "passed: 4/4 actual Agent filesystem REST/MCP tests",
+      "postgresql_slow_logs": {
+        "result": "passed on RC7",
+        "record_type_counts": {
+          "bind": 5,
+          "execute": 3,
+          "parse": 6,
+          "statement": 5
+        },
+        "database_filter": "passed",
+        "literal_and_bind_redaction": "passed",
+        "disable_and_reload_settled": "passed",
+        "external_evidence": "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/postgresql-g1-live-rc7-evidence.json",
+        "external_log": "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/postgresql-g1-protocols-rc7.log"
+      },
+      "database_backup_restore": {
+        "result": "passed on RC7: backed up a managed database, changed a canary, restored the captured state, and deleted the backup artifact",
+        "backup_bytes": 1909,
+        "backup_sha256": "5cd474cabb9082f970a429d8fc2f152adea7809aacd7131c451f2ac15ececfb3",
+        "temporary_database_removed_after_test": true,
+        "external_evidence": "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/database-backup-restore-rc7.json"
+      },
+      "rollback": "passed: RC7 --rollback restored RC6 with its pre-upgrade panel data; RC7 was then reinstalled from the exact archive hash and healthchecked",
+      "uninstall_and_data_retention": "passed: RC7 uninstall retained /var/lib/powerlinux, /etc/powerlinux, release backups, and the managed PostgreSQL service/data; reinstall preserved the releaseqa login and a managed-database canary",
+      "managed_nginx": "existing managed service remained active; nginx -t passed; no fresh Nginx installation was repeated on RC7",
+      "external_lifecycle_logs": [
+        "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/rollback-rc7-to-rc6.log",
+        "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/re-upgrade-rc7-after-rollback.log",
+        "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/uninstall-rc7-data-retention.log",
+        "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/reinstall-rc7-after-uninstall.log",
+        "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/rollback-rc7-for-interruption-test.log",
+        "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/interrupted-upgrade-rc7-injection.log",
+        "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/interrupted-upgrade-recovery-rc7.log",
+        "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/re-upgrade-rc7-after-interrupted-recovery.log"
+      ],
+      "interrupted_upgrade_recovery": "passed: SIGKILL after a complete pending-transaction snapshot; first retry restored RC6 and health, second exact-hash RC7 retry succeeded",
+      "resource_baseline": {
+        "MemAvailable_bytes": 1612058624,
+        "MemTotal_bytes": 2069446656,
+        "candidate_version": "0.1.0-rc.7",
+        "health_latency_ms": {
+          "max": 5.403,
+          "p50": 1.67,
+          "p95": 2.28
+        },
+        "measured_health_requests": 300,
+        "services": {
+          "powerlinux-agent.service": {
+            "main_rss_kib": 36456,
+            "state": "active"
+          },
+          "powerlinux-plugin-nginx-rc2qa.service": {
+            "main_rss_kib": 8484,
+            "state": "active"
+          },
+          "powerlinux-plugin-postgresql-g1qa4.service": {
+            "main_rss_kib": 24536,
+            "state": "active"
+          },
+          "powerlinux.service": {
+            "main_rss_kib": 46500,
+            "state": "active"
+          }
+        },
+        "virtualization": "2 vCPU / 2 GiB QEMU guest; requests through local SSH tunnel",
+        "warmup_requests": 25
+      }
+    },
+    "ubuntu2404_amd64": {
+      "environment": "Ubuntu 24.04 OCI-derived systemd guest in QEMU TCG, 2 vCPU, 2 GiB; not an official Ubuntu cloud image",
+      "upgrade": "passed from 0.1.0-rc.6 using exact RC7 archive SHA-256; API and Agent remained healthy",
+      "agent_files": "passed: 4/4 actual Agent filesystem REST/MCP tests",
+      "terminal": "passed: 3/3 actual local/OpenSSH PTY, MCP/WebSocket shared session, revocation, host-key rejection and audit-redaction tests",
+      "full_reboot": "passed after RC7 upgrade: API and Agent healthy, OpenResty active/enabled, nginx configuration valid, HTTP 200",
+      "fixture_adjustment": "The OCI-derived image lacked /bin/sleep although /usr/bin/sleep existed; added the conventional symlink in the disposable guest before reboot testing.",
+      "postgresql_catalog_plan": {
+        "result": "plan passed after RC7 added Ubuntu 24.04 amd64 to the PostgreSQL catalog whitelist",
+        "exact_signed_package_count": 20,
+        "elapsed_seconds_approximate": 376,
+        "install": "failed during postinst: postgresql-common exited with status 10 on this OCI-derived image; no PostgreSQL cluster or running service was created",
+        "recovery_inspection": "inspection_only; no verified service proof and no automatic recovery action available",
+        "external_plan": "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/postgresql-plan-rc7.json",
+        "external_install_record": "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/postgresql-install-rc7.json",
+        "external_recovery_record": "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/postgresql-recovery-inspect-rc7.private.json"
+      },
+      "php": "not passed: PHP/Sury package plan remains blocked by source/signature network failure; PHP site and TLS are not verified",
+      "mysql": "not installed or verified; repo.mysql.com access is not active until the saved cloud environment draft is published",
+      "openresty": "existing service and reboot recovery passed; its signed source was manually configured in the disposable guest",
+      "external_logs": [
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/rc7-upgrade.log",
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/test-agent-files-rc7.log",
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/test-terminal-rc7.log",
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/serial-after-rc7-reboot.log",
+        "/workspace/tools/qa-acceptance/active-release-test/ubuntu2404-rc5/resource-baseline-rc7.json"
+      ],
+      "resource_baseline": {
+        "MemAvailable_bytes": 1845186560,
+        "MemTotal_bytes": 2063216640,
+        "candidate_version": "0.1.0-rc.7",
+        "health_latency_ms": {
+          "max": 2.875,
+          "p50": 1.686,
+          "p95": 2.278
+        },
+        "measured_health_requests": 300,
+        "services": {
+          "openresty.service": {
+            "main_rss_kib": 3044,
+            "state": "active"
+          },
+          "powerlinux-agent.service": {
+            "main_rss_kib": 30320,
+            "state": "active"
+          },
+          "powerlinux-plugin-openresty-rc5openqa.service": {
+            "main_rss_kib": 10780,
+            "state": "active"
+          },
+          "powerlinux.service": {
+            "main_rss_kib": 44304,
+            "state": "active"
+          }
+        },
+        "virtualization": "2 vCPU / 2 GiB QEMU guest; requests through local SSH tunnel",
+        "warmup_requests": 25
+      }
+    }
+  },
+  "release_gates": {
+    "G0": "passed for the local amd64 candidate: clean source build, full source checks, package smoke and byte-for-byte reproducible rebuild passed; source commit descends from current GitHub main",
+    "G1": "partial: Debian RC7 PostgreSQL live logs and backup/restore passed; Ubuntu PostgreSQL catalog plan now resolves signed packages, but install failed on the nonofficial incomplete guest and no live Ubuntu PostgreSQL service was available",
+    "G2": "blocked: no official clean Ubuntu image; Ubuntu PostgreSQL postinst failed on the OCI-derived image; PHP/Sury source, PHP site/TLS, MySQL repository install, and fresh RC7 Nginx install are incomplete",
+    "G3": "partial: RC7 Agent files passed on Debian and Ubuntu; RC7 terminal passed on Ubuntu; full web/MCP scope and authorization, task recovery, revocation and audit matrix remains incomplete",
+    "G4": "partial: RC7 upgrade, actual interrupted-upgrade recovery, rollback/re-upgrade and data-preserving uninstall/reinstall passed on Debian; Ubuntu RC7 reboot and idle health/RSS baselines on both guests passed; Ubuntu uninstall, representative workload measurements and system-change inventory remain outstanding",
+    "G5": "blocked: G1-G4 are not complete on this one final candidate"
+  },
+  "branch_transition": {
+    "requested": "After acceptance, preserve the prior GitHub main as legacy and promote the accepted candidate to main",
+    "current_github_main": "037b80832fe7e57ebfc08d3a8eef8f655fed70e1",
+    "legacy_branch_exists_on_origin": false,
+    "executed": false,
+    "reason": "Acceptance is conditional; G1-G5 have not all passed, so no remote branch was written"
+  },
+  "external_evidence": {
+    "directory": "/workspace/tools/qa-acceptance/active-release-test/",
+    "note": "QEMU disks, private fixtures, account credentials and raw guest logs remain outside Git. This record contains no credentials."
+  }
+}

@@ -1,10 +1,23 @@
 # Folio 首发上线前差距清单
 
-更新：2026-10-18（Asia/Singapore）。本文是接续开发和首发验收的当前执行清单；[第二阶段核心版收尾](PHASE2-CLOSEOUT-20261015.md)保留详细范围与退出条件。早期交接、阶段计划和 ARM64 记录中的历史目标不覆盖本文确认的首发范围。
+更新：2026-10-18（UTC）。本文是接续开发和首发验收的当前执行清单；[第二阶段核心版收尾](PHASE2-CLOSEOUT-20261015.md)保留详细范围与退出条件。早期交接、阶段计划和 ARM64 记录中的历史目标不覆盖本文确认的首发范围。
 
 ## 当前结论
 
-**首发尚未达到发布条件。** 当前本地 `work` 候选为 Folio `0.1.0-rc.6` amd64，源码提交 `0da6e18473815301621f862bf543fe49ed9d9f3a` 是当前 GitHub `main` 的后代。该候选通过完整源码测试、发行包 smoke 和双构建逐字节比较；RC6 已在 Debian 13 与 Ubuntu 24.04 隔离 amd64 guest 上完成可运行的升级、Agent 文件测试，Ubuntu 终端测试、重启和 OpenResty 检查，以及 Debian PostgreSQL 慢日志与备份恢复。Ubuntu guest 是 OCI 派生镜像而非官方 cloud image，且 PHP 网络计划失败、Ubuntu 的 PostgreSQL/MySQL 计划返回 `unsupported_platform`；完整网站、数据库、审计和生命周期矩阵仍不齐，G5 未通过。GitHub `main` 仍为 `037b80832fe7e57ebfc08d3a8eef8f655fed70e1`，远端尚无 `legacy` 分支；按用户要求，未在验收完成前改写远端分支。
+**RC7 已冻结为可复现的 amd64 候选，但首发验收尚未完成。** 产品源码提交 `20866c12870adde1ff1d0136e1b621ee2da4ac42` 是当前 GitHub `main` 的后代；干净构建包与独立重建包 SHA-256 均为 `ce35662bffd2349f938cca4034cc2a9b9331ddc254e2f8cd6046394284f5b69b`，源码检查和包 smoke 全部通过。RC7 在 Debian 13 克隆上通过升级、回滚/重升级、卸载/重装数据保留、Agent 文件、PostgreSQL 慢日志与备份恢复；Ubuntu 24.04 OCI 派生 guest 上通过升级、文件/终端及完整重启后的 API、Agent、OpenResty 验收。Ubuntu PostgreSQL 软件计划已修复并解析出 20 个签名包，但安装在该不完整 dpkg 镜像的 `postgresql-common` postinst 失败；这不能代替官方干净 Ubuntu cloud image 上的验收。PHP 源、MySQL 仓库、PHP 站点/TLS 和 G3/G4 剩余矩阵仍未通过，G5 未通过。GitHub `main` 仍为 `037b80832fe7e57ebfc08d3a8eef8f655fed70e1`，远端尚无 `legacy`；按你的条件，G1–G5 通过前没有改写远端分支。
+
+### 2026-10-18 RC7 当前验收检查点
+
+完整结果见 [RC7 证据](evidence/release-gates-rc7-20261018.json)。候选包 build info 记录 Go `1.27.2`、`working_tree_dirty=false`；RC7 全量 Go race、MySQL driver race、安装器 33 项、前端 82 项、类型检查、包 smoke 和双构建字节比较通过。
+
+| 门槛 | RC7 结果 | 发布判断 |
+| --- | --- | --- |
+| G0 源码与候选包 | 固定源码提交、amd64 构建、全部源检查、包 smoke、独立重建一致；提交是当前 GitHub `main` 后代 | 通过 |
+| G1 PostgreSQL | Debian RC7 慢日志四种协议、筛选、脱敏、停用和备份恢复通过；Ubuntu PostgreSQL 计划成功，但 `postgresql-common` 安装配置失败，无实际 Ubuntu 集群 | 部分通过 |
+| G2 Web 与数据库安装 | Ubuntu PostgreSQL 包安装未完成；PHP/Sury 网络失败、PHP 站点/TLS 未测、MySQL 源未开放；RC7 只复验既有 Nginx/OpenResty 服务，没有完成干净双系统 Web/DB 矩阵 | 未通过 |
+| G3 网页/MCP/任务/审计 | Debian/Ubuntu Agent 文件测试各 4/4，Ubuntu 终端 3/3；更完整的网页/MCP 权限、任务恢复及审计矩阵未完成 | 部分通过 |
+| G4 生命周期与数据保护 | Debian RC6→RC7 升级、SIGKILL 后中断升级恢复、RC7→RC6 回滚再升级、卸载/重装后 Folio 登录与 PostgreSQL canary 保留通过；Ubuntu RC7 重启恢复通过。两台 2 vCPU/2 GiB guest 均记录了空闲健康接口延迟与服务 RSS；Ubuntu 卸载、代表性并发负载和系统变更清单仍未完成 | 部分通过 |
+| G5 发布冻结 | G1–G4 仍有未完成项，不能把 RC7 标成首发完成 | 未通过 |
 
 ### 2026-10-18 RC5 冻结验收检查点
 
@@ -19,9 +32,9 @@
 | G4 系统生命周期与数据保护 | Debian 13 上此前已通过 RC4 全新/重复安装、服务重启、卸载保留数据、RC3→RC4 升级、中断恢复、回滚再升级及 API/Agent/Nginx 自启；本轮 RC4→RC5 升级保留数据并正常启动 API/Agent/PostgreSQL。Ubuntu、数据库备份恢复、PHP 失败恢复和 2 vCPU / 2 GiB 性能基线尚未验收 | 部分通过 |
 | G5 发布冻结 | 依赖 G0–G4 全部通过；当前仍有未验收目标系统和核心功能 | 未通过 |
 
-RC5 证明了当时 Debian 13 上的构建、包 smoke、升级和 PostgreSQL 慢日志路径可工作。后续验收已经推进到 RC6；RC5 的历史结果仍保留在上表，当前状态以下方 RC6 检查点为准。
+RC5 证明了当时 Debian 13 上的构建、包 smoke、升级和 PostgreSQL 慢日志路径可工作。RC5 的历史结果仍保留在上表，RC7 是当前候选。
 
-### 2026-10-18 RC6 当前验收检查点
+### RC6 历史验收检查点（已由 RC7 替代）
 
 RC6 修复了 Next.js 随机 build ID 使相同源码产物不一致的问题。提交 `0da6e18473815301621f862bf543fe49ed9d9f3a` 的干净构建包与独立重建包 SHA-256 均为 `290b4465b04f9506812f63c58163c5614abdc4c2373476fda2baa1130b887d7a`，`cmp` 逐字节一致。Go race、MySQL driver race、安装器 Python 33 项（2 项 root-only skip）、前端 82 项、类型检查及发行包 smoke 全部通过。完整结果见[RC6 证据](evidence/release-gates-rc6-20261018.json)；VM 原始日志留在 `/workspace/tools/qa-acceptance/`。
 
@@ -34,7 +47,7 @@ RC6 修复了 Next.js 随机 build ID 使相同源码产物不一致的问题。
 | G4 系统生命周期与数据保护 | RC6 在 Debian/Ubuntu 升级通过；Ubuntu 完整重启后 API/Agent/OpenResty 恢复；Debian PostgreSQL 备份恢复通过。RC6 回滚、中断升级、数据保留卸载和 2 vCPU/2 GiB 性能基线未做 | 部分通过 |
 | G5 发布冻结 | G1–G4 尚未全部通过同一候选包 | 未通过 |
 
-当前剩余首发项是实质验收缺口，不是 Git 分支操作能力问题：需要让配置草稿生效以获取官方 Ubuntu 镜像及 PHP/MySQL 源，再补齐不支持的 Ubuntu 数据库计划或产品实现；随后用官方干净镜像验收两种 Web 栈、PHP 站点/TLS 和数据库矩阵，完成 G3/G4 剩余项目，并将所有结果锁定在同一候选。配置草稿保存不会自动应用；cloud-environment-onboarding setup 说明要求在环境设置中检查并保存草稿，再发布环境。发布前 GitHub `main` 保持不变。
+当前 RC7 的源码快照和 amd64 包已经固定，阻塞点是实机门槛而非无法执行 Git 分支操作。云环境设置中已有包含 `cloud-images.ubuntu.com`、`packages.sury.org`、`repo.mysql.com` 的受限网络配置草稿，但草稿还未应用；onboarding 配置工具明确说明“Saving does not apply or publish”，需要你在环境设置检查并保存草稿，再发布环境。发布后用官方干净 Ubuntu 镜像复验 PostgreSQL postinst、PHP/MySQL 源及完整 Web/数据库矩阵，再完成 G3/G4 剩余项和 G5。分支操作仍按你的条件，验收全部通过后执行；当前 GitHub `main` 保持不变。
 
 接续基线是 GitHub [`main`](https://github.com/Aoody743/Folio/tree/main)。另有一份为保留本地 WIP 而上传的[历史快照分支](https://github.com/Aoody743/Folio/tree/handoff/pre-closeout-wip-20261016)，提交 `c93eac3f3819bdcd66b30fec2a84948bc4ad3f97`。该快照基于较早的 `refine-local` 状态，供比对遗留草稿；它不是当前源码或发行基线，不要整体合并到 `main`。
 
@@ -50,11 +63,11 @@ RC6 修复了 Next.js 随机 build ID 使相同源码产物不一致的问题。
 
 ### G0：冻结当前源码并建立可复现候选包
 
-当前本地 `work` 候选 `0da6e18473815301621f862bf543fe49ed9d9f3a` 已从最新 GitHub `main` 派生，并完成干净构建和字节级可复现重建。待 G1–G4 通过后，再按本轮约定先把现有远端 `main` 保存到 `legacy`，再将通过验收的候选晋升为 `main`；在那之前不写远端分支。
+当前本地产品源码候选 `20866c12870adde1ff1d0136e1b621ee2da4ac42` 已从 GitHub `main` 派生，并完成干净构建和字节级可复现重建。待 G1–G5 通过后，再按约定先把现有远端 `main` 保存到 `legacy`，再将已验收候选晋升为 `main`；在那之前不写远端分支。
 
-- [x] 固定本地 RC6 commit `0da6e18473815301621f862bf543fe49ed9d9f3a`；它是最新 GitHub `main` 后代，构建时工作树干净。
+- [x] 固定本地 RC7 产品源码 commit `20866c12870adde1ff1d0136e1b621ee2da4ac42`；它是 GitHub `main` 后代，构建时工作树干净。
 - [x] 执行 Go race、MySQL driver race、安装器、前端和发行包检查；2 项需要 root-owned policy 的安装器测试明确跳过。
-- [x] 构建 amd64 候选并记录版本、SHA-256；相同提交的独立重建包与原包逐字节一致。
+- [x] 构建 Folio `0.1.0-rc.7` amd64 候选，SHA-256 为 `ce35662bffd2349f938cca4034cc2a9b9331ddc254e2f8cd6046394284f5b69b`；独立重建包与原包逐字节一致。
 
 ### G1：关闭 PostgreSQL 慢日志缺陷
 
@@ -90,7 +103,7 @@ RC6 修复了 Next.js 随机 build ID 使相同源码产物不一致的问题。
 
 ## 推荐接续顺序
 
-1. 从当前 `work` 上的 RC6 候选继续，先读本文、[本地交接](HANDOFF.md)、[第二阶段收尾说明](PHASE2-CLOSEOUT-20261015.md)、[验收运行手册](PHASE2-ACCEPTANCE-RUNBOOK.md)、[验收证据目录](../../tests/rewrite/phase2/README.md) 和 [验收矩阵](../../tests/rewrite/phase2/acceptance-matrix.json)。RC6 提交已是当前 GitHub `main` 后代；不要在门槛通过前移动远端分支。
+1. 从当前 `work` 上的 RC7 候选继续，先读本文、[本地交接](HANDOFF.md)、[第二阶段收尾说明](PHASE2-CLOSEOUT-20261015.md)、[验收运行手册](PHASE2-ACCEPTANCE-RUNBOOK.md)、[验收证据目录](../../tests/rewrite/phase2/README.md) 和 [验收矩阵](../../tests/rewrite/phase2/acceptance-matrix.json)。RC7 产品源码提交已是当前 GitHub `main` 后代；不要在所有门槛通过前移动远端分支。
 2. 在官方、干净的 Debian 13 amd64 与 Ubuntu 24.04 amd64 隔离系统补齐 G1–G4；不要在日常工作主机上运行 root、systemd、防火墙或 SSH 主机操作验收。
 3. 每轮修复后用新 commit/包复验对应失败项，保存精确版本、哈希、环境和结果，再更新本清单与矩阵。G1–G4 全部通过后，先将原 GitHub `main` 指针保留到 `legacy`，再把验收候选推为新 `main`。
 4. 若没有目标 VM、root 权限或外部测试账户，继续可独立完成的代码和源测试，并把实机项保持为“未验收/受阻”；不得用 ARM64、mock 或旧候选包替代。
@@ -99,7 +112,8 @@ RC6 修复了 Next.js 随机 build ID 使相同源码产物不一致的问题。
 
 - `docs/rewrite/evidence/phase2-hosting-core-source-checks-20261016.json` 记录的是当时源码检查，不是当前 `main` 的完整发行验收。
 - [RC5 验收检查点](evidence/release-gates-rc5-20261018.json) 记录的是本地 `work` 冻结提交和 Debian 13 amd64 QA 包的本轮结果；其中通过项不能替代主线整合、Ubuntu 24.04 或完整发行矩阵验收。
-- [RC6 验收检查点](evidence/release-gates-rc6-20261018.json) 是当前 amd64 候选的源码、可复现构建和实际 guest 证据；明确列出 Ubuntu 镜像、PHP/数据库源和生命周期矩阵的限制。它通过 Git 继承当前远端 `main`，但尚未被推送或发布。
+- [RC7 验收检查点](evidence/release-gates-rc7-20261018.json) 是当前 amd64 候选的源码、可复现构建和实际 guest 证据；明确列出 Ubuntu PostgreSQL 安装、官方镜像、PHP/MySQL 源和生命周期矩阵的限制。它通过 Git 继承当前远端 `main`，但尚未被推送或发布。
+- [RC6 验收检查点](evidence/release-gates-rc6-20261018.json) 保留 RC6 的历史测试结果；RC7 已替代它作为当前候选。
 - [RC4 验收检查点](evidence/release-gates-rc4-20261018.json) 是上一轮未冻结候选的历史记录。
 - `docs/rewrite/evidence/phase2-closeout-dev24-20261016.json` 是 ARM64 方向的历史检查；用户随后把首发目标改为 Debian 13 / Ubuntu 24.04 amd64。
 - 较早 dev.21/dev.23 的原生记录只能证明对应旧包与当时环境的结果，不能代替 G0 当前候选包。
