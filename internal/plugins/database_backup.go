@@ -280,13 +280,13 @@ func (e *PrivilegedExecutor) databaseTool(ctx context.Context, instance Instance
 		args = append(args, "--host", host, "--port", strconv.Itoa(port), "--username", record.Username, "--no-password", "--dbname", record.Database)
 	} else {
 		body = "[client]\nuser=" + mysqlOptionQuote(record.Username) + "\npassword=" + mysqlOptionQuote(record.Credential) + "\nhost=" + mysqlOptionQuote(host) + "\nport=" + strconv.Itoa(port) + "\n"
-		program = filepath.Join(filepath.Dir(instance.Service.Program), "mysqldump")
+		program = mysqlClientProgram(instance, "mysqldump")
 		if instance.PluginID == "mariadb" {
 			program = "/usr/bin/mariadb-dump"
 		}
 		args = []string{"--defaults-file=" + name, "--single-transaction", "--skip-lock-tables", "--no-tablespaces", "--routines", "--events", "--triggers", "--hex-blob", record.Database}
 		if command == "restore" {
-			program = filepath.Join(filepath.Dir(instance.Service.Program), "mysql")
+			program = mysqlClientProgram(instance, "mysql")
 			if instance.PluginID == "mariadb" {
 				program = "/usr/bin/mariadb"
 			}

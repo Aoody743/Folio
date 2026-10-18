@@ -114,14 +114,14 @@ func databaseReplicationDumpProgram(instance Instance) string {
 	if instance.PluginID == "mariadb" {
 		return "/usr/bin/mariadb-dump"
 	}
-	return filepath.Join(filepath.Dir(instance.Service.Program), "mysqldump")
+	return mysqlClientProgram(instance, "mysqldump")
 }
 
 func databaseReplicationImportProgram(instance Instance) string {
 	if instance.PluginID == "mariadb" {
 		return "/usr/bin/mariadb"
 	}
-	return filepath.Join(filepath.Dir(instance.Service.Program), "mysql")
+	return mysqlClientProgram(instance, "mysql")
 }
 
 func databaseReplicationDumpArgs(configFile, database string) ([]string, error) {

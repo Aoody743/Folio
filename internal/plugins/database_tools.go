@@ -13,6 +13,16 @@ var mysqlDistributionVersion = regexp.MustCompile(`\bDistrib\s+([0-9]+\.[0-9]+)\
 var mariaFromVersion = regexp.MustCompile(`\bfrom\s+([0-9]+\.[0-9]+)\.[0-9]+-MariaDB\b`)
 var mysqlUtilityVersion = regexp.MustCompile(`\bVer\s+([0-9]+\.[0-9]+)\.[0-9]+`)
 
+// Oracle's signed Debian/Ubuntu packages put the server in sbin and clients
+// in bin. Archive runtimes keep clients beside their owned server instead.
+// Both paths still pass the root-ownership and matching-series checks.
+func mysqlClientProgram(instance Instance, name string) string {
+	if len(instance.Packages) > 0 && instance.Service.Program == "/usr/sbin/mysqld" {
+		return filepath.Join("/usr/bin", name)
+	}
+	return filepath.Join(filepath.Dir(instance.Service.Program), name)
+}
+
 func databaseUtilitySeries(engine, output string) string {
 	if engine == "postgresql" {
 		if match := postgresUtilityVersion.FindStringSubmatch(output); len(match) == 2 {
@@ -84,7 +94,7 @@ func (e *PrivilegedExecutor) validateDatabaseRuntimeTools(ctx context.Context, i
 		programs = []string{"/usr/bin/mariadb", "/usr/bin/mariadb-dump"}
 	default:
 		for _, name := range []string{"mysql", "mysqldump"} {
-			programs = append(programs, filepath.Join(filepath.Dir(instance.Service.Program), name))
+			programs = append(programs, mysqlClientProgram(instance, name))
 		}
 	}
 	for _, program := range programs {
