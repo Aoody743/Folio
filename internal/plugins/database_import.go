@@ -662,7 +662,9 @@ func openMySQLImportProfile(ctx context.Context, profile DatabaseConnection, pas
 		return nil, failure("connection_failed", "MySQL import connection could not be initialized", 502)
 	}
 	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(0)
+	// Keep the same session for LOCK/UNLOCK and other approved dump statements.
+	// This private pool is closed at the end of the import.
+	db.SetMaxIdleConns(1)
 	if err = db.PingContext(ctx); err != nil {
 		db.Close()
 		return nil, failure("connection_failed", "MySQL import could not connect with its database-only identity", 502)

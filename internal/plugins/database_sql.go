@@ -38,15 +38,17 @@ func verifySQLLeastPrivilege(ctx context.Context, db *sql.DB, p DatabaseConnecti
 		}
 		return nil
 	}
+	grantDatabase := p.Database
+	if !mysqlPartialRevokes(ctx, db) {
+		grantDatabase = strings.NewReplacer(`\`, `\\`, "_", `\_`, "%", `\%`).Replace(grantDatabase)
+	}
+	// Import connections intentionally allow one connection. Resolve the server
+	// setting before holding grant rows, or its nested query waits for itself.
 	rows, e := db.QueryContext(ctx, "SHOW GRANTS FOR CURRENT_USER")
 	if e != nil {
 		return failure("credential_verification_failed", "Could not verify MySQL role privileges", 502)
 	}
 	defer rows.Close()
-	grantDatabase := p.Database
-	if !mysqlPartialRevokes(ctx, db) {
-		grantDatabase = strings.NewReplacer(`\`, `\\`, "_", `\_`, "%", `\%`).Replace(grantDatabase)
-	}
 	target := "`" + grantDatabase + "`.*"
 	found := false
 	for rows.Next() {
