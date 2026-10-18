@@ -60,6 +60,10 @@ epoch=${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD)}
 stage=$(mktemp -d "$cache/release.XXXXXX")
 trap 'rm -rf -- "$stage"; if [[ -n "$lock_dir" ]]; then rmdir "$lock_dir" 2>/dev/null || true; fi' EXIT
 IFS=, read -r -a arch_list <<< "$architectures"
+# Read help completely before inspecting it. With pipefail, grep -q can close
+# a help pipeline early and make tar exit on SIGPIPE, intermittently omitting
+# the normalization flags even when the same tar supports them.
+tar_help=$(tar --help 2>&1 || true)
 for arch in "${arch_list[@]}"; do
   [[ "$arch" == amd64 || "$arch" == arm64 ]] || { printf 'Unsupported architecture: %s\n' "$arch" >&2; exit 2; }
   package="$stage/$arch"
@@ -76,13 +80,13 @@ for arch in "${arch_list[@]}"; do
   chmod 0644 "$package/VERSION" "$package/PLATFORM" "$package/BUILDINFO" "$package/README.txt"
   name="folio-$version-linux-$arch.tar.gz"
   tar_args=(-C "$package")
-  if tar --help 2>&1 | grep -q -- '--mtime'; then
+  if [[ "$tar_help" == *--mtime* ]]; then
     tar_args+=(--mtime="@$epoch")
   fi
-  if tar --help 2>&1 | grep -q -- '--owner'; then
+  if [[ "$tar_help" == *--owner* ]]; then
     tar_args+=(--owner=0 --group=0 --numeric-owner)
   fi
-  if tar --help 2>&1 | grep -q -- '--sort=name'; then
+  if [[ "$tar_help" == *--sort* ]]; then
     tar_args+=(--sort=name)
   fi
   tar "${tar_args[@]}" -cf - BUILDINFO PLATFORM README.txt VERSION install.sh folio powerlinux | gzip -n > "$output/$name.tmp"
