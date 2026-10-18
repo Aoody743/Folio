@@ -99,7 +99,7 @@ class PhaseOne(unittest.TestCase):
         token = self.new_token()
         mcp = HTTPMCPClient(self.server.url + "/mcp", token["token"])
         server_info = mcp.initialize()
-        self.assertEqual(server_info["serverInfo"]["name"], "powerlinux")
+        self.assertEqual(server_info["serverInfo"]["name"], "folio")
         status, tools = mcp.request("tools/list", {})
         self.assertEqual(status, 200)
         names = [t["name"] for t in tools["result"]["tools"]]
