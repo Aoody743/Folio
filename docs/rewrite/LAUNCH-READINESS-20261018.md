@@ -4,22 +4,22 @@
 
 ## 当前结论
 
-**首发尚未达到发布条件。** 第一阶段已验收；第二阶段核心版仍未完成；没有基于当前主线冻结并通过目标系统原生验收的最终候选包。此前构建、源码检查和原生验收只对各自记录的提交、构建包与环境有效，不能自动证明当前 `main` 可上线。
+**首发尚未达到发布条件。** 第一阶段已验收；第二阶段核心版仍未完成。当前已把本地 `work` 分支冻结为提交 `fee6e9189a74ba6eb3c828a5a956f3ff56a94f2a`，并从干净工作树构建、测试了 Folio `0.1.0-rc.5` amd64 候选包；该提交尚未整合到最新 `main`，Ubuntu 和多项核心实机验收也未完成，因此不能宣布发行门槛通过。
 
-### 2026-10-18 RC4 验收检查点
+### 2026-10-18 RC5 冻结验收检查点
 
-本轮构建并实际测试了 Folio `0.1.0-rc.4` amd64 QA 包（SHA-256：`497fa0e3bdbad31617ecc27361a2012736cecabefc33f950be41bcf542246081`）。源码基线为 `037b80832fe7e57ebfc08d3a8eef8f655fed70e1`，但工作区有未提交改动，所以此包只能作为 QA 候选，不能作为冻结发行包。可复核摘要见[RC4 证据](evidence/release-gates-rc4-20261018.json)；完整原始日志在当前 QA 工作区的 `/workspace/tools/qa-acceptance/logs/`，不随仓库分发。
+本轮在本地 `work` 分支创建冻结提交 `fee6e9189a74ba6eb3c828a5a956f3ff56a94f2a`，确认工作树干净后构建了 Folio `0.1.0-rc.5` amd64 包（SHA-256：`c4e4e817ab400e5a237ac0fe02ef6d26ac4d636904534ea54cac16ab01e8cb49`）。包内 `BUILDINFO` 记录 `working_tree_dirty=false`、Go `1.27.2`。Python/Go race、前端 82 项测试、类型检查和发行包 smoke 均通过；具体结果见[RC5 证据](evidence/release-gates-rc5-20261018.json)。RC5 已在隔离 Debian 13 验收机上从 RC4 升级，并复验 API/Agent/PostgreSQL 活动状态与 PostgreSQL 慢日志行为。原 RC4 验收摘要仍保留在[RC4 证据](evidence/release-gates-rc4-20261018.json)。原始日志位于当前 QA 工作区 `/workspace/tools/qa-acceptance/logs/`，不随仓库分发。
 
 | 门槛 | 本轮结果 | 发布判断 |
 | --- | --- | --- |
-| G0 源码冻结与可复现包 | 源码、安装器、Go race、前端 82 项测试及类型检查通过；RC4 包 smoke 通过。但源码树未冻结，无法声明干净构建 | 未通过 |
-| G1 PostgreSQL 慢日志 | Debian 13 上将验收镜像升级到 RC4 后，实机验证了 `statement`、`parse`、`bind`、`execute` 记录、数据库筛选、字面量/参数脱敏及启停生效；Ubuntu 尚未复测 | 部分通过 |
+| G0 源码冻结与可复现包 | 本地 `work` 已冻结；RC5 干净构建、Python/Go race、前端测试/类型检查和包 smoke 通过。尚未整合到最新 `main`，也未做双构建字节一致性比较 | 部分通过 |
+| G1 PostgreSQL 慢日志 | Debian 13 验收机升级到 RC5 后，实测 `statement`、`parse`、`bind`、`execute` 记录、数据库筛选、字面量/参数脱敏及启停生效；Ubuntu 尚未复测 | 部分通过 |
 | G2 Web 与数据库安装 | Debian 13 上实际安装、管理并重启 Nginx 成功，受管 HTTP 返回 200。PHP 安装在 `php8.4-common` 配置阶段失败；此测试镜像的 dpkg 状态缺少基础包的 `Maintainer`/`Description` 元数据，需在干净官方镜像重跑。PostgreSQL 冷安装计划在 2 vCPU / 2 GiB TCG 验收机等待超过 360 秒未返回，安装链未通过。没有完成 PHP 站点、OpenResty、Ubuntu 或数据库选择/备份恢复验收 | 未通过 |
 | G3 网页/MCP/任务/审计一致性 | Debian 13 上 Agent 文件实测 4/4、终端实测 3/3 通过，覆盖实际 MCP、WebSocket 和 SSH PTY；完整授权、撤权、任务状态及审计矩阵尚未完成 | 部分通过 |
-| G4 系统生命周期与数据保护 | Debian 13 上 RC4 全新/重复安装、服务重启、卸载保留数据、RC3→RC4 升级、真实中断恢复、回滚再升级、API/Agent/Nginx 重启自启通过。Ubuntu、数据库备份恢复、PHP 失败恢复和 2 vCPU / 2 GiB 性能基线尚未验收 | 部分通过 |
+| G4 系统生命周期与数据保护 | Debian 13 上此前已通过 RC4 全新/重复安装、服务重启、卸载保留数据、RC3→RC4 升级、中断恢复、回滚再升级及 API/Agent/Nginx 自启；本轮 RC4→RC5 升级保留数据并正常启动 API/Agent/PostgreSQL。Ubuntu、数据库备份恢复、PHP 失败恢复和 2 vCPU / 2 GiB 性能基线尚未验收 | 部分通过 |
 | G5 发布冻结 | 依赖 G0–G4 全部通过；当前仍有未验收目标系统和核心功能 | 未通过 |
 
-因此，RC4 证明了 Debian 13 上安装器、Agent、文件/终端通路、PostgreSQL 慢日志及 Nginx 托管生命周期的一组关键路径可工作，但尚不能宣布首发门槛完成。关闭发布阻塞至少还需要：冻结干净源码并重建候选；在干净 Debian 与 Ubuntu 镜像重跑 PHP/Web 栈、OpenResty 和数据库安装矩阵并解决包计划超时；在 Ubuntu 复验 G1；补齐数据库备份恢复和 G3 权限/审计矩阵；记录规定规格下的性能与系统变更基线，再以同一冻结包复验并更新支持和恢复文档。
+RC5 证明了冻结快照在 Debian 13 上的构建、包 smoke、升级和 PostgreSQL 慢日志路径可工作，但不能据此宣布首发门槛完成。后续需先把该快照审查并整合到最新 `main`（若提交变化则重建候选），再在干净 Debian 与 Ubuntu 镜像完成 PHP/Web 栈、OpenResty 和数据库安装矩阵并解决 PostgreSQL 包计划超时；在 Ubuntu 复验 G1；补齐数据库备份恢复和 G3 权限/审计矩阵；记录规定规格下的性能与系统变更基线，再以同一最终候选复验并更新支持和恢复文档。
 
 接续基线是 GitHub [`main`](https://github.com/Aoody743/Folio/tree/main)。另有一份为保留本地 WIP 而上传的[历史快照分支](https://github.com/Aoody743/Folio/tree/handoff/pre-closeout-wip-20261016)，提交 `c93eac3f3819bdcd66b30fec2a84948bc4ad3f97`。该快照基于较早的 `refine-local` 状态，供比对遗留草稿；它不是当前源码或发行基线，不要整体合并到 `main`。
 
@@ -34,6 +34,8 @@
 ## 上线前必须完成
 
 ### G0：冻结当前源码并建立可复现候选包
+
+当前本地 `work` 快照 `fee6e9189a74ba6eb3c828a5a956f3ff56a94f2a` 已完成干净构建与基本包验收；要成为正式发行基线，仍须审查并整合到最新 `main`，在主线最终提交上重建。字节级可复现构建尚未验证。
 
 - [ ] 从最新 `main` 固定待验收 commit；在干净 Linux 环境按锁文件安装依赖，记录源码 commit 与构建环境。
 - [ ] 执行 Go、前端、安装器及发行包检查；每项记录命令、结果和日志位置，不把交叉编译、旧版本通过或未执行写成通过。
@@ -81,7 +83,8 @@
 ## 证据与历史记录边界
 
 - `docs/rewrite/evidence/phase2-hosting-core-source-checks-20261016.json` 记录的是当时源码检查，不是当前 `main` 的完整发行验收。
-- [RC4 验收检查点](evidence/release-gates-rc4-20261018.json) 记录的是本地 `work` 分支、未冻结源码和 Debian 13 amd64 QA 包的本轮结果；其中通过项不能替代 Ubuntu 24.04 或干净发行候选验收。
+- [RC5 验收检查点](evidence/release-gates-rc5-20261018.json) 记录的是本地 `work` 冻结提交和 Debian 13 amd64 QA 包的本轮结果；其中通过项不能替代主线整合、Ubuntu 24.04 或完整发行矩阵验收。
+- [RC4 验收检查点](evidence/release-gates-rc4-20261018.json) 是上一轮未冻结候选的历史记录。
 - `docs/rewrite/evidence/phase2-closeout-dev24-20261016.json` 是 ARM64 方向的历史检查；用户随后把首发目标改为 Debian 13 / Ubuntu 24.04 amd64。
 - 较早 dev.21/dev.23 的原生记录只能证明对应旧包与当时环境的结果，不能代替 G0 当前候选包。
 - 当前仓库内源代码可以接续开发；云端 VM、运行数据、凭据、原始大体积日志不会随 Git 一起迁移。凭据不得加入仓库、计划或验收日志。

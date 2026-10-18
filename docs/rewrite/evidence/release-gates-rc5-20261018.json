@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-18",
+  "product": "Folio",
+  "candidate": {
+    "version": "0.1.0-rc.5",
+    "architecture": "amd64",
+    "sha256": "c4e4e817ab400e5a237ac0fe02ef6d26ac4d636904534ea54cac16ab01e8cb49",
+    "source_branch": "work",
+    "source_commit": "fee6e9189a74ba6eb3c828a5a956f3ff56a94f2a",
+    "working_tree_clean_at_build": true,
+    "release_status": "local frozen QA candidate; not integrated into latest main and not a release artifact",
+    "archive_path_in_qa_workspace": "/workspace/tools/qa-acceptance/release-candidate-rc5/folio-0.1.0-rc.5-linux-amd64.tar.gz",
+    "build_info": {
+      "go": "1.27.2",
+      "source_date_epoch": 1792326372,
+      "byte_for_byte_rebuild_comparison": "not run"
+    }
+  },
+  "source_checks": {
+    "installer_python_tests": "passed: 33 tests; 2 root-only cases skipped outside the owned VM",
+    "mysql_race_tests": "passed: third_party/mysql go test -mod=readonly -race -count=1 ./...",
+    "go_race_tests": "passed: go test -race -count=1 ./...",
+    "frontend_tests": "passed: 82 tests",
+    "frontend_typecheck": "passed: npm run typecheck --prefix frontend",
+    "release_package_smoke": "passed: archive validation, install/repeat, HTTP health/session, embedded assets, lock, SIGTERM, reinstall and data-preserving uninstall",
+    "source_test_log": "/workspace/tools/qa-acceptance/logs/release-gates-source-tests-rc5-final-20261018.log",
+    "package_smoke_log": "/workspace/tools/qa-acceptance/logs/release-gates-rc5-package-smoke-20261018.log"
+  },
+  "targets": {
+    "debian13_amd64": {
+      "environment": "isolated QEMU TCG clone, 2 vCPU, 2 GiB; managed PostgreSQL instance already present; upgraded from RC4",
+      "rc5_upgrade": "passed: installer accepted exact archive SHA-256 and agent policy; preserved panel data; API, Agent and managed PostgreSQL units active; local and forwarded health checks reported 0.1.0-rc.5",
+      "postgresql_slow_logs": {
+        "result": "passed",
+        "record_types": ["statement", "parse", "bind", "execute"],
+        "record_counts": {"bind": 5, "execute": 3, "parse": 6, "statement": 3},
+        "database_filter": "passed",
+        "literal_and_bind_redaction": "passed",
+        "enable_disable_reload_settled": "passed",
+        "external_evidence": "/workspace/tools/qa-acceptance/active-release-test/debian-rc4-postgresql-existing/postgresql-g1-live-rc5-evidence.json",
+        "external_log": "/workspace/tools/qa-acceptance/logs/release-gates-debian-rc5-postgresql-slowlog-protocols-20261018.log"
+      },
+      "other_debian_evidence": "The detailed RC4 record contains earlier Debian install, files, terminal, Nginx, upgrade recovery, rollback, data-preserving uninstall and reboot checks. RC5 evidence here is limited to the upgrade and PostgreSQL checks above.",
+      "php_install": "not passed: prior attempt failed during php8.4-common configuration in an image whose dpkg status metadata for base packages was incomplete; retry on a clean official image required",
+      "postgresql_cold_install_plan": "not passed: exact signed package plan produced no response within 360 seconds under 2 vCPU/2 GiB QEMU TCG; package installation was not attempted",
+      "actual_php_site_and_tls": "not tested",
+      "openresty": "not tested",
+      "database_selection_backup_restore": "not tested",
+      "resource_baseline": "not tested"
+    },
+    "ubuntu2404_amd64": {
+      "status": "not tested with RC5"
+    }
+  },
+  "release_gates": {
+    "G0": "partial: local frozen work-branch snapshot, clean RC5 build, source tests and package smoke passed; latest-main integration and byte-for-byte reproducibility remain outstanding",
+    "G1": "partial: Debian 13 RC5 PostgreSQL slow-log behavior passed; Ubuntu verification remains outstanding",
+    "G2": "blocked: clean-image PHP/Web stack, OpenResty, Ubuntu and database selection/backup/restore matrix remain incomplete; PostgreSQL cold package planning timed out",
+    "G3": "partial: real Debian files and terminal paths passed on the earlier RC4 candidate; full web/MCP permission, revocation, task and audit matrix remains incomplete",
+    "G4": "partial: Debian lifecycle and recovery paths were tested on RC4; RC5 upgrade preserved panel data and services; Ubuntu, PHP recovery, database recovery and performance baseline remain outstanding",
+    "G5": "blocked: G0-G4 are not complete on one final candidate"
+  },
+  "external_evidence": {
+    "directory": "/workspace/tools/qa-acceptance/logs/",
+    "files": [
+      "release-gates-source-tests-rc5-final-20261018.log",
+      "release-gates-rc5-package-smoke-20261018.log",
+      "release-gates-build-rc4-20261018.log",
+      "release-gates-rc4-package-smoke-20261018.log",
+      "release-gates-debian-rc5-postgresql-slowlog-protocols-20261018.log",
+      "../active-release-test/debian-rc4-postgresql-existing/postgresql-g1-live-rc5-evidence.json"
+    ],
+    "note": "Raw VM logs and private fixtures remain outside the repository; this file contains no credentials."
+  }
+}
