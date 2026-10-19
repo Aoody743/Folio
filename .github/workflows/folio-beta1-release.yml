@@ -1,0 +1,82 @@
+name: Publish Folio 1.0-beta1 prerelease
+
+on:
+  push:
+    branches:
+      - rc/0.1.0-rc15-handoff
+    paths:
+      - .github/workflows/folio-beta1-release.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.repository == 'Aoody743/Folio'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/product-source/.cache/rewrite
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ee3917412fcc4e3267a625d74a243527227cea0a
+          path: product-source
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: product-source/frontend/package-lock.json
+
+      - name: Rebuild the clean 1.0-beta1 package
+        run: |
+          set -Eeuo pipefail
+          [[ "$(git -C product-source rev-parse HEAD)" == ee3917412fcc4e3267a625d74a243527227cea0a ]]
+          [[ -z "$(git -C product-source status --porcelain --untracked-files=normal)" ]]
+          bash product-source/scripts/rewrite/build.sh \
+            --version 1.0-beta1 \
+            --architectures amd64 \
+            --output "$GITHUB_WORKSPACE/release-assets"
+          archive=release-assets/folio-1.0-beta1-linux-amd64.tar.gz
+          grep -Fx 'commit=ee3917412fcc4e3267a625d74a243527227cea0a' <(tar -xOzf "$archive" BUILDINFO)
+          grep -Fx 'working_tree_dirty=false' <(tar -xOzf "$archive" BUILDINFO)
+          printf '%s  %s\n' \
+            72672619b8da5a5209883179759851d82c344797168314f0fd89b47ed0fbb492 \
+            "$archive" | sha256sum --check
+          python3 product-source/scripts/rewrite/test-package.py "$archive"
+
+      - name: Prepare and verify the one-command installer and screenshots
+        run: |
+          set -Eeuo pipefail
+          cp product-source/scripts/rewrite/install-1.0-beta1.sh release-assets/install-1.0-beta1.sh
+          cp product-source/docs/screenshots/panel-1.0-beta1-screenshots.zip release-assets/panel-1.0-beta1-screenshots.zip
+          cd release-assets
+          cp CHECKSUMS.txt SHA256SUMS.txt
+          sha256sum install-1.0-beta1.sh panel-1.0-beta1-screenshots.zip >> SHA256SUMS.txt
+          sha256sum --check --strict SHA256SUMS.txt
+
+      - name: Upload verified assets and publish the prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          gh release upload 1.0-beta1 \
+            release-assets/folio-1.0-beta1-linux-amd64.tar.gz \
+            release-assets/install-1.0-beta1.sh \
+            release-assets/SHA256SUMS.txt \
+            release-assets/panel-1.0-beta1-screenshots.zip \
+            --clobber
+          gh release edit 1.0-beta1 \
+            --title 'Folio 1.0-beta1' \
+            --notes-file product-source/.github/release-notes/1.0-beta1.md \
+            --prerelease \
+            --draft=false
