@@ -4,27 +4,58 @@
 
 # Folio · 折纸面板
 
-Folio 是一款面向 Linux 服务器的管理面板，提供主机状态、网站与软件管理、文件和终端、任务记录，以及可与同一权限和审计体系协作的 MCP 接口。
+Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态、网站与软件、文件与终端、计划任务、账户安全和操作审计放在同一个界面中；支持 MCP 的客户端也可以在授权后调用面板提供的能力。
 
-新版使用 Go 服务和静态 Web 界面，主机上无需常驻 Node.js、Python 或 AI 模型进程。独立主机执行器按需启用。
+服务端使用 Go，管理界面以静态资源嵌入发行包。运行 Folio 不需要在服务器上常驻 Node.js、Python 或 AI 模型进程。可选的主机执行器默认关闭，只有配置 root 私有策略后才会启用。
 
-## 当前版本
+## 功能
 
-[Folio 1.0-beta1](https://github.com/Aoody743/Folio/releases/tag/1.0-beta1) 已发布，提供 Linux amd64 安装包和一键安装脚本。
+- 查看主机概览、资源指标、服务状态和共享便签。
+- 管理网站、证书和软件目录中的服务。
+- 浏览文件，使用受控终端和计划任务。
+- 查看数据库与缓存连接、任务进度和操作记录。
+- 管理账户安全、会话、MCP 客户端授权和界面主题。
 
-## 一键安装
+![Folio 面板页面总览](docs/screenshots/panel-1.0-beta1/contact-sheet.png)
 
-在全新 Linux amd64、运行 systemd 的主机上执行：
+截图索引包含[全部 18 个页面](docs/screenshots/panel-1.0-beta1/README.md)，也可下载[截图 ZIP](docs/screenshots/panel-1.0-beta1-screenshots.zip)。截图使用隔离的示例数据，不是某台服务器的实时信息。
+
+## 安装与首次登录
+
+当前发行版是 [Folio 1.0-beta1](https://github.com/Aoody743/Folio/releases/tag/1.0-beta1)，提供 Linux amd64 安装包和一键安装脚本。在 Linux amd64、运行 systemd 的服务器上执行：
 
 ```sh
 curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta1/install-1.0-beta1.sh | sudo bash
 ```
 
-安装脚本会下载该版本的软件包及 `SHA256SUMS.txt`，校验 SHA-256 后调用包内安装器。运行前可以先审阅[一键安装脚本](scripts/rewrite/install-1.0-beta1.sh)。安装目标为 Linux amd64 systemd 主机；可选 Agent 能力默认关闭，需要显式参数和 root 私有策略。
+安装脚本会下载发行包和 `SHA256SUMS.txt`，校验发行包后再运行包内安装器。可以先查看[一键安装脚本](scripts/rewrite/install-1.0-beta1.sh)及[发行校验清单](https://github.com/Aoody743/Folio/releases/download/1.0-beta1/SHA256SUMS.txt)。
+
+安装完成后，服务由 systemd 管理，默认只监听服务器本机的 `127.0.0.1:9000`。在自己的电脑上建立 SSH 隧道：
+
+```sh
+ssh -L 9000:127.0.0.1:9000 your-user@your-server
+```
+
+保持隧道运行，在浏览器打开 <http://127.0.0.1:9000>。首次设置时，按页面提示从服务器本机管理员控制台取得私有初始化令牌，并设置管理员账号和密码。令牌保存在 `/var/lib/powerlinux/bootstrap-token`；完成设置后会被删除。不要把令牌或密码放进 URL、聊天记录或命令行参数。
+
+可以用下面的命令查看服务状态和健康状态：
+
+```sh
+sudo systemctl status powerlinux.service
+sudo /opt/powerlinux/current/folio healthcheck \
+  --server-config /etc/powerlinux/server.json \
+  --expected-version 1.0-beta1
+```
+
+默认配置不向公网开放服务。如需通过其他入口访问，请先按[安装与运维手册](scripts/rewrite/README.md)配置并验证 HTTPS、监听地址和允许的来源。
+
+## 更新、回退与卸载
+
+安装器会保留版本快照，并提供更新、回退和卸载流程。卸载会停止并移除 Folio 的服务入口，同时保留数据、配置和快照，方便按需恢复或清理。请按[安装与运维手册](scripts/rewrite/README.md#update-rollback-and-uninstall)中的步骤执行这些操作。
 
 ## 本地开发
 
-需要与仓库匹配的 Go、Node.js 24 和 npm：
+开发需要仓库指定版本的 Go、Node.js 24 和 npm：
 
 ```sh
 make rewrite-deps
@@ -33,24 +64,25 @@ make rewrite-build REWRITE_VERSION=dev
 make rewrite-dev
 ```
 
-构建、手动安装、升级、恢复和开发环境说明见[新版构建与安装手册](scripts/rewrite/README.md)。
+常用入口：
 
-## 面板截图
+- `cmd/powerlinux`：服务器与命令行程序。
+- `internal/`：API、授权、任务和主机能力实现。
+- `frontend/`：Next.js 静态管理界面。
+- `scripts/rewrite/`：构建、安装、升级、回退和卸载工具。
 
-截图覆盖当前面板的 18 个可见页面，包括证书、数据库连接、缓存空间和通知渠道。页面状态使用隔离的示例数据；软件目录及其验证状态取自随 beta1 发布的产品清单，不代表真实主机快照。查看[截图索引](docs/screenshots/panel-1.0-beta1/README.md)。
+完整参数和运维说明见[构建与安装手册](scripts/rewrite/README.md)。
 
-![Folio 面板页面总览](docs/screenshots/panel-1.0-beta1/contact-sheet.png)
-
-## 产品文档
+## 项目文档
 
 - [1.0-beta1 发布说明](.github/release-notes/1.0-beta1.md)
-- [开发计划](docs/rewrite/DEVELOPMENT-PLAN.md)
+- [面板截图索引](docs/screenshots/panel-1.0-beta1/README.md)
 - [MCP 接入设计](docs/rewrite/AI-NATIVE-MCP.md)
 - [界面设计规范](docs/rewrite/UI-SPEC.md)
-- [本地开发交接](docs/rewrite/HANDOFF.md)
+- [开发计划](docs/rewrite/DEVELOPMENT-PLAN.md)
 
-仓库仍包含上一代实现和兼容标识；新版界面、产品名称和新发行命令统一使用 **Folio**。
+仓库仍包含旧版兼容代码；新版界面、产品名称及安装命令统一使用 **Folio**。
 
 ## License
 
-本项目采用 Apache License 2.0，详见 [LICENSE](./LICENSE)。
+本项目采用 Apache License 2.0，详见 [LICENSE](LICENSE)。
