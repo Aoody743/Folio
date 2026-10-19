@@ -1,0 +1,78 @@
+name: Publish Folio RC15 prerelease
+
+on:
+  push:
+    branches:
+      - rc/0.1.0-rc15-handoff
+    paths:
+      - .github/workflows/rc15-release.yml
+      - .github/release-notes/0.1.0-rc.15.md
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.repository == 'Aoody743/Folio'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/.cache/rewrite
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          ref: d38e3de398d677ce39b241209658f95dcaceadfa
+          path: product-source
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: product-source/frontend/package-lock.json
+
+      - name: Rebuild the frozen RC15 candidate
+        run: |
+          set -Eeuo pipefail
+          [[ "$(git -C product-source rev-parse HEAD)" == d38e3de398d677ce39b241209658f95dcaceadfa ]]
+          bash product-source/scripts/rewrite/build.sh \
+            --version 0.1.0-rc.15 \
+            --architectures amd64 \
+            --output "$GITHUB_WORKSPACE/release-assets"
+          archive=release-assets/folio-0.1.0-rc.15-linux-amd64.tar.gz
+          grep -Fx 'commit=d38e3de398d677ce39b241209658f95dcaceadfa' <(tar -xOzf "$archive" BUILDINFO)
+          grep -Fx 'working_tree_dirty=false' <(tar -xOzf "$archive" BUILDINFO)
+          printf '%s  %s\n' \
+            392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6 \
+            "$archive" | sha256sum --check
+
+      - name: Add the pinned installer and verify release assets
+        run: |
+          set -Eeuo pipefail
+          cp scripts/rewrite/install-rc15.sh release-assets/install-rc15.sh
+          cd release-assets
+          sha256sum folio-0.1.0-rc.15-linux-amd64.tar.gz install-rc15.sh > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+
+      - name: Upload verified assets and publish the prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          gh release upload 0.1.0-rc.15 \
+            release-assets/folio-0.1.0-rc.15-linux-amd64.tar.gz \
+            release-assets/install-rc15.sh \
+            release-assets/SHA256SUMS.txt \
+            --clobber
+          gh release edit 0.1.0-rc.15 \
+            --title 'Folio 0.1.0-rc.15' \
+            --notes-file .github/release-notes/0.1.0-rc.15.md \
+            --prerelease \
+            --draft=false
