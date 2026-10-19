@@ -4,13 +4,13 @@
 
 ## 当前结论
 
-**RC15 可复现候选已冻结，Ubuntu 原生验收继续通过，但首发门槛仍未全部通过。** 源码 `d38e3de398d677ce39b241209658f95dcaceadfa`，amd64 包 SHA-256 `392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6`。已上传独立交接分支 [`rc/0.1.0-rc15-handoff`](https://github.com/Aoody743/Folio/tree/rc/0.1.0-rc15-handoff) 供其他 Agent 接续；GitHub `main` 与 `legacy` 未修改。RC15 全量 Go race、vet、前端构建/类型检查、发行包 smoke、独立重建字节一致均通过。安装器 33 项（2 root-policy skip）、前端 82 项和嵌套 MySQL driver race 分别执行于本轮更早的未改动组件版本，不能记成 RC15 重跑。
+**RC15 可复现候选已冻结，Ubuntu 原生验收继续通过，但首发门槛仍未全部通过。** [`0.1.0-rc.15`](https://github.com/Aoody743/Folio/releases/tag/0.1.0-rc.15) 已作为 GitHub 预发布版发布；这不代表 G5 或正式首发验收通过。源码 `d38e3de398d677ce39b241209658f95dcaceadfa`，amd64 包 SHA-256 `392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6`。已上传独立交接分支 [`rc/0.1.0-rc15-handoff`](https://github.com/Aoody743/Folio/tree/rc/0.1.0-rc15-handoff)；GitHub `main` 与 `legacy` 未修改。RC15 全量 Go race、vet、前端构建/类型检查、发行包 smoke、独立重建字节一致均通过。安装器 33 项（2 root-policy skip）、前端 82 项和嵌套 MySQL driver race 分别执行于本轮更早的未改动组件版本，不能记成 RC15 重跑。
 
 本轮修复发行版默认 PHP 版本、tar 探测 SIGPIPE 导致的不稳定归档、MySQL 客户端路径、AppArmor 精确授权和多余 X 监听、单连接导入死锁、新装软件 vendor unit 自启冲突、Docker 超时识别，以及任务列表逐条查询性能问题。AppArmor 保持 enforce；保留原有 vendor unit 使用意图。
 
 | 门槛 | 当前证据 | 判断 |
 | --- | --- | --- |
-| G0 | RC15 干净源码、双构建、全量 race/vet、包 smoke 通过 | 本地候选通过 |
+| G0 | RC15 干净源码、双构建、全量 race/vet、包 smoke 通过；发布资产重新构建后哈希一致 | 冻结包通过，已作为预发布版发布 |
 | G1 | 官方 Ubuntu RC15 实测 PostgreSQL 四种协议慢日志、筛选、脱敏、启停 reload | Ubuntu 通过；新 Debian 待测 |
 | G2 | RC15 官方 Ubuntu 上 PHP 8.3、Nginx/OpenResty、HTTPS 与失败配置回滚、MySQL/PostgreSQL 备份恢复通过 | Debian 与数据库“不装/一种/两种”选择矩阵未完成 |
 | G3 | RC15 文件 4/4、终端 3/3、四种宽度/五套主题浏览器、任务、REST/MCP 资源隔离及撤权通过 | Ubuntu 通过；Debian 同候选矩阵未完成 |

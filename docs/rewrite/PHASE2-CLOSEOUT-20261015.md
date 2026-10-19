@@ -1,6 +1,6 @@
 # 第二阶段核心版收尾
 
-2026-10-19 接续检查点：当前冻结候选 RC15，官方 Ubuntu 原生栈、浏览器/MCP/任务、完整重启及卸载重装已有直接证据；Debian 镜像出口、同候选双系统矩阵和性能目标仍阻塞，`stage_2_complete=false`。RC15 已上传到独立交接分支 [`rc/0.1.0-rc15-handoff`](https://github.com/Aoody743/Folio/tree/rc/0.1.0-rc15-handoff)；`main` 与 `legacy` 未修改。以[当前验收结论](LAUNCH-READINESS-20261018.md)和 [RC15 证据](evidence/release-gates-rc15-20261019.json)为准；下文历史状态不覆盖该结论。
+2026-10-19 接续检查点：当前冻结候选 RC15，官方 Ubuntu 原生栈、浏览器/MCP/任务、完整重启及卸载重装已有直接证据；Debian 镜像出口、同候选双系统矩阵和性能目标仍阻塞，`stage_2_complete=false`。RC15 已作为 [GitHub prerelease](https://github.com/Aoody743/Folio/releases/tag/0.1.0-rc.15) 发布，交接分支 [`rc/0.1.0-rc15-handoff`](https://github.com/Aoody743/Folio/tree/rc/0.1.0-rc15-handoff) 也已上传；`main` 与 `legacy` 未修改。以[当前验收结论](LAUNCH-READINESS-20261018.md)和 [RC15 证据](evidence/release-gates-rc15-20261019.json)为准；下文历史状态不覆盖该结论。
 
 2026-10-15，用户允许不迁移无用软件，要求准备收尾。本文件优先于旧计划中必须迁移全部 23 个核心插件的假设。2026-10-16 用户先将目标收敛到 ARM64，随后又批准 Nginx + PHP / OpenResty + PHP 首次启动二选一、Next.js/Go 应用托管，并将目标改为全新 Debian 13 与 Ubuntu 24.04 amd64 机器；下面较早的 ARM64 记录保留为历史证据，不代表当前产品目标。Nginx 使用 Debian/Ubuntu 签名仓库原生包；不以机器上已有 Nginx 为前置条件。2026-10-17 起进入新版首发验收准备，第二阶段仍未完成，第三阶段尚未开始实现。
 

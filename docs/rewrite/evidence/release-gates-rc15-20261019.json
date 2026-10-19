@@ -7,8 +7,16 @@
     "sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
     "clean_at_build": true,
     "reproducible_bytes": true,
-    "published": false,
+    "published": true,
+    "release_url": "https://github.com/Aoody743/Folio/releases/tag/0.1.0-rc.15",
     "handoff_branch_uploaded": "rc/0.1.0-rc15-handoff"
+  },
+  "publication": {
+    "kind": "GitHub prerelease",
+    "tag_commit": "7811bd9e11768cbb0b43e5cfc0c8a171a58bd6c8",
+    "workflow_commit": "93a66311e0cfabed0774725be7f78a0ce708e138",
+    "workflow_run": "https://github.com/Aoody743/Folio/actions/runs/39200400677",
+    "assets_sha256_verified": true
   },
   "source_checks": {
     "rc15": [
@@ -96,7 +104,7 @@
     "handoff_branch_uploaded": true,
     "last_checked": "2026-10-19",
     "writes_performed": true,
-    "write_scope": "Uploaded the RC15 handoff branch only; main and legacy were not modified.",
+    "write_scope": "Pushed the RC15 handoff branch and tag and published the prerelease assets; main and legacy were not modified.",
     "condition": "Preserve legacy/promote main only after all gates pass."
   },
   "evidence": [
