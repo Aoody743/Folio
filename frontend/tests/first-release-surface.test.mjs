@@ -50,8 +50,6 @@ test("unsupported integrations stay hidden while selected runtimes are visible",
   for (const id of [
 	"acme_pandominassl_apply",
     "mongodb",
-    "phpmyadmin",
-    "pgadmin",
     "pureftp",
     "backup_ftp",
     "data_query",
@@ -61,6 +59,8 @@ test("unsupported integrations stay hidden while selected runtimes are visible",
     assert.equal(surface.isFirstReleaseCatalogPlugin(id), false, id);
   }
   assert.equal(surface.isFirstReleaseCatalogPlugin("nginx"), true);
+  assert.equal(surface.isFirstReleaseCatalogPlugin("phpmyadmin"), true);
+  assert.equal(surface.isFirstReleaseCatalogPlugin("pgadmin"), true);
   assert.equal(surface.isFirstReleaseCatalogPlugin("postgresql"), true);
   assert.equal(surface.isFirstReleaseCatalogPlugin("git"), true);
   assert.equal(surface.isFirstReleaseCatalogPlugin("nodejs"), true);

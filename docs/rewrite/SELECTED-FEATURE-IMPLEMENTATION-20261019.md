@@ -8,7 +8,8 @@
 - Go 项目归档和 Git 导入现在都要求根 go.mod 与 go.sum；模板提供空 go.sum。Node.js 构建先把源码安全复制到受限 staging 目录，再以应用专属非特权身份安装依赖和构建；成功后才切换目录，失败保留当前项目。Git 导入记录仓库地址、分支和精确 commit；仓库 URL 不允许嵌入凭据，私有仓库仍明确不支持。
 - Node.js 的受管服务以 npm run start 启动，并设置 HOST=127.0.0.1、HOSTNAME=127.0.0.1 和受管 PORT。服务启动后会轮询固定回环 upstream；在 20 秒内无 HTTP 响应时停止服务并报告失败。通用 Node.js 项目必须让启动脚本使用这些环境变量。
 - ACME/DNS 的证书入口和相关动作现已出现在首发界面。代码已有加密 DNS 凭据、不可变凭据版本、持久 ACME 订单、逐订单 TXT 所有权回执和精确清理；下面列出的“可用”只表示代码适配器存在，不表示真实供应商账号或公开 CA 签发已通过。
-- phpMyAdmin 和 pgAdmin 暂不开放：目录已删除没有可信来源的旧版本选择，将默认来源与能力标为 unavailable，因此不会出现在可安装软件列表。两者尚无可信安装来源和受管 Web 生命周期适配器。
+- phpMyAdmin 和 pgAdmin 已接入可安装软件目录。phpMyAdmin 使用官方 5.2.3 发布包的固定 SHA-256、Debian 12/13 的签名 PHP CLI/扩展包、受管回环监听和 cookie 登录；安装前要求存在唯一的受管 MySQL/MariaDB 目标，或明确指定实例。pgAdmin 使用固定哈希校验的官方签名密钥和 Debian 12/13 amd64 APT 源，只安装 `pgadmin4-server`，不安装会接管 Apache 的 `pgadmin4-web`；首次安装创建管理员账号，密码不返回到普通计划/实例响应。两者默认只监听回环地址，需通过网站反向代理发布。
+- 两个工具的安装/启停要求真实 systemd，并由受管服务执行；本轮代码测试通过，但运行容器没有 systemd，目标主机安装、登录、数据库连接、反向代理、重启恢复和升级仍未验收。目录中的旧动作仍标记为未一对一迁移；这不冒充旧插件 API 全量兼容。
 
 ## DNS 提供商状态
 
@@ -60,12 +61,13 @@
 - Debian 13 amd64 和 Ubuntu 24.04 amd64 上 Git/OpenSSH、Node.js/npm、Go 的签名包冷安装、升级、重复安装、状态和卸载。
 - Node.js/Next.js/Go 在目标主机上的归档和 Git 创建、构建、失败恢复、服务重启、站点反代及删除全链路。私有 Git 认证仍未实现。
 - 所有 30 个已实现 DNS 适配器的真实 API 行为、DNS-01 staging/公开 CA 申请和续期；HTTP-01 公开 CA canary 也未运行。
-- phpMyAdmin/pgAdmin 的可信包源、数据库 canary、HTTPS 反代、备份保留和服务恢复；功能保持隐藏。
+- Debian 12/13 上 phpMyAdmin/pgAdmin 的冷安装、管理员登录、真实 MySQL/PostgreSQL canary、HTTPS 反代、备份保留、服务重启恢复和升级；代码实现已开放，但目标主机验收仍待完成。
 
 ## 本地验证
 
 - /workspace/tools/go1.27.2/bin/go test ./...：通过。
 - cd frontend && npm run typecheck && npm test：通过，84 项测试全部通过。
+- phpMyAdmin/pgAdmin 定向单测覆盖可信 catalog 声明、回环配置、首个管理员口令校验、实例预检、响应标识和敏感字段脱敏；这些测试不替代 systemd/真实包运行验收。
 - Next.js 模板执行 npm ci --dry-run --ignore-scripts --offline：锁文件与依赖清单一致。
 - 无依赖 Node.js 模板执行 npm ci --dry-run --ignore-scripts --offline：锁文件格式和清单一致。
 - go test -tags hosted_apps_integration ... 的真实非特权 npm 构建用例在当前非 root 容器中按设计跳过；目标主机实测仍待安排。

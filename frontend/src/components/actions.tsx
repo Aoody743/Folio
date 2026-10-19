@@ -407,10 +407,78 @@ export function ActionForm({
   lockedPresetFields?: string[];
   formatError?: (error: APIError) => string | undefined;
 }) {
-  const schema = (capability.input_schema ?? {
+  const baseSchema = (capability.input_schema ?? {
     type: "object",
     properties: {},
   }) as Schema;
+  const pluginID = typeof preset.plugin_id === "string" ? preset.plugin_id : "";
+  const schema = (() => {
+    if (capability.name !== "software_plan") return baseSchema;
+    const port = pluginID === "phpmyadmin" ? 19050 : 19051;
+    const configProperties: Record<string, Schema> | undefined =
+      pluginID === "phpmyadmin"
+        ? {
+            port: {
+              type: "integer",
+              minimum: 1024,
+              maximum: 65535,
+              default: port,
+              description: "仅监听本机回环地址；如需外部访问，请用受管站点反向代理。",
+            },
+            target_id: {
+              type: "string",
+              maxLength: 128,
+              description: "可选的 MySQL/MariaDB 软件实例 ID；留空时仅在恰有一个实例时自动选择。",
+            },
+          }
+        : pluginID === "pgadmin"
+          ? {
+              port: {
+                type: "integer",
+                minimum: 1024,
+                maximum: 65535,
+                default: port,
+                description: "仅监听本机回环地址；如需外部访问，请用受管站点反向代理。",
+              },
+              ...(preset.operation === "install"
+                ? {
+                    admin_email: {
+                      type: "string",
+                      format: "email",
+                      maxLength: 254,
+                      description: "首次安装创建的 pgAdmin 管理员邮箱。之后可在 pgAdmin 中修改密码。",
+                    },
+                    admin_password: {
+                      type: "string",
+                      format: "password",
+                      writeOnly: true,
+                      minLength: 12,
+                      maxLength: 128,
+                      description: "只用于首次创建管理员；不会写入实例回执或安装计划响应。",
+                    },
+                  }
+                : {}),
+            }
+          : undefined;
+    if (!configProperties) return baseSchema;
+    return {
+      ...baseSchema,
+      properties: {
+        ...baseSchema.properties,
+        config: {
+          type: "object",
+          properties: configProperties,
+          required:
+            pluginID === "pgadmin" && preset.operation === "install"
+              ? ["port", "admin_email", "admin_password"]
+              : ["port"],
+          additionalProperties: false,
+          description: "受管数据库 Web 工具设置。监听地址固定为 127.0.0.1。",
+        },
+      },
+      required: [...(baseSchema.required ?? []), "config"],
+    } as Schema;
+  })();
   const presetKey = JSON.stringify(preset);
   const stablePreset = Object.fromEntries(
     Object.entries(preset).filter(([key]) =>

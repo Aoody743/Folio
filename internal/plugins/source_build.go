@@ -21,7 +21,7 @@ import (
 var sourceBuildPath = regexp.MustCompile(`^/[A-Za-z0-9/_+.-]+$`)
 
 func sourceUsesSystemPackages(source Source) bool {
-	return source.Kind == "signed_package" || source.Kind == "verified_source" && len(source.Packages) > 0
+	return source.Kind == "signed_package" || (source.Kind == "verified_source" || source.Kind == "verified_archive") && len(source.Packages) > 0
 }
 func validateSourceBuildConfig(config PrivilegedConfig) error {
 	if !config.EnableSourceBuild {
@@ -317,7 +317,7 @@ func (e *PrivilegedExecutor) buildSource(ctx context.Context, source Source, art
 	if err = secureRuntimeTree(stage, e.gid); err != nil {
 		return "", err
 	}
-	program, err := resolveArchiveProgram(stage, manifest)
+	program, err := resolveArchiveProgram(stage, manifest, nil)
 	if err != nil {
 		return "", err
 	}

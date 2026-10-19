@@ -45,6 +45,7 @@ import {
 } from "./resource-ui";
 const categoryName: Record<string, string> = {
   database: "数据库",
+  "database-ui": "数据库管理",
   container: "容器",
   containers: "容器",
   runtime: "运行环境",
@@ -127,6 +128,18 @@ export function SoftwareView({
     : softwareTabs[0]?.id;
   const planAction = capabilities.find((c) => c.name === "software_plan");
   const applyAction = capabilities.find((c) => c.name === "software_apply");
+  const databaseTargetReferences = {
+    target_id: instances
+      .filter(
+        (item) =>
+          ["mysql", "mysql-community", "mariadb"].includes(item.plugin_id) &&
+          item.status !== "uninstalled",
+      )
+      .map((item) => ({
+        value: item.id,
+        label: `${item.plugin_id} · ${item.instance_id ?? item.id} · ${item.status}`,
+      })),
+  };
   const refresh = () => {
     void catalog.reload();
     void installed.reload();
@@ -452,6 +465,9 @@ export function SoftwareView({
                 <ActionForm
                   capability={planAction}
                   preset={{ plugin_id: selected.id, operation: "install" }}
+                  references={
+                    selected.id === "phpmyadmin" ? databaseTargetReferences : {}
+                  }
                   onExecuted={receivePlan}
                 />
               )}
@@ -504,6 +520,22 @@ export function SoftwareView({
                   <State value={detail.data?.status ?? instance.status} />
                 </div>
               )}
+              {instance &&
+                ["phpmyadmin", "pgadmin"].includes(instance.plugin_id) &&
+                instance.config &&
+                typeof instance.config === "object" && (
+                  <div className="notice warning">
+                    此管理页面只监听主机本机回环地址{" "}
+                    <code>
+                      127.0.0.1:
+                      {String(
+                        (instance.config as Record<string, unknown>).port ??
+                          (instance.plugin_id === "phpmyadmin" ? 19050 : 19051),
+                      )}
+                    </code>
+                    。需要从域名访问时，请在“网站”页面添加反向代理到该地址；不要把管理端口直接开放到公网。
+                  </div>
+                )}
               {detail.error && (
                 <div className="notice danger">{detail.error}</div>
               )}
@@ -588,6 +620,11 @@ export function SoftwareView({
                       plugin_id: selected.id,
                       instance_id: instance?.instance_id,
                     }}
+                    references={
+                      selected.id === "phpmyadmin"
+                        ? databaseTargetReferences
+                        : {}
+                    }
                     onExecuted={receivePlan}
                   />
                 </details>

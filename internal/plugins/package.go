@@ -3,9 +3,13 @@ package plugins
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -24,22 +28,25 @@ import (
 // No insecure repo flags, third-party installer scripts, or global PATH changes
 // are used. Package installation is enabled only in trusted Agent policy.
 type packageBackend struct {
-	enabled bool
-	dir     string
-	mu      sync.Mutex
-	updated time.Time
+	enabled     bool
+	dir         string
+	sourcesDir  string
+	mu          sync.Mutex
+	updated     time.Time
+	sourcesHash string
 }
 
 func newPackageBackend(enabled bool, dir string) *packageBackend {
-	return &packageBackend{enabled: enabled, dir: filepath.Join(dir, "apt")}
+	aptDir := filepath.Join(dir, "apt")
+	return &packageBackend{enabled: enabled, dir: aptDir, sourcesDir: filepath.Join(aptDir, "sources.d")}
 }
 
 var debVersion = regexp.MustCompile(`^[0-9A-Za-z.+:~_-]{1,128}$`)
 
 func (p *packageBackend) options() []string {
-	return []string{"-o", "Dir::Cache=" + filepath.Join(p.dir, "cache"), "-o", "Dir::State::lists=" + filepath.Join(p.dir, "lists"), "-o", "APT::Get::AllowUnauthenticated=false", "-o", "Acquire::AllowInsecureRepositories=false", "-o", "Acquire::AllowDowngradeToInsecureRepositories=false", "-o", "APT::Sandbox::User=root"}
+	return []string{"-o", "Dir::Cache=" + filepath.Join(p.dir, "cache"), "-o", "Dir::State::lists=" + filepath.Join(p.dir, "lists"), "-o", "Dir::Etc::sourcelist=/dev/null", "-o", "Dir::Etc::sourceparts=" + p.sourcesDir, "-o", "APT::Get::AllowUnauthenticated=false", "-o", "Acquire::AllowInsecureRepositories=false", "-o", "Acquire::AllowDowngradeToInsecureRepositories=false", "-o", "APT::Sandbox::User=root"}
 }
-func (p *packageBackend) prepare(ctx context.Context) error {
+func (p *packageBackend) prepare(ctx context.Context, selected ...Source) error {
 	if !p.enabled || os.Geteuid() != 0 {
 		return failure("package_install_disabled", "Trusted Agent policy must explicitly enable system package installation", 412)
 	}
@@ -57,10 +64,21 @@ func (p *packageBackend) prepare(ctx context.Context) error {
 	if err := rejectInsecureSources(); err != nil {
 		return err
 	}
-	for _, dir := range []string{p.dir, filepath.Join(p.dir, "cache", "archives", "partial"), filepath.Join(p.dir, "lists", "partial")} {
+	for _, dir := range []string{p.dir, p.sourcesDir, filepath.Join(p.dir, "cache", "archives", "partial"), filepath.Join(p.dir, "lists", "partial")} {
 		if err := os.MkdirAll(dir, 0700); err != nil {
 			return err
 		}
+	}
+	source := Source{}
+	if len(selected) > 0 {
+		source = selected[0]
+	}
+	changed, err := p.refreshSourceOverlay(ctx, source)
+	if err != nil {
+		return err
+	}
+	if changed {
+		p.updated = time.Time{}
 	}
 	if time.Since(p.updated) < 5*time.Minute {
 		return nil
@@ -71,6 +89,172 @@ func (p *packageBackend) prepare(ctx context.Context) error {
 	}
 	p.updated = time.Now()
 	return nil
+}
+
+func (p *packageBackend) refreshSourceOverlay(ctx context.Context, source Source) (bool, error) {
+	legacy, deb822, err := readHostAPTSourceFiles()
+	if err != nil {
+		return false, err
+	}
+	files := map[string][]byte{}
+	if len(legacy) > 0 {
+		files["host.list"] = legacy
+	}
+	if len(deb822) > 0 {
+		files["host.sources"] = deb822
+	}
+	if source.RepositoryKeySHA256 != "" {
+		key, err := fetchPinnedRepositoryKey(ctx, source.RepositoryKeyURL, source.RepositoryKeySHA256)
+		if err != nil {
+			return false, err
+		}
+		if err = writeAtomicRoot(p.dir, "pgadmin-repository.asc", key, 0644, 0); err != nil {
+			return false, err
+		}
+		if source.RepositorySuite != "pgadmin4" || source.Architecture != "amd64" || !strings.HasPrefix(source.Repository, "https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/") {
+			return false, failure("repository_untrusted", "Only the pinned official pgAdmin Debian feed is accepted by this repository adapter", 412)
+		}
+		repository, err := url.Parse(source.Repository)
+		if err != nil || repository.User != nil || repository.RawQuery != "" || repository.Fragment != "" || strings.ContainsAny(source.Repository, "\\r\\n[]") {
+			return false, failure("repository_untrusted", "The pinned pgAdmin repository URL is invalid", 412)
+		}
+		keyPath := filepath.Join(p.dir, "pgadmin-repository.asc")
+		files["folio-pgadmin.list"] = []byte(fmt.Sprintf("deb [arch=amd64 signed-by=%s] %s pgadmin4 main\n", keyPath, strings.TrimSuffix(source.Repository, "/")))
+	}
+
+	var snapshot strings.Builder
+	for _, name := range []string{"host.list", "host.sources", "folio-pgadmin.list"} {
+		body, exists := files[name]
+		if !exists {
+			continue
+		}
+		snapshot.WriteString(name)
+		snapshot.WriteByte(0)
+		snapshot.Write(body)
+		snapshot.WriteByte(0)
+	}
+	digest := sha256.Sum256([]byte(snapshot.String()))
+	hash := hex.EncodeToString(digest[:])
+	if hash == p.sourcesHash {
+		return false, nil
+	}
+	entries, err := os.ReadDir(p.sourcesDir)
+	if err != nil {
+		return false, err
+	}
+	for _, entry := range entries {
+		if entry.Name() != "host.list" && entry.Name() != "host.sources" && entry.Name() != "folio-pgadmin.list" {
+			return false, failure("repository_overlay_conflict", "The private APT source overlay contains an unrecognized file; it was preserved", 409)
+		}
+		info, statErr := os.Lstat(filepath.Join(p.sourcesDir, entry.Name()))
+		if statErr != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+			return false, failure("repository_overlay_conflict", "The private APT source overlay contains a non-regular file; it was preserved", 409)
+		}
+		if err := os.Remove(filepath.Join(p.sourcesDir, entry.Name())); err != nil {
+			return false, err
+		}
+	}
+	for name, body := range files {
+		if err := writeAtomicRoot(p.sourcesDir, name, body, 0644, 0); err != nil {
+			return false, err
+		}
+	}
+	p.sourcesHash = hash
+	return true, nil
+}
+
+func readHostAPTSourceFiles() ([]byte, []byte, error) {
+	return readAPTSourceFiles("/etc/apt")
+}
+
+func readAPTSourceFiles(aptRoot string) ([]byte, []byte, error) {
+	var legacy, deb822 []byte
+	appendFile := func(path string, deb822Format bool) error {
+		resolved, err := filepath.EvalSymlinks(path)
+		if os.IsNotExist(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		relative, err := filepath.Rel(aptRoot, resolved)
+		if err != nil || !filepath.IsLocal(relative) || relative == "." {
+			return failure("repository_source_invalid", "An active APT source symlink escapes the trusted APT configuration directory", 412)
+		}
+		info, err := os.Stat(resolved)
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() || info.Size() > 1<<20 {
+			return failure("repository_source_invalid", "An active APT source is not a bounded regular file", 412)
+		}
+		body, err := os.ReadFile(resolved)
+		if err != nil {
+			return err
+		}
+		if deb822Format {
+			deb822 = append(deb822, body...)
+			deb822 = append(deb822, '\n')
+		} else {
+			legacy = append(legacy, body...)
+			legacy = append(legacy, '\n')
+		}
+		return nil
+	}
+	if err := appendFile(filepath.Join(aptRoot, "sources.list"), false); err != nil {
+		return nil, nil, err
+	}
+	sourceDir := filepath.Join(aptRoot, "sources.list.d")
+	entries, err := os.ReadDir(sourceDir)
+	if os.IsNotExist(err) {
+		return legacy, deb822, nil
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !(strings.HasSuffix(entry.Name(), ".list") || strings.HasSuffix(entry.Name(), ".sources")) {
+			continue
+		}
+		if err := appendFile(filepath.Join(sourceDir, entry.Name()), strings.HasSuffix(entry.Name(), ".sources")); err != nil {
+			return nil, nil, err
+		}
+	}
+	return legacy, deb822, nil
+}
+
+func fetchPinnedRepositoryKey(ctx context.Context, rawURL, expectedSHA256 string) ([]byte, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil || !trustedHTTPS(rawURL) || !artifactHash.MatchString(expectedSHA256) {
+		return nil, failure("repository_untrusted", "The official repository key identity is invalid", 412)
+	}
+	client := &http.Client{Timeout: 20 * time.Second, CheckRedirect: func(request *http.Request, via []*http.Request) error {
+		if request.URL.Scheme != "https" || request.URL.Host != u.Host || len(via) >= 3 {
+			return errors.New("repository key redirect changed host")
+		}
+		return nil
+	}}
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, failure("repository_key_unavailable", "The pinned official repository key could not be fetched over HTTPS", 412)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return nil, failure("repository_key_unavailable", "The pinned official repository key endpoint returned an error", 412)
+	}
+	body, err := io.ReadAll(io.LimitReader(response.Body, (1<<20)+1))
+	if err != nil || len(body) < 128 || len(body) > 1<<20 {
+		return nil, failure("repository_key_invalid", "The official repository key file is incomplete or oversized", 412)
+	}
+	digest := sha256.Sum256(body)
+	if hex.EncodeToString(digest[:]) != expectedSHA256 || !strings.Contains(string(body), "BEGIN PGP PUBLIC KEY BLOCK") {
+		return nil, failure("repository_key_invalid", "The official repository key does not match the compiled SHA-256 pin", 412)
+	}
+	return body, nil
 }
 
 func rejectInsecureSources() error {
@@ -109,7 +293,7 @@ func (p *packageBackend) resolve(ctx context.Context, source Source) ([]PackageP
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if err := p.prepare(ctx); err != nil {
+	if err := p.prepare(ctx, source); err != nil {
 		return nil, err
 	}
 	pins := []PackagePin{}
@@ -296,13 +480,17 @@ func debFields(raw string) map[string]string {
 	return fields
 }
 
-func (p *packageBackend) install(ctx context.Context, pins []PackagePin) (returned error) {
+func (p *packageBackend) install(ctx context.Context, pins []PackagePin) error {
+	return p.installSource(ctx, pins, Source{})
+}
+
+func (p *packageBackend) installSource(ctx context.Context, pins []PackagePin, source Source) (returned error) {
 	if len(pins) > 0 && pins[0].Format == "rpm" {
 		return p.installRPM(ctx, pins)
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if err := p.prepare(ctx); err != nil {
+	if err := p.prepare(ctx, source); err != nil {
 		return err
 	}
 	if len(pins) == 0 || len(pins) > 128 {

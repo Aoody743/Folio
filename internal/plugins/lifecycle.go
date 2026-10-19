@@ -8,6 +8,7 @@ import (
 	"io"
 	"maps"
 	"net"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -78,6 +79,9 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 	if manifest.ID == "nginx" && !e.config.UseSystemd {
 		return Plan{}, failure("service_manager_required", "The managed Nginx stack requires systemd to isolate its distribution service", 412)
 	}
+	if (manifest.ID == "phpmyadmin" || manifest.ID == "pgadmin") && !e.config.UseSystemd {
+		return Plan{}, failure("service_manager_required", "Database web tools need systemd to own their foreground application server and preserve its lifecycle", 412)
+	}
 	if input.Operation != "install" && loadErr != nil {
 		return Plan{}, failure("not_found", "A managed instance is required for this operation", 404)
 	}
@@ -117,6 +121,31 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 	if err = validateConfiguration(manifest.ID, config); err != nil {
 		return Plan{}, err
 	}
+	phpMyAdminTargetID := ""
+	if manifest.ID == "phpmyadmin" && (input.Operation == "install" || input.Operation == "config") {
+		target, targetErr := e.phpMyAdminDatabaseTarget(ctx, config)
+		if targetErr != nil {
+			return Plan{}, targetErr
+		}
+		phpMyAdminTargetID = target.ID
+		if targetID, _ := config["target_id"].(string); targetID == "" {
+			config["target_id"] = target.ID
+		}
+		if err = validateConfiguration(manifest.ID, config); err != nil {
+			return Plan{}, err
+		}
+	}
+	if manifest.ID == "pgadmin" {
+		if input.Operation == "install" {
+			if err = validatePGAdminInstallConfig(config); err != nil {
+				return Plan{}, err
+			}
+		} else if _, emailSupplied := input.Config["admin_email"]; emailSupplied {
+			return Plan{}, failure("invalid_config", "Change the pgAdmin administrator email in pgAdmin itself; bootstrap credentials are accepted only for first installation", 400)
+		} else if _, passwordSupplied := input.Config["admin_password"]; passwordSupplied {
+			return Plan{}, failure("invalid_config", "Change the pgAdmin administrator password in pgAdmin itself; bootstrap credentials are accepted only for first installation", 400)
+		}
+	}
 	planID, err := randomPlanID()
 	if err != nil {
 		return Plan{}, err
@@ -127,6 +156,9 @@ func (e *PrivilegedExecutor) plan(ctx context.Context, input PlanInput) (Plan, e
 	}
 	plan := Plan{ID: planID, InstanceID: id, PluginID: manifest.ID, Operation: input.Operation, Version: version, Config: config, CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(30 * time.Minute), State: "planned", KeepData: keepData}
 	plan.Resources = []string{InstanceResource(id)}
+	if phpMyAdminTargetID != "" {
+		plan.Resources = append(plan.Resources, InstanceResource(phpMyAdminTargetID))
+	}
 	if (input.Operation == "install" || input.Operation == "upgrade") && sourceUsesSystemPackages(version.Source) {
 		plan.Resources = append(plan.Resources, "host:packages")
 	}
@@ -321,6 +353,12 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 			return instance, createErr
 		}
 		install = &created
+		if plan.PluginID == "pgadmin" {
+			delete(plan.Config, "admin_password")
+			if err = e.save("plans", plan.ID, plan); err != nil {
+				return instance, failure("persistence_failed", "pgAdmin's one-time setup credential could not be removed from its reusable plan", 500)
+			}
+		}
 	}
 	plan.State = "running"
 	durable.Plan = plan
@@ -414,6 +452,21 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 	if plan.Operation == "install" || plan.Operation == "upgrade" {
 		switch plan.Version.Source.Kind {
 		case "verified_archive", "verified_source":
+			if plan.Version.Source.Kind == "verified_archive" && len(plan.Packages) > 0 {
+				if install != nil {
+					if err = e.saveNextInstallJournal(ctx, install, "package_install_started"); err != nil {
+						return instance, err
+					}
+				}
+				if err = e.packages.installSource(ctx, plan.Packages, plan.Version.Source); err != nil {
+					return instance, err
+				}
+				if install != nil {
+					if err = e.saveNextInstallJournal(ctx, install, "package_install_completed"); err != nil {
+						return instance, err
+					}
+				}
+			}
 			if install != nil {
 				if err = e.saveNextInstallJournal(ctx, install, "artifact_fetch_started"); err != nil {
 					return instance, err
@@ -431,7 +484,7 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 							return instance, err
 						}
 					}
-					if err = e.packages.install(ctx, plan.Packages); err != nil {
+					if err = e.packages.installSource(ctx, plan.Packages, plan.Version.Source); err != nil {
 						return instance, err
 					}
 					if plan.PluginID == "nginx" {
@@ -474,7 +527,7 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 				}
 			}
 			defer os.RemoveAll(stage)
-			program, err := resolveArchiveProgram(stage, manifest)
+			program, err := resolveArchiveProgram(stage, manifest, plan.Packages)
 			if err != nil {
 				return instance, err
 			}
@@ -517,7 +570,7 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 					return instance, err
 				}
 			}
-			if err = e.packages.install(ctx, plan.Packages); err != nil {
+			if err = e.packages.installSource(ctx, plan.Packages, plan.Version.Source); err != nil {
 				return instance, err
 			}
 			if err = isolateNewDistributionServices(ctx, distributionBefore); err != nil {
@@ -765,7 +818,10 @@ func removeOwnedDirectory(base, name string) error {
 	defer root.Close()
 	return root.RemoveAll(relative)
 }
-func resolveArchiveProgram(stage string, manifest Manifest) (string, error) {
+func resolveArchiveProgram(stage string, manifest Manifest, pins []PackagePin) (string, error) {
+	if manifest.ID == "phpmyadmin" {
+		return resolvePackageProgram(manifest, Version{}, pins)
+	}
 	for _, program := range manifest.Service.Programs {
 		if strings.ContainsAny(program, "/\\") {
 			return "", failure("invalid_catalog", "Catalog program must be a fixed basename", 500)
@@ -781,6 +837,17 @@ func resolveArchiveProgram(stage string, manifest Manifest) (string, error) {
 }
 func resolvePackageProgram(manifest Manifest, version Version, pins []PackagePin) (string, error) {
 	candidates := []string{}
+	if manifest.ID == "pgadmin" {
+		candidates = []string{"/usr/pgadmin4/venv/bin/python3"}
+	}
+	if manifest.ID == "phpmyadmin" {
+		phpCLI := regexp.MustCompile(`^php([0-9]+\.[0-9]+)-cli$`)
+		for _, pin := range pins {
+			if match := phpCLI.FindStringSubmatch(pin.Name); match != nil {
+				candidates = append([]string{"/usr/bin/php" + match[1]}, candidates...)
+			}
+		}
+	}
 	if manifest.ID == "postgresql" {
 		major, err := reviewedPostgreSQLMajor(pins)
 		if err != nil {
@@ -821,12 +888,12 @@ func resolvePackageProgram(manifest Manifest, version Version, pins []PackagePin
 }
 
 func defaultConfig(plugin string) map[string]any {
-	ports := map[string]int{"openresty": 18080, "nginx": 18081, "mysql": 18306, "mysql-community": 18307, "mariadb": 18308, "postgresql": 18432, "mongodb": 18017, "redis": 18379, "valkey": 18380, "memcached": 18211, "pureftp": 18221, "rsyncd": 18873}
+	ports := map[string]int{"openresty": 18080, "nginx": 18081, "mysql": 18306, "mysql-community": 18307, "mariadb": 18308, "postgresql": 18432, "mongodb": 18017, "redis": 18379, "valkey": 18380, "memcached": 18211, "pureftp": 18221, "rsyncd": 18873, "phpmyadmin": 19050, "pgadmin": 19051}
 	config := map[string]any{"bind": "127.0.0.1"}
 	if port := ports[plugin]; port != 0 {
 		config["port"] = port
 	}
-	if strings.HasPrefix(plugin, "php") {
+	if isPHPRuntime(plugin) {
 		config["memory_limit_mb"] = 128
 		config["max_children"] = 5
 		config["max_execution_time"] = 30
@@ -839,7 +906,11 @@ func defaultConfig(plugin string) map[string]any {
 }
 func validateConfiguration(plugin string, config map[string]any) error {
 	allowed := map[string]bool{"bind": true, "port": true, "target_id": true}
-	if strings.HasPrefix(plugin, "php") {
+	if plugin == "pgadmin" {
+		allowed["admin_email"] = true
+		allowed["admin_password"] = true
+	}
+	if isPHPRuntime(plugin) {
 		for _, key := range []string{"memory_limit_mb", "max_children", "max_execution_time", "upload_max_filesize_mb", "post_max_size_mb", "disable_functions", "session_handler", "session_path", "max_input_vars", "timezone", "display_errors", "slowlog_enabled", "slowlog_timeout_seconds"} {
 			allowed[key] = true
 		}
@@ -864,10 +935,22 @@ func validateConfiguration(plugin string, config map[string]any) error {
 				return failure("invalid_config", "bind must be a literal IP address", 400)
 			}
 		}
-		if slices.Contains([]string{"disable_functions", "session_handler", "session_path", "timezone", "target_id"}, key) {
+		if slices.Contains([]string{"disable_functions", "session_handler", "session_path", "timezone", "target_id", "admin_email", "admin_password"}, key) {
 			text, ok := value.(string)
 			if !ok || len(text) > 1024 || strings.ContainsAny(text, "\x00\r\n") {
 				return failure("invalid_config", "String configuration value is invalid", 400)
+			}
+			if key == "target_id" && text != "" && !validID.MatchString(text) {
+				return failure("invalid_config", "target_id must name a managed software instance", 400)
+			}
+			if key == "admin_email" && text != "" {
+				parsed, err := mail.ParseAddress(text)
+				if err != nil || parsed.Address != text || len(text) > 254 {
+					return failure("invalid_config", "admin_email must be a valid email address", 400)
+				}
+			}
+			if key == "admin_password" && (len(text) < 12 || len(text) > 128) {
+				return failure("invalid_config", "admin_password must be 12–128 characters", 400)
 			}
 		}
 		if key == "display_errors" || key == "slowlog_enabled" {
@@ -889,6 +972,12 @@ func validateConfiguration(plugin string, config map[string]any) error {
 			if key == "slowlog_timeout_seconds" && number > 300 {
 				return failure("invalid_config", "PHP slowlog timeout must be between one and 300 seconds", 400)
 			}
+		}
+	}
+	if plugin == "phpmyadmin" || plugin == "pgadmin" {
+		bind, _ := config["bind"].(string)
+		if bind != "" && (net.ParseIP(bind) == nil || !net.ParseIP(bind).IsLoopback()) {
+			return failure("invalid_config", "Database web tools must bind to a loopback address and be published through a managed site proxy", 400)
 		}
 	}
 	return nil

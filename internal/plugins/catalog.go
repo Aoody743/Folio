@@ -54,18 +54,20 @@ type Platform struct {
 	Release string `json:"release"`
 }
 type Source struct {
-	Kind             string   `json:"kind"` // signed_package, verified_archive, integration
-	Packages         []string `json:"packages,omitempty"`
-	Repository       string   `json:"repository,omitempty"`
-	RepositoryKeyURL string   `json:"repository_key_url,omitempty"`
-	URL              string   `json:"url,omitempty"`
-	SHA256           string   `json:"sha256,omitempty"`
-	ArchiveFormat    string   `json:"archive_format,omitempty"`
-	StripComponents  int      `json:"strip_components,omitempty"`
-	BuildRecipe      string   `json:"build_recipe,omitempty"`
-	OS               string   `json:"os,omitempty"`
-	Architecture     string   `json:"architecture,omitempty"`
-	Trust            string   `json:"trust"`
+	Kind                string   `json:"kind"` // signed_package, verified_archive, integration
+	Packages            []string `json:"packages,omitempty"`
+	Repository          string   `json:"repository,omitempty"`
+	RepositoryKeyURL    string   `json:"repository_key_url,omitempty"`
+	RepositoryKeySHA256 string   `json:"repository_key_sha256,omitempty"`
+	RepositorySuite     string   `json:"repository_suite,omitempty"`
+	URL                 string   `json:"url,omitempty"`
+	SHA256              string   `json:"sha256,omitempty"`
+	ArchiveFormat       string   `json:"archive_format,omitempty"`
+	StripComponents     int      `json:"strip_components,omitempty"`
+	BuildRecipe         string   `json:"build_recipe,omitempty"`
+	OS                  string   `json:"os,omitempty"`
+	Architecture        string   `json:"architecture,omitempty"`
+	Trust               string   `json:"trust"`
 }
 type Capability struct {
 	Name          string   `json:"name"`
@@ -100,6 +102,7 @@ func BuiltinCatalog() (*Catalog, error) {
 		return nil, err
 	}
 	catalog.useDistributionPHPDefault(CurrentPlatform())
+	catalog.useDatabaseWebToolSources(CurrentPlatform())
 	return catalog, nil
 }
 
@@ -135,6 +138,34 @@ func (c *Catalog) useDistributionPHPDefault(platform Platform) {
 		versions[selected].Source.Repository = "https://deb.debian.org/debian/"
 	}
 	versions[selected].Source.RepositoryKeyURL = ""
+}
+
+// useDatabaseWebToolSources selects pgAdmin's signed vendor feed for the
+// supported Debian series. The official feed currently publishes amd64 only.
+func (c *Catalog) useDatabaseWebToolSources(platform Platform) {
+	if c == nil || platform.OS != "linux" || platform.Distro != "debian" {
+		return
+	}
+	index, ok := c.byID["pgadmin"]
+	if !ok || len(c.Items[index].Versions) == 0 {
+		return
+	}
+	version := &c.Items[index].Versions[0]
+	setUnavailable := func(reason string) {
+		version.Source = Source{Kind: "unavailable", Trust: "none"}
+		version.Verification = Verification{Status: "unavailable", Reason: reason}
+		c.Items[index].Verification = version.Verification
+	}
+	if platform.Arch != "amd64" {
+		setUnavailable("The official pgAdmin Debian repository currently publishes amd64 packages only.")
+		return
+	}
+	suite := map[string]string{"12": "bookworm", "13": "trixie"}[platform.Release]
+	if suite == "" {
+		setUnavailable("The official pgAdmin Debian repository is enabled only for Debian 12 and 13.")
+		return
+	}
+	version.Source.Repository = "https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/" + suite
 }
 
 // DecodeCatalog is for trusted configuration only. Uploads/API inputs cannot
@@ -197,11 +228,9 @@ func DecodeCatalog(reader io.Reader) (*Catalog, error) {
 				if source.Kind == "verified_source" && !(item.ID == "openresty" && source.BuildRecipe == "openresty" || item.ID == "php" && source.BuildRecipe == "php-fpm") {
 					return nil, errors.New("source builds require a compiled-in native recipe for this exact plugin")
 				}
-				if source.Kind == "verified_source" {
-					for _, name := range source.Packages {
-						if !packageName.MatchString(name) {
-							return nil, errors.New("invalid trusted source-build dependency")
-						}
+				for _, name := range source.Packages {
+					if !packageName.MatchString(name) {
+						return nil, errors.New("invalid trusted artifact dependency")
 					}
 				}
 			case "integration":
@@ -220,6 +249,15 @@ func DecodeCatalog(reader io.Reader) (*Catalog, error) {
 			}
 			if source.RepositoryKeyURL != "" && !trustedHTTPS(source.RepositoryKeyURL) {
 				return nil, errors.New("repository key must use verified HTTPS")
+			}
+			if source.RepositoryKeySHA256 != "" && !artifactHash.MatchString(source.RepositoryKeySHA256) {
+				return nil, errors.New("repository key requires a pinned SHA-256")
+			}
+			if source.RepositorySuite != "" && !regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,31}$`).MatchString(source.RepositorySuite) {
+				return nil, errors.New("repository suite is invalid")
+			}
+			if source.RepositoryKeySHA256 != "" && (source.Repository == "" || source.RepositoryKeyURL == "" || source.RepositorySuite == "") {
+				return nil, errors.New("pinned signed repository requires URL, key URL and suite")
 			}
 		}
 		catalog.byID[item.ID] = i

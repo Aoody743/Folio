@@ -18,8 +18,6 @@ export const deferredCatalogPluginIDs = new Set([
   "mongodb",
   "php-guard",
   "php-yum",
-  "phpmyadmin",
-  "pgadmin",
   "pureftp",
   "webssh",
 ]);

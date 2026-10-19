@@ -232,7 +232,7 @@ func (m *Manager) listAction(ctx context.Context, actor core.Actor, _ json.RawMe
 	visible := []Instance{}
 	for _, instance := range instances {
 		if m.deps.Authorize(actor, "software:read", InstanceResource(instance.ID)) {
-			visible = append(visible, instance)
+			visible = append(visible, publicSoftwareInstance(instance))
 		}
 	}
 	return core.ActionResult{Data: map[string]any{"items": visible}}, nil
@@ -246,7 +246,7 @@ func (m *Manager) getAction(ctx context.Context, _ core.Actor, raw json.RawMessa
 	if err := m.agentJSON(ctx, "plugin_get", raw, &instance); err != nil {
 		return core.ActionResult{}, err
 	}
-	return core.ActionResult{Data: instance, Resources: []string{InstanceResource(input.ID)}}, nil
+	return core.ActionResult{Data: publicSoftwareInstance(instance), Resources: []string{InstanceResource(input.ID)}}, nil
 }
 func (m *Manager) planAction(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 	var input PlanInput
@@ -277,11 +277,28 @@ func (m *Manager) planAction(ctx context.Context, actor core.Actor, raw json.Raw
 			}
 		}
 	}
-	data, _ := json.Marshal(plan)
+	publicPlan := publicSoftwarePlan(plan)
+	data, _ := json.Marshal(publicPlan)
 	if err := m.deps.State.Save(ctx, "plans", plan.ID, data); err != nil {
 		return core.ActionResult{}, failure("persistence_failed", "Unable to persist the software plan", 500)
 	}
-	return core.ActionResult{Data: plan, Resources: plan.Resources}, nil
+	return core.ActionResult{Data: publicPlan, Resources: plan.Resources}, nil
+}
+
+func publicSoftwarePlan(plan Plan) Plan {
+	plan.Config = cloneConfig(plan.Config)
+	delete(plan.Config, "admin_password")
+	if plan.Result != nil {
+		instance := publicSoftwareInstance(*plan.Result)
+		plan.Result = &instance
+	}
+	return plan
+}
+
+func publicSoftwareInstance(instance Instance) Instance {
+	instance.Config = cloneConfig(instance.Config)
+	delete(instance.Config, "admin_password")
+	return instance
 }
 func (m *Manager) applyAction(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 	var input ApplyInput

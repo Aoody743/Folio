@@ -115,8 +115,14 @@ func isPHPRuntime(plugin string) bool {
 	return plugin == "php" || plugin == "php-apt" || plugin == "php-yum"
 }
 func runtimeEnvironment(instance Instance) []string {
+	if instance.PluginID == "phpmyadmin" {
+		return []string{"PHP_CLI_SERVER_WORKERS=4"}
+	}
 	if isPHPRuntime(instance.PluginID) {
 		return []string{"PHP_INI_SCAN_DIR=" + filepath.Join(instance.Paths.ConfigDir, "conf.d")}
+	}
+	if instance.PluginID == "pgadmin" {
+		return []string{"CONFIG_DISTRO_FILE_PATH=" + filepath.Join(instance.Paths.ConfigDir, "pgadmin.py"), "PGADMIN_SERVER_MODE=ON"}
 	}
 	return nil
 }
@@ -236,6 +242,16 @@ func (e *PrivilegedExecutor) configureWithInstallJournal(ctx context.Context, in
 		if err = write("pools/default.conf", pool); err != nil {
 			return err
 		}
+	case "phpmyadmin":
+		if err := e.configurePHPMyAdmin(ctx, instance); err != nil {
+			return err
+		}
+		instance.Status = "configured"
+	case "pgadmin":
+		if err := e.configurePGAdmin(ctx, instance); err != nil {
+			return err
+		}
+		instance.Status = "configured"
 	case "redis", "valkey":
 		body := fmt.Sprintf("bind %s\nport %d\nprotected-mode yes\ndaemonize yes\npidfile %s\nlogfile %s\ndir %s\ndbfilename dump.rdb\nappendonly yes\nmaxmemory %dmb\nmaxclients %d\ndatabases %d\n", bind, port, redisQuote(filepath.Join(instance.Paths.RunDir, "server.pid")), redisQuote(filepath.Join(instance.Paths.LogDir, "server.log")), redisQuote(instance.Paths.DataDir), setting(instance.Config, "maxmemory_mb", 64), setting(instance.Config, "maxclients", 256), setting(instance.Config, "databases", 16))
 		if err := write("service.conf", body); err != nil {
@@ -254,7 +270,7 @@ func (e *PrivilegedExecutor) configureWithInstallJournal(ctx context.Context, in
 		if err := e.configureUtility(ctx, instance); err != nil {
 			return err
 		}
-	case "phpmyadmin", "pgadmin", "php-guard", "data_query", "backup_ftp", "acme_pandominassl_apply", "webssh":
+	case "php-guard", "data_query", "backup_ftp", "acme_pandominassl_apply", "webssh":
 		raw, _ := json.Marshal(instance.Config)
 		if err := write("integration.json", string(raw)); err != nil {
 			return err
@@ -332,6 +348,10 @@ func unitQuote(value string) string {
 }
 
 func (e *PrivilegedExecutor) serviceArgs(instance Instance, command string) ([]string, error) {
+	bind, _ := instance.Config["bind"].(string)
+	if bind == "" {
+		bind = "127.0.0.1"
+	}
 	switch instance.PluginID {
 	case "openresty", "nginx":
 		prefix := instance.Paths.Root + "/"
@@ -358,6 +378,20 @@ func (e *PrivilegedExecutor) serviceArgs(instance Instance, command string) ([]s
 			return append(args, "-t"), nil
 		case "start":
 			return append(args, "-D"), nil
+		}
+	case "phpmyadmin":
+		switch command {
+		case "check":
+			return []string{"-v"}, nil
+		case "start":
+			return []string{"-d", "session.save_path=" + filepath.Join(instance.Paths.DataDir, "sessions"), "-d", "upload_tmp_dir=" + filepath.Join(instance.Paths.DataDir, "tmp"), "-S", net.JoinHostPort(bind, strconv.Itoa(setting(instance.Config, "port", 19050))), "-t", filepath.Join(instance.Paths.Root, "runtime"), filepath.Join(instance.Paths.ConfigDir, "phpmyadmin-router.php")}, nil
+		}
+	case "pgadmin":
+		switch command {
+		case "check":
+			return []string{"--version"}, nil
+		case "start":
+			return []string{filepath.Join(instance.Paths.ConfigDir, "pgadmin-launch.py")}, nil
 		}
 	case "redis", "valkey":
 		switch command {
@@ -442,6 +476,9 @@ func (e *PrivilegedExecutor) controlLocked(ctx context.Context, input ServiceInp
 		}
 		return e.controlLocked(ctx, ServiceInput{ID: input.ID, Command: "start"}, instance)
 	}
+	if input.Command == "reload" && (instance.PluginID == "phpmyadmin" || instance.PluginID == "pgadmin") {
+		return e.controlLocked(ctx, ServiceInput{ID: input.ID, Command: "restart"}, instance)
+	}
 	if input.Command == "reload" && (instance.PluginID == "openresty" || instance.PluginID == "nginx") {
 		generation, err := e.reloadWebRuntime(ctx, instance)
 		if err != nil {
@@ -514,6 +551,8 @@ func runtimeReadinessBudget(instance Instance) time.Duration {
 		return 45 * time.Second
 	case "mongodb":
 		return 60 * time.Second
+	case "pgadmin":
+		return 60 * time.Second
 	default:
 		return 8 * time.Second
 	}
@@ -523,6 +562,8 @@ func runtimeProbeBudget(instance Instance) time.Duration {
 	switch instance.PluginID {
 	case "mysql", "mysql-community", "mariadb", "postgresql", "mongodb":
 		return 3 * time.Second
+	case "phpmyadmin", "pgadmin":
+		return 2 * time.Second
 	default:
 		return 500 * time.Millisecond
 	}
@@ -665,6 +706,22 @@ func (e *PrivilegedExecutor) probe(ctx context.Context, instance Instance) Healt
 		if err == nil && strings.Contains(strings.ToLower(output), "lego") {
 			health.Status = "available"
 			health.Reason = "Verified CLI is installed; DNS credentials/actual issuance remain separate checks"
+		}
+		return health
+	}
+	if instance.PluginID == "phpmyadmin" || instance.PluginID == "pgadmin" {
+		bind, _ := instance.Config["bind"].(string)
+		if bind == "" || bind == "0.0.0.0" {
+			bind = "127.0.0.1"
+		}
+		address := net.JoinHostPort(bind, strconv.Itoa(setting(instance.Config, "port", 0)))
+		probeCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		if probeManagedDatabaseWebTool(probeCtx, instance.PluginID, address) == nil {
+			if _, err := ownedProcessID(instance); err == nil {
+				health.Status = "healthy"
+				health.Reason = ""
+			}
 		}
 		return health
 	}

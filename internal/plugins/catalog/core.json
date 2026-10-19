@@ -2283,24 +2283,38 @@
         "reason": "Declared migration scope, not a passed plugin"
       }
     },
-    {
+        {
       "id": "phpmyadmin",
       "name": "phpMyAdmin",
-      "description": "著名Web端MySQL管理工具",
+      "description": "官方 phpMyAdmin 发布版，使用固定校验和、受管 PHP 服务与本机数据库连接",
       "category": "database-ui",
       "integration_version": "2.0.0",
       "versions": [
         {
-          "id": "distribution",
-          "version": "unavailable",
+          "id": "5.2.3",
+          "version": "5.2.3",
           "default": true,
           "source": {
-            "kind": "unavailable",
-            "trust": "none"
+            "kind": "verified_archive",
+            "trust": "pinned_sha256",
+            "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-english.tar.gz",
+            "sha256": "03de2640bb25c9a6f96bc94eae316080b5fd5bd58d769e1318ba9dd94c83364c",
+            "archive_format": "tar.gz",
+            "strip_components": 1,
+            "packages": [
+              "php-cli",
+              "php-mysql",
+              "php-mbstring",
+              "php-zip",
+              "php-gd",
+              "php-xml",
+              "php-curl",
+              "php-intl"
+            ]
           },
           "verification": {
-            "status": "unavailable",
-            "reason": "No trusted package source or native lifecycle adapter is configured for the supported OS matrix. Installation remains disabled."
+            "status": "not_tested",
+            "reason": "The upstream release archive is SHA-256 pinned; signed Debian PHP packages are resolved at install time. Live host startup checks remain pending."
           }
         }
       ],
@@ -2313,15 +2327,15 @@
         },
         {
           "os": "linux",
-          "arch": "amd64",
-          "distro": "debian",
-          "release": "13"
-        },
-        {
-          "os": "linux",
           "arch": "arm64",
           "distro": "debian",
           "release": "12"
+        },
+        {
+          "os": "linux",
+          "arch": "amd64",
+          "distro": "debian",
+          "release": "13"
         },
         {
           "os": "linux",
@@ -2331,7 +2345,6 @@
         }
       ],
       "dependencies": [
-        "php-fpm-instance",
         "mysql-compatible-instance"
       ],
       "capabilities": [
@@ -2341,7 +2354,7 @@
             "access_log"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "conf",
@@ -2349,7 +2362,7 @@
             "conf"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "config_inc",
@@ -2357,7 +2370,7 @@
             "config_inc"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "error_log",
@@ -2365,7 +2378,7 @@
             "error_log"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_cfg",
@@ -2373,7 +2386,7 @@
             "get_cfg"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_home_page",
@@ -2381,7 +2394,7 @@
             "get_home_page"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_pma_option",
@@ -2389,7 +2402,7 @@
             "get_pma_option"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_pma_port",
@@ -2397,7 +2410,7 @@
             "get_pma_port"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_set_php_ver",
@@ -2405,7 +2418,7 @@
             "get_set_php_ver"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "install_pre_inspection",
@@ -2413,7 +2426,7 @@
             "install_pre_inspection"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "plugins_db_support",
@@ -2421,7 +2434,7 @@
             "plugins_db_support"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "reload",
@@ -2429,7 +2442,7 @@
             "reload"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "restart",
@@ -2437,7 +2450,7 @@
             "restart"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_php_ver",
@@ -2445,7 +2458,7 @@
             "set_php_ver"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_pma_choose",
@@ -2453,7 +2466,7 @@
             "set_pma_choose"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_pma_password",
@@ -2461,7 +2474,7 @@
             "set_pma_password"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_pma_path",
@@ -2469,7 +2482,7 @@
             "set_pma_path"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_pma_port",
@@ -2477,7 +2490,7 @@
             "set_pma_port"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_pma_username",
@@ -2485,7 +2498,7 @@
             "set_pma_username"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "start",
@@ -2493,7 +2506,7 @@
             "start"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "status",
@@ -2501,7 +2514,7 @@
             "status"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "stop",
@@ -2509,7 +2522,7 @@
             "stop"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "version",
@@ -2517,20 +2530,22 @@
             "version"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         }
       ],
       "coexist": false,
       "service": {
-        "programs": [],
+        "programs": [
+          "php"
+        ],
         "unit_base": "powerlinux-plugin-phpmyadmin",
         "health": "phpmyadmin",
-        "default_port": 0,
+        "default_port": 19050,
         "config_kind": "phpmyadmin"
       },
       "verification": {
-        "status": "unavailable",
-        "reason": "No trusted package source or native lifecycle adapter is configured for the supported OS matrix. Installation remains disabled."
+        "status": "not_tested",
+        "reason": "The app is installed from the pinned upstream release and runs on a loopback-only managed PHP server. Database login, reverse-proxy publication and live Debian/systemd behavior still need host acceptance."
       }
     },
     {
@@ -6527,24 +6542,32 @@
         "reason": "Declared migration scope, not a passed plugin"
       }
     },
-    {
+        {
       "id": "pgadmin",
-      "name": "pgadmin",
-      "description": "全能Postgres数据库Web管理工具",
+      "name": "pgAdmin",
+      "description": "官方 pgAdmin Server 核心版，使用签名仓库、独立服务和首次安装管理员账号",
       "category": "database-ui",
       "integration_version": "2.0.0",
       "versions": [
         {
-          "id": "distribution",
-          "version": "unavailable",
+          "id": "official",
+          "version": "official",
           "default": true,
           "source": {
-            "kind": "unavailable",
-            "trust": "none"
+            "kind": "signed_package",
+            "trust": "repository_signature",
+            "packages": [
+              "pgadmin4-server"
+            ],
+            "repository": "https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/bookworm",
+            "repository_key_url": "https://www.pgadmin.org/static/packages_pgadmin_org.pub",
+            "repository_key_sha256": "546cbd50f8cadcf0832dc0aef9959b1ccf0b7e9a5e99c1518784bcc46f455585",
+            "repository_suite": "pgadmin4",
+            "architecture": "amd64"
           },
           "verification": {
-            "status": "unavailable",
-            "reason": "No trusted package source or native lifecycle adapter is configured for the supported OS matrix. Installation remains disabled."
+            "status": "not_tested",
+            "reason": "The official signing-key file is SHA-256 pinned and APT verifies repository metadata. The Apache-dependent pgadmin4-web package is intentionally excluded; native service acceptance remains pending."
           }
         }
       ],
@@ -6560,23 +6583,9 @@
           "arch": "amd64",
           "distro": "debian",
           "release": "13"
-        },
-        {
-          "os": "linux",
-          "arch": "arm64",
-          "distro": "debian",
-          "release": "12"
-        },
-        {
-          "os": "linux",
-          "arch": "arm64",
-          "distro": "debian",
-          "release": "13"
         }
       ],
-      "dependencies": [
-        "postgresql-instance"
-      ],
+      "dependencies": [],
       "capabilities": [
         {
           "name": "access_log",
@@ -6584,7 +6593,7 @@
             "access_log"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "conf",
@@ -6592,7 +6601,7 @@
             "conf"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "error_log",
@@ -6600,7 +6609,7 @@
             "error_log"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_cfg",
@@ -6608,7 +6617,7 @@
             "get_cfg"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_home_page",
@@ -6616,7 +6625,7 @@
             "get_home_page"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_pg_option",
@@ -6624,7 +6633,7 @@
             "get_pg_option"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "get_pg_port",
@@ -6632,7 +6641,7 @@
             "get_pg_port"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "reload",
@@ -6640,7 +6649,7 @@
             "reload"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "restart",
@@ -6648,7 +6657,7 @@
             "restart"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_pg_password",
@@ -6656,7 +6665,7 @@
             "set_pg_password"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_pg_port",
@@ -6664,7 +6673,7 @@
             "set_pg_port"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "set_pg_username",
@@ -6672,7 +6681,7 @@
             "set_pg_username"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "start",
@@ -6680,7 +6689,7 @@
             "start"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "status",
@@ -6688,7 +6697,7 @@
             "status"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "stop",
@@ -6696,7 +6705,7 @@
             "stop"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         },
         {
           "name": "version",
@@ -6704,20 +6713,22 @@
             "version"
           ],
           "status": "unavailable",
-          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
+          "reason": "The legacy action is not exposed one-for-one; use the managed install, configuration and service workflow. Full legacy-action parity and live host acceptance remain pending."
         }
       ],
       "coexist": false,
       "service": {
-        "programs": [],
+        "programs": [
+          "python3"
+        ],
         "unit_base": "powerlinux-plugin-pgadmin",
         "health": "pgadmin",
-        "default_port": 0,
+        "default_port": 19051,
         "config_kind": "pgadmin"
       },
       "verification": {
-        "status": "unavailable",
-        "reason": "No trusted package source or native lifecycle adapter is configured for the supported OS matrix. Installation remains disabled."
+        "status": "not_tested",
+        "reason": "Uses the official signature-verified pgAdmin Server package on Debian 12/13 amd64 and a separate loopback-only managed service. Live host startup, login and reverse-proxy acceptance remain pending."
       }
     },
     {

@@ -28,23 +28,41 @@ func TestFirstReleaseDatabaseCatalogSupportsUbuntu2404AMD64(t *testing.T) {
 	}
 }
 
-func TestDatabaseWebToolsStayUnavailableWithoutTrustedSourcesAndNativeAdapters(t *testing.T) {
+func TestDatabaseWebToolsHaveTrustedSourcesAndManagedLoopbackServices(t *testing.T) {
 	catalog, err := BuiltinCatalog()
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, id := range []string{"phpmyadmin", "pgadmin"} {
-		manifest, err := catalog.Get(id)
-		if err != nil {
-			t.Fatal(err)
+	pma, err := catalog.Get("phpmyadmin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pma.Versions) != 1 || pma.Versions[0].Source.Kind != "verified_archive" || pma.Versions[0].Source.SHA256 != "03de2640bb25c9a6f96bc94eae316080b5fd5bd58d769e1318ba9dd94c83364c" || pma.Service.Programs[0] != "php" || pma.Service.DefaultPort != 19050 {
+		t.Fatalf("phpMyAdmin does not use its pinned upstream artifact and managed PHP service: %+v", pma)
+	}
+	if pma.Verification.Status != "not_tested" {
+		t.Fatalf("phpMyAdmin claims live acceptance without host evidence: %+v", pma.Verification)
+	}
+	pg, err := catalog.Get("pgadmin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := pg.Versions[0].Source
+	if source.Kind != "signed_package" || len(source.Packages) != 1 || source.Packages[0] != "pgadmin4-server" || source.RepositoryKeySHA256 != "546cbd50f8cadcf0832dc0aef9959b1ccf0b7e9a5e99c1518784bcc46f455585" || pg.Service.DefaultPort != 19051 || pg.Service.Programs[0] != "python3" {
+		t.Fatalf("pgAdmin does not use its pinned vendor key and isolated server package: %+v", pg)
+	}
+	if source.Repository != "https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/"+map[string]string{"12": "bookworm", "13": "trixie"}[CurrentPlatform().Release] {
+		t.Fatalf("pgAdmin repository does not match the current Debian suite: %s", source.Repository)
+	}
+	for _, item := range []Manifest{pma, pg} {
+		if item.Verification.Status != "not_tested" {
+			t.Errorf("%s claims unperformed host acceptance", item.ID)
 		}
-		if len(manifest.Versions) != 1 || manifest.Versions[0].Source.Kind != "unavailable" || manifest.Verification.Status != "unavailable" {
-			t.Errorf("%s still advertises an installable or unverified legacy package: %+v", id, manifest)
+		if len(item.Capabilities) == 0 {
+			t.Errorf("%s lost its legacy capability ledger", item.ID)
 		}
-		for _, capability := range manifest.Capabilities {
-			if capability.Status != "unavailable" {
-				t.Errorf("%s capability %s is not hidden as unavailable: %+v", id, capability.Name, capability)
-			}
-		}
+	}
+	if pg.Supports(Platform{OS: "linux", Arch: "arm64", Distro: "debian", Release: "13"}) {
+		t.Fatal("pgAdmin advertised an unsupported official-repository architecture")
 	}
 }
