@@ -236,26 +236,79 @@ export function SitesView({
   const updateProperties = update?.input_schema?.properties as
     | Record<string, unknown>
     | undefined;
-  const groupedUpdate =
-    update && allowedFields[group]
-      ? {
-          ...update,
-          description: `修改网站${groups.find((g) => g.id === group)?.label ?? "设置"}`,
-          input_schema: {
-            ...update.input_schema,
-            properties: Object.fromEntries(
-              [
-                "id",
-                "expected_revision",
-                "reset_advanced_config",
-                ...allowedFields[group],
-              ]
-                .filter((k) => updateProperties?.[k])
-                .map((k) => [k, updateProperties![k]]),
-            ),
-          },
-        }
-      : undefined;
+  const updateHasFields = (target: string) =>
+    !!allowedFields[target]?.some((field) => updateProperties?.[field]);
+  const hasGroupActions = (target: string) =>
+    capabilities.some(
+      (capability) =>
+        /^(sites|tls)_/.test(capability.name) &&
+        !/^sites_(retained|categor)/.test(capability.name) &&
+        !isDedicatedSiteMigrationAction(capability.name) &&
+        ![
+          "sites_list",
+          "sites_get",
+          "sites_create",
+          "sites_update",
+          "sites_default_get",
+          "sites_default_set",
+        ].includes(capability.name) &&
+        inGroup(capability.name, target),
+    );
+  const supportedGroups = groups.filter((tab) => {
+    if (tab.id === "overview") return true;
+    if (tab.id === "migration") return false;
+    if (tab.id === "tls")
+      return (
+        hasGroupActions("tls") ||
+        capabilities.some((capability) => capability.name === "certificates_list")
+      );
+    if (tab.id === "backup")
+      return capabilities.some((capability) =>
+        /^sites_backup/.test(capability.name),
+      );
+    if (tab.id === "php")
+      return (
+        updateHasFields(tab.id) ||
+        capabilities.some((capability) => capability.name.startsWith("php_"))
+      );
+    return updateHasFields(tab.id) || hasGroupActions(tab.id);
+  });
+  const activeGroup = supportedGroups.some((tab) => tab.id === group)
+    ? group
+    : supportedGroups[0]?.id ?? "overview";
+  const groupedUpdate = update && allowedFields[activeGroup]
+    ? {
+        ...update,
+        description: `修改网站${groups.find((g) => g.id === activeGroup)?.label ?? "设置"}`,
+        input_schema: {
+          ...update.input_schema,
+          properties: Object.fromEntries(
+            [
+              "id",
+              "expected_revision",
+              "reset_advanced_config",
+              ...allowedFields[activeGroup],
+            ]
+              .filter((k) => updateProperties?.[k])
+              .map((k) => [k, updateProperties![k]]),
+          ),
+        },
+      }
+    : undefined;
+  const siteResourceTabs = [
+    { id: "sites", label: "网站" },
+    ...(capabilities.some((capability) =>
+      ["certificates_list", "certificates_import"].includes(capability.name),
+    )
+      ? [{ id: "certificates", label: "证书" }]
+      : []),
+    ...(capabilities.some((c) => c.name === "sites_retained_list")
+      ? [{ id: "retained", label: "保留内容" }]
+      : []),
+  ];
+  const activeResourcePage = siteResourceTabs.some((tab) => tab.id === resourcePage)
+    ? resourcePage
+    : siteResourceTabs[0]?.id;
   const refresh = () => {
     void resources.reload();
     void detail.reload();
@@ -273,16 +326,10 @@ export function SitesView({
   return (
     <div className="stack">
       <div className="section-tabs" role="tablist" aria-label="网站资源类型">
-        {[
-          { id: "sites", label: "网站" },
-          { id: "certificates", label: "证书与DNS" },
-          ...(capabilities.some((c) => c.name === "sites_retained_list")
-            ? [{ id: "retained", label: "保留内容" }]
-            : []),
-        ].map((tab) => (
+        {siteResourceTabs.map((tab) => (
           <button
             role="tab"
-            aria-selected={resourcePage === tab.id}
+            aria-selected={activeResourcePage === tab.id}
             key={tab.id}
             onClick={() => setResourcePage(tab.id)}
           >
@@ -290,14 +337,14 @@ export function SitesView({
           </button>
         ))}
       </div>
-      {resourcePage === "retained" ? (
+      {activeResourcePage === "retained" ? (
         <RetainedSites
           capabilities={capabilities}
           onExecuted={refresh}
           active={active}
           onFiles={onFiles}
         />
-      ) : resourcePage === "certificates" ? (
+      ) : activeResourcePage === "certificates" ? (
         <CertificatesView
           capabilities={capabilities}
           onExecuted={refresh}
@@ -505,16 +552,10 @@ export function SitesView({
             role="tablist"
             aria-label="网站详情分类"
           >
-            {groups
-              .filter(
-                (tab) =>
-                  tab.id !== "migration" ||
-                  capabilities.some((c) => c.name === "sites_migration_plan"),
-              )
-              .map((tab) => (
+            {supportedGroups.map((tab) => (
                 <button
                   role="tab"
-                  aria-selected={group === tab.id}
+                  aria-selected={activeGroup === tab.id}
                   key={tab.id}
                   onClick={() => {
                     setGroup(tab.id);
@@ -527,7 +568,7 @@ export function SitesView({
           </div>
           {detail.error && <div className="notice danger">{detail.error}</div>}
           {current.configuration_mode === "advanced" &&
-            group !== "migration" && (
+            activeGroup !== "migration" && (
               <div className="notice warning">
                 <strong>此网站使用手工配置。</strong>
                 <p>
@@ -535,7 +576,7 @@ export function SitesView({
                 </p>
               </div>
             )}
-          {group === "overview" ? (
+          {activeGroup === "overview" ? (
             <>
               <div className="detail-grid">
                 <div>
@@ -572,7 +613,7 @@ export function SitesView({
                 active={active && open}
               />
             </>
-          ) : group === "backup" ? (
+          ) : activeGroup === "backup" ? (
             <SiteBackups
               key={current.id}
               id={current.id}
@@ -581,7 +622,7 @@ export function SitesView({
               onExecuted={refresh}
               active={active && open}
             />
-          ) : group === "migration" ? (
+          ) : activeGroup === "migration" ? (
             <SiteMigration
               key={current.id}
               site={current}
@@ -595,12 +636,12 @@ export function SitesView({
               webInstancesLoading={instances.loading}
               webInstancesError={instances.error || undefined}
               capabilities={capabilities}
-              active={active && open && group === "migration"}
+              active={active && open && activeGroup === "migration"}
               onExecuted={refresh}
             />
           ) : (
             <>
-              {group === "config" &&
+              {activeGroup === "config" &&
                 typeof current.category_id === "string" &&
                 current.category_id !== "" &&
                 !categoryResources.loading &&
@@ -625,7 +666,7 @@ export function SitesView({
                     "sites_default_get",
                     "sites_default_set",
                   ].includes(name) &&
-                  inGroup(name, group)
+                  inGroup(name, activeGroup)
                 }
                 preset={{
                   id: current.id,
@@ -637,7 +678,12 @@ export function SitesView({
                 onExecuted={refresh}
                 references={references}
               />
-              {group === "tls" && (
+              {activeGroup === "tls" &&
+                capabilities.some((capability) =>
+                  ["certificates_list", "certificates_import"].includes(
+                    capability.name,
+                  ),
+                ) && (
                 <CertificatesView
                   capabilities={capabilities}
                   onExecuted={refresh}
@@ -647,7 +693,7 @@ export function SitesView({
               )}
               {groupedUpdate && (
                 <ActionForm
-                  key={current.id + group}
+                  key={current.id + activeGroup}
                   capability={groupedUpdate}
                   references={references}
                   preset={
@@ -659,7 +705,7 @@ export function SitesView({
                   onExecuted={refresh}
                 />
               )}
-              {group === "php" && current.php_instance && (
+              {activeGroup === "php" && current.php_instance && (
                 <PHPResources
                   key={current.php_instance}
                   id={current.php_instance}
@@ -668,7 +714,7 @@ export function SitesView({
                   active={active && open}
                 />
               )}
-              {group === "php" && (
+              {activeGroup === "php" && (
                 <SitePHPMaintenance
                   key={`site-php:${current.id}`}
                   siteID={current.id}
@@ -676,7 +722,7 @@ export function SitesView({
                   phpInstance={current.php_instance ?? ""}
                   capabilities={capabilities}
                   onExecuted={refresh}
-                  active={active && open && group === "php"}
+                  active={active && open && activeGroup === "php"}
                 />
               )}
             </>

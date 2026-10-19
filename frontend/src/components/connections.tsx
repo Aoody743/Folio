@@ -49,20 +49,48 @@ export function ConnectionsView({
     {},
     active && capabilities.some((c) => c.name === name),
   );
-  const rows = list(resources.data);
+  const rows = list(resources.data).filter(
+    (row) => kind !== "database" || row.engine !== "mongodb",
+  );
   const detail = useResource<Connection>(
     `${kind}_connection_get`,
     { id: selected?.id },
     active &&
       open &&
       !!selected &&
+      !(kind === "database" && selected.engine === "mongodb") &&
       capabilities.some((c) => c.name === `${kind}_connection_get`),
   );
   const current =
-    detail.data ?? rows.find((r) => r.id === selected?.id) ?? selected;
-  const register = capabilities.find(
+    detail.data ??
+    rows.find((r) => r.id === selected?.id) ??
+    (kind === "database" && selected?.engine === "mongodb" ? undefined : selected);
+  const rawRegister = capabilities.find(
     (c) => c.name === `${kind}_connection_register`,
   );
+  const registerProperties = rawRegister?.input_schema?.properties as
+    | Record<string, unknown>
+    | undefined;
+  const engineSchema = registerProperties?.engine as
+    | Record<string, unknown>
+    | undefined;
+  const register = rawRegister
+    ? kind === "database"
+      ? {
+          ...rawRegister,
+          input_schema: {
+            ...rawRegister.input_schema,
+            properties: {
+              ...registerProperties,
+              engine: {
+                ...engineSchema,
+                enum: ["mysql", "mariadb", "postgresql"],
+              },
+            },
+          },
+        }
+      : rawRegister
+    : undefined;
   const title = kind === "database" ? "数据库连接" : "缓存空间";
   const refresh = () => {
     void resources.reload();
@@ -91,16 +119,16 @@ export function ConnectionsView({
       return current?.engine === "redis" || current?.engine === "valkey";
     return name.startsWith("cache_");
   };
-  const inGroup = (name: string) =>
-    group === "cluster"
+  const inGroup = (name: string, selectedGroup = group) =>
+    selectedGroup === "cluster"
       ? name.startsWith("cache_cluster_")
-      : group === "status"
+      : selectedGroup === "status"
       ? /status|get$|tables_list$|scan$|type$/.test(name)
-      : group === "query"
+      : selectedGroup === "query"
         ? /query|documents_/.test(name)
-        : group === "data"
+        : selectedGroup === "data"
           ? /key_|keys_|hash_|list_|set_/.test(name)
-          : group === "config"
+          : selectedGroup === "config"
             ? /connection_register$|connection_delete$/.test(name)
             : true;
   const groups =
@@ -116,6 +144,21 @@ export function ConnectionsView({
           { id: "data", label: "键与集合" },
           { id: "config", label: "连接设置" },
         ];
+  const visibleGroups = current
+    ? groups.filter((tab) =>
+        tab.id === "config"
+          ? !!register || capabilities.some((capability) =>
+              allowed(capability.name) && /connection_delete$/.test(capability.name),
+            )
+          : capabilities.some(
+              (capability) =>
+                allowed(capability.name) && inGroup(capability.name, tab.id),
+            ),
+      )
+    : [];
+  const activeGroup = visibleGroups.some((tab) => tab.id === group)
+    ? group
+    : visibleGroups[0]?.id;
   const preset = current
     ? {
         id: current.id,
@@ -286,10 +329,10 @@ export function ConnectionsView({
             role="tablist"
             aria-label={`${title}分类`}
           >
-            {groups.map((tab) => (
+            {visibleGroups.map((tab) => (
               <button
                 role="tab"
-                aria-selected={group === tab.id}
+                aria-selected={activeGroup === tab.id}
                 key={tab.id}
                 onClick={() => {
                   setGroup(tab.id);
@@ -300,7 +343,7 @@ export function ConnectionsView({
               </button>
             ))}
           </div>
-          {group === "config" && register ? (
+          {activeGroup === "config" && register ? (
             <>
               {kind === "database" && current.instance_id ? (
                 <p className="notice warning">
@@ -340,7 +383,7 @@ export function ConnectionsView({
               capabilities={capabilities}
               names={(name) =>
                 allowed(name) &&
-                inGroup(name) &&
+                inGroup(name, activeGroup ?? "status") &&
                 !name.endsWith("connections_list") &&
                 !name.endsWith("connection_register")
               }

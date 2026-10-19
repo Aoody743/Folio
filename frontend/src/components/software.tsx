@@ -13,10 +13,6 @@ const PHPResources = dynamic(
   () => import("./php-resources").then((m) => m.PHPResources),
   { ssr: false },
 );
-const BackupFTPMaintenance = dynamic(
-  () => import("./backup-ftp").then((m) => m.BackupFTPMaintenance),
-  { ssr: false },
-);
 const HostedApplications = dynamic(
   () => import("./hosted-applications").then((m) => m.HostedApplications),
   { ssr: false },
@@ -35,6 +31,7 @@ import { Card } from "@astryxdesign/core/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { action, Capability, intentKey, list, fullDate } from "@/lib/api";
 import { CatalogItem, Page, SoftwareInstance } from "@/lib/resources";
+import { isFirstReleaseCatalogPlugin } from "@/lib/first-release-surface";
 import { useResource } from "@/lib/resource-hook";
 import { ActionBrowser, ActionForm } from "./actions";
 import { Icon } from "./icon";
@@ -55,6 +52,12 @@ const categoryName: Record<string, string> = {
   storage: "存储",
   security: "安全",
   mail: "邮件",
+};
+const hasInstallableDefault = (item: CatalogItem) => {
+  const selected = item.versions.find((version) => version.default);
+  if (!selected) return false;
+  const source = selected.source;
+  return !(source && typeof source === "object" && source.kind === "unavailable");
 };
 export function SoftwareView({
   capabilities,
@@ -102,6 +105,26 @@ export function SoftwareView({
   );
   const items = list(catalog.data),
     instances = list(installed.data);
+  const visibleItems = items.filter(
+    (item) => isFirstReleaseCatalogPlugin(item.id) && hasInstallableDefault(item),
+  );
+  const softwareTabs = [
+    ...(capabilities.some((capability) => capability.name === "plugins_catalog")
+      ? [{ id: "catalog", label: "软件目录" }]
+      : []),
+    ...(capabilities.some((capability) => capability.name === "database_connections_list")
+      ? [{ id: "database", label: "数据库连接" }]
+      : []),
+    ...(capabilities.some((capability) => capability.name === "cache_connections_list")
+      ? [{ id: "cache", label: "缓存空间" }]
+      : []),
+    ...(capabilities.some((capability) => capability.name === "hosted_apps_list")
+      ? [{ id: "applications", label: "应用服务" }]
+      : []),
+  ];
+  const activeResourcePage = softwareTabs.some((tab) => tab.id === resourcePage)
+    ? resourcePage
+    : softwareTabs[0]?.id;
   const planAction = capabilities.find((c) => c.name === "software_plan");
   const applyAction = capabilities.find((c) => c.name === "software_apply");
   const refresh = () => {
@@ -129,14 +152,41 @@ export function SoftwareView({
       (selected.id === "pureftp" && /^ftp_/.test(name)) ||
       (selected.id === "rsyncd" && /^rsync_/.test(name)) ||
       (selected.id === "docker" && /^docker_/.test(name)) ||
-      ([
-        "mysql",
-        "mysql-community",
-        "mariadb",
-        "postgresql",
-        "mongodb",
-      ].includes(selected.id) &&
+      (["mysql", "mysql-community", "mariadb", "postgresql"].includes(selected.id) &&
         /^managed_database/.test(name)));
+  const detailTabs = selected
+    ? [
+        { id: "instances", label: "实例" },
+        ...(planAction ||
+        capabilities.some(
+          (capability) =>
+            compatible(capability.name) &&
+            !/config|setting|backup|restore|dump|import/.test(capability.name),
+        ) ||
+        (!!instance && hasInstanceResources(instance.plugin_id))
+          ? [{ id: "operations", label: "管理操作" }]
+          : []),
+        ...(capabilities.some(
+          (capability) =>
+            compatible(capability.name) && /config|setting/.test(capability.name),
+        )
+          ? [{ id: "config", label: "配置" }]
+          : []),
+        ...(capabilities.some(
+          (capability) =>
+            compatible(capability.name) &&
+            /backup|restore|dump|import/.test(capability.name),
+        )
+          ? [{ id: "backup", label: "备份恢复" }]
+          : []),
+        ...(selected.versions?.length
+          ? [{ id: "source", label: "版本与来源" }]
+          : []),
+      ]
+    : [];
+  const activeDetailTab = detailTabs.some((item) => item.id === tab)
+    ? tab
+    : detailTabs[0]?.id;
   const apply = async () => {
     if (!plan) return;
     const id = String(plan.plan_id ?? plan.id);
@@ -190,16 +240,10 @@ export function SoftwareView({
   return (
     <div className="stack">
       <div className="section-tabs" role="tablist" aria-label="软件资源类型">
-        {[
-          { id: "catalog", label: "软件目录" },
-          { id: "database", label: "数据库连接" },
-          { id: "cache", label: "缓存空间" },
-          { id: "applications", label: "应用服务" },
-          { id: "backup-ftp", label: "远程备份" },
-        ].map((tab) => (
+        {softwareTabs.map((tab) => (
           <button
             role="tab"
-            aria-selected={resourcePage === tab.id}
+            aria-selected={activeResourcePage === tab.id}
             key={tab.id}
             onClick={() => setResourcePage(tab.id)}
           >
@@ -207,22 +251,18 @@ export function SoftwareView({
           </button>
         ))}
       </div>
-      {resourcePage === "backup-ftp" ? (
-        <BackupFTPMaintenance
-          capabilities={capabilities}
-          onExecuted={onExecuted}
-          active={active}
-        />
-      ) : resourcePage === "applications" ? (
+      {!activeResourcePage ? (
+        <Unavailable title="当前没有可用的软件管理能力" />
+      ) : activeResourcePage === "applications" ? (
         <HostedApplications
           capabilities={capabilities}
           onExecuted={onExecuted}
           active={active}
         />
-      ) : resourcePage !== "catalog" ? (
+      ) : activeResourcePage !== "catalog" ? (
         <ConnectionsView
-          key={resourcePage}
-          kind={resourcePage as "database" | "cache"}
+          key={activeResourcePage}
+          kind={activeResourcePage as "database" | "cache"}
           capabilities={capabilities}
           onExecuted={onExecuted}
           active={active}
@@ -278,7 +318,7 @@ export function SoftwareView({
             <p role="status">正在读取软件目录…</p>
           ) : (
             <div className="software-grid">
-              {items
+                {visibleItems
                 .filter(
                   (item) =>
                     (item.name.includes(query) ||
@@ -344,7 +384,7 @@ export function SoftwareView({
           )}
         </Card>
       )}
-      {resourcePage === "catalog" &&
+      {activeResourcePage === "catalog" &&
         capabilities.some((c) => c.name === "software_recovery_inspect") && (
           <SoftwareRecovery capabilities={capabilities} seed={recoverySeed} />
         )}
@@ -364,36 +404,22 @@ export function SoftwareView({
           {selected.verification?.reason && (
             <div className="notice warning">{selected.verification.reason}</div>
           )}
-          <div
-            className="section-tabs"
-            role="tablist"
-            aria-label="软件详情分类"
-          >
-            {["instances", "operations", "config", "backup", "source"].map(
-              (t) => (
+          <div className="section-tabs" role="tablist" aria-label="软件详情分类">
+            {detailTabs.map((t) => (
                 <button
                   role="tab"
-                  aria-selected={tab === t}
-                  key={t}
+                  aria-selected={activeDetailTab === t.id}
+                  key={t.id}
                   onClick={() => {
-                    setTab(t);
+                    setTab(t.id);
                     setOperation(undefined);
                   }}
                 >
-                  {
-                    {
-                      instances: "实例",
-                      operations: "管理操作",
-                      config: "配置",
-                      backup: "备份恢复",
-                      source: "版本与来源",
-                    }[t]
-                  }
+                  {t.label}
                 </button>
-              ),
-            )}
+              ))}
           </div>
-          {tab === "instances" ? (
+          {activeDetailTab === "instances" ? (
             <>
               <div className="instance-list">
                 {associated(selected).map((s) => (
@@ -430,7 +456,7 @@ export function SoftwareView({
                 />
               )}
             </>
-          ) : tab === "source" ? (
+          ) : activeDetailTab === "source" ? (
             <div className="version-list">
               <p className="muted">
                 集成版本 {selected.integration_version} · 平台{" "}
@@ -444,7 +470,15 @@ export function SoftwareView({
                   )
                   .join(" · ")}
               </p>
-              {selected.versions?.map((v) => (
+              {selected.versions
+                ?.filter((v) => {
+                  const source = v.source;
+                  return (
+                    v.verification?.status !== "not_verified" &&
+                    !(source && typeof source === "object" && source.kind === "unavailable")
+                  );
+                })
+                .map((v) => (
                 <div className="version-row" key={v.id}>
                   <strong>
                     {v.version}
@@ -460,7 +494,7 @@ export function SoftwareView({
                     reason={v.verification?.reason}
                   />
                 </div>
-              ))}
+                ))}
             </div>
           ) : (
             <>
@@ -475,7 +509,7 @@ export function SoftwareView({
               )}
               {instance &&
                 ["php", "php-apt", "php-yum"].includes(instance.plugin_id) &&
-                ["operations", "config"].includes(tab) && (
+                ["operations", "config"].includes(activeDetailTab) && (
                   <PHPResources
                     key={instance.id}
                     id={instance.id}
@@ -485,7 +519,7 @@ export function SoftwareView({
                   />
                 )}
               {instance &&
-                tab === "operations" &&
+                activeDetailTab === "operations" &&
                 hasInstanceResources(instance.plugin_id) && (
                   <InstanceResources
                     key={instance.id}
@@ -495,7 +529,7 @@ export function SoftwareView({
                     active={active && open}
                   />
                 )}
-              {instance && tab === "operations" &&
+              {instance && activeDetailTab === "operations" &&
                 ["php", "php-apt", "php-yum"].includes(instance.plugin_id) && (
                   <PHPMaintenance
                     key={instance.id}
@@ -505,7 +539,7 @@ export function SoftwareView({
                     active={active && open}
                   />
                 )}
-              {instance && tab === "operations" && instance.plugin_id === "supervisor" && (
+              {instance && activeDetailTab === "operations" && instance.plugin_id === "supervisor" && (
                 <SupervisorLogs
                   key={instance.id}
                   instance={instance}
@@ -521,16 +555,16 @@ export function SoftwareView({
                   !name.startsWith("php_maintenance_") &&
                   !(
                     instance &&
-                    tab === "operations" &&
+                    activeDetailTab === "operations" &&
                     hasInstanceResources(instance.plugin_id) &&
                     /^(docker|ftp|rsync|supervisor|managed_database)_/.test(
                       name,
                     ) &&
                     !/status|diagnostics|replication/.test(name)
                   ) &&
-                  (tab === "backup"
+                  (activeDetailTab === "backup"
                     ? /backup|restore|dump|import/.test(name)
-                    : tab === "config"
+                    : activeDetailTab === "config"
                       ? /config|setting/.test(name)
                       : true)
                 }
@@ -545,7 +579,7 @@ export function SoftwareView({
                 onSelect={setOperation}
                 onExecuted={refresh}
               />
-              {planAction && tab === "operations" && (
+              {planAction && activeDetailTab === "operations" && (
                 <details>
                   <summary>安装 / 升级 / 卸载 / 回滚计划</summary>
                   <ActionForm

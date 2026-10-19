@@ -66,10 +66,27 @@ export function OperationsView({
   const [other, setOther] = useState<string>();
   const [creating, setCreating] = useState(false);
   const has = (name: string) => capabilities.some((c) => c.name === name);
+  const scheduleTabs = [
+    ...(has("schedules_list")
+      ? [{ id: "schedules", label: "计划任务" }]
+      : []),
+    ...(has("notifications_channels_list")
+      ? [{ id: "notifications", label: "通知渠道" }]
+      : []),
+  ];
+  const pageTabs =
+    page === "monitor"
+      ? has("services_list")
+        ? [{ id: "services", label: "主机服务" }]
+        : []
+      : scheduleTabs;
+  const activeTab = pageTabs.some((item) => item.id === tab)
+    ? tab
+    : pageTabs[0]?.id;
   const name =
-    tab === "services"
+    activeTab === "services"
       ? "services_list"
-      : tab === "notifications"
+      : activeTab === "notifications"
         ? "notifications_channels_list"
         : "schedules_list";
   const records = useResource<RecordData[] | Page<RecordData>>(
@@ -102,15 +119,15 @@ export function OperationsView({
       intervals[Math.floor(intervals.length / 2)] ?? 0,
     ) * 3;
   const title =
-    tab === "services"
+    activeTab === "services"
       ? "主机服务"
-      : tab === "notifications"
+      : activeTab === "notifications"
         ? "通知渠道"
         : "计划任务";
   const create = capabilities.find(
     (c) =>
       c.name ===
-      (tab === "notifications"
+      (activeTab === "notifications"
         ? "notifications_channels_save"
         : "schedules_create"),
   );
@@ -124,9 +141,9 @@ export function OperationsView({
       ? capabilities.filter((capability) => !/^system_change_/.test(capability.name))
       : capabilities;
   const prefix =
-    tab === "services"
+    activeTab === "services"
       ? /^services_get$/
-      : tab === "notifications"
+      : activeTab === "notifications"
         ? /^notifications_/
         : /^schedules_/;
   const preset = current
@@ -166,7 +183,7 @@ export function OperationsView({
   ];
   return (
     <div className="stack">
-      {page === "monitor" && (
+      {page === "monitor" && has("monitor_history") && (
         <Card className="panel-card">
           <div className="card-heading">
             <h2>指标历史</h2>
@@ -251,26 +268,25 @@ export function OperationsView({
           )}
         </Card>
       )}
+      {((page === "monitor" && has("services_list")) ||
+        (page === "schedules" && pageTabs.length > 0)) && (
       <Card className="panel-card">
         <div className="card-heading">
           <h2>{title}</h2>
-          {tab !== "services" && create && (
+          {activeTab !== "services" && create && (
             <Button
-              label={tab === "notifications" ? "新增通知渠道" : "创建计划任务"}
+              label={activeTab === "notifications" ? "新增通知渠道" : "创建计划任务"}
               variant="primary"
               onClick={() => setCreating(true)}
             />
           )}
         </div>
-        {page === "schedules" && (
+        {page === "schedules" && pageTabs.length > 1 && (
           <div className="section-tabs" role="tablist" aria-label="自动化分类">
-            {[
-              { id: "schedules", label: "计划任务" },
-              { id: "notifications", label: "通知渠道" },
-            ].map((t) => (
+            {pageTabs.map((t) => (
               <button
                 role="tab"
-                aria-selected={tab === t.id}
+                aria-selected={activeTab === t.id}
                 key={t.id}
                 onClick={() => {
                   setTab(t.id);
@@ -297,9 +313,9 @@ export function OperationsView({
                 <thead>
                   <tr>
                     <th>名称</th>
-                    {(tab === "services"
+                    {(activeTab === "services"
                       ? ["unit", "active_state", "ownership"]
-                      : tab === "notifications"
+                      : activeTab === "notifications"
                         ? ["kind"]
                         : ["mode", "action", "enabled", "next_run_at"]
                     ).map((k) => (
@@ -323,9 +339,9 @@ export function OperationsView({
                         </button>
                         <small>{row.id}</small>
                       </td>
-                      {(tab === "services"
+                      {(activeTab === "services"
                         ? ["unit", "active_state", "ownership"]
-                        : tab === "notifications"
+                        : activeTab === "notifications"
                           ? ["kind"]
                           : ["mode", "action", "enabled", "next_run_at"]
                       ).map((k) => (
@@ -346,7 +362,7 @@ export function OperationsView({
               <Unavailable
                 title={`暂无${title}`}
                 detail={
-                  tab === "services"
+                  activeTab === "services"
                     ? "仅列出受信任主机策略中明确管理的服务。"
                     : "创建后由网页与MCP共同管理。"
                 }
@@ -355,7 +371,13 @@ export function OperationsView({
           </>
         )}
       </Card>
-      {page === "monitor" && (
+      )}
+      {page === "schedules" && !pageTabs.length && (
+        <Unavailable title="当前没有可用的计划任务或通知能力" />
+      )}
+      {page === "monitor" &&
+        has("system_change_plan") &&
+        has("system_change_get") && (
         <SystemChangeWorkflow
           capabilities={capabilities}
           identityKey={identityKey}
@@ -398,7 +420,7 @@ export function OperationsView({
       {create && (
         <ResourceDrawer
           open={creating}
-          title={tab === "notifications" ? "新增通知渠道" : "创建计划任务"}
+          title={activeTab === "notifications" ? "新增通知渠道" : "创建计划任务"}
           onClose={() => setCreating(false)}
         >
           <ActionForm capability={create} onExecuted={refresh} />

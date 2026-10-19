@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Folio · 折纸面板",
   description: "AI 时代的 Linux 服务器可视化工具",
-  icons: { icon: "/icon.svg" },
+  icons: { icon: "/folio-logo.png" },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 export default function RootLayout({

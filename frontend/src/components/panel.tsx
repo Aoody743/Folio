@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { clearDrafts } from "@/lib/draft-cache";
+import { firstReleaseCapabilities } from "@/lib/first-release-surface";
 import { authorizationReturn, AuthValues, loginHints } from "@/lib/auth-hints";
 import { Theme } from "@astryxdesign/core/theme";
 import { InternationalizationProvider } from "@astryxdesign/core/i18n";
@@ -77,6 +78,15 @@ const nav: { id: string; label: string; icon: IconName }[] = [
   { id: "software", label: "软件", icon: "software" },
   { id: "files", label: "文件", icon: "files" },
   { id: "more", label: "更多", icon: "more" },
+];
+const moreNav: { id: string; icon: string; title: string; desc: string }[] = [
+  { id: "monitor", icon: "overview", title: "监控", desc: "主机指标与状态" },
+  { id: "terminal", icon: "terminal", title: "终端", desc: "受控主机操作" },
+  { id: "schedules", icon: "tasks", title: "计划任务", desc: "自动执行与任务进度" },
+  { id: "security", icon: "shield", title: "安全与账户", desc: "密码、两步验证与会话" },
+  { id: "appearance", icon: "settings", title: "外观", desc: "五套配色与主题预览" },
+  { id: "mcp", icon: "software", title: "MCP 接入", desc: "客户端身份与授权范围" },
+  { id: "audit", icon: "history", title: "操作记录", desc: "网页与 MCP 共用审计" },
 ];
 const stateText: Record<string, string> = {
   queued: "排队中",
@@ -194,6 +204,24 @@ export function Panel() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedAction, setSelectedAction] = useState<string>();
+  const hasCapability = (name: string) => caps.some((capability) => capability.name === name);
+  const visibleNav = nav.filter((item) =>
+    item.id === "overview" ||
+    item.id === "more" ||
+    (item.id === "sites" && hasCapability("sites_list")) ||
+    (item.id === "software" && hasCapability("plugins_catalog")) ||
+    (item.id === "files" && hasCapability("fs_roots")),
+  );
+  const visibleMoreNav = moreNav.filter((item) =>
+    item.id === "monitor"
+      ? hasCapability("monitor_history") || hasCapability("services_list")
+      : item.id === "terminal"
+        ? hasCapability("terminal_targets_list")
+        : item.id === "schedules"
+          ? hasCapability("schedules_list") ||
+            hasCapability("notifications_channels_list")
+          : true,
+  );
   const refreshTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const refreshGeneration = useRef(0);
   useEffect(() => {
@@ -318,7 +346,7 @@ export function Panel() {
           setAudit(list(result.value as Audit[]));
           break;
         case 4:
-          setCaps(list(result.value as Capability[]));
+          setCaps(firstReleaseCapabilities(list(result.value as Capability[])));
           break;
         case 5: {
           const next = result.value as Session;
@@ -542,12 +570,12 @@ export function Panel() {
                   }}
                   aria-label={`${session?.panel?.panel_name ?? "Folio · 折纸面板"} 概览`}
                 >
-                  <span className="brand-mark">
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </span>
+                  <img
+                    className="brand-logo"
+                    src="/folio-logo.png"
+                    alt=""
+                    aria-hidden="true"
+                  />
                   <strong>{session?.panel?.panel_name ?? "Folio · 折纸面板"}</strong>
                 </button>
                 <div className="host-pill">
@@ -667,7 +695,9 @@ export function Panel() {
                     秒尝试读取，恢复后自动同步。
                   </div>
                 )}
-                <HostingStackSetup capabilities={caps} />
+                {section === "overview" && !notesAll && (
+                  <HostingStackSetup capabilities={caps} />
+                )}
                 {section === "overview" &&
                   (notesAll ? (
                     <Card className="panel-card">
@@ -964,31 +994,51 @@ export function Panel() {
                         )}
                       </Card>
                       <Card className="panel-card secondary-card">
-                        <CardTitle icon="software" title="第二阶段核心测试版范围">
-                          <span className="status-chip warning">验收进行中</span>
-                        </CardTitle>
+                        <CardTitle icon="overview" title="常用入口" />
                         <div className="rows">
-                          <div className="event-row">
-                            <span className="status-chip accent">可用</span>
-                            <div>
-                              <strong>网站 / PHP、数据库与缓存（MariaDB 主线、PostgreSQL 本机管理、Redis）、Docker、Supervisor</strong>
-                              <p>文件、本地备份、计划任务、系统设置、安全审计及网页 / MCP 授权也属于核心测试版。每项功能仍以当前能力和权限检查为准。</p>
-                            </div>
-                          </div>
-                          <div className="event-row">
-                            <span className="status-chip warning">暂缓</span>
-                            <div>
-                              <strong>MongoDB、phpMyAdmin / pgAdmin、PureFTP、FTP 远程备份、文件同步</strong>
-                              <p>包括 rsync / lsyncd、PHP yum / 源码和 PostgreSQL 远程 TLS。</p>
-                            </div>
-                          </div>
-                          <div className="event-row">
-                            <span className="status-chip danger">不可用</span>
-                            <div>
-                              <strong>跨主机或跨引擎数据库复制，以及未实现的管理能力</strong>
-                              <p>首发范围尚未完成实际环境验收；这里的范围标签不表示功能已验证。</p>
-                            </div>
-                          </div>
+                          {[
+                            {
+                              id: "sites",
+                              icon: "sites",
+                              title: "网站管理",
+                              detail: "网站、域名与证书",
+                            },
+                            {
+                              id: "software",
+                              icon: "software",
+                              title: "软件管理",
+                              detail: "服务、数据库与容器",
+                            },
+                            {
+                              id: "files",
+                              icon: "files",
+                              title: "文件管理",
+                              detail: "浏览文件与配置",
+                            },
+                          ]
+                            .filter((item) =>
+                              visibleNav.some((navItem) => navItem.id === item.id),
+                            )
+                            .map((item) => (
+                            <button
+                              className="event-row quick-link-row"
+                              key={item.id}
+                              onClick={() => {
+                                setSection(item.id);
+                                setSelectedAction(undefined);
+                                setNotesAll(false);
+                              }}
+                            >
+                              <span className="heading-icon">
+                                <Icon name={item.icon as IconName} size={16} />
+                              </span>
+                              <div>
+                                <strong>{item.title}</strong>
+                                <p>{item.detail}</p>
+                              </div>
+                              <Icon name="arrow" size={16} />
+                            </button>
+                            ))}
                         </div>
                       </Card>
                     </div>
@@ -1055,56 +1105,7 @@ export function Panel() {
                   <>
                     {morePage === "menu" ? (
                       <div className="more-grid">
-                        {[
-                          {
-                            id: "monitor",
-                            icon: "overview",
-                            title: "监控",
-                            desc: "主机指标与状态",
-                          },
-                          {
-                            id: "terminal",
-                            icon: "terminal",
-                            title: "终端",
-                            desc: "受控主机操作",
-                          },
-                          {
-                            id: "schedules",
-                            icon: "tasks",
-                            title: "计划任务",
-                            desc: "自动执行与任务进度",
-                          },
-                          {
-                            id: "security",
-                            icon: "shield",
-                            title: "安全与账户",
-                            desc: "密码、两步验证与会话",
-                          },
-                          {
-                            id: "storage",
-                            icon: "files",
-                            title: "备份存储",
-                            desc: "备份与恢复",
-                          },
-                          {
-                            id: "appearance",
-                            icon: "settings",
-                            title: "外观",
-                            desc: "五套配色与主题预览",
-                          },
-                          {
-                            id: "mcp",
-                            icon: "software",
-                            title: "MCP 接入",
-                            desc: "客户端身份与授权范围",
-                          },
-                          {
-                            id: "audit",
-                            icon: "history",
-                            title: "操作记录",
-                            desc: "网页与 MCP 共用审计",
-                          },
-                        ].map((item) => (
+                        {visibleMoreNav.map((item) => (
                           <button
                             key={item.id}
                             className="more-tile"
@@ -1243,7 +1244,7 @@ export function Panel() {
                 )}
               </main>
               <nav className="bottom-nav" aria-label="主导航">
-                {nav.map((item) => (
+                {visibleNav.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => {
@@ -1365,7 +1366,7 @@ export function Panel() {
                   startIcon={<Icon name="search" />}
                 />
                 <div className="search-results">
-                  {nav
+                  {visibleNav
                     .filter((n) => n.label.includes(query))
                     .map((n) => (
                       <button
@@ -1559,12 +1560,12 @@ function Auth({
   return (
     <main className="auth-shell">
       <div className="auth-brand">
-        <span className="brand-mark">
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
+        <img
+          className="brand-logo"
+          src="/folio-logo.png"
+          alt=""
+          aria-hidden="true"
+        />
         <strong>{panel?.panel_name ?? "Folio · 折纸面板"}</strong>
       </div>
       <Card className="auth-card panel-card">

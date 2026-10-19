@@ -236,26 +236,11 @@ time {
   font-size: 18px;
   letter-spacing: -0.5px;
 }
-.brand-mark {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 4px;
-  transform: rotate(-7deg);
-}
-.brand-mark i {
-  background: var(--accent);
-  border-radius: 4px;
-}
-.brand-mark i:nth-child(2) {
-  opacity: 0.6;
-}
-.brand-mark i:nth-child(3) {
-  opacity: 0.4;
-}
-.brand-mark i:nth-child(4) {
-  opacity: 0.8;
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  display: block;
+  object-fit: contain;
 }
 .host-pill {
   display: flex;
@@ -1265,10 +1250,9 @@ legend {
   .brand {
     font-size: 16px;
   }
-  .brand-mark {
-    width: 27px;
-    height: 27px;
-    gap: 3px;
+  .brand-logo {
+    width: 34px;
+    height: 34px;
   }
   .host-pill {
     display: none;

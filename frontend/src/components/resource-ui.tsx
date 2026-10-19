@@ -36,7 +36,7 @@ export function State({ value, reason }: { value?: string; reason?: string }) {
     pending: "待处理",
     disabled: "已停用",
     unknown: "状态未知",
-    not_tested: "尚未验收",
+    not_tested: "尚未验证",
     verified: "验证成功",
     queued: "排队中",
     canceled: "已取消",

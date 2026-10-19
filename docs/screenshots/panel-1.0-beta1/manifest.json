@@ -1,0 +1,147 @@
+{
+  "source": "Current worktree static frontend with isolated local visual-preview API fixture",
+  "captured_at": "2026-10-19T07:00:21.731Z",
+  "viewport": "1440x1100",
+  "capture_mode": "Read-only UI navigation. API responses use a local screenshot fixture; catalog entries and verification states come from the checked-in RC15 core manifest. Host metrics, connections, sites, notes, tasks, and audit rows are visual samples, not acceptance evidence.",
+  "notes": [
+    "当前工作区静态前端的只读视觉预览；本地夹具模拟登录后的主机、站点、软件实例、连接、便签、任务和审计样例。",
+    "软件目录条目和验收状态直接读取仓库中的 RC15 core.json；它们不是验收通过证明，主机指标和资源样例也不是实时主机快照。",
+    "采集过程没有向 RC15 验收虚拟机发送请求，也没有执行主机、账户、文件或计划任务变更。",
+    "长页面另附完整滚动截图；完整截图把固定底部导航移到内容之后，以免遮挡页面。"
+  ],
+  "pages": [
+    {
+      "name": "00-login",
+      "label": "登录",
+      "file": "00-login.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "01-overview",
+      "label": "概览",
+      "file": "01-overview.png",
+      "viewport": "1440x1100",
+      "document_height": 1582,
+      "full_file": "01-overview-full.png"
+    },
+    {
+      "name": "02-shared-notes",
+      "label": "共享便签",
+      "file": "02-shared-notes.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "03-sites",
+      "label": "网站",
+      "file": "03-sites.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "04-certificates",
+      "label": "证书",
+      "file": "04-certificates.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "05-software",
+      "label": "软件目录",
+      "file": "05-software.png",
+      "viewport": "1440x1100",
+      "document_height": 1634,
+      "full_file": "05-software-full.png"
+    },
+    {
+      "name": "06-database-connections",
+      "label": "数据库连接",
+      "file": "06-database-connections.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "07-cache-connections",
+      "label": "缓存空间",
+      "file": "07-cache-connections.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "08-files",
+      "label": "文件",
+      "file": "08-files.png",
+      "viewport": "1440x1100",
+      "document_height": 1155,
+      "full_file": "08-files-full.png"
+    },
+    {
+      "name": "09-more-menu",
+      "label": "更多菜单",
+      "file": "09-more-menu.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "10-more-monitor",
+      "label": "监控",
+      "file": "10-more-monitor.png",
+      "viewport": "1440x1100",
+      "document_height": 1215,
+      "full_file": "10-more-monitor-full.png"
+    },
+    {
+      "name": "11-more-terminal",
+      "label": "终端",
+      "file": "11-more-terminal.png",
+      "viewport": "1440x1100",
+      "document_height": 1187,
+      "full_file": "11-more-terminal-full.png"
+    },
+    {
+      "name": "12-more-schedules",
+      "label": "计划任务",
+      "file": "12-more-schedules.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "13-more-notifications",
+      "label": "通知渠道",
+      "file": "13-more-notifications.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "14-more-security",
+      "label": "安全与账户",
+      "file": "14-more-security.png",
+      "viewport": "1440x1100",
+      "document_height": 1117,
+      "full_file": "14-more-security-full.png"
+    },
+    {
+      "name": "15-more-appearance",
+      "label": "外观",
+      "file": "15-more-appearance.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    },
+    {
+      "name": "16-more-mcp",
+      "label": "MCP 接入",
+      "file": "16-more-mcp.png",
+      "viewport": "1440x1100",
+      "document_height": 1278,
+      "full_file": "16-more-mcp-full.png"
+    },
+    {
+      "name": "17-more-audit",
+      "label": "操作记录",
+      "file": "17-more-audit.png",
+      "viewport": "1440x1100",
+      "document_height": 1100
+    }
+  ]
+}

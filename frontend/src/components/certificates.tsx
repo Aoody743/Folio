@@ -78,6 +78,20 @@ export function CertificatesView({
   const [copyError, setCopyError] = useState("");
   const lookupGeneration = useRef(0);
   const has = (name: string) => capabilities.some((c) => c.name === name);
+  const pageTabs = [
+    ...(has("certificates_list") || has("certificates_import")
+      ? [{ id: "certificates", label: "证书" }]
+      : []),
+    ...(capabilities.some((capability) => capability.name.startsWith("certificates_acme_"))
+      ? [{ id: "manual", label: "验证与恢复" }]
+      : []),
+    ...(capabilities.some((capability) => capability.name.startsWith("certificates_dns_"))
+      ? [{ id: "dns", label: "DNS凭据与提供商" }]
+      : []),
+  ];
+  const activePage = pageTabs.some((tab) => tab.id === page)
+    ? page
+    : pageTabs[0]?.id;
   const certificates = useResource<Page<Certificate>>(
     "certificates_list",
     {},
@@ -87,7 +101,7 @@ export function CertificatesView({
     "certificates_dns_providers",
     {},
     active &&
-      (page === "dns" ||
+      (activePage === "dns" ||
         create === "certificates_acme_issue" ||
         create === "certificates_dns_credentials_save") &&
       has("certificates_dns_providers"),
@@ -96,14 +110,14 @@ export function CertificatesView({
     "certificates_dns_credentials_list",
     {},
     active &&
-      (page === "dns" || create === "certificates_acme_issue") &&
+      (activePage === "dns" || create === "certificates_acme_issue") &&
       has("certificates_dns_credentials_list"),
   );
   const order = useResource<Order>(
     "certificates_acme_status",
     { id: loadedID },
     active &&
-      page === "manual" &&
+      activePage === "manual" &&
       !!loadedID &&
       has("certificates_acme_status"),
     5000,
@@ -342,14 +356,10 @@ export function CertificatesView({
           </div>
         </div>
         <div className="section-tabs" role="tablist" aria-label="证书资源类型">
-          {[
-            { id: "certificates", label: "证书" },
-            { id: "manual", label: "验证与恢复" },
-            { id: "dns", label: "DNS凭据与提供商" },
-          ].map((tab) => (
+          {pageTabs.map((tab) => (
             <button
               role="tab"
-              aria-selected={page === tab.id}
+              aria-selected={activePage === tab.id}
               key={tab.id}
               onClick={() => {
                 setPage(tab.id);
@@ -361,7 +371,7 @@ export function CertificatesView({
             </button>
           ))}
         </div>
-        {page === "certificates" ? (
+        {activePage === "certificates" ? (
           <>
             {certificates.error && (
               <div className="notice danger" role="alert">
@@ -411,13 +421,17 @@ export function CertificatesView({
                   !certificates.error && (
                     <Unavailable
                       title="暂无可见证书"
-                      detail="导入已有证书，或通过真实ACME流程申请。没有签发产物时不会显示已签发。"
+                      detail={
+                        has("certificates_acme_issue")
+                          ? "导入已有证书，或通过真实ACME流程申请。没有签发产物时不会显示已签发。"
+                          : "导入已有证书，再绑定到需要启用HTTPS的网站。"
+                      }
                     />
                   )}
               </>
             )}
           </>
-        ) : page === "manual" ? (
+        ) : activePage === "manual" ? (
           <div className="form-stack">
             <form
               onSubmit={(e) => {
@@ -708,7 +722,7 @@ export function CertificatesView({
           />
         </ResourceDrawer>
       )}
-      {page === "certificates" && current && (
+      {activePage === "certificates" && current && (
         <ResourceDrawer
           open={open}
           title={`证书 · ${current.name}`}
@@ -747,7 +761,7 @@ export function CertificatesView({
           />
         </ResourceDrawer>
       )}
-      {page === "dns" && currentCredential && (
+      {activePage === "dns" && currentCredential && (
         <ResourceDrawer
           open={open}
           title={`DNS凭据 · ${currentCredential.name}`}
