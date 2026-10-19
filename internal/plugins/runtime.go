@@ -254,6 +254,10 @@ func (e *PrivilegedExecutor) configureWithInstallJournal(ctx context.Context, in
 		if err := e.configureUtility(ctx, instance); err != nil {
 			return err
 		}
+	case "git", "nodejs", "golang":
+		if instance.Service.Kind != "cli" || instance.Service.Program == "" {
+			return failure("invalid_catalog", "Managed command-line runtime must have a reviewed executable", 500)
+		}
 	case "phpmyadmin", "pgadmin", "php-guard", "data_query", "backup_ftp", "acme_pandominassl_apply", "webssh":
 		raw, _ := json.Marshal(instance.Config)
 		if err := write("integration.json", string(raw)); err != nil {
@@ -661,10 +665,24 @@ func (e *PrivilegedExecutor) probe(ctx context.Context, instance Instance) Healt
 		return health
 	}
 	if instance.Service.Kind == "cli" {
-		output, err := runFixed(ctx, instance.Service.Program, []string{"--version"}, 10*time.Second, e.credential(instance))
-		if err == nil && strings.Contains(strings.ToLower(output), "lego") {
-			health.Status = "available"
-			health.Reason = "Verified CLI is installed; DNS credentials/actual issuance remain separate checks"
+		args := []string{"--version"}
+		if instance.PluginID == "golang" {
+			// Go 1.22, which is the Ubuntu 24.04 distribution toolchain, uses
+			// `go version`; `go --version` is not a supported flag there.
+			args = []string{"version"}
+		}
+		output, err := runFixed(ctx, instance.Service.Program, args, 10*time.Second, e.credential(instance))
+		if err == nil {
+			switch instance.PluginID {
+			case "lego":
+				if strings.Contains(strings.ToLower(output), "lego") {
+					health.Status = "available"
+					health.Reason = "Verified CLI is installed; DNS credentials/actual issuance remain separate checks"
+				}
+			case "git", "nodejs", "golang":
+				health.Status = "available"
+				health.Reason = "Verified command-line runtime is installed; application workflows are checked separately"
+			}
 		}
 		return health
 	}

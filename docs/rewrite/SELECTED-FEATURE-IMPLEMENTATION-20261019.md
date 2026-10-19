@@ -1,6 +1,6 @@
 # phpMyAdmin/pgAdmin、ACME/DNS 与应用入口执行记录
 
-更新时间：2026-10-19。本文记录范围计划的代码改动、本地验证和仍需目标主机/外部账号完成的验收；源码测试不代表生产支持承诺。
+更新时间：2026-10-20。本文记录范围计划的代码改动与验收边界。beta2 的系统目标按用户确认收敛为 Ubuntu 24.04 amd64。逐项目标系统证据见[验收记录](./SELECTED-FEATURE-ACCEPTANCE-20261019.md)；源码测试不代表生产支持承诺。
 
 ## 已完成的本地实现
 
@@ -8,7 +8,8 @@
 - Go 项目归档和 Git 导入现在都要求根 go.mod 与 go.sum；模板提供空 go.sum。Node.js 构建先把源码安全复制到受限 staging 目录，再以应用专属非特权身份安装依赖和构建；成功后才切换目录，失败保留当前项目。Git 导入记录仓库地址、分支和精确 commit；仓库 URL 不允许嵌入凭据，私有仓库仍明确不支持。
 - Node.js 的受管服务以 npm run start 启动，并设置 HOST=127.0.0.1、HOSTNAME=127.0.0.1 和受管 PORT。服务启动后会轮询固定回环 upstream；在 20 秒内无 HTTP 响应时停止服务并报告失败。通用 Node.js 项目必须让启动脚本使用这些环境变量。
 - ACME/DNS 的证书入口和相关动作现已出现在首发界面。代码已有加密 DNS 凭据、不可变凭据版本、持久 ACME 订单、逐订单 TXT 所有权回执和精确清理；下面列出的“可用”只表示代码适配器存在，不表示真实供应商账号或公开 CA 签发已通过。
-- phpMyAdmin 和 pgAdmin 暂不开放：目录已删除没有可信来源的旧版本选择，将默认来源与能力标为 unavailable，因此不会出现在可安装软件列表。两者尚无可信安装来源和受管 Web 生命周期适配器。
+- beta2 的 Ubuntu 首装器默认启用软件和网站/证书 Agent 模块，使已验收的应用与证书入口可直接使用；升级时保留现存 Agent 策略，且可用 `--no-managed-features` 跳过首装模块。Git、Node.js、Go 的目录验证状态和支持平台限定为 Ubuntu 24.04 amd64。
+- phpMyAdmin 和 pgAdmin 暂不开放：目录已删除旧版本选择并将默认来源与能力标为 unavailable，因此不会出现在可安装软件列表。Ubuntu 24.04 的签名仓库有 phpMyAdmin 候选包，但当前产品没有将它绑定到受管 PHP-FPM 和 HTTPS 站点的生命周期；pgAdmin 官方 apt 仓库及其签名密钥存在，但当前包管理器尚无受控第三方仓库注册流程，也没有隔离运行时适配器。
 
 ## DNS 提供商状态
 
@@ -53,20 +54,16 @@
 
 ## 尚未通过的目标环境验收
 
-当前执行容器报告 Debian 13.6，但 PID 1 是 tail、systemd 状态为 offline，Node/npm 来自 Codex 工具运行时而不是 /usr/bin/npm。这不足以证明 Debian 13 主机的可信软件安装、systemd 服务启动/重启、反向代理或卸载行为；本轮也没有 Ubuntu 24.04 干净主机、真实 DNS 供应商账号、测试 zone 或 ACME staging/production 域名。
+- beta2 的 Git、Node.js、Go 目录条目仅声明 Ubuntu 24.04 amd64；不声明 Debian、ARM 或其他发行版/架构支持。
+- Go 1.22.2 运行时及 Go 归档应用构建、非 root systemd 服务和 HTTP 验收已通过。公开 HTTPS Git 应用与固定 SSH 指纹应用均成功部署；错误 SSH pin 拒绝且不修改应用来源。私有 Git 认证仍未实现。
+- DNS 协议测试使用本地 API/CA fixture；真实 DNS 供应商账号、隔离 zone、公开 CA staging/production 签发和续期尚未执行。全部外部 provider 仍未验收。
+- phpMyAdmin/pgAdmin 因产品级来源集成和受管 Web 生命周期适配器缺失而不可安装；数据库 canary、HTTPS 反代和恢复测试未执行。beta2 保留这一门禁。
 
-因此以下内容保持“未验收”，不得标成 release-ready：
+## 源码、集成与目标主机验证
 
-- Debian 13 amd64 和 Ubuntu 24.04 amd64 上 Git/OpenSSH、Node.js/npm、Go 的签名包冷安装、升级、重复安装、状态和卸载。
-- Node.js/Next.js/Go 在目标主机上的归档和 Git 创建、构建、失败恢复、服务重启、站点反代及删除全链路。私有 Git 认证仍未实现。
-- 所有 30 个已实现 DNS 适配器的真实 API 行为、DNS-01 staging/公开 CA 申请和续期；HTTP-01 公开 CA canary 也未运行。
-- phpMyAdmin/pgAdmin 的可信包源、数据库 canary、HTTPS 反代、备份保留和服务恢复；功能保持隐藏。
-
-## 本地验证
-
-- /workspace/tools/go1.27.2/bin/go test ./...：通过。
-- cd frontend && npm run typecheck && npm test：通过，84 项测试全部通过。
-- Next.js 模板执行 npm ci --dry-run --ignore-scripts --offline：锁文件与依赖清单一致。
-- 无依赖 Node.js 模板执行 npm ci --dry-run --ignore-scripts --offline：锁文件格式和清单一致。
-- go test -tags hosted_apps_integration ... 的真实非特权 npm 构建用例在当前非 root 容器中按设计跳过；目标主机实测仍待安排。
-- ACME/DNS 协议测试通过，但不连接外部供应商或 CA。
+- `go test -mod=readonly ./...`：通过。
+- `frontend` 的 `npm run typecheck` 与 `npm test`：通过，84/84。
+- `make rewrite-build`：qa.11 amd64 构建、前端类型检查和生产构建通过；该包已在 Ubuntu Git 验收 VM 安装并通过健康检查。
+- root VM 的 `hosted_apps_integration` 测试：Node/npm 锁文件构建和项目切换通过；测试 fixture 位于 `/tmp` 的直接子目录，确保 `nobody` 可遍历其父路径。
+- Ubuntu 24.04 amd64 VM：Node.js 24.22.0、Go 1.22.2 安装通过；Node 归档应用升级及重启保持运行；Go 归档应用构建和服务通过；公开 HTTPS 与固定 SSH pin Git 应用部署通过，错误 pin 被拒绝；DNS 凭据 CRUD 与脱敏通过；HTTP-01/DNS-01 本地协议、重启及清理恢复测试通过。
+- 更完整的逐项结果、发行包哈希和外部验收限制见[验收记录](./SELECTED-FEATURE-ACCEPTANCE-20261019.md)。

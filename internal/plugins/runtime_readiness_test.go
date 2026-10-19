@@ -2,6 +2,8 @@ package plugins
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -23,6 +25,21 @@ func TestRuntimeReadinessBudgets(t *testing.T) {
 	} {
 		if got := runtimeReadinessBudget(Instance{PluginID: test.plugin}); got != test.want {
 			t.Errorf("%s readiness budget = %s, want %s", test.plugin, got, test.want)
+		}
+	}
+}
+
+func TestManagedCommandLineRuntimeHealthUsesVersionCheck(t *testing.T) {
+	program := filepath.Join(t.TempDir(), "runtime")
+	for plugin, wantArg := range map[string]string{"git": "--version", "nodejs": "--version", "golang": "version"} {
+		script := "#!/bin/sh\n[ \"$1\" = \"" + wantArg + "\" ] || exit 2\necho version 1\n"
+		if err := os.WriteFile(program, []byte(script), 0755); err != nil {
+			t.Fatal(err)
+		}
+		instance := Instance{PluginID: plugin, Status: "configured", Service: ServiceProfile{Kind: "cli", Program: program}}
+		health := (&PrivilegedExecutor{}).probe(context.Background(), instance)
+		if health.Status != "available" || health.Reason == "" {
+			t.Errorf("%s CLI health = %+v, want available with an explicit workflow boundary", plugin, health)
 		}
 	}
 }

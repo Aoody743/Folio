@@ -1,0 +1,86 @@
+name: Publish Folio 1.0-beta2 prerelease
+
+on:
+  push:
+    tags:
+      - 1.0-beta2
+
+permissions:
+  contents: write
+
+concurrency:
+  group: folio-1.0-beta2-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'Aoody743/Folio'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/.cache/rewrite
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build and verify the tagged beta2 package
+        run: |
+          set -Eeuo pipefail
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          [[ -z "$(git status --porcelain --untracked-files=normal)" ]]
+          bash scripts/rewrite/build.sh \
+            --version 1.0-beta2 \
+            --architectures amd64 \
+            --output "$GITHUB_WORKSPACE/release-assets"
+          archive=release-assets/folio-1.0-beta2-linux-amd64.tar.gz
+          grep -Fx "commit=$GITHUB_SHA" <(tar -xOzf "$archive" BUILDINFO)
+          grep -Fx 'working_tree_dirty=false' <(tar -xOzf "$archive" BUILDINFO)
+          python3 scripts/rewrite/test-package.py "$archive"
+
+      - name: Prepare installer and checksums
+        run: |
+          set -Eeuo pipefail
+          install -m 0755 scripts/rewrite/install-1.0-beta2.sh release-assets/install-1.0-beta2.sh
+          cd release-assets
+          cp CHECKSUMS.txt SHA256SUMS.txt
+          sha256sum install-1.0-beta2.sh >> SHA256SUMS.txt
+          sha256sum --check --strict SHA256SUMS.txt
+          bash -n install-1.0-beta2.sh
+
+      - name: Publish the verified prerelease assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          if gh release view 1.0-beta2 >/dev/null 2>&1; then
+            gh release upload 1.0-beta2 \
+              release-assets/folio-1.0-beta2-linux-amd64.tar.gz \
+              release-assets/install-1.0-beta2.sh \
+              release-assets/SHA256SUMS.txt \
+              --clobber
+            gh release edit 1.0-beta2 \
+              --title 'Folio 1.0-beta2' \
+              --notes-file .github/release-notes/1.0-beta2.md \
+              --prerelease \
+              --draft=false
+          else
+            gh release create 1.0-beta2 \
+              release-assets/folio-1.0-beta2-linux-amd64.tar.gz \
+              release-assets/install-1.0-beta2.sh \
+              release-assets/SHA256SUMS.txt \
+              --verify-tag \
+              --title 'Folio 1.0-beta2' \
+              --notes-file .github/release-notes/1.0-beta2.md \
+              --prerelease
+          fi

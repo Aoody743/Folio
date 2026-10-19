@@ -27,7 +27,7 @@ func hostedAppHasNodeBuildScript(project string) (bool, error) {
 	return strings.TrimSpace(manifest.Scripts["build"]) != "", nil
 }
 
-func (e *PrivilegedExecutor) buildNodeHostedApp(ctx context.Context, receipt hostedAppReceipt, npm string, credential *syscall.Credential, environment []string) error {
+func (e *PrivilegedExecutor) buildNodeHostedApp(ctx context.Context, receipt hostedAppReceipt, node, npmCLI string, credential *syscall.Credential, environment []string) error {
 	if err := validateHostedAppProjectManifest(receipt.ProjectDir, receipt.Runtime); err != nil {
 		return err
 	}
@@ -64,7 +64,8 @@ func (e *PrivilegedExecutor) buildNodeHostedApp(ctx context.Context, receipt hos
 			buildEnvironment[i] = "HOME=" + stageHome
 		}
 	}
-	result, runErr := runFixedDirectoryResult(ctx, npm, stage, []string{"ci", "--no-audit", "--no-fund"}, 30*time.Minute, credential, buildEnvironment)
+	npmArgs := func(args ...string) []string { return append([]string{npmCLI}, args...) }
+	result, runErr := runFixedDirectoryResult(ctx, node, stage, npmArgs("ci", "--no-audit", "--no-fund"), 30*time.Minute, credential, buildEnvironment)
 	if runErr != nil || result.ExitCode != 0 || result.Truncated || result.Canceled || result.TimedOut {
 		return failure("application_build_failed", "Node.js locked dependency installation failed under its isolated system user; inspect the task output", 502)
 	}
@@ -76,7 +77,7 @@ func (e *PrivilegedExecutor) buildNodeHostedApp(ctx context.Context, receipt hos
 		return failure("application_build_script_required", "Next.js project must declare a non-empty scripts.build command", 400)
 	}
 	if buildScript {
-		result, runErr = runFixedDirectoryResult(ctx, npm, stage, []string{"run", "build"}, 30*time.Minute, credential, buildEnvironment)
+		result, runErr = runFixedDirectoryResult(ctx, node, stage, npmArgs("run", "build"), 30*time.Minute, credential, buildEnvironment)
 		if runErr != nil || result.ExitCode != 0 || result.Truncated || result.Canceled || result.TimedOut {
 			return failure("application_build_failed", "Node.js production build failed under its isolated system user; inspect the task output", 502)
 		}

@@ -429,42 +429,36 @@
         "version": "distribution",
         "default": true,
         "source": {"kind": "signed_package", "trust": "repository_signature", "packages": ["git", "openssh-client"]},
-        "verification": {"status": "not_tested", "reason": "Native Git/OpenSSH installation and pinned-host-key repository import are pending."}
+        "verification": {"status": "verified", "reason": "Ubuntu 24.04 amd64: signed Git/OpenSSH packages and public HTTPS plus pinned-host-key SSH repository import passed."}
       }],
       "platforms": [
-        {"os": "linux", "arch": "amd64", "distro": "debian", "release": "13"},
-        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"},
-        {"os": "linux", "arch": "arm64", "distro": "debian", "release": "13"},
-        {"os": "linux", "arch": "arm64", "distro": "ubuntu", "release": "24.04"}
+        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"}
       ],
       "capabilities": [],
       "coexist": true,
       "service": {"programs": ["git"], "health": "cli", "config_kind": "native"},
-      "verification": {"status": "not_tested", "reason": "The signed distribution package source is declared; installation and managed Git import acceptance are pending."}
+      "verification": {"status": "verified", "reason": "Ubuntu 24.04 amd64: exact signed package install and managed HTTPS/SSH Git imports passed."}
     },
     {
       "id": "nodejs",
       "name": "Node.js",
-      "description": "签名仓库提供的 Node.js 与 npm 运行环境，用于受管 Node.js 与 Next.js 应用",
+      "description": "来自 Node.js 官方发布页的固定校验 Node.js 与 npm 运行环境，用于受管 Node.js 与 Next.js 应用",
       "category": "runtime",
       "integration_version": "1.0.0",
       "versions": [{
-        "id": "distribution",
-        "version": "distribution",
+        "id": "official-24.22.0",
+        "version": "24.22.0",
         "default": true,
-        "source": {"kind": "signed_package", "trust": "repository_signature", "packages": ["nodejs", "npm"]},
-        "verification": {"status": "not_tested", "reason": "Native Node.js/npm installation and Node.js/Next.js application lifecycle acceptance are pending."}
+        "source": {"kind": "verified_archive", "trust": "pinned_sha256", "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-linux-x64.tar.xz", "sha256": "cc2f601cee82d9a5a233302fe307abc600727035fd7d2c3a3571755989e95008", "archive_format": "tar.xz", "strip_components": 1, "os": "linux", "architecture": "amd64"},
+        "verification": {"status": "verified", "reason": "Ubuntu 24.04 amd64: official Node.js 24.22.0 archive checksum, install, npm build, app update and restart passed."}
       }],
       "platforms": [
-        {"os": "linux", "arch": "amd64", "distro": "debian", "release": "13"},
-        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"},
-        {"os": "linux", "arch": "arm64", "distro": "debian", "release": "13"},
-        {"os": "linux", "arch": "arm64", "distro": "ubuntu", "release": "24.04"}
+        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"}
       ],
       "capabilities": [],
       "coexist": true,
       "service": {"programs": ["node"], "health": "cli", "config_kind": "native"},
-      "verification": {"status": "not_tested", "reason": "The signed distribution package source is declared; installation and managed Node.js/Next.js runtime acceptance are pending."}
+      "verification": {"status": "verified", "reason": "Ubuntu 24.04 amd64: official Node.js runtime and managed Node.js application lifecycle passed."}
     },
     {
       "id": "golang",
@@ -477,18 +471,15 @@
         "version": "distribution",
         "default": true,
         "source": {"kind": "signed_package", "trust": "repository_signature", "packages": ["golang-go"]},
-        "verification": {"status": "not_tested", "reason": "Native Go installation and Go application lifecycle acceptance are pending."}
+        "verification": {"status": "verified", "reason": "Ubuntu 24.04 amd64: signed Go 1.22.2 package install, managed build, service and HTTP health passed."}
       }],
       "platforms": [
-        {"os": "linux", "arch": "amd64", "distro": "debian", "release": "13"},
-        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"},
-        {"os": "linux", "arch": "arm64", "distro": "debian", "release": "13"},
-        {"os": "linux", "arch": "arm64", "distro": "ubuntu", "release": "24.04"}
+        {"os": "linux", "arch": "amd64", "distro": "ubuntu", "release": "24.04"}
       ],
       "capabilities": [],
       "coexist": true,
       "service": {"programs": ["go"], "health": "cli", "config_kind": "native"},
-      "verification": {"status": "not_tested", "reason": "The signed distribution package source is declared; installation and managed Go application acceptance are pending."}
+      "verification": {"status": "verified", "reason": "Ubuntu 24.04 amd64: signed Go package install and managed Go application lifecycle passed."}
     },
     {
       "id": "php",

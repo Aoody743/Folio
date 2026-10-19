@@ -54,6 +54,7 @@ type hostedAppReceipt struct {
 	ProjectDir               string `json:"project_dir"`
 	DataDir                  string `json:"data_dir"`
 	RuntimeProgram           string `json:"runtime_program"`
+	RuntimeNPMCLI            string `json:"runtime_npm_cli,omitempty"`
 }
 
 type hostedAppCreateInput struct {
@@ -142,11 +143,28 @@ func (e *PrivilegedExecutor) hostedAppPaths(id string) (root, project, data stri
 	return root, filepath.Join(root, "project"), filepath.Join(root, "data")
 }
 
+func ensureHostedAppRootTraversable(receipt hostedAppReceipt) error {
+	info, err := os.Lstat(receipt.Root)
+	if err != nil {
+		return err
+	}
+	stat, ok := statOf(info)
+	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 || !ok || stat.Uid != 0 || info.Mode().Perm()&0022 != 0 {
+		return failure("ownership_invalid", "Hosted application root must be root-owned and protected", 412)
+	}
+	if info.Mode().Perm() != 0711 {
+		if err = os.Chmod(receipt.Root, 0711); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (e *PrivilegedExecutor) hostedAppRuntime(ctx context.Context, runtime string) (Instance, string, error) {
 	pluginID, program := "", ""
 	switch runtime {
 	case "nextjs", "nodejs":
-		pluginID, program = "nodejs", "/usr/bin/npm"
+		pluginID = "nodejs"
 	case "go":
 		pluginID = "golang"
 	default:
@@ -157,17 +175,29 @@ func (e *PrivilegedExecutor) hostedAppRuntime(ctx context.Context, runtime strin
 	if err != nil || instance.PluginID != pluginID || instance.Status == "uninstalled" || instance.Service.Program == "" {
 		return Instance{}, "", failure("application_runtime_required", "Install the trusted Node.js/npm or Go runtime from Software before creating this application", 412)
 	}
-	if runtime == "go" {
+	if runtime == "go" || runtime == "nodejs" || runtime == "nextjs" {
 		program = instance.Service.Program
 	}
 	canonical, err := validateTrustedProgramPath(program)
 	if err != nil {
 		return Instance{}, "", failure("application_runtime_required", "The managed application runtime executable is missing or no longer trusted", 412)
 	}
-	if runtime == "go" {
+	if runtime == "go" || runtime == "nodejs" || runtime == "nextjs" {
 		instance.Service.Program = canonical
 	}
 	return instance, canonical, nil
+}
+
+func hostedAppNPMCLI(instance Instance) (string, error) {
+	if instance.PluginID != "nodejs" || instance.Paths.Root == "" || !filepath.IsAbs(instance.Paths.Root) {
+		return "", failure("application_runtime_required", "The managed Node.js runtime receipt is invalid", 412)
+	}
+	program := filepath.Join(instance.Paths.Root, "runtime", "lib", "node_modules", "npm", "bin", "npm-cli.js")
+	canonical, err := validateTrustedProgramPath(program)
+	if err != nil {
+		return "", failure("application_runtime_required", "The managed npm CLI is missing or no longer trusted", 412)
+	}
+	return canonical, nil
 }
 
 func (e *PrivilegedExecutor) hostedAppReceipt(id string) (hostedAppReceipt, error) {
@@ -195,13 +225,22 @@ func (e *PrivilegedExecutor) hostedAppReceipt(id string) (hostedAppReceipt, erro
 		return receipt, nil
 	}
 	if receipt.Status != "retained" {
-		expectedProgram := "/usr/bin/npm"
+		expectedProgram := ""
+		expectedNPMCLI := ""
 		runtimeInstance, runtimeErr := e.get(context.Background(), receipt.RuntimeInstance, false)
 		if runtimeErr != nil || runtimeInstance.PluginID != hostedAppRuntimePlugin(receipt.Runtime) || runtimeInstance.Status == "uninstalled" {
 			return receipt, failure("application_runtime_required", "The application's managed runtime is unavailable", 412)
 		}
-		if receipt.Runtime == "go" {
+		if receipt.Runtime == "go" || receipt.Runtime == "nodejs" || receipt.Runtime == "nextjs" {
 			expectedProgram = runtimeInstance.Service.Program
+		}
+		if receipt.Runtime == "nodejs" || receipt.Runtime == "nextjs" {
+			expectedNPMCLI, runtimeErr = hostedAppNPMCLI(runtimeInstance)
+			if runtimeErr != nil || receipt.RuntimeNPMCLI != expectedNPMCLI {
+				return receipt, failure("ownership_invalid", "Hosted application npm CLI no longer matches its managed runtime", 412)
+			}
+		} else if receipt.RuntimeNPMCLI != "" {
+			return receipt, failure("record_invalid", "Non-Node application receipt contains an unexpected npm CLI", 412)
 		}
 		canonical, programErr := validateTrustedProgramPath(expectedProgram)
 		if programErr != nil || canonical != receipt.RuntimeProgram {
@@ -406,6 +445,9 @@ func (e *PrivilegedExecutor) createHostedApp(ctx context.Context, input hostedAp
 	if err = os.Chown(root, 0, 0); err != nil {
 		return empty, err
 	}
+	if err = os.Chmod(root, 0711); err != nil {
+		return empty, err
+	}
 	if err = os.Mkdir(project, 0750); err != nil {
 		return empty, err
 	}
@@ -448,7 +490,14 @@ func (e *PrivilegedExecutor) createHostedApp(ctx context.Context, input hostedAp
 	if err = os.Chown(filepath.Join(project, ".home"), int(uid), int(gid)); err != nil {
 		return empty, err
 	}
-	receipt := hostedAppReceipt{HostedApplication: HostedApplication{ID: input.ID, Name: input.Name, Runtime: input.Runtime, RuntimeInstance: runtimeInstance.ID, User: userName, Status: "created", Port: port, Revision: 1, Upstream: "http://127.0.0.1:" + strconv.Itoa(port), UpdatedAt: time.Now().UTC()}, UID: uint32(uid), GID: uint32(gid), Root: root, ProjectDir: project, DataDir: data, RuntimeProgram: runtimeProgram}
+	runtimeNPMCLI := ""
+	if input.Runtime == "nodejs" || input.Runtime == "nextjs" {
+		runtimeNPMCLI, err = hostedAppNPMCLI(runtimeInstance)
+		if err != nil {
+			return empty, err
+		}
+	}
+	receipt := hostedAppReceipt{HostedApplication: HostedApplication{ID: input.ID, Name: input.Name, Runtime: input.Runtime, RuntimeInstance: runtimeInstance.ID, User: userName, Status: "created", Port: port, Revision: 1, Upstream: "http://127.0.0.1:" + strconv.Itoa(port), UpdatedAt: time.Now().UTC()}, UID: uint32(uid), GID: uint32(gid), Root: root, ProjectDir: project, DataDir: data, RuntimeProgram: runtimeProgram, RuntimeNPMCLI: runtimeNPMCLI}
 	if err = e.saveHostedApp(receipt); err != nil {
 		if _, receiptErr := e.hostedAppReceipt(input.ID); receiptErr == nil {
 			committed = true
@@ -573,6 +622,9 @@ func (e *PrivilegedExecutor) buildHostedApp(ctx context.Context, input hostedApp
 	if err != nil {
 		return empty, err
 	}
+	if err = ensureHostedAppRootTraversable(receipt); err != nil {
+		return empty, err
+	}
 	if input.ExpectedRevision != receipt.Revision {
 		return empty, failure("revision_conflict", "Application revision changed; reload before building", 412)
 	}
@@ -588,12 +640,16 @@ func (e *PrivilegedExecutor) buildHostedApp(ctx context.Context, input hostedApp
 	credential := &syscall.Credential{Uid: receipt.UID, Gid: receipt.GID, Groups: []uint32{receipt.GID}}
 	home := filepath.Join(receipt.ProjectDir, ".home")
 	environment := []string{"HOME=" + home, "DATA_DIR=" + receipt.DataDir, "PORT=" + strconv.Itoa(receipt.Port), "NODE_ENV=production", "PATH=/usr/local/bin:/usr/bin:/bin", "GOPATH=" + filepath.Join(home, "go"), "GOCACHE=" + filepath.Join(home, ".cache", "go-build"), "GOPROXY=https://proxy.golang.org,direct"}
+	if receipt.Runtime == "nodejs" || receipt.Runtime == "nextjs" {
+		environment[4] = "PATH=" + filepath.Dir(program) + ":/usr/local/bin:/usr/bin:/bin"
+	}
+	environment = append(environment, hostedAppOutboundNetworkEnvironment()...)
 	if receipt.Runtime == "go" {
 		if err = e.buildGoHostedApp(ctx, receipt, program, credential, environment); err != nil {
 			return empty, err
 		}
 	} else {
-		if err = e.buildNodeHostedApp(ctx, receipt, program, credential, environment); err != nil {
+		if err = e.buildNodeHostedApp(ctx, receipt, program, receipt.RuntimeNPMCLI, credential, environment); err != nil {
 			return empty, err
 		}
 	}
@@ -661,18 +717,36 @@ func hostedAppUnit(receipt hostedAppReceipt) []byte {
 	if receipt.Runtime == "go" {
 		command = unitQuote(filepath.Join(receipt.ProjectDir, "powerlinux-app"))
 	} else {
+		if receipt.Runtime == "nodejs" || receipt.Runtime == "nextjs" {
+			command += " " + unitQuote(receipt.RuntimeNPMCLI)
+		}
 		for _, arg := range args {
 			command += " " + unitQuote(arg)
 		}
 	}
 	hostEnvironment := ""
+	pathEnvironment := "/usr/local/bin:/usr/bin:/bin"
 	if receipt.Runtime == "nodejs" {
 		hostEnvironment = "Environment=HOST=127.0.0.1\nEnvironment=HOSTNAME=127.0.0.1\n"
 	}
-	return []byte("[Unit]\nDescription=Folio application " + receipt.ID + "\nAfter=network-online.target\nWants=network-online.target\n[Service]\nType=simple\nUser=" + receipt.User + "\nGroup=" + receipt.User + "\nWorkingDirectory=" + unitQuote(receipt.ProjectDir) + "\nEnvironment=HOME=" + unitQuote(filepath.Join(receipt.ProjectDir, ".home")) + "\nEnvironment=DATA_DIR=" + unitQuote(receipt.DataDir) + "\nEnvironment=PATH=/usr/local/bin:/usr/bin:/bin\nEnvironment=PORT=" + strconv.Itoa(receipt.Port) + "\n" + hostEnvironment + "Environment=NODE_ENV=production\nExecStart=" + command + "\nRestart=on-failure\nRestartSec=3\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(receipt.ProjectDir) + " " + unitQuote(receipt.DataDir) + "\n[Install]\nWantedBy=multi-user.target\n")
+	if receipt.Runtime == "nodejs" || receipt.Runtime == "nextjs" {
+		pathEnvironment = filepath.Dir(receipt.RuntimeProgram) + ":" + pathEnvironment
+	}
+	return []byte("[Unit]\nDescription=Folio application " + receipt.ID + "\nAfter=network-online.target\nWants=network-online.target\n[Service]\nType=simple\nUser=" + receipt.User + "\nGroup=" + receipt.User + "\nWorkingDirectory=" + receipt.ProjectDir + "\nEnvironment=HOME=" + unitQuote(filepath.Join(receipt.ProjectDir, ".home")) + "\nEnvironment=DATA_DIR=" + unitQuote(receipt.DataDir) + "\nEnvironment=PATH=" + unitQuote(pathEnvironment) + "\nEnvironment=PORT=" + strconv.Itoa(receipt.Port) + "\n" + hostEnvironment + "Environment=NODE_ENV=production\nExecStart=" + command + "\nRestart=on-failure\nRestartSec=3\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(receipt.ProjectDir) + " " + unitQuote(receipt.DataDir) + "\n[Install]\nWantedBy=multi-user.target\n")
 }
 
 func hostedAppUnitName(id string) string { return "powerlinux-app-" + id + ".service" }
+
+func hostedAppLegacyQuotedWorkingDirectoryUnit(receipt hostedAppReceipt) []byte {
+	unit := string(hostedAppUnit(receipt))
+	current := "WorkingDirectory=" + receipt.ProjectDir + "\n"
+	legacy := "WorkingDirectory=" + unitQuote(receipt.ProjectDir) + "\n"
+	return []byte(strings.Replace(unit, current, legacy, 1))
+}
+
+func hostedAppUnitMatches(receipt hostedAppReceipt, current []byte) bool {
+	return string(current) == string(hostedAppUnit(receipt)) || string(current) == string(hostedAppLegacyQuotedWorkingDirectoryUnit(receipt))
+}
 
 func (e *PrivilegedExecutor) ensureHostedAppUnit(ctx context.Context, receipt hostedAppReceipt) (string, error) {
 	if !e.config.UseSystemd || !hostedAppValidID(receipt.ID) {
@@ -691,6 +765,10 @@ func (e *PrivilegedExecutor) ensureHostedAppUnit(ctx context.Context, receipt ho
 		}
 	} else if err != nil {
 		return "", err
+	} else if string(current) == string(hostedAppLegacyQuotedWorkingDirectoryUnit(receipt)) {
+		if err = writeAtomicRoot(e.systemdUnitDir(), name, body, 0644, 0); err != nil {
+			return "", err
+		}
 	} else if string(current) != string(body) {
 		return "", failure("ownership_conflict", "Application systemd unit changed outside Folio; it was preserved", 409)
 	}
@@ -709,11 +787,15 @@ func (e *PrivilegedExecutor) hostedAppRunning(ctx context.Context, receipt hoste
 		return false, err
 	}
 	current, err := os.ReadFile(path)
-	if err != nil || string(current) != string(hostedAppUnit(receipt)) {
+	if err != nil || !hostedAppUnitMatches(receipt, current) {
 		return false, failure("ownership_conflict", "Application systemd unit changed outside Folio; it was preserved", 409)
 	}
+	legacyUnit := string(current) == string(hostedAppLegacyQuotedWorkingDirectoryUnit(receipt))
 	result, err := runFixedResult(ctx, "/usr/bin/systemctl", []string{"show", "--property=ActiveState", "--value", hostedAppUnitName(receipt.ID)}, 15*time.Second, nil, nil)
 	if err != nil || result.ExitCode != 0 || result.Truncated || result.Canceled || result.TimedOut || result.Stderr != "" {
+		if err == nil && legacyUnit && result.ExitCode != 0 && !result.Truncated && !result.Canceled && !result.TimedOut {
+			return false, nil
+		}
 		return false, failure("service_state_unknown", "Hosted application service state could not be verified", 502)
 	}
 	switch strings.TrimSpace(result.Stdout) {
@@ -747,6 +829,11 @@ func (e *PrivilegedExecutor) controlHostedApp(ctx context.Context, input hostedA
 	}
 	if input.ExpectedRevision != receipt.Revision {
 		return empty, failure("revision_conflict", "Application revision changed; reload before changing its service", 412)
+	}
+	if input.Command == "start" || input.Command == "restart" {
+		if err = ensureHostedAppRootTraversable(receipt); err != nil {
+			return empty, err
+		}
 	}
 	if receipt.Status == "created" && input.Command != "delete" && input.Command != "rollback" {
 		return empty, failure("application_not_built", "Build the application before starting its service", 412)

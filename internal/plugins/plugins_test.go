@@ -267,7 +267,7 @@ func TestVerifiedArtifactTLSHashAndSafeExtraction(t *testing.T) {
 	}
 }
 func TestArtifactsRejectTraversalSymlinksHardlinksAndPrivilegedModes(t *testing.T) {
-	for _, header := range []*tar.Header{{Name: "../../etc/passwd", Mode: 0644, Typeflag: tar.TypeReg, Size: 1}, {Name: "bin/link", Linkname: "/etc/passwd", Mode: 0777, Typeflag: tar.TypeSymlink}, {Name: "bin/hard", Linkname: "/etc/passwd", Mode: 0644, Typeflag: tar.TypeLink}, {Name: "bin/root", Mode: 04755, Typeflag: tar.TypeReg, Size: 1}} {
+	for _, header := range []*tar.Header{{Name: "../../etc/passwd", Mode: 0644, Typeflag: tar.TypeReg, Size: 1}, {Name: "bin/link", Linkname: "/etc/passwd", Mode: 0777, Typeflag: tar.TypeSymlink}, {Name: "bin/escape", Linkname: "../../../../etc/passwd", Mode: 0777, Typeflag: tar.TypeSymlink}, {Name: "bin/hard", Linkname: "/etc/passwd", Mode: 0644, Typeflag: tar.TypeLink}, {Name: "bin/root", Mode: 04755, Typeflag: tar.TypeReg, Size: 1}} {
 		t.Run(strings.ReplaceAll(header.Name, "/", "_"), func(t *testing.T) {
 			archive := archiveFixture(t, []*tar.Header{header})
 			name := filepath.Join(t.TempDir(), "archive.gz")
@@ -278,6 +278,54 @@ func TestArtifactsRejectTraversalSymlinksHardlinksAndPrivilegedModes(t *testing.
 				t.Fatalf("unsafe archive entry accepted %+v", header)
 			}
 		})
+	}
+}
+
+func TestVerifiedArtifactAllowsContainedRelativeSymlinkAfterExtraction(t *testing.T) {
+	archive := archiveFixture(t, []*tar.Header{
+		{Name: "node/bin/", Mode: 0755, Typeflag: tar.TypeDir},
+		{Name: "node/bin/npm", Linkname: "../lib/node_modules/npm/bin/npm-cli.js", Mode: 0777, Typeflag: tar.TypeSymlink},
+		{Name: "node/lib/node_modules/npm/bin/npm-cli.js", Mode: 0755, Size: 5, Typeflag: tar.TypeReg},
+	})
+	name := filepath.Join(t.TempDir(), "node.tar.gz")
+	if err := os.WriteFile(name, archive, 0600); err != nil {
+		t.Fatal(err)
+	}
+	target := t.TempDir()
+	source := Source{ArchiveFormat: "tar.gz", StripComponents: 1}
+	if err := extractArtifact(context.Background(), name, target, source); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(target, "bin", "npm")
+	if raw, err := os.Readlink(link); err != nil || raw != "../lib/node_modules/npm/bin/npm-cli.js" {
+		t.Fatalf("contained archive symlink was not preserved: %q, %v", raw, err)
+	}
+	if err := secureRuntimeTree(target, uint32(os.Getgid())); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestApplicationRuntimeTreeIsReadableByItsIndependentServiceUser(t *testing.T) {
+	root := t.TempDir()
+	bin := filepath.Join(root, "bin")
+	if err := os.Mkdir(bin, 0700); err != nil {
+		t.Fatal(err)
+	}
+	executable := filepath.Join(bin, "node")
+	if err := os.WriteFile(executable, []byte("runtime"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := secureApplicationRuntimeTree(root, uint32(os.Getgid())); err != nil {
+		t.Fatal(err)
+	}
+	for name, want := range map[string]os.FileMode{root: 0755, bin: 0755, executable: 0755} {
+		info, err := os.Stat(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if info.Mode().Perm() != want {
+			t.Fatalf("shared application runtime mode for %s = %v, want %04o", name, info.Mode().Perm(), want)
+		}
 	}
 }
 func TestPluginProviderSharesCoreAuthorizationAndSchemas(t *testing.T) {
