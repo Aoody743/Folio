@@ -49,6 +49,20 @@ provenance and host compatibility. User servers need no Node, Go or Python.
 
 ## Verified installation
 
+For the RC15 Linux amd64 prerelease, the release includes a pinned one-command
+bootstrap installer. On a fresh systemd host, run:
+
+```sh
+curl -fsSL https://github.com/Aoody743/Folio/releases/download/0.1.0-rc.15/install-rc15.sh | sudo bash
+```
+
+The bootstrap downloads the exact RC15 archive, checks its pinned SHA-256, then
+passes that archive to the package installer. Review
+[`install-rc15.sh`](install-rc15.sh) and the release `SHA256SUMS.txt` before
+running it. Optional installer flags such as `--prefix` can be passed after
+`bash -s --`; `--prefix` creates no system user or service. The one-command
+bootstrap is amd64-only; arm64 packages are not part of this prerelease.
+
 Download and review `install.sh` from a trusted project revision. Obtain the
 artifact hash from a trusted release record before running the installer.
 
