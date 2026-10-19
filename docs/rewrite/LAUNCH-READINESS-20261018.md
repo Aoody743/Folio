@@ -4,7 +4,7 @@
 
 ## 当前结论
 
-**RC15 可复现候选已冻结，首发验收仍未全部通过，未发布、未修改远端分支。** 源码 `d38e3de398d677ce39b241209658f95dcaceadfa`，amd64 包 SHA-256 `392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6`。RC15 全量 Go race、vet、前端构建/类型检查、发行包 smoke、独立重建字节一致均通过。安装器 33 项（2 root-policy skip）、前端 82 项和嵌套 MySQL driver race 分别执行于本轮更早的未改动组件版本，不能记成 RC15 重跑。
+**RC15 可复现候选已冻结，Ubuntu 原生验收继续通过，但首发门槛仍未全部通过。** 源码 `d38e3de398d677ce39b241209658f95dcaceadfa`，amd64 包 SHA-256 `392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6`。已上传独立交接分支 [`rc/0.1.0-rc15-handoff`](https://github.com/Aoody743/Folio/tree/rc/0.1.0-rc15-handoff) 供其他 Agent 接续；GitHub `main` 与 `legacy` 未修改。RC15 全量 Go race、vet、前端构建/类型检查、发行包 smoke、独立重建字节一致均通过。安装器 33 项（2 root-policy skip）、前端 82 项和嵌套 MySQL driver race 分别执行于本轮更早的未改动组件版本，不能记成 RC15 重跑。
 
 本轮修复发行版默认 PHP 版本、tar 探测 SIGPIPE 导致的不稳定归档、MySQL 客户端路径、AppArmor 精确授权和多余 X 监听、单连接导入死锁、新装软件 vendor unit 自启冲突、Docker 超时识别，以及任务列表逐条查询性能问题。AppArmor 保持 enforce；保留原有 vendor unit 使用意图。
 
@@ -12,18 +12,18 @@
 | --- | --- | --- |
 | G0 | RC15 干净源码、双构建、全量 race/vet、包 smoke 通过 | 本地候选通过 |
 | G1 | 官方 Ubuntu RC15 实测 PostgreSQL 四种协议慢日志、筛选、脱敏、启停 reload | Ubuntu 通过；新 Debian 待测 |
-| G2 | 官方 Ubuntu 上 RC7–RC14 分阶段通过原生 PG/MySQL/PHP、Nginx/OpenResty PHP+验证 TLS、失败配置回滚、备份恢复 | 同一候选双系统完整矩阵未完成 |
-| G3 | RC14 文件 4/4、终端 3/3、浏览器宽度/主题/SSE/冲突/离线/XSS、真实任务中断；RC15 实测 REST/MCP 任务资源隔离与撤权 | 部分通过 |
-| G4 | RC15 真实锁、端口冲突、SIGKILL、peer denial、14→15 升级/回滚/再升级；RC14 重启及卸载保留数据 | 性能门槛及最终变更清单仍未完成 |
+| G2 | RC15 官方 Ubuntu 上 PHP 8.3、Nginx/OpenResty、HTTPS 与失败配置回滚、MySQL/PostgreSQL 备份恢复通过 | Debian 与数据库“不装/一种/两种”选择矩阵未完成 |
+| G3 | RC15 文件 4/4、终端 3/3、四种宽度/五套主题浏览器、任务、REST/MCP 资源隔离及撤权通过 | Ubuntu 通过；Debian 同候选矩阵未完成 |
+| G4 | RC15 Ubuntu 全机重启、真实锁/端口冲突/SIGKILL/peer denial、14→15 升级回滚再升级、卸载保留与精确包重装通过 | 并发 20 状态接口 p95 仍高于 100ms，系统变更清单未完成 |
 | G5 | G1–G4 尚未在同一冻结包、两种干净目标系统全部完成 | 未通过 |
 
-官方 Ubuntu cloud image 已下载并校验，QEMU 工具也已找到并成功运行，原先“无 VM 工具/Ubuntu 源不可达”的结论已过时。当前 Debian 官方镜像重定向到 `gemmei.ftp.acc.umu.se` 后被代理 403 拦截，已请求追加白名单，尚未收到发布确认。旧 RC7 Debian 证据保留，但不能替代新候选验收。
+官方 Ubuntu cloud image 已下载并校验，QEMU 工具也已找到并成功运行，原先“无 VM 工具/Ubuntu 源不可达”的结论已过时。最新执行环境状态为修订 26 且已执行，但网络仍是受限模式；白名单未包含 `gemmei.ftp.acc.umu.se`，代理请求仍返回 CONNECT 403。Debian 官方镜像重定向到该域名，故 Debian 新候选测试仍阻塞。旧 RC7 Debian 证据保留，但不能替代新候选验收。
 
 并发测试使用固定 2 vCPU/2 GiB QEMU TCG、持久认证连接和 SSH 转发，串行运行，最初重叠采样已排除。并发 20 混合只读 p95 从 RC14 的 3434.094ms 降到 RC15 的 548.822ms，240 请求全部 200；缓存状态接口 RC15 在并发 1/4/20 的 p95 分别为 14.217/27.362/195.219ms。并发 20 仍超过既定 100ms，不下调门槛；TCG 结果也不能代替原生硬件性能证明。
 
-证据边界：MySQL/OpenResty 签名源由 QA 预先配置；旧 guest 中已启用但未运行的 vendor units 经显式 QA 基线修正后禁用，新装 OpenResty 单独验证了产品隔离。PostgreSQL 独立目标恢复使用原生 pg_restore，并非可选 JSON 导入功能验收。资源记录是主进程 RSS，guest 保留两套 PHP 测试实例。宽泛功能测试发生于 RC7–RC14，未冒充 RC15 全量冷安装。完整数据库“不装/仅一种/同时安装”选择矩阵仍需补齐。
+证据边界：MySQL/OpenResty 签名源由 QA 预先配置；旧 guest 中已启用但未运行的 vendor units 经显式 QA 基线修正后禁用，新装 OpenResty 单独验证了产品隔离。PostgreSQL 独立目标恢复使用原生 pg_restore，并非可选 JSON 导入功能验收。RC15 已直接运行浏览器、文件、终端、任务、Web 栈、数据库和生命周期测试；完整数据库“不装/仅一种/同时安装”选择矩阵仍需补齐。资源记录是主进程 RSS，guest 保留两套 PHP 测试实例。
 
-截至本轮检查，远端 main 仍为 `037b80832fe7e57ebfc08d3a8eef8f655fed70e1`，legacy 不存在；所有门槛通过前不写远端。`stage_2_complete=false`。
+截至本轮检查，远端 main 仍为 `037b80832fe7e57ebfc08d3a8eef8f655fed70e1`，legacy 不存在。仅 RC15 交接分支已上传；只有全部门槛通过后才保留 main 为 legacy 并提升候选为 main。`stage_2_complete=false`。
 
 ### 2026-10-18 RC7 历史验收检查点（已由 RC15 替代）
 

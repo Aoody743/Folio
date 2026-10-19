@@ -7,7 +7,8 @@
     "sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
     "clean_at_build": true,
     "reproducible_bytes": true,
-    "published": false
+    "published": false,
+    "handoff_branch_uploaded": "rc/0.1.0-rc15-handoff"
   },
   "source_checks": {
     "rc15": [
@@ -27,9 +28,16 @@
     "image": "official Ubuntu 24.04.5 amd64 cloud image, verified SHA256SUMS",
     "runtime": "QEMU TCG 2 vCPU / 2 GiB; systemd; kernel 6.8.0-147-generic",
     "rc15_direct": [
+      "Ubuntu-signed default PHP 8.3 package, healthy managed runtime and actual HTTP response",
+      "signed Nginx install, PHP over verified HTTPS, invalid-config rejection and rollback; OpenResty exclusion/reinstall and retained content over verified HTTPS",
+      "MySQL and PostgreSQL product backup/hash/restore, independent target restore and unchanged source",
+      "files 4/4 and terminal 3/3",
+      "browser suite at four widths and five themes, including live UI/MCP, SSE/history, conflict/manual merge, offline retry, XSS, actor labels and keyboard",
+      "actual nonroot task success/failure/cancel and restart interruption",
       "eight actual installer identity/lock/failure/recovery/upgrade/rollback steps",
       "actual REST/MCP task resource filtering, omitted inputs/grants, token revocation",
       "PostgreSQL statement/parse/bind/execute, database filter, redaction, enable/disable reload",
+      "full reboot, retained note and database canaries, uninstall retaining live site/content, exact RC15 reinstall",
       "serial authenticated concurrency benchmark"
     ],
     "rc7_through_rc14_native": [
@@ -44,7 +52,7 @@
       "full reboot, retained-data uninstall/reinstall"
     ],
     "limitations": [
-      "Broad cold-stack acceptance was not rerun on a single frozen RC15.",
+      "Ubuntu RC15 direct paths passed, but a fresh clean-image no-database/one-database/both-databases choice matrix and the corresponding Debian matrix remain incomplete.",
       "MySQL/OpenResty signed repositories and keys were configured as QA prerequisites.",
       "Previously enabled inactive vendor units were explicitly disabled as a QA baseline correction; this is not a product migration result. Cold OpenResty separately verified new-unit isolation.",
       "PostgreSQL independent-target native pg_restore is not optional JSON-import acceptance.",
@@ -70,13 +78,13 @@
   "gates": {
     "G0": "local frozen source/build/reproduction/smoke passed; inherited component test versions distinguished above",
     "G1": "Ubuntu RC15 passed; fresh Debian RC15 pending",
-    "G2": "Ubuntu major native paths passed across RC7-RC14; full same-candidate two-OS and database-choice matrix incomplete",
-    "G3": "substantial Ubuntu coverage; full same-candidate two-OS matrix incomplete",
-    "G4": "Ubuntu lifecycle failure injection RC15 passed; broader lifecycle RC14 passed; performance target and final inventory incomplete",
+    "G2": "Ubuntu RC15 native PHP, Nginx/OpenResty, HTTPS rollback, MySQL and PostgreSQL backup/restore paths passed; Debian and full database-choice matrix incomplete",
+    "G3": "Ubuntu RC15 files, terminal, browser, tasks, REST/MCP scopes and revocation passed; Debian matrix incomplete",
+    "G4": "Ubuntu RC15 reboot, exact-package repeat install, data-preserving uninstall/reinstall and failure injection passed; performance target and final system-change inventory incomplete",
     "G5": "not passed"
   },
   "blockers": [
-    "Debian official cloud image redirects to gemmei.ftp.acc.umu.se, currently proxy HTTP403; allowlist publication requested, no answer received.",
+    "At the latest managed-environment check, revision 26 is enforced but remains restricted and omits gemmei.ftp.acc.umu.se; the HTTPS proxy returns CONNECT 403 for the Debian mirror redirect.",
     "Complete clean Debian13/Ubuntu24.04 stack and none/one/both database selection matrix on one candidate.",
     "Resolve/validate cached readonly p95 target without relaxing 100ms.",
     "Complete system-change inventory and final frozen matrix."
@@ -84,9 +92,12 @@
   "remote": {
     "main": "037b80832fe7e57ebfc08d3a8eef8f655fed70e1",
     "legacy_exists": false,
-    "last_checked": "2026-10-18 around 18:00 UTC",
-    "writes_performed": false,
-    "condition": "Only preserve legacy/promote main after all gates pass."
+    "handoff_branch": "rc/0.1.0-rc15-handoff",
+    "handoff_branch_uploaded": true,
+    "last_checked": "2026-10-19",
+    "writes_performed": true,
+    "write_scope": "Uploaded the RC15 handoff branch only; main and legacy were not modified.",
+    "condition": "Preserve legacy/promote main only after all gates pass."
   },
   "evidence": [
     {
@@ -136,6 +147,27 @@
     {
       "path": "/workspace/tools/qa-acceptance/official-ubuntu-rc7/uninstall-retention-rc14.json",
       "sha256": "0ceed6033c72323d6f34f6a240ef57bd44acdddebd26f7776a093fe41a7e43da"
+    },
+    {
+      "path": "docs/rewrite/evidence/ubuntu-php-default-rc15-20261019.json"
+    },
+    {
+      "path": "docs/rewrite/evidence/ubuntu-web-stack-rc15-20261019.json"
+    },
+    {
+      "path": "docs/rewrite/evidence/ubuntu-databases-rc15-20261019.json"
+    },
+    {
+      "path": "docs/rewrite/evidence/ubuntu-browser-rc15-20261019.json"
+    },
+    {
+      "path": "docs/rewrite/evidence/ubuntu-files-terminal-rc15-20261019.json"
+    },
+    {
+      "path": "docs/rewrite/evidence/ubuntu-tasks-rc15-20261019.json"
+    },
+    {
+      "path": "docs/rewrite/evidence/ubuntu-lifecycle-rc15-20261019.json"
     }
   ]
 }

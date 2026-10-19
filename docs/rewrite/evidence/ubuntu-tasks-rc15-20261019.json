@@ -1,0 +1,13 @@
+{
+  "candidate_version": "0.1.0-rc.15",
+  "candidate_sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
+  "platform": "Official Ubuntu 24.04.5 amd64 cloud image",
+  "execution_profile": "Separate non-root UID",
+  "queued_response": true,
+  "success_with_actual_output": true,
+  "failure_exit_7": true,
+  "running_observed": true,
+  "running_cancellation": true,
+  "sigkill_restart_marks_interrupted_without_replay": true,
+  "rest_scope_authorization_and_token_revocation": "Passed; see ubuntu-task-scope-rc15-20261019.json"
+}

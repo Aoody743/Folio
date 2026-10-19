@@ -1,0 +1,18 @@
+{
+  "candidate_version": "0.1.0-rc.15",
+  "candidate_sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
+  "platform": "Official Ubuntu 24.04.5 amd64 cloud image; QEMU TCG 2 vCPU / 2 GiB",
+  "full_guest_reboot_and_boot_id_changed": true,
+  "six_folio_and_managed_plugin_units_active_after_reboot": true,
+  "distribution_vendor_units_inactive_after_reboot": true,
+  "verified_https_site_after_reboot": true,
+  "dpkg_audit_clean": true,
+  "note_retained_across_reboot_uninstall_and_reinstall": true,
+  "mysql_source_and_independent_target_canaries_retained": true,
+  "postgresql_source_and_independent_target_canaries_retained": true,
+  "exact_archive_repeat_install_passed": true,
+  "uninstall_preserved_live_site_and_content_hash": true,
+  "exact_archive_reinstall_after_uninstall_passed": true,
+  "qa_clone_disk_expanded_without_deleting_product_backups": true,
+  "scope_limit": "Single Ubuntu amd64 QA clone; this does not complete the Debian or database-choice matrix."
+}

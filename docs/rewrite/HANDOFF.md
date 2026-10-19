@@ -1,6 +1,6 @@
 # 本地 Codex 开发交接
 
-2026-10-19 接续检查点：当前冻结候选 RC15，官方 Ubuntu 原生栈及升级故障注入已有新证据；Debian 镜像出口、同候选双系统矩阵和性能目标仍阻塞，`stage_2_complete=false`，没有写远端。以[当前验收结论](LAUNCH-READINESS-20261018.md)和 [RC15 证据](evidence/release-gates-rc15-20261019.json)为准；下文历史状态不覆盖该结论。
+2026-10-19 接续检查点：当前冻结候选 RC15，官方 Ubuntu 原生栈、浏览器/MCP/任务、完整重启及卸载重装已有直接证据；Debian 镜像出口、同候选双系统矩阵和性能目标仍阻塞，`stage_2_complete=false`。RC15 已上传到独立交接分支 [`rc/0.1.0-rc15-handoff`](https://github.com/Aoody743/Folio/tree/rc/0.1.0-rc15-handoff)；`main` 与 `legacy` 未修改。以[当前验收结论](LAUNCH-READINESS-20261018.md)和 [RC15 证据](evidence/release-gates-rc15-20261019.json)为准；下文历史状态不覆盖该结论。
 
 更新：2026-10-18。产品与用户界面统一使用 Folio 品牌；旧版代码和系统兼容标识仍保留，避免破坏已有路径与升级识别。当前范围、首发差距和执行顺序以[上线前差距清单](LAUNCH-READINESS-20261018.md)为准；本文件中的早期要求如与它或[第二阶段收尾说明](PHASE2-CLOSEOUT-20261015.md)冲突，按后两者的当前范围执行。未执行的环境验收不得写成通过。
 

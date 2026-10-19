@@ -1,0 +1,14 @@
+{
+  "candidate_version": "0.1.0-rc.15",
+  "candidate_sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
+  "platform": "Official Ubuntu 24.04.5 amd64 cloud image",
+  "files": {
+    "passed": 4,
+    "total": 4
+  },
+  "terminal": {
+    "passed": 3,
+    "total": 3
+  },
+  "passed": true
+}

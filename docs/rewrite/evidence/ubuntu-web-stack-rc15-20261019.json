@@ -1,0 +1,20 @@
+{
+  "candidate_version": "0.1.0-rc.15",
+  "candidate_sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
+  "platform": "Official Ubuntu 24.04.5 amd64 cloud image",
+  "nginx": {
+    "signed_distribution_package_install": true,
+    "managed_service_healthy": true,
+    "vendor_unit_disabled_and_inactive": true,
+    "php_https_verified": true,
+    "invalid_config_rejected": true,
+    "failed_change_preserved_revision_and_https": true
+  },
+  "openresty": {
+    "mutual_exclusion_with_nginx_enforced": true,
+    "reinstall_and_managed_service_healthy": true,
+    "vendor_unit_disabled_and_inactive": true,
+    "retained_content_served_over_verified_https": true
+  },
+  "passed": true
+}

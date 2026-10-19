@@ -1,0 +1,19 @@
+{
+  "candidate_version": "0.1.0-rc.15",
+  "candidate_sha256": "392458cadb7850be2653dd341a10e2f1e1935c8709640eb44ecb6e8e37d4a9a6",
+  "platform": "Official Ubuntu 24.04.5 amd64 cloud image",
+  "mysql": {
+    "product_backup_download_integrity_verified": true,
+    "same_database_restore_verified": true,
+    "independent_target_restore_verified": true,
+    "source_unchanged": true
+  },
+  "postgresql": {
+    "product_backup_download_integrity_verified": true,
+    "same_database_restore_verified": true,
+    "independent_target_native_pg_restore_verified": true,
+    "source_unchanged": true
+  },
+  "passed": true,
+  "scope_limit": "This verifies live backup and restore paths; the no-database/one-database/both-databases install-choice matrix remains incomplete."
+}
