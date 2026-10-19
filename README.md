@@ -22,23 +22,23 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 
 ### 概览
 
-![Folio 概览完整页面](docs/screenshots/panel-1.0-beta1/01-overview-full.png)
+[![Folio 概览完整页面](docs/screenshots/panel-1.0-beta1/01-overview-full.png)](docs/screenshots/panel-1.0-beta1/01-overview-full.png)
 
 ### 网站
 
-![Folio 网站管理页面](docs/screenshots/panel-1.0-beta1/03-sites.png)
+[![Folio 网站管理页面](docs/screenshots/panel-1.0-beta1/03-sites.png)](docs/screenshots/panel-1.0-beta1/03-sites.png)
 
 ### 文件
 
-![Folio 文件管理完整页面](docs/screenshots/panel-1.0-beta1/08-files-full.png)
+[![Folio 文件管理完整页面](docs/screenshots/panel-1.0-beta1/08-files-full.png)](docs/screenshots/panel-1.0-beta1/08-files-full.png)
 
 ### 监控
 
-![Folio 监控完整页面](docs/screenshots/panel-1.0-beta1/10-more-monitor-full.png)
+[![Folio 监控完整页面](docs/screenshots/panel-1.0-beta1/10-more-monitor-full.png)](docs/screenshots/panel-1.0-beta1/10-more-monitor-full.png)
 
 ### MCP 接入
 
-![Folio MCP 接入完整页面](docs/screenshots/panel-1.0-beta1/16-more-mcp-full.png)
+[![Folio MCP 接入完整页面](docs/screenshots/panel-1.0-beta1/16-more-mcp-full.png)](docs/screenshots/panel-1.0-beta1/16-more-mcp-full.png)
 
 其余页面见[截图索引（全部 18 个页面）](docs/screenshots/panel-1.0-beta1/README.md)，也可下载[完整截图 ZIP](docs/screenshots/panel-1.0-beta1-screenshots.zip)。
 

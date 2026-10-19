@@ -8,23 +8,23 @@
 
 ### 概览
 
-![概览完整页面](01-overview-full.png)
+[![概览完整页面](01-overview-full.png)](01-overview-full.png)
 
 ### 网站
 
-![网站管理页面](03-sites.png)
+[![网站管理页面](03-sites.png)](03-sites.png)
 
 ### 文件
 
-![文件管理完整页面](08-files-full.png)
+[![文件管理完整页面](08-files-full.png)](08-files-full.png)
 
 ### 监控
 
-![监控完整页面](10-more-monitor-full.png)
+[![监控完整页面](10-more-monitor-full.png)](10-more-monitor-full.png)
 
 ### MCP 接入
 
-![MCP 接入完整页面](16-more-mcp-full.png)
+[![MCP 接入完整页面](16-more-mcp-full.png)](16-more-mcp-full.png)
 
 ## 其他页面
 
