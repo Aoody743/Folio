@@ -25,29 +25,35 @@ import (
 var hostedAppIDPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,31}$`)
 
 type HostedApplication struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	Runtime         string    `json:"runtime"`
-	RuntimeInstance string    `json:"runtime_instance"`
-	User            string    `json:"user"`
-	Status          string    `json:"status"`
-	Port            int       `json:"port"`
-	Revision        int64     `json:"revision"`
-	Running         bool      `json:"running"`
-	Upstream        string    `json:"upstream"`
-	SourceSHA256    string    `json:"source_sha256,omitempty"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	Runtime          string    `json:"runtime"`
+	RuntimeInstance  string    `json:"runtime_instance"`
+	User             string    `json:"user"`
+	Status           string    `json:"status"`
+	Port             int       `json:"port"`
+	Revision         int64     `json:"revision"`
+	Running          bool      `json:"running"`
+	Upstream         string    `json:"upstream"`
+	SourceSHA256     string    `json:"source_sha256,omitempty"`
+	SourceRepository string    `json:"source_repository,omitempty"`
+	SourceBranch     string    `json:"source_branch,omitempty"`
+	SourceCommit     string    `json:"source_commit,omitempty"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 type hostedAppReceipt struct {
 	HostedApplication
-	PreviousSourceSHA256 string `json:"previous_source_sha256,omitempty"`
-	UID                  uint32 `json:"uid"`
-	GID                  uint32 `json:"gid"`
-	Root                 string `json:"root"`
-	ProjectDir           string `json:"project_dir"`
-	DataDir              string `json:"data_dir"`
-	RuntimeProgram       string `json:"runtime_program"`
+	PreviousSourceSHA256     string `json:"previous_source_sha256,omitempty"`
+	PreviousSourceRepository string `json:"previous_source_repository,omitempty"`
+	PreviousSourceBranch     string `json:"previous_source_branch,omitempty"`
+	PreviousSourceCommit     string `json:"previous_source_commit,omitempty"`
+	UID                      uint32 `json:"uid"`
+	GID                      uint32 `json:"gid"`
+	Root                     string `json:"root"`
+	ProjectDir               string `json:"project_dir"`
+	DataDir                  string `json:"data_dir"`
+	RuntimeProgram           string `json:"runtime_program"`
 }
 
 type hostedAppCreateInput struct {
@@ -78,6 +84,19 @@ func hostedAppValidID(id string) bool       { return hostedAppIDPattern.MatchStr
 func hostedAppStateID(id string) string     { return "application_" + id }
 func hostedAppResource(id string) string    { return "hosted-app:" + id }
 func isHostedAppRuntime(plugin string) bool { return plugin == "nodejs" || plugin == "golang" }
+
+func hostedAppRuntimePlugin(runtime string) string {
+	switch runtime {
+	case "nextjs", "nodejs":
+		return "nodejs"
+	case "go":
+		return "golang"
+	default:
+		return ""
+	}
+}
+
+func validHostedAppRuntime(runtime string) bool { return hostedAppRuntimePlugin(runtime) != "" }
 
 func pathsOverlap(left, right string) bool {
 	left, right = filepath.Clean(left), filepath.Clean(right)
@@ -126,12 +145,12 @@ func (e *PrivilegedExecutor) hostedAppPaths(id string) (root, project, data stri
 func (e *PrivilegedExecutor) hostedAppRuntime(ctx context.Context, runtime string) (Instance, string, error) {
 	pluginID, program := "", ""
 	switch runtime {
-	case "nextjs":
+	case "nextjs", "nodejs":
 		pluginID, program = "nodejs", "/usr/bin/npm"
 	case "go":
 		pluginID = "golang"
 	default:
-		return Instance{}, "", failure("invalid_input", "Application runtime must be Next.js or Go", 400)
+		return Instance{}, "", failure("invalid_input", "Application runtime must be Node.js, Next.js or Go", 400)
 	}
 	instanceID := pluginID + "-default"
 	instance, err := e.get(ctx, instanceID, false)
@@ -160,7 +179,7 @@ func (e *PrivilegedExecutor) hostedAppReceipt(id string) (hostedAppReceipt, erro
 		return receipt, err
 	}
 	root, project, data := e.hostedAppPaths(id)
-	if receipt.ID != id || receipt.Root != root || receipt.ProjectDir != project || receipt.DataDir != data || receipt.User != hostedAppUser(id) || receipt.RuntimeInstance != map[string]string{"nextjs": "nodejs-default", "go": "golang-default"}[receipt.Runtime] || receipt.UID == 0 || receipt.GID == 0 || receipt.Port < 1024 || receipt.Port > 65535 || receipt.Revision < 1 || !filepath.IsAbs(receipt.ProjectDir) || receipt.SourceSHA256 != "" && !validHostedAppSHA256(receipt.SourceSHA256) || receipt.PreviousSourceSHA256 != "" && !validHostedAppSHA256(receipt.PreviousSourceSHA256) {
+	if receipt.ID != id || !validHostedAppRuntime(receipt.Runtime) || receipt.Root != root || receipt.ProjectDir != project || receipt.DataDir != data || receipt.User != hostedAppUser(id) || receipt.RuntimeInstance != hostedAppRuntimePlugin(receipt.Runtime)+"-default" || receipt.UID == 0 || receipt.GID == 0 || receipt.Port < 1024 || receipt.Port > 65535 || receipt.Revision < 1 || !filepath.IsAbs(receipt.ProjectDir) || receipt.SourceSHA256 != "" && !validHostedAppSHA256(receipt.SourceSHA256) || receipt.PreviousSourceSHA256 != "" && !validHostedAppSHA256(receipt.PreviousSourceSHA256) || !validHostedAppGitSourceMetadata(receipt.SourceRepository, receipt.SourceBranch, receipt.SourceCommit) || !validHostedAppGitSourceMetadata(receipt.PreviousSourceRepository, receipt.PreviousSourceBranch, receipt.PreviousSourceCommit) {
 		return receipt, failure("ownership_invalid", "Hosted application receipt disagrees with the trusted layout", 412)
 	}
 	if receipt.Status != "created" && receipt.Status != "built" && receipt.Status != "running" && receipt.Status != "stopped" && receipt.Status != "retained" && receipt.Status != "purging" {
@@ -178,7 +197,7 @@ func (e *PrivilegedExecutor) hostedAppReceipt(id string) (hostedAppReceipt, erro
 	if receipt.Status != "retained" {
 		expectedProgram := "/usr/bin/npm"
 		runtimeInstance, runtimeErr := e.get(context.Background(), receipt.RuntimeInstance, false)
-		if runtimeErr != nil || runtimeInstance.PluginID != map[string]string{"nextjs": "nodejs", "go": "golang"}[receipt.Runtime] || runtimeInstance.Status == "uninstalled" {
+		if runtimeErr != nil || runtimeInstance.PluginID != hostedAppRuntimePlugin(receipt.Runtime) || runtimeInstance.Status == "uninstalled" {
 			return receipt, failure("application_runtime_required", "The application's managed runtime is unavailable", 412)
 		}
 		if receipt.Runtime == "go" {
@@ -279,13 +298,22 @@ func hostedAppTemplates(input hostedAppCreateInput) map[string][]byte {
 	if input.Runtime == "go" {
 		return map[string][]byte{
 			"go.mod":  []byte("module powerlinux.local/" + input.ID + "\n\ngo 1.22\n"),
+			"go.sum":  []byte(""),
 			"main.go": []byte("package main\n\nimport (\n\t\"fmt\"\n\t\"net/http\"\n\t\"os\"\n)\n\nfunc main() {\n\tport := os.Getenv(\"PORT\")\n\tif port == \"\" { port = \"3000\" }\n\thttp.HandleFunc(\"/\", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintln(w, " + string(nameJSON) + "+\" is running\") })\n\tif err := http.ListenAndServe(\"127.0.0.1:\"+port, nil); err != nil { panic(err) }\n}\n"),
 		}
 	}
+	if input.Runtime == "nodejs" {
+		return map[string][]byte{
+			"package.json":      []byte("{\n  \"name\": \"" + input.ID + "\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"scripts\": {\"start\": \"node server.js\"}\n}\n"),
+			"package-lock.json": []byte("{\n  \"name\": \"" + input.ID + "\",\n  \"version\": \"1.0.0\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\"\": {\"name\": \"" + input.ID + "\", \"version\": \"1.0.0\"}}\n}\n"),
+			"server.js":         []byte("const http = require('node:http');\nconst host = process.env.HOST || '127.0.0.1';\nconst port = Number(process.env.PORT || 3000);\nconst title = " + string(nameJSON) + ";\nhttp.createServer((_request, response) => {\n  response.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });\n  response.end(`${title} is running\\n`);\n}).listen(port, host);\n"),
+		}
+	}
 	return map[string][]byte{
-		"package.json":  []byte("{\n  \"name\": \"" + input.ID + "\",\n  \"private\": true,\n  \"scripts\": {\"build\": \"next build\", \"start\": \"next start\"},\n  \"dependencies\": {\"next\": \"15.5.27\", \"react\": \"19.3.1\", \"react-dom\": \"19.3.1\"}\n}\n"),
-		"app/page.js":   []byte("const title = " + string(nameJSON) + ";\nexport default function Home() { return <main><h1>{title}</h1><p>Your Next.js service is ready.</p></main>; }\n"),
-		"app/layout.js": []byte("export const metadata = { title: " + string(nameJSON) + " };\nexport default function RootLayout({ children }) { return <html lang=\"zh-CN\"><body>{children}</body></html>; }\n"),
+		"package.json":      []byte("{\n  \"name\": \"" + input.ID + "\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"scripts\": {\"build\": \"next build\", \"start\": \"next start\"},\n  \"dependencies\": {\"next\": \"15.5.27\", \"react\": \"19.3.1\", \"react-dom\": \"19.3.1\"}\n}\n"),
+		"package-lock.json": hostedAppNextPackageLock(input.ID),
+		"app/page.js":       []byte("const title = " + string(nameJSON) + ";\nexport default function Home() { return <main><h1>{title}</h1><p>Your Next.js service is ready.</p></main>; }\n"),
+		"app/layout.js":     []byte("export const metadata = { title: " + string(nameJSON) + " };\nexport default function RootLayout({ children }) { return <html lang=\"zh-CN\"><body>{children}</body></html>; }\n"),
 	}
 }
 
@@ -294,7 +322,7 @@ func (e *PrivilegedExecutor) createHostedApp(ctx context.Context, input hostedAp
 	if err := e.hostedAppsEnabled(); err != nil {
 		return empty, err
 	}
-	if !hostedAppValidID(input.ID) || input.Runtime != "go" && input.Runtime != "nextjs" {
+	if !hostedAppValidID(input.ID) || !validHostedAppRuntime(input.Runtime) {
 		return empty, failure("invalid_input", "Application ID or runtime is invalid", 400)
 	}
 	input.Name = strings.TrimSpace(input.Name)
@@ -565,7 +593,7 @@ func (e *PrivilegedExecutor) buildHostedApp(ctx context.Context, input hostedApp
 			return empty, err
 		}
 	} else {
-		if err = e.buildNextHostedApp(ctx, receipt, program, credential, environment); err != nil {
+		if err = e.buildNodeHostedApp(ctx, receipt, program, credential, environment); err != nil {
 			return empty, err
 		}
 	}
@@ -573,6 +601,13 @@ func (e *PrivilegedExecutor) buildHostedApp(ctx context.Context, input hostedApp
 	receipt.Revision++
 	receipt.UpdatedAt = time.Now().UTC()
 	if err = e.saveHostedApp(receipt); err != nil {
+		current, readErr := e.hostedAppReceipt(receipt.ID)
+		if readErr == nil && current.Revision == receipt.Revision {
+			return empty, err
+		}
+		if rollbackErr := rollbackHostedAppBuild(receipt); rollbackErr != nil {
+			return empty, errors.Join(err, failure("application_build_recovery_required", "Application build was not committed to its receipt and the previous project could not be restored", 500), rollbackErr)
+		}
 		return empty, err
 	}
 	return receipt.HostedApplication, nil
@@ -615,40 +650,12 @@ func (e *PrivilegedExecutor) buildGoHostedApp(ctx context.Context, receipt hoste
 	return nil
 }
 
-func (e *PrivilegedExecutor) buildNextHostedApp(ctx context.Context, receipt hostedAppReceipt, npm string, credential *syscall.Credential, environment []string) error {
-	result, err := runFixedDirectoryResult(ctx, npm, receipt.ProjectDir, []string{"install", "--no-audit", "--no-fund"}, 30*time.Minute, credential, environment)
-	if err != nil || result.ExitCode != 0 || result.Truncated || result.Canceled || result.TimedOut {
-		return failure("application_build_failed", "Next.js dependency installation failed under its isolated system user; inspect the task output", 502)
-	}
-	buildDir := filepath.Join(receipt.ProjectDir, ".next")
-	previous := filepath.Join(receipt.ProjectDir, ".next.previous")
-	_ = os.RemoveAll(previous)
-	if _, err := os.Lstat(buildDir); err == nil {
-		if err = os.Rename(buildDir, previous); err != nil {
-			return err
-		}
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-	result, err = runFixedDirectoryResult(ctx, npm, receipt.ProjectDir, []string{"run", "build"}, 30*time.Minute, credential, environment)
-	if err != nil || result.ExitCode != 0 || result.Truncated || result.Canceled || result.TimedOut {
-		_ = os.RemoveAll(buildDir)
-		if _, restoreErr := os.Lstat(previous); restoreErr == nil {
-			_ = os.Rename(previous, buildDir)
-		}
-		return failure("application_build_failed", "Next.js production build failed under its isolated system user; inspect the task output", 502)
-	}
-	info, err := os.Lstat(buildDir)
-	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-		return failure("application_build_failed", "Next.js build did not create a real production output directory", 502)
-	}
-	return nil
-}
-
 func hostedAppUnit(receipt hostedAppReceipt) []byte {
 	args := []string{}
 	if receipt.Runtime == "nextjs" {
 		args = []string{"run", "start", "--", "--hostname", "127.0.0.1", "--port", strconv.Itoa(receipt.Port)}
+	} else if receipt.Runtime == "nodejs" {
+		args = []string{"run", "start"}
 	}
 	command := unitQuote(receipt.RuntimeProgram)
 	if receipt.Runtime == "go" {
@@ -658,7 +665,11 @@ func hostedAppUnit(receipt hostedAppReceipt) []byte {
 			command += " " + unitQuote(arg)
 		}
 	}
-	return []byte("[Unit]\nDescription=Folio application " + receipt.ID + "\nAfter=network-online.target\nWants=network-online.target\n[Service]\nType=simple\nUser=" + receipt.User + "\nGroup=" + receipt.User + "\nWorkingDirectory=" + unitQuote(receipt.ProjectDir) + "\nEnvironment=HOME=" + unitQuote(filepath.Join(receipt.ProjectDir, ".home")) + "\nEnvironment=DATA_DIR=" + unitQuote(receipt.DataDir) + "\nEnvironment=PATH=/usr/local/bin:/usr/bin:/bin\nEnvironment=PORT=" + strconv.Itoa(receipt.Port) + "\nEnvironment=NODE_ENV=production\nExecStart=" + command + "\nRestart=on-failure\nRestartSec=3\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(receipt.ProjectDir) + " " + unitQuote(receipt.DataDir) + "\n[Install]\nWantedBy=multi-user.target\n")
+	hostEnvironment := ""
+	if receipt.Runtime == "nodejs" {
+		hostEnvironment = "Environment=HOST=127.0.0.1\nEnvironment=HOSTNAME=127.0.0.1\n"
+	}
+	return []byte("[Unit]\nDescription=Folio application " + receipt.ID + "\nAfter=network-online.target\nWants=network-online.target\n[Service]\nType=simple\nUser=" + receipt.User + "\nGroup=" + receipt.User + "\nWorkingDirectory=" + unitQuote(receipt.ProjectDir) + "\nEnvironment=HOME=" + unitQuote(filepath.Join(receipt.ProjectDir, ".home")) + "\nEnvironment=DATA_DIR=" + unitQuote(receipt.DataDir) + "\nEnvironment=PATH=/usr/local/bin:/usr/bin:/bin\nEnvironment=PORT=" + strconv.Itoa(receipt.Port) + "\n" + hostEnvironment + "Environment=NODE_ENV=production\nExecStart=" + command + "\nRestart=on-failure\nRestartSec=3\nNoNewPrivileges=true\nPrivateTmp=true\nProtectHome=true\nProtectSystem=strict\nReadWritePaths=" + unitQuote(receipt.ProjectDir) + " " + unitQuote(receipt.DataDir) + "\n[Install]\nWantedBy=multi-user.target\n")
 }
 
 func hostedAppUnitName(id string) string { return "powerlinux-app-" + id + ".service" }
@@ -753,8 +764,17 @@ func (e *PrivilegedExecutor) controlHostedApp(ctx context.Context, input hostedA
 			return empty, rollbackErr
 		}
 		if sourceRollback {
+			previousRepository := receipt.PreviousSourceRepository
+			previousBranch := receipt.PreviousSourceBranch
+			previousCommit := receipt.PreviousSourceCommit
 			receipt.PreviousSourceSHA256 = receipt.SourceSHA256
 			receipt.SourceSHA256 = sourceHash
+			receipt.PreviousSourceRepository = receipt.SourceRepository
+			receipt.PreviousSourceBranch = receipt.SourceBranch
+			receipt.PreviousSourceCommit = receipt.SourceCommit
+			receipt.SourceRepository = previousRepository
+			receipt.SourceBranch = previousBranch
+			receipt.SourceCommit = previousCommit
 		}
 		if hostedAppProjectBuilt(receipt.ProjectDir, receipt.Runtime) {
 			receipt.Status = "built"
@@ -804,6 +824,14 @@ func (e *PrivilegedExecutor) controlHostedApp(ctx context.Context, input hostedA
 		if err != nil {
 			return empty, failure("service_control_failed", "Hosted application service operation failed; inspect its status and logs", 502)
 		}
+		if input.Command != "stop" {
+			if err = waitHostedAppReady(ctx, receipt.Port); err != nil {
+				stopCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				_, _ = runFixed(stopCtx, "/usr/bin/systemctl", []string{"stop", unit}, 15*time.Second, nil)
+				cancel()
+				return empty, failure("application_not_ready", "Application did not answer over its loopback upstream and was stopped; inspect its logs", 502)
+			}
+		}
 		if input.Command == "stop" {
 			receipt.Status = "stopped"
 		} else {
@@ -848,18 +876,19 @@ func validateParkedHostedAppSource(path string) error {
 }
 
 func hostedAppProjectBuilt(project, runtime string) bool {
-	name := "powerlinux-app"
-	if runtime == "nextjs" {
-		name = ".next"
-	}
-	info, err := os.Lstat(filepath.Join(project, name))
-	if err != nil || info.Mode()&os.ModeSymlink != 0 {
+	switch runtime {
+	case "nextjs":
+		info, err := os.Lstat(filepath.Join(project, ".next"))
+		return err == nil && info.IsDir() && info.Mode()&os.ModeSymlink == 0
+	case "nodejs":
+		info, err := os.Lstat(filepath.Join(project, ".powerlinux-node-built"))
+		return err == nil && info.Mode().IsRegular() && info.Mode()&os.ModeSymlink == 0
+	case "go":
+		info, err := os.Lstat(filepath.Join(project, "powerlinux-app"))
+		return err == nil && info.Mode().IsRegular() && info.Mode()&os.ModeSymlink == 0 && info.Mode()&0111 != 0
+	default:
 		return false
 	}
-	if runtime == "nextjs" {
-		return info.IsDir()
-	}
-	return info.Mode().IsRegular() && info.Mode()&0111 != 0
 }
 
 func rollbackHostedApp(receipt hostedAppReceipt) (string, bool, error) {
@@ -907,6 +936,17 @@ func rollbackHostedApp(receipt hostedAppReceipt) (string, bool, error) {
 }
 
 func rollbackHostedAppBuild(receipt hostedAppReceipt) error {
+	if receipt.Runtime == "nodejs" {
+		return rollbackHostedNodeProject(receipt)
+	}
+	if receipt.Runtime == "nextjs" {
+		buildPrevious := filepath.Join(receipt.Root, ".project.build.previous")
+		if _, err := os.Lstat(buildPrevious); err == nil {
+			return rollbackHostedNodeProject(receipt)
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+	}
 	current, previous, failed := "", "", ""
 	if receipt.Runtime == "go" {
 		current = filepath.Join(receipt.ProjectDir, "powerlinux-app")
@@ -930,6 +970,42 @@ func rollbackHostedAppBuild(receipt hostedAppReceipt) error {
 		if _, restoreErr := os.Lstat(failed); restoreErr == nil {
 			_ = os.Rename(failed, current)
 		}
+		return err
+	}
+	return os.Rename(failed, previous)
+}
+
+func rollbackHostedNodeProject(receipt hostedAppReceipt) error {
+	previous := filepath.Join(receipt.Root, ".project.build.previous")
+	if err := validateParkedHostedAppSource(previous); err != nil {
+		if os.IsNotExist(err) {
+			return failure("rollback_unavailable", "No previous successful application project build is available", 412)
+		}
+		return err
+	}
+	random, err := randomPlanID()
+	if err != nil {
+		return err
+	}
+	failed := filepath.Join(receipt.Root, ".project.build.failed-"+strings.TrimPrefix(random, "plan_"))
+	if err = os.Rename(receipt.ProjectDir, failed); err != nil {
+		return err
+	}
+	if err = os.Rename(previous, receipt.ProjectDir); err != nil {
+		_ = os.Rename(failed, receipt.ProjectDir)
+		return err
+	}
+	if err = os.Chown(receipt.ProjectDir, int(receipt.UID), int(receipt.GID)); err == nil {
+		err = os.Chmod(receipt.ProjectDir, 0750)
+	}
+	if err != nil {
+		_ = os.Rename(receipt.ProjectDir, previous)
+		_ = os.Rename(failed, receipt.ProjectDir)
+		return err
+	}
+	if err = parkHostedAppSource(failed); err != nil {
+		_ = os.Rename(receipt.ProjectDir, previous)
+		_ = os.Rename(failed, receipt.ProjectDir)
 		return err
 	}
 	return os.Rename(failed, previous)
@@ -1093,7 +1169,7 @@ func (e *PrivilegedExecutor) validateHostedApp(request agent.Request) error {
 		if err := parse(request.Input, &input); err != nil {
 			return err
 		}
-		if !hostedAppValidID(input.ID) || (input.Runtime != "go" && input.Runtime != "nextjs") || len(input.Name) > 120 || strings.TrimSpace(input.Name) == "" || strings.ContainsAny(input.Name, "\x00\r\n") {
+		if !hostedAppValidID(input.ID) || !validHostedAppRuntime(input.Runtime) || len(input.Name) > 120 || strings.TrimSpace(input.Name) == "" || strings.ContainsAny(input.Name, "\x00\r\n") {
 			return failure("invalid_input", "Invalid hosted application identity, name or runtime", 400)
 		}
 	case "hosted_app_build", "hosted_app_deploy", "hosted_app_control", "hosted_app_delete", "hosted_app_logs":
@@ -1195,7 +1271,7 @@ func (m *Manager) hostedAppBindings() []core.Binding {
 		if err := parse(raw, &input); err != nil {
 			return nil, err
 		}
-		if !hostedAppValidID(input.ID) || (input.Runtime != "go" && input.Runtime != "nextjs") {
+		if !hostedAppValidID(input.ID) || !validHostedAppRuntime(input.Runtime) {
 			return nil, failure("invalid_input", "Application ID or runtime is invalid", 400)
 		}
 		return []string{hostedAppResource(input.ID)}, nil
@@ -1219,8 +1295,8 @@ func (m *Manager) hostedAppBindings() []core.Binding {
 		}
 		return m.hostedAppTask(ctx, actor, "hosted_app_git_import", raw, resources)
 	}))
-	bindings = append(bindings, m.binding("hosted_apps_list", "List hosted Next.js and Go applications within authorized resources", "hosted_apps:read", true, obj(map[string]any{}), func(context.Context, core.Actor, json.RawMessage) ([]string, error) { return nil, nil }, m.hostedAppsListAction))
-	bindings = append(bindings, m.binding("hosted_apps_create", "Create an isolated Next.js or Go template with its own unprivileged system user", "hosted_apps:manage", false, obj(map[string]any{"id": idSchema(), "name": textSchema(), "runtime": enumSchema("nextjs", "go")}, "id", "name", "runtime"), createResources, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+	bindings = append(bindings, m.binding("hosted_apps_list", "List hosted Node.js, Next.js and Go applications within authorized resources", "hosted_apps:read", true, obj(map[string]any{}), func(context.Context, core.Actor, json.RawMessage) ([]string, error) { return nil, nil }, m.hostedAppsListAction))
+	bindings = append(bindings, m.binding("hosted_apps_create", "Create an isolated Node.js, Next.js or Go template with its own unprivileged system user", "hosted_apps:manage", false, obj(map[string]any{"id": idSchema(), "name": textSchema(), "runtime": enumSchema("nodejs", "nextjs", "go")}, "id", "name", "runtime"), createResources, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 		return m.hostedAppTask(ctx, actor, "hosted_app_create", raw, createResources)
 	}))
 	bindings = append(bindings, m.binding("hosted_apps_build", "Build a hosted application under its own unprivileged system user and preserve its previous release", "hosted_apps:manage", false, obj(map[string]any{"id": idSchema(), "expected_revision": revisionSchema()}, "id", "expected_revision"), resources, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {

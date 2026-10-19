@@ -421,7 +421,7 @@
     {
       "id": "git",
       "name": "Git",
-      "description": "系统 Git 客户端，用于受管 Next.js 与 Go 应用的仓库导入",
+      "description": "系统 Git 客户端，用于受管 Node.js、Next.js 与 Go 应用的仓库导入",
       "category": "runtime",
       "integration_version": "1.0.0",
       "versions": [{
@@ -445,7 +445,7 @@
     {
       "id": "nodejs",
       "name": "Node.js",
-      "description": "签名仓库提供的 Node.js 与 npm 运行环境，用于受管 Next.js 应用",
+      "description": "签名仓库提供的 Node.js 与 npm 运行环境，用于受管 Node.js 与 Next.js 应用",
       "category": "runtime",
       "integration_version": "1.0.0",
       "versions": [{
@@ -453,7 +453,7 @@
         "version": "distribution",
         "default": true,
         "source": {"kind": "signed_package", "trust": "repository_signature", "packages": ["nodejs", "npm"]},
-        "verification": {"status": "not_tested", "reason": "Native Node.js/npm installation and Next.js application lifecycle acceptance are pending."}
+        "verification": {"status": "not_tested", "reason": "Native Node.js/npm installation and Node.js/Next.js application lifecycle acceptance are pending."}
       }],
       "platforms": [
         {"os": "linux", "arch": "amd64", "distro": "debian", "release": "13"},
@@ -464,7 +464,7 @@
       "capabilities": [],
       "coexist": true,
       "service": {"programs": ["node"], "health": "cli", "config_kind": "native"},
-      "verification": {"status": "not_tested", "reason": "The signed distribution package source is declared; installation and managed Next.js runtime acceptance are pending."}
+      "verification": {"status": "not_tested", "reason": "The signed distribution package source is declared; installation and managed Node.js/Next.js runtime acceptance are pending."}
     },
     {
       "id": "golang",
@@ -2292,68 +2292,15 @@
       "versions": [
         {
           "id": "distribution",
-          "version": "resolved_from_signed_repository",
+          "version": "unavailable",
           "default": true,
           "source": {
-            "kind": "signed_package",
-            "trust": "repository_signature",
-            "packages": [
-              "phpmyadmin"
-            ],
-            "repository": "",
-            "repository_key_url": ""
-          },
-          "verification": {
-            "status": "not_tested",
-            "reason": "Runtime package resolution, authenticity and functional acceptance must succeed before readiness"
-          }
-        },
-        {
-          "id": "legacy-4.4.15",
-          "version": "4.4.15",
-          "default": false,
-          "legacy_labels": [
-            "4.4.15"
-          ],
-          "source": {
             "kind": "unavailable",
             "trust": "none"
           },
           "verification": {
-            "status": "not_verified",
-            "reason": "Legacy version retained for parity; authoritative artifact trust, ABI and real functional checks are pending"
-          }
-        },
-        {
-          "id": "legacy-4.9.11",
-          "version": "4.9.11",
-          "default": false,
-          "legacy_labels": [
-            "4.9.11"
-          ],
-          "source": {
-            "kind": "unavailable",
-            "trust": "none"
-          },
-          "verification": {
-            "status": "not_verified",
-            "reason": "Legacy version retained for parity; authoritative artifact trust, ABI and real functional checks are pending"
-          }
-        },
-        {
-          "id": "legacy-5.2.1",
-          "version": "5.2.1",
-          "default": false,
-          "legacy_labels": [
-            "5.2.1"
-          ],
-          "source": {
-            "kind": "unavailable",
-            "trust": "none"
-          },
-          "verification": {
-            "status": "not_verified",
-            "reason": "Legacy version retained for parity; authoritative artifact trust, ABI and real functional checks are pending"
+            "status": "unavailable",
+            "reason": "No trusted package source or native lifecycle adapter is configured for the supported OS matrix. Installation remains disabled."
           }
         }
       ],
@@ -2393,184 +2340,184 @@
           "legacy_actions": [
             "access_log"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "conf",
           "legacy_actions": [
             "conf"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "config_inc",
           "legacy_actions": [
             "config_inc"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "error_log",
           "legacy_actions": [
             "error_log"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_cfg",
           "legacy_actions": [
             "get_cfg"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_home_page",
           "legacy_actions": [
             "get_home_page"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_pma_option",
           "legacy_actions": [
             "get_pma_option"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_pma_port",
           "legacy_actions": [
             "get_pma_port"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_set_php_ver",
           "legacy_actions": [
             "get_set_php_ver"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "install_pre_inspection",
           "legacy_actions": [
             "install_pre_inspection"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "plugins_db_support",
           "legacy_actions": [
             "plugins_db_support"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "reload",
           "legacy_actions": [
             "reload"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "restart",
           "legacy_actions": [
             "restart"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_php_ver",
           "legacy_actions": [
             "set_php_ver"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_pma_choose",
           "legacy_actions": [
             "set_pma_choose"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_pma_password",
           "legacy_actions": [
             "set_pma_password"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_pma_path",
           "legacy_actions": [
             "set_pma_path"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_pma_port",
           "legacy_actions": [
             "set_pma_port"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_pma_username",
           "legacy_actions": [
             "set_pma_username"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "start",
           "legacy_actions": [
             "start"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "status",
           "legacy_actions": [
             "status"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "stop",
           "legacy_actions": [
             "stop"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "version",
           "legacy_actions": [
             "version"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         }
       ],
       "coexist": false,
@@ -2582,8 +2529,8 @@
         "config_kind": "phpmyadmin"
       },
       "verification": {
-        "status": "not_tested",
-        "reason": "Declared migration scope, not a passed plugin"
+        "status": "unavailable",
+        "reason": "No trusted package source or native lifecycle adapter is configured for the supported OS matrix. Installation remains disabled."
       }
     },
     {
@@ -6589,7 +6536,7 @@
       "versions": [
         {
           "id": "distribution",
-          "version": "resolved_from_signed_repository",
+          "version": "unavailable",
           "default": true,
           "source": {
             "kind": "unavailable",
@@ -6597,23 +6544,7 @@
           },
           "verification": {
             "status": "unavailable",
-            "reason": "A verified official artifact/repository adapter must be configured; no legacy installer is executed"
-          }
-        },
-        {
-          "id": "legacy-4",
-          "version": "4",
-          "default": false,
-          "legacy_labels": [
-            "4"
-          ],
-          "source": {
-            "kind": "unavailable",
-            "trust": "none"
-          },
-          "verification": {
-            "status": "not_verified",
-            "reason": "Legacy version retained for parity; authoritative artifact trust, ABI and real functional checks are pending"
+            "reason": "No trusted package source or native lifecycle adapter is configured for the supported OS matrix. Installation remains disabled."
           }
         }
       ],
@@ -6652,128 +6583,128 @@
           "legacy_actions": [
             "access_log"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "conf",
           "legacy_actions": [
             "conf"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "error_log",
           "legacy_actions": [
             "error_log"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_cfg",
           "legacy_actions": [
             "get_cfg"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_home_page",
           "legacy_actions": [
             "get_home_page"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_pg_option",
           "legacy_actions": [
             "get_pg_option"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "get_pg_port",
           "legacy_actions": [
             "get_pg_port"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "reload",
           "legacy_actions": [
             "reload"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "restart",
           "legacy_actions": [
             "restart"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_pg_password",
           "legacy_actions": [
             "set_pg_password"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_pg_port",
           "legacy_actions": [
             "set_pg_port"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "set_pg_username",
           "legacy_actions": [
             "set_pg_username"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "start",
           "legacy_actions": [
             "start"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "status",
           "legacy_actions": [
             "status"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "stop",
           "legacy_actions": [
             "stop"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         },
         {
           "name": "version",
           "legacy_actions": [
             "version"
           ],
-          "status": "planned",
-          "reason": "Requires native typed implementation and real acceptance evidence"
+          "status": "unavailable",
+          "reason": "Native configuration, lifecycle actions, and real acceptance are not implemented."
         }
       ],
       "coexist": false,
@@ -6785,8 +6716,8 @@
         "config_kind": "pgadmin"
       },
       "verification": {
-        "status": "not_tested",
-        "reason": "Declared migration scope, not a passed plugin"
+        "status": "unavailable",
+        "reason": "No trusted package source or native lifecycle adapter is configured for the supported OS matrix. Installation remains disabled."
       }
     },
     {

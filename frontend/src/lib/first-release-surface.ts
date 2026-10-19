@@ -3,10 +3,7 @@ type NamedCapability = { name: string };
 // Features explicitly deferred by the RC15 launch-readiness scope stay out of
 // the first-release panel even when an agent advertises their capabilities.
 const deferredCapabilityPatterns = [
-  /^hosted_apps_/,
   /^sites_migration_/,
-  /^certificates_acme_/,
-  /^certificates_dns_/,
   /^backup_ftp_/,
   /^ftp_/,
   /^mongodb_/,
@@ -15,13 +12,10 @@ const deferredCapabilityPatterns = [
 ];
 
 export const deferredCatalogPluginIDs = new Set([
-  "acme_pandominassl_apply",
+	"acme_pandominassl_apply",
   "backup_ftp",
   "data_query",
-  "git",
-  "golang",
   "mongodb",
-  "nodejs",
   "php-guard",
   "php-yum",
   "phpmyadmin",

@@ -15,7 +15,7 @@ import { State } from "./resource-ui";
 type HostedApplication = {
   id: string;
   name: string;
-  runtime: "nextjs" | "go";
+  runtime: "nodejs" | "nextjs" | "go";
   runtime_instance: string;
   user: string;
   status: string;
@@ -24,6 +24,9 @@ type HostedApplication = {
   running: boolean;
   upstream: string;
   updated_at: string;
+  source_repository?: string;
+  source_branch?: string;
+  source_commit?: string;
 };
 
 export function HostedApplications({
@@ -49,7 +52,7 @@ export function HostedApplications({
   );
   const [id, setID] = useState("");
   const [name, setName] = useState("");
-  const [runtime, setRuntime] = useState<"nextjs" | "go">("nextjs");
+  const [runtime, setRuntime] = useState<"nodejs" | "nextjs" | "go">("nextjs");
   const [siteID, setSiteID] = useState("");
   const [proxyPath, setProxyPath] = useState("/");
   const [busy, setBusy] = useState(false);
@@ -210,6 +213,14 @@ export function HostedApplications({
   const items = apps.data?.items ?? [];
   const siteItems = sites.data?.items ?? [];
   const canCreate = allowed("hosted_apps_create");
+  const projectRequirements = (value: HostedApplication["runtime"]) =>
+    value === "go"
+      ? "go.mod + go.sum"
+      : value === "nextjs"
+        ? "package.json + package-lock.json/npm-shrinkwrap.json + scripts.build/start"
+        : "package.json + package-lock.json/npm-shrinkwrap.json + scripts.start";
+  const runtimeName = (value: HostedApplication["runtime"]) =>
+    value === "nextjs" ? "Next.js" : value === "nodejs" ? "Node.js" : "Go";
   if (!allowed("hosted_apps_list") && !canCreate)
     return <div className="notice warning">当前身份没有应用服务管理权限。</div>;
 
@@ -217,9 +228,9 @@ export function HostedApplications({
     <Card className="panel-card">
       <div className="card-heading">
         <div>
-          <h2>Next.js / Go 应用服务</h2>
+          <h2>Node.js / Go 应用服务</h2>
           <p className="muted">
-            应用使用独立系统用户和 systemd 服务，监听本机回环地址。先在软件目录安装 Node.js 或 Go 运行环境。
+            应用使用独立系统用户和 systemd 服务。Node.js 服务收到 HOST=127.0.0.1、HOSTNAME=127.0.0.1 与 PORT；项目启动脚本需使用这些环境变量监听回环地址。先在软件目录安装 Git、Node.js 或 Go 运行环境。
           </p>
         </div>
         <Button
@@ -253,8 +264,9 @@ export function HostedApplications({
             运行时
             <select
               value={runtime}
-              onChange={(event) => setRuntime(event.target.value as "nextjs" | "go")}
+              onChange={(event) => setRuntime(event.target.value as "nodejs" | "nextjs" | "go")}
             >
+              <option value="nodejs">Node.js</option>
               <option value="nextjs">Next.js（Node.js）</option>
               <option value="go">Go</option>
             </select>
@@ -279,8 +291,13 @@ export function HostedApplications({
               <div className="stack">
                 <strong>{app.name} · {app.id}</strong>
                 <p>
-                  {app.runtime === "nextjs" ? "Next.js" : "Go"} · {app.user} · {app.upstream}
+                  {runtimeName(app.runtime)} · {app.user} · {app.upstream}
                 </p>
+                {app.source_commit && (
+                  <p className="muted">
+                    Git · {app.source_repository} · {app.source_branch} · {app.source_commit}
+                  </p>
+                )}
                 <State
                   value={
                     app.running
@@ -294,7 +311,7 @@ export function HostedApplications({
               {allowed("hosted_apps_source_upload") && app.status !== "retained" && app.status !== "purging" && (
                     <>
                       <label className="native-field">
-                        导入项目归档（tar.gz，根目录需含 {app.runtime === "nextjs" ? "package.json" : "go.mod"}）
+                        导入项目归档（tar.gz，根目录需含 {projectRequirements(app.runtime)}）
                         <input
                           type="file"
                           accept=".tar.gz,.tgz,application/gzip"
@@ -321,7 +338,7 @@ export function HostedApplications({
                   {allowed("hosted_apps_git_import") && app.status !== "retained" && app.status !== "purging" && (
                     <div className="stack" aria-label={`${app.name} Git 源码导入`}>
                       <p className="muted">
-                        先在软件目录安装 Git/OpenSSH，再导入公开 HTTPS 或 SSH 仓库；根目录需含 {app.runtime === "nextjs" ? "package.json" : "go.mod"}。私有仓库凭据暂不支持；SSH 使用 ssh://git@host/owner/repo.git 格式，并填写服务器 SHA256 主机指纹。
+                        先在软件目录安装 Git/OpenSSH，再导入公开 HTTPS 或 SSH 仓库；根目录需含 {projectRequirements(app.runtime)}。私有仓库凭据暂不支持；SSH 使用 ssh://git@host/owner/repo.git 格式，并填写服务器 SHA256 主机指纹。
                       </p>
                       <TextInput
                         label="Git 仓库 HTTPS / SSH 地址"

@@ -396,13 +396,8 @@ func extractHostedAppArchive(ctx context.Context, destination, runtime string, c
 	if err = gz.Close(); err != nil {
 		return total, failure("application_archive_invalid", "Application source archive failed its gzip integrity check", 400)
 	}
-	manifest := "package.json"
-	if runtime == "go" {
-		manifest = "go.mod"
-	}
-	info, statErr := os.Lstat(filepath.Join(destination, manifest))
-	if statErr != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
-		return total, failure("application_manifest_required", "Application archive must contain a root-level "+manifest+" file", 400)
+	if err = validateHostedAppProjectManifest(destination, runtime); err != nil {
+		return total, err
 	}
 	return total, nil
 }
@@ -425,7 +420,7 @@ func hostedArchivePath(name string, directory bool) (string, error) {
 	if name == "" || clean != name || clean == "." || clean == ".." || strings.HasPrefix(clean, "../") || !filepath.IsLocal(filepath.FromSlash(clean)) {
 		return "", failure("application_archive_unsafe_path", "Application source archive contains a path traversal entry", 400)
 	}
-	if !strings.Contains(clean, "/") && (clean == ".home" || clean == ".next" || strings.HasPrefix(clean, ".next.") || strings.HasPrefix(clean, ".powerlinux-app")) {
+	if !strings.Contains(clean, "/") && (clean == ".home" || clean == ".next" || strings.HasPrefix(clean, ".next.") || strings.HasPrefix(clean, ".powerlinux-app") || strings.HasPrefix(clean, ".powerlinux-node-")) {
 		return "", failure("application_archive_reserved_path", "Application source archive contains a reserved Folio runtime path", 400)
 	}
 	return clean, nil
@@ -557,8 +552,14 @@ func (e *PrivilegedExecutor) hostedAppSourceUpload(ctx context.Context, request 
 		return result, err
 	}
 	oldHash := receipt.SourceSHA256
+	receipt.PreviousSourceRepository = receipt.SourceRepository
+	receipt.PreviousSourceBranch = receipt.SourceBranch
+	receipt.PreviousSourceCommit = receipt.SourceCommit
 	receipt.PreviousSourceSHA256 = oldHash
 	receipt.SourceSHA256 = hex.EncodeToString(inputStream.hash.Sum(nil))
+	receipt.SourceRepository = ""
+	receipt.SourceBranch = ""
+	receipt.SourceCommit = ""
 	receipt.Status = "created"
 	receipt.Revision++
 	receipt.UpdatedAt = time.Now().UTC()

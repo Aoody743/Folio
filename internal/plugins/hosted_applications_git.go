@@ -156,6 +156,21 @@ func parseHostedAppGitRemote(input hostedAppGitInput) (hostedAppGitRemote, error
 	return remote, nil
 }
 
+func validHostedAppGitSourceMetadata(repository, branch, commit string) bool {
+	if repository == "" && branch == "" && commit == "" {
+		return true
+	}
+	if !hostedGitCommitPattern.MatchString(commit) || !hostedGitBranchPattern.MatchString(branch) {
+		return false
+	}
+	fingerprint := ""
+	if strings.HasPrefix(repository, "ssh://") {
+		fingerprint = "SHA256:" + base64.RawStdEncoding.EncodeToString(make([]byte, sha256.Size))
+	}
+	_, err := parseHostedAppGitRemote(hostedAppGitInput{ID: "receipt", ExpectedRevision: 1, RepositoryURL: repository, Branch: branch, HostKeySHA256: fingerprint})
+	return err == nil
+}
+
 func validHostedAppGitInput(raw json.RawMessage) error {
 	input, err := parseHostedAppGitInput(raw)
 	if err != nil {
@@ -345,11 +360,7 @@ func (e *PrivilegedExecutor) importHostedAppGit(ctx context.Context, input hoste
 	if !hostedGitCommitPattern.MatchString(commit) {
 		return empty, failure("application_git_clone_failed", "Git checkout returned an invalid commit identity", 502)
 	}
-	manifest := "package.json"
-	if receipt.Runtime == "go" {
-		manifest = "go.mod"
-	}
-	if err = validateHostedGitProject(project, manifest, receipt.UID, receipt.GID); err != nil {
+	if err = validateHostedGitProject(project, receipt.Runtime, receipt.UID, receipt.GID); err != nil {
 		return empty, err
 	}
 	if remote.Scheme == "ssh" {
@@ -395,8 +406,14 @@ func (e *PrivilegedExecutor) importHostedAppGit(ctx context.Context, input hoste
 		return empty, err
 	}
 	oldSourceHash := receipt.SourceSHA256
+	receipt.PreviousSourceRepository = receipt.SourceRepository
+	receipt.PreviousSourceBranch = receipt.SourceBranch
+	receipt.PreviousSourceCommit = receipt.SourceCommit
 	receipt.PreviousSourceSHA256 = oldSourceHash
 	receipt.SourceSHA256 = sourceHash
+	receipt.SourceRepository = remote.URL
+	receipt.SourceBranch = remote.Branch
+	receipt.SourceCommit = commit
 	receipt.Status = "created"
 	receipt.Revision++
 	receipt.UpdatedAt = time.Now().UTC()
@@ -437,8 +454,7 @@ func cleanupHostedGitStages(root string, uid, gid uint32) error {
 	return nil
 }
 
-func validateHostedGitProject(project, manifest string, uid, gid uint32) error {
-	manifestFound := false
+func validateHostedGitProject(project, runtime string, uid, gid uint32) error {
 	err := filepath.WalkDir(project, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -452,7 +468,7 @@ func validateHostedGitProject(project, manifest string, uid, gid uint32) error {
 		}
 		relative = filepath.ToSlash(relative)
 		first := strings.Split(relative, "/")[0]
-		if first == ".home" || first == ".next" || strings.HasPrefix(first, ".next.") || strings.HasPrefix(first, ".powerlinux-app") {
+		if first == ".home" || first == ".next" || strings.HasPrefix(first, ".next.") || strings.HasPrefix(first, ".powerlinux-app") || strings.HasPrefix(first, ".powerlinux-node-") {
 			return failure("application_git_reserved_path", "Git repository contains a reserved Folio runtime path", 400)
 		}
 		info, err := os.Lstat(path)
@@ -468,9 +484,6 @@ func validateHostedGitProject(project, manifest string, uid, gid uint32) error {
 			}
 			return os.Chmod(path, 0750)
 		}
-		if relative == filepath.FromSlash(manifest) {
-			manifestFound = true
-		}
 		if err = os.Chown(path, int(uid), int(gid)); err != nil {
 			return err
 		}
@@ -483,10 +496,7 @@ func validateHostedGitProject(project, manifest string, uid, gid uint32) error {
 	if err != nil {
 		return err
 	}
-	if !manifestFound {
-		return failure("application_manifest_required", "Git repository must contain a root-level "+manifest+" file", 400)
-	}
-	return nil
+	return validateHostedAppProjectManifest(project, runtime)
 }
 
 func (e *PrivilegedExecutor) runHostedAppGit(ctx context.Context, raw json.RawMessage) (HostedApplication, error) {

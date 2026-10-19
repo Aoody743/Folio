@@ -2,7 +2,11 @@
 
 更新时间：2026-10-19。本计划只覆盖 phpMyAdmin、pgAdmin、ACME/DNS，以及托管应用的 Git、Node.js、Go 入口。它是后续适配与验收计划，不把现有未验收代码改记为完成，也不恢复 MongoDB、FTP 或其他暂缓插件的工作。
 
-## 当前基线
+## 执行状态
+
+本轮已完成应用入口与项目契约的本地实现，ACME/DNS 入口已开放并完成协议测试；phpMyAdmin/pgAdmin 因可信来源和生命周期实现缺失已从可安装目录隐藏。完整改动、34 个 DNS 适配器状态、本地测试结果及目标环境限制见[执行记录](./SELECTED-FEATURE-IMPLEMENTATION-20261019.md)。Debian/Ubuntu 主机级安装、服务和公开 CA 验收仍未关闭。
+
+## 计划建立时的基线
 
 - 首轮真实系统验收目标沿用 Debian 13 amd64 与 Ubuntu 24.04 amd64。其他发行版和架构须有各自的原生证据，不能从 manifest 声明推定已支持。
 - `phpmyadmin`、`pgadmin` 已有软件目录条目，但生命周期能力未验收。phpMyAdmin 的签名仓库包尚未完成来源与功能验收，旧版本没有可用的可信来源；pgAdmin 还没有配置可信的软件来源。两者不得通过旧 `install.sh` 执行安装。

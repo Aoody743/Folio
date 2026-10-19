@@ -17,7 +17,7 @@ const surface = await import(
   `data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`
 );
 
-test("deferred RC15 features stay out of the first-release panel", () => {
+test("selected application and certificate actions are visible in the first-release panel", () => {
   const capabilities = [
     { name: "sites_list" },
     { name: "certificates_import" },
@@ -35,27 +35,34 @@ test("deferred RC15 features stay out of the first-release panel", () => {
 
   assert.deepEqual(
     surface.firstReleaseCapabilities(capabilities).map((item) => item.name),
-    ["sites_list", "certificates_import", "terminal_open"],
+    [
+      "sites_list",
+      "certificates_import",
+      "certificates_acme_issue",
+      "certificates_dns_credentials_list",
+      "hosted_apps_create",
+      "terminal_open",
+    ],
   );
 });
 
-test("deferred catalog integrations are hidden while core packages remain", () => {
+test("unsupported integrations stay hidden while selected runtimes are visible", () => {
   for (const id of [
+	"acme_pandominassl_apply",
     "mongodb",
     "phpmyadmin",
     "pgadmin",
     "pureftp",
     "backup_ftp",
-    "acme_pandominassl_apply",
     "data_query",
     "webssh",
-    "git",
-    "nodejs",
-    "golang",
     "php-yum",
   ]) {
     assert.equal(surface.isFirstReleaseCatalogPlugin(id), false, id);
   }
   assert.equal(surface.isFirstReleaseCatalogPlugin("nginx"), true);
   assert.equal(surface.isFirstReleaseCatalogPlugin("postgresql"), true);
+  assert.equal(surface.isFirstReleaseCatalogPlugin("git"), true);
+  assert.equal(surface.isFirstReleaseCatalogPlugin("nodejs"), true);
+  assert.equal(surface.isFirstReleaseCatalogPlugin("golang"), true);
 });

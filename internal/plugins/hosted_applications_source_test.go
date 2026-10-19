@@ -55,10 +55,11 @@ func TestHostedAppArchiveExtractsBuildableGoProject(t *testing.T) {
 	archive := hostedTestTarGz(t, []*tar.Header{
 		{Name: "./", Typeflag: tar.TypeDir, Mode: 0755},
 		regularHostedHeader("./go.mod", "module example.test/app\n\ngo 1.22\n"),
+		regularHostedHeader("./go.sum", ""),
 		regularHostedHeader("./main.go", "package main\n"),
 		{Name: "cmd", Typeflag: tar.TypeDir, Mode: 0755},
 		regularHostedHeader("cmd/health.go", "package main\n"),
-	}, map[string]string{"./go.mod": "module example.test/app\n\ngo 1.22\n", "./main.go": "package main\n", "cmd/health.go": "package main\n"})
+	}, map[string]string{"./go.mod": "module example.test/app\n\ngo 1.22\n", "./go.sum": "", "./main.go": "package main\n", "cmd/health.go": "package main\n"})
 	destination := t.TempDir()
 	expanded, err := extractHostedAppArchive(context.Background(), destination, "go", bytes.NewReader(archive))
 	if err != nil || expanded == 0 {
@@ -69,6 +70,41 @@ func TestHostedAppArchiveExtractsBuildableGoProject(t *testing.T) {
 		if readErr != nil || string(actual) != expected {
 			t.Fatalf("extracted %s differs: %q err=%v", name, actual, readErr)
 		}
+	}
+}
+
+func TestHostedAppArchiveRequiresRuntimeLockfilesAndStartScripts(t *testing.T) {
+	nodeFiles := map[string]string{
+		"package.json":      "{\"name\":\"demo\",\"scripts\":{\"start\":\"node server.js\"}}\n",
+		"package-lock.json": "{\"name\":\"demo\",\"lockfileVersion\":3,\"packages\":{\"\":{\"name\":\"demo\"}}}\n",
+		"server.js":         "process.exit(0)\n",
+	}
+	for _, test := range []struct {
+		name      string
+		files     map[string]string
+		wantError string
+	}{
+		{name: "valid node", files: nodeFiles},
+		{name: "missing lockfile", files: map[string]string{"package.json": nodeFiles["package.json"]}, wantError: "application_lockfile_required"},
+		{name: "missing start", files: map[string]string{"package.json": "{\"name\":\"demo\"}", "package-lock.json": nodeFiles["package-lock.json"]}, wantError: "application_start_script_required"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var headers []*tar.Header
+			for name, body := range test.files {
+				headers = append(headers, regularHostedHeader(name, body))
+			}
+			archive := hostedTestTarGz(t, headers, test.files)
+			_, err := extractHostedAppArchive(context.Background(), t.TempDir(), "nodejs", bytes.NewReader(archive))
+			if test.wantError == "" && err != nil {
+				t.Fatalf("valid Node.js archive was rejected: %v", err)
+			}
+			if test.wantError != "" && core.ErrorCode(err) != test.wantError {
+				t.Fatalf("archive error = %q, want %q (err=%v)", core.ErrorCode(err), test.wantError, err)
+			}
+		})
+	}
+	if err := validateHostedAppProjectManifest(t.TempDir(), "go"); core.ErrorCode(err) != "application_manifest_required" {
+		t.Fatalf("Go project without go.mod/go.sum was not rejected: %v", err)
 	}
 }
 

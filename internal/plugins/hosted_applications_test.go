@@ -1,12 +1,19 @@
 package plugins
 
 import (
+	"context"
 	"encoding/json"
 	"go/parser"
 	"go/token"
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestHostedAppIdentityAndPaths(t *testing.T) {
@@ -25,10 +32,32 @@ func TestHostedAppIdentityAndPaths(t *testing.T) {
 	}
 }
 
+func TestHostedAppGitSourceMetadataRetainsOnlyPinnedPublicIdentity(t *testing.T) {
+	commit := strings.Repeat("a", 40)
+	if !validHostedAppGitSourceMetadata("https://github.com/owner/repo.git", "release/v1", commit) {
+		t.Fatal("valid public HTTPS Git source metadata was rejected")
+	}
+	if !validHostedAppGitSourceMetadata("ssh://git@github.com/owner/repo.git", "main", commit) {
+		t.Fatal("valid pinned SSH repository identity was rejected")
+	}
+	for _, source := range []struct{ repository, branch, commit string }{
+		{"https://user:token@example.com/owner/repo.git", "main", commit},
+		{"https://github.com/owner/repo.git", "main", "not-a-commit"},
+		{"https://github.com/owner/repo.git?token=secret", "main", commit},
+	} {
+		if validHostedAppGitSourceMetadata(source.repository, source.branch, source.commit) {
+			t.Fatalf("unsafe Git source metadata was accepted: %+v", source)
+		}
+	}
+}
+
 func TestHostedAppTemplatesEscapeNameAndProduceValidMetadata(t *testing.T) {
 	name := `hello"</script><script>alert(1)</script>`
 	input := hostedAppCreateInput{ID: "demo", Name: name, Runtime: "go"}
 	files := hostedAppTemplates(input)
+	if _, ok := files["go.sum"]; !ok {
+		t.Fatal("Go template is missing its required checksum file")
+	}
 	if _, err := parser.ParseFile(token.NewFileSet(), "main.go", files["main.go"], parser.AllErrors); err != nil {
 		t.Fatalf("Go template is not valid source: %v", err)
 	}
@@ -43,6 +72,7 @@ func TestHostedAppTemplatesEscapeNameAndProduceValidMetadata(t *testing.T) {
 	files = hostedAppTemplates(input)
 	var manifest struct {
 		Dependencies map[string]string `json:"dependencies"`
+		Scripts      map[string]string `json:"scripts"`
 	}
 	if err := json.Unmarshal(files["package.json"], &manifest); err != nil {
 		t.Fatalf("Next.js package manifest is invalid JSON: %v", err)
@@ -50,8 +80,36 @@ func TestHostedAppTemplatesEscapeNameAndProduceValidMetadata(t *testing.T) {
 	if manifest.Dependencies["next"] == "" || manifest.Dependencies["react"] == "" || manifest.Dependencies["react-dom"] == "" {
 		t.Fatal("Next.js template is missing runtime dependencies")
 	}
+	if manifest.Scripts["build"] == "" || manifest.Scripts["start"] == "" || len(files["package-lock.json"]) == 0 {
+		t.Fatal("Next.js template is missing its build/start scripts or locked dependency tree")
+	}
 	if strings.Contains(string(files["app/page.js"]), name) {
 		t.Fatal("Next.js template interpolated raw user input into JavaScript")
+	}
+
+	input.Runtime = "nodejs"
+	files = hostedAppTemplates(input)
+	if err := json.Unmarshal(files["package.json"], &manifest); err != nil {
+		t.Fatalf("Node.js package manifest is invalid JSON: %v", err)
+	}
+	if manifest.Scripts["start"] == "" || strings.Contains(string(files["server.js"]), name) {
+		t.Fatal("Node.js template must provide a start script and escape the application name")
+	}
+	var lock struct {
+		Name            string `json:"name"`
+		LockfileVersion int    `json:"lockfileVersion"`
+	}
+	if json.Unmarshal(files["package-lock.json"], &lock) != nil || lock.Name != input.ID || lock.LockfileVersion != 3 {
+		t.Fatal("Node.js template package lock does not match the application identity")
+	}
+	project := t.TempDir()
+	for filename, body := range files {
+		if err := os.WriteFile(filepath.Join(project, filename), body, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := validateHostedAppProjectManifest(project, "nodejs"); err != nil {
+		t.Fatalf("generated Node.js project does not satisfy its manifest contract: %v", err)
 	}
 }
 
@@ -70,5 +128,100 @@ func TestHostedAppSystemdUnitUsesOwnedLoopbackService(t *testing.T) {
 	}
 	if strings.Contains(unit, "User=root") || strings.Contains(unit, "0.0.0.0") {
 		t.Fatalf("generated app unit has unsafe service binding: %s", unit)
+	}
+}
+
+func TestHostedNodeAppSystemdUnitRunsDeclaredScriptWithLoopbackEnvironment(t *testing.T) {
+	receipt := hostedAppReceipt{
+		HostedApplication: HostedApplication{ID: "demo", Runtime: "nodejs", Port: 43127, User: "plapp_1234567890abcdef"},
+		RuntimeProgram:    "/usr/bin/npm",
+		ProjectDir:        filepath.Join(string(filepath.Separator), "srv", "powerlinux-apps", "demo", "project"),
+		DataDir:           filepath.Join(string(filepath.Separator), "srv", "powerlinux-apps", "demo", "data"),
+	}
+	unit := string(hostedAppUnit(receipt))
+	for _, expected := range []string{`ExecStart="/usr/bin/npm" "run" "start"`, "Environment=HOST=127.0.0.1", "Environment=HOSTNAME=127.0.0.1", "Environment=PORT=43127", "User=plapp_1234567890abcdef"} {
+		if !strings.Contains(unit, expected) {
+			t.Fatalf("generated Node.js unit does not include %q: %s", expected, unit)
+		}
+	}
+}
+
+func TestHostedAppNodeBuildSwapKeepsPreviousProjectForRollback(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("protected build rollback fixture requires root")
+	}
+	root := t.TempDir()
+	project := filepath.Join(root, "project")
+	stage := filepath.Join(root, ".project.build-fixture")
+	for directory, version := range map[string]string{project: "old", stage: "new"} {
+		if err := os.Mkdir(directory, 0750); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(directory, "version"), []byte(version), 0600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(directory, ".powerlinux-node-built"), []byte("built\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chown(directory, 65534, 65534); err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range []string{"version", ".powerlinux-node-built"} {
+			if err := os.Chown(filepath.Join(directory, name), 65534, 65534); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	receipt := hostedAppReceipt{
+		HostedApplication: HostedApplication{ID: "demo", Runtime: "nodejs"},
+		UID:               65534,
+		GID:               65534,
+		Root:              root,
+		ProjectDir:        project,
+	}
+	stageExists := true
+	executor := &PrivilegedExecutor{}
+	if err := executor.commitHostedAppBuild(receipt, stage, &stageExists); err != nil {
+		t.Fatalf("could not atomically switch to built project: %v", err)
+	}
+	if stageExists || !hostedAppProjectBuilt(project, "nodejs") {
+		t.Fatal("successful build was not installed at the active project path")
+	}
+	previous := filepath.Join(root, ".project.build.previous")
+	version, err := os.ReadFile(filepath.Join(previous, "version"))
+	if err != nil || string(version) != "old" {
+		t.Fatalf("previous project was not preserved: %q, %v", version, err)
+	}
+	if err := rollbackHostedNodeProject(receipt); err != nil {
+		t.Fatalf("project rollback failed: %v", err)
+	}
+	version, err = os.ReadFile(filepath.Join(project, "version"))
+	if err != nil || string(version) != "old" || !hostedAppProjectBuilt(project, "nodejs") {
+		t.Fatalf("rollback did not restore the previous built project: %q, %v", version, err)
+	}
+}
+
+func TestHostedAppReadyCheckUsesLoopbackUpstream(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+	_, portText, err := net.SplitHostPort(server.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := strconv.Atoi(portText)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err = waitHostedAppReady(ctx, port); err != nil {
+		t.Fatalf("loopback HTTP response was not recognized as ready: %v", err)
+	}
+	canceled, stop := context.WithCancel(context.Background())
+	stop()
+	if err = waitHostedAppReady(canceled, port); err == nil {
+		t.Fatal("a canceled application readiness check succeeded")
 	}
 }
