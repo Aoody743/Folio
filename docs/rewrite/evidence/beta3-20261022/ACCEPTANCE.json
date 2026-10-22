@@ -1,0 +1,57 @@
+{
+  "version": "1.0-beta3",
+  "commit": "0f5b6d6f453e0fb014dffbc0508fcf4807c86ccb",
+  "working_tree_dirty": false,
+  "go": "1.27.2",
+  "artifact": "folio-1.0-beta3-linux-amd64.tar.gz",
+  "artifact_sha256": "370239be119764e86066fdd537ce9255c63d515f07617f2ddd5a0406086c08e1",
+  "checks": {
+    "go_race_all_packages": true,
+    "go_vet": true,
+    "frontend_tests": {
+      "passed": 84
+    },
+    "frontend_typecheck_and_production_build": true,
+    "installer_tests": {
+      "total": 33,
+      "skipped": 2,
+      "skip_reason": "requires root-owned policy"
+    },
+    "mysql_driver_race": true,
+    "actual_package_smoke": true,
+    "real_chromium_rest_mcp": true,
+    "schedule_api_restart_and_final_outcomes": true
+  },
+  "ubuntu_fixture": {
+    "description": "Ubuntu 24.04.5 amd64 OCI-derived systemd QEMU overlay, kernel 6.8.0-147-generic, 2 vCPU / 2 GiB, TCG",
+    "full_clean_official_image_matrix": false,
+    "large_website_backup_restore_bytes": 2147487744,
+    "database_over_four_gib": "production writer and sparse-file metadata/offset fixture; not a native multi-GiB database dump",
+    "real_unix_backup_stream_integrity": true,
+    "upgrade": "RC7 -> beta3-qa1 -> beta3",
+    "api_agent_health_after_upgrade": true,
+    "changed_boot_id_and_exact_version_after_reboot": true
+  },
+  "unverified_or_deferred": [
+    "Debian/ARM acceptance",
+    "real DNS provider and public CA issuance",
+    "phpMyAdmin/pgAdmin native host workflows",
+    "full cold-install combinations and historic RC15 performance gates"
+  ],
+  "logs": {
+    "go-race.log": "b1dff0d97647bcd305628e6021e287464163c1a4566eb3e044a6a9ca6cf6bd0d",
+    "go-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "frontend-tests.log": "06bbf2ddd77c8d286dccabf8d4da1ba88f8299d6345de66f1b244053fc58fcca",
+    "installer-tests.log": "cd6202d38203b2cc9738384004f4cf935ee27f301bd254481b2d18d760de3b43",
+    "mysql-driver-tests.log": "81b0c41aea545f8bca11711a8e2a3647a1f190fb67c55022294cb99eb4db24c8",
+    "build-release.log": "e79aa7730bacbff04f1bf86fe0c809ec1070eb37e11cd27573af4f846d4c39d6",
+    "release-package-smoke.log": "2d0d9bea3ec34721d5f9b4b3c12a7c995a0e0cf9fa655f8302fa1acb505c62af",
+    "release-browser.log": "5fe41e2214c731a59c22a0b35b7f7e2a0b75e36ed3c880bd73547c174ebb2654",
+    "release-beta3-browser.log": "01ba32a854be084a4390926cdc6309b4e5cceffcac812318dd85b65daa3099f1",
+    "vm/large-site.log": "465f3d866f0ad4d7b4b6f1afdf3f948e7eccdc773ba73aed9e29a4a5846de6fb",
+    "vm/plugin-regressions.log": "b745fc1283761fb0d911a52971375dc2e3165d1d720fe9c00897b215a38fa16c",
+    "vm/release-upgrade.log": "f5529d2e888377419f801776ef49fe050a837e57be02a37709f1dffbe11fc656",
+    "vm/release-health.log": "342c92ede34e9e48ae351e998abac99d0247a7392339493fbe87f637628a60a6",
+    "vm/release-reboot.log": "6516c0fa7e04ccb8b48b3d7eb399a57d1ab6852db275369374db2ef3f64778b1"
+  }
+}
