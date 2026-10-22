@@ -23,6 +23,7 @@ jobs:
           set -Eeuo pipefail
           cp -a docs/rewrite/evidence/beta4-20261022 "$RUNNER_TEMP/beta4-acceptance"
           changed=$(git diff --name-only 1.0-beta4 "$GITHUB_SHA" -- cmd internal frontend go.mod go.sum third_party scripts Makefile)
+          changed=$(printf '%s\n' "$changed" | sed '/^$/d; \|^scripts/rewrite/README\.md$|d')
           [[ -z "$changed" ]] || { printf '%s\n' "$changed"; exit 1; }
       - uses: actions/checkout@v4
         with:

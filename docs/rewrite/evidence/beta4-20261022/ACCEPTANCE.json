@@ -1,0 +1,64 @@
+{
+  "version": "1.0-beta4",
+  "commit": "def554967dae831184ee46d0ffccfbe393de43e6",
+  "working_tree_dirty": false,
+  "artifact": "folio-1.0-beta4-linux-amd64.tar.gz",
+  "artifact_sha256": "c47c8d64ca4e7209f8c1f8f8a19a7bd72afc3167da83e6d11b245c90ede16d80",
+  "platform": "linux-amd64",
+  "runtime_validation": "Ubuntu 24.04.5 LTS / systemd / QEMU OCI-derived guest, 2 vCPU, 2 GiB",
+  "checks": {
+    "frontend": {
+      "passed": 89,
+      "failed": 0
+    },
+    "typescript": true,
+    "next_static_build": true,
+    "go_race": true,
+    "go_vet": true,
+    "mysql_driver_race": true,
+    "installer": {
+      "total": 39,
+      "passed": 37,
+      "skipped": 2,
+      "failed": 0,
+      "skipped_reason": "root-only ownership fixtures; production systemd upgrade separately exercised in guest"
+    },
+    "installer_generation_consistency": true,
+    "package_smoke": true,
+    "real_browser": {
+      "api_mocked": false,
+      "languages": [
+        "zh-CN",
+        "en"
+      ],
+      "widths": [
+        1440,
+        768,
+        390,
+        320
+      ],
+      "themes": 5,
+      "live_language_switch_preserves_input": true,
+      "user_content_unchanged": true,
+      "global_action_search": true,
+      "notes_mcp_conflict_offline_drafts": true,
+      "schedule_outcomes": true
+    },
+    "production_guest": {
+      "beta3_to_final_beta4": true,
+      "api_and_agent_healthy": true,
+      "server_config_preserved": true,
+      "agent_policy_preserved": true,
+      "retained_data_preserved": true,
+      "reboot_changed_boot_id": true,
+      "post_reboot_health": true,
+      "qa_upgrade_and_rollback_to_beta3": true
+    }
+  },
+  "scope_limits": [
+    "Debian/ARM runtime acceptance not expanded",
+    "Real DNS provider and public CA acceptance not expanded",
+    "External service diagnostics and user content remain verbatim"
+  ],
+  "evidence": "verification-logs.tar.gz"
+}
