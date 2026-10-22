@@ -38,7 +38,9 @@ jobs:
       - name: Frozen dependency installation
         run: make rewrite-deps
       - name: Go, UI and installer tests
-        run: make rewrite-test
+        run: |
+          umask 077
+          make rewrite-test
       - name: Static UI and two Linux architectures
         run: make rewrite-build REWRITE_VERSION=dev-${GITHUB_SHA::12} REWRITE_BUILD_FLAGS=--skip-install
       - name: Verify artifact checksum manifest

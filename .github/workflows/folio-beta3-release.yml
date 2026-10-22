@@ -37,6 +37,7 @@ jobs:
       - name: Verify source, UI and installer
         run: |
           make rewrite-deps
+          umask 077
           make rewrite-test
 
       - name: Build and verify the tagged beta3 package
