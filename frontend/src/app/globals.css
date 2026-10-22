@@ -2276,3 +2276,9 @@ html[lang="en"] .metric-value {
 .software-empty {
   grid-column: 1 / -1;
 }
+.setup-resume > span {
+  min-width: 0;
+}
+.setup-resume > button {
+  flex-shrink: 0;
+}

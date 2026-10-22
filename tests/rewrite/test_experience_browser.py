@@ -54,7 +54,7 @@ def main():
             dialog = page.get_by_role('dialog')
             dialog.get_by_label(re.compile('^Title')).fill('我的网站 · customer data')
             dialog.get_by_label(re.compile('^Text|^Body|^Content')).fill('原文 stays exactly as typed')
-            dialog.get_by_role('button', name='Create notes', exact=True).click()
+            dialog.get_by_role('button', name='Create note', exact=True).click()
             expect(dialog).not_to_be_visible()
             page.evaluate('window.experienceSentinel = "same-document"')
             page.get_by_label('语言 / Language', exact=True).select_option('zh-CN')
