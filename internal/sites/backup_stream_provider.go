@@ -28,7 +28,7 @@ type backupPreparedWriter interface {
 func backupDownloadSchema(chunk bool) map[string]any {
 	fields := map[string]any{"id": idField(), "backup_id": idField()}
 	if chunk {
-		fields["offset"] = number(0, int(maxWebsiteBackupBytes))
+		fields["offset"] = map[string]any{"type": "integer", "minimum": 0}
 		fields["length"] = number(1, int(maxWebsiteBackupChunk))
 	}
 	return object(fields, "id", "backup_id")
@@ -39,7 +39,7 @@ func (p *Provider) backupDownloadResources(_ context.Context, actor core.Actor, 
 	if err := strict(raw, &in); err != nil {
 		return nil, err
 	}
-	if !safeID.MatchString(in.ID) || len(in.ID) > 75 || !safeID.MatchString(in.BackupID) || in.Offset < 0 || in.Offset > maxWebsiteBackupBytes || in.Length < 0 || in.Length > maxWebsiteBackupChunk {
+	if !safeID.MatchString(in.ID) || len(in.ID) > 75 || !safeID.MatchString(in.BackupID) || in.Offset < 0 || in.Length < 0 || in.Length > maxWebsiteBackupChunk {
 		return nil, invalid("Invalid website archive descriptor")
 	}
 	if !p.deps.Authorize(actor, "sites:backup", Resource(in.ID)) || !p.deps.Authorize(actor, "files:read", "fs:site-"+in.ID) {
@@ -123,7 +123,7 @@ func (p *Provider) executeBackupDownload(ctx context.Context, actor core.Actor, 
 	if err = p.call(lease, actor, "site_backup_stat", request{ID: in.ID, BackupID: in.BackupID}, &backup); err != nil {
 		return result, err
 	}
-	if backup.ID != in.BackupID || backup.SiteID != in.ID || backup.IncludesTLS || backup.Size < 1 || backup.Size > maxWebsiteBackupBytes {
+	if backup.ID != in.BackupID || backup.SiteID != in.ID || backup.IncludesTLS || backup.Size < 1 {
 		return result, failure("artifact_invalid", "Verified website archive does not match its resource", 412)
 	}
 	result = core.ActionResult{Resources: resources, AuditSummary: map[string]any{"backup_id": backup.ID, "bytes": backup.Size, "sha256": backup.SHA256}}

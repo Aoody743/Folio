@@ -24,6 +24,7 @@ type HostedApplication = {
   running: boolean;
   upstream: string;
   updated_at: string;
+  health_check?: { path?: string; status_codes?: number[]; timeout_seconds?: number };
   source_repository?: string;
   source_branch?: string;
   source_commit?: string;
@@ -307,6 +308,17 @@ export function HostedApplications({
                         : app.status
                   }
                 />
+                {allowed("hosted_apps_control") && app.status !== "retained" && app.status !== "purging" && (
+                  <HostedHealthEditor
+                    key={`${app.id}:${app.revision}`}
+                    app={app}
+                    busy={busy}
+                    onSave={(health_check) => void submitTask("hosted_apps_control", {
+                      id: app.id, expected_revision: app.revision,
+                      command: "health", health_check,
+                    })}
+                  />
+                )}
                 <div className="button-row">
               {allowed("hosted_apps_source_upload") && app.status !== "retained" && app.status !== "purging" && (
                     <>
@@ -554,4 +566,29 @@ export function HostedApplications({
       )}
     </Card>
   );
+}
+
+function HostedHealthEditor({app, busy, onSave}: {
+  app: HostedApplication;
+  busy: boolean;
+  onSave: (check: NonNullable<HostedApplication["health_check"]>) => void;
+}) {
+  const [path, setPath] = useState(app.health_check?.path || "/");
+  const [codes, setCodes] = useState(app.health_check?.status_codes?.join(",") || "");
+  const [seconds, setSeconds] = useState(String(app.health_check?.timeout_seconds || 20));
+  const statuses = codes.trim() ? codes.split(",").map((value) => Number(value.trim())) : [];
+  const timeout = Number(seconds);
+  const valid = path.startsWith("/") && !path.startsWith("//") &&
+    Number.isInteger(timeout) && timeout >= 1 && timeout <= 300 &&
+    statuses.length <= 20 && statuses.every((code) => Number.isInteger(code) && code >= 200 && code <= 499);
+  return <details>
+    <summary>启动健康检查</summary>
+    <p className="muted">默认检查 /，HTTP 2xx/3xx 通过；5xx 会等待重试，超时后报告启动失败。</p>
+    <TextInput label="检查路径" value={path} onChange={setPath} />
+    <TextInput label="预期状态码（逗号分隔，留空为 2xx/3xx）" value={codes} onChange={setCodes} />
+    <TextInput label="启动等待时间（1–300 秒）" value={seconds} onChange={setSeconds} />
+    <Button label="保存健康检查" isDisabled={busy || !valid} onClick={() => onSave({
+      path, timeout_seconds: timeout, ...(statuses.length ? {status_codes: statuses} : {}),
+    })} />
+  </details>;
 }

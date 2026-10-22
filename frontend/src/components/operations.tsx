@@ -6,6 +6,7 @@ import { Capability, fullDate, list } from "@/lib/api";
 import { useResource } from "@/lib/resource-hook";
 import { Page } from "@/lib/resources";
 import { ActionBrowser, ActionForm } from "./actions";
+import { TaskResult } from "./task-result";
 import { SystemChangeWorkflow } from "./system-change-workflow";
 import {
   ResourceActions,
@@ -31,6 +32,8 @@ const descriptions: Record<string, string> = {
   next_run_at: "下次执行",
   last_run_at: "上次执行",
   last_error: "最近错误",
+  last_run_status: "最近结果",
+  last_task_id: "关联任务",
   kind: "类型",
   unit: "服务单元",
   active_state: "运行状态",
@@ -317,7 +320,7 @@ export function OperationsView({
                       ? ["unit", "active_state", "ownership"]
                       : activeTab === "notifications"
                         ? ["kind"]
-                        : ["mode", "action", "enabled", "next_run_at"]
+                        : ["mode", "action", "enabled", "next_run_at", "last_run_status"]
                     ).map((k) => (
                       <th key={k}>{descriptions[k] ?? k}</th>
                     ))}
@@ -343,10 +346,10 @@ export function OperationsView({
                         ? ["unit", "active_state", "ownership"]
                         : activeTab === "notifications"
                           ? ["kind"]
-                          : ["mode", "action", "enabled", "next_run_at"]
+                          : ["mode", "action", "enabled", "next_run_at", "last_run_status"]
                       ).map((k) => (
                         <td key={k}>
-                          {k === "active_state" ? (
+                          {k === "active_state" || k === "last_run_status" ? (
                             <State value={row[k] as string} />
                           ) : (
                             cell(k, row[k])
@@ -403,6 +406,9 @@ export function OperationsView({
           <div className="resource-summary">
             <code>修订 {current.revision ?? "未提供"}</code>
           </div>
+          {activeTab === "schedules" && has("schedules_history") && open && (
+            <ScheduleHistory id={current.id} capabilities={capabilities} />
+          )}
           <ResourceActions
             capabilities={capabilities}
             names={(name) =>
@@ -440,4 +446,20 @@ export function OperationsView({
       </details>
     </div>
   );
+}
+
+function ScheduleHistory({id, capabilities}: {id: string; capabilities: Capability[]}) {
+  type Run = {id: string; started_at: string; status: string; task_id?: string; error_code?: string; notification_state?: string};
+  const history = useResource<Run[]>("schedules_history", {id}, true, 3000);
+  const [taskID, setTaskID] = useState<string>();
+  return <section className="stack"><h3>最近执行</h3>
+    {history.error && <div className="notice danger" role="alert">{history.error}</div>}
+    {history.data?.map((run) => <div key={run.id} className="resource-summary">
+      <span>{fullDate(run.started_at)}</span><State value={run.status} />
+      {run.error_code && <code>{run.error_code}</code>}
+      {run.notification_state && <span>失败通知：{run.notification_state === "submitted" ? "已提交" : run.notification_state === "failed" ? "发送失败" : "发送中或待检查"}</span>}
+      {run.task_id && capabilities.some((c) => c.name === "tasks_get") && <Button label="查看关联任务" onClick={() => setTaskID(run.task_id)} />}
+    </div>)}
+    {taskID && <TaskResult key={taskID} submitted={{task_id: taskID}} capabilities={capabilities} onFinished={() => void history.reload()} />}
+  </section>;
 }

@@ -270,7 +270,7 @@ func TestHostedAppNodeBuildSwapKeepsPreviousProjectForRollback(t *testing.T) {
 
 func TestHostedAppReadyCheckUsesLoopbackUpstream(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusServiceUnavailable)
+		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 	_, portText, err := net.SplitHostPort(server.Listener.Addr().String())
@@ -290,5 +290,31 @@ func TestHostedAppReadyCheckUsesLoopbackUpstream(t *testing.T) {
 	stop()
 	if err = waitHostedAppReady(canceled, port); err == nil {
 		t.Fatal("a canceled application readiness check succeeded")
+	}
+}
+
+func TestHostedAppHealthRejectsFailuresAndChecksConfiguredPath(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ready" {
+			w.WriteHeader(204)
+		} else {
+			w.WriteHeader(503)
+		}
+	}))
+	defer server.Close()
+	_, portText, _ := net.SplitHostPort(server.Listener.Addr().String())
+	port, _ := strconv.Atoi(portText)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+	if err := waitHostedAppReady(ctx, port); err == nil {
+		t.Fatal("503 passed health check")
+	}
+	if err := waitHostedAppHealthy(context.Background(), port, HostedAppHealthCheck{Path: "/ready", StatusCodes: []int{204}, TimeoutSeconds: 1}); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{"//example.test/", "http://example.test/", "/ready\r\nHost: bad"} {
+		if validateHostedAppHealth(HostedAppHealthCheck{Path: path}) == nil {
+			t.Fatalf("unsafe path accepted: %q", path)
+		}
 	}
 }

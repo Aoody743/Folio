@@ -178,7 +178,7 @@ func parseBackupRange(header string, size int64) (int64, int64, error) {
 	invalidRange := func() (int64, int64, error) {
 		return 0, 0, failure("range_not_satisfiable", "One valid bounded byte range is required", 416)
 	}
-	if size < 1 || size > maxWebsiteBackupBytes || len(header) > 128 || !strings.HasPrefix(header, "bytes=") || strings.Contains(header, ",") {
+	if size < 1 || len(header) > 128 || !strings.HasPrefix(header, "bytes=") || strings.Contains(header, ",") {
 		return invalidRange()
 	}
 	startText, endText, ok := strings.Cut(strings.TrimPrefix(header, "bytes="), "-")

@@ -31,6 +31,7 @@ type Provider struct {
 	cancel          context.CancelFunc
 	wg              sync.WaitGroup
 	mu              sync.Mutex
+	scheduleMu      sync.Mutex
 	scheduleTargets map[string]bool
 	networkPrevious map[string]NetworkUsage
 	networkAt       time.Time
@@ -212,6 +213,7 @@ func (p *Provider) background() {
 		case <-p.ctx.Done():
 			return
 		case now := <-tick.C:
+			p.reconcileSchedules(p.ctx)
 			p.tickSchedules(p.ctx, now)
 			if !now.Before(nextSample) && p.options.Status != nil {
 				_ = p.sample(p.ctx, now)

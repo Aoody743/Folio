@@ -14,7 +14,6 @@ import (
 	"github.com/Aoody743/PowerLinux/internal/agent"
 )
 
-const maxWebsiteBackupBytes int64 = 3 << 30 // gzip overhead above the 2-GiB input bound
 const maxWebsiteBackupChunk int64 = 32 << 10
 
 type backupFileStamp struct {
@@ -68,7 +67,7 @@ func backupStamp(file *os.File) (backupFileStamp, error) {
 
 func validateBackupArtifact(in request) error {
 	if !safeID.MatchString(in.ID) || len(in.ID) > 75 || !safeID.MatchString(in.BackupID) || len(in.BackupID) > 96 ||
-		in.ArtifactOffset < 0 || in.ArtifactOffset > maxWebsiteBackupBytes || in.ArtifactLength < 0 || in.ArtifactLength > maxWebsiteBackupBytes ||
+		in.ArtifactOffset < 0 || in.ArtifactLength < 0 ||
 		in.ArtifactOffset != 0 && in.ArtifactLength == 0 {
 		return invalid("Invalid bounded website archive descriptor")
 	}
@@ -87,7 +86,7 @@ func (e *AgentExecutor) openVerifiedBackup(ctx context.Context, in request) (*os
 	}
 	backup := metadata.Backup
 	checksum, err := hex.DecodeString(backup.SHA256)
-	if backup.ID != in.BackupID || backup.SiteID != in.ID || backup.Size < 1 || backup.Size > maxWebsiteBackupBytes ||
+	if backup.ID != in.BackupID || backup.SiteID != in.ID || backup.Size < 1 ||
 		backup.IncludesTLS || err != nil || len(checksum) != sha256.Size {
 		return nil, backup, backupFileStamp{}, failure("artifact_invalid", "Website archive receipt is invalid or includes unreviewed private material", 412)
 	}

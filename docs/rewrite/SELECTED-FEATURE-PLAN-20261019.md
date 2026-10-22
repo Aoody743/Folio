@@ -1,5 +1,7 @@
 # phpMyAdmin/pgAdmin、ACME/DNS 与应用入口适配计划
 
+> 2026-10-22：当前发行与验收状态统一见 [CURRENT-RELEASE](CURRENT-RELEASE.md)。本文件保留各历史阶段的范围与证据；旧版“当前／未实现”表述不覆盖新版实现状态。
+
 更新时间：2026-10-20。本计划只覆盖 phpMyAdmin、pgAdmin、ACME/DNS，以及托管应用的 Git、Node.js、Go 入口。它是后续适配与验收计划，不把现有未验收代码改记为完成，也不恢复 MongoDB、FTP 或其他暂缓插件的工作。
 
 ## 执行状态

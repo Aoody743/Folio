@@ -1,3 +1,5 @@
+Current release and version-specific acceptance: [Folio beta3](../../docs/rewrite/CURRENT-RELEASE.md). Older RC and beta records retain their original scope.
+
 # Folio rewrite build and installation
 
 These scripts operate the new Go/Next.js runtime. They never invoke the legacy

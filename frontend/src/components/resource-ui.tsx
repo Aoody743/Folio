@@ -8,6 +8,9 @@ import { ActionContext, ActionForm, References } from "./actions";
 export function State({ value, reason }: { value?: string; reason?: string }) {
   const labels: Record<string, string> = {
     active: "已启用",
+    submitted: "已提交，等待结果",
+    skipped: "已跳过",
+    observation_denied: "结果读取权限已失效",
     deleted: "已删除",
     creating: "创建中",
     deleting: "删除中",

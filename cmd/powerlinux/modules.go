@@ -102,7 +102,7 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 			return core.SystemStatus{}, err
 		}
 		return service.StatusSnapshot(), nil
-	}, AllowedScheduleActions: []string{"files_backup", "files_hash", "sites_backup_create", "certificates_acme_renew", "notifications_send", "scripts_run"}})
+	}, AllowedScheduleActions: []string{"files_backup", "files_hash", "sites_backup_create", "managed_database_backup", "certificates_acme_renew", "notifications_send", "scripts_run"}})
 	if err != nil {
 		return nil, err
 	}

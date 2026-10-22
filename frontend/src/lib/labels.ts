@@ -1,5 +1,12 @@
 import type { Capability } from "./api";
 const fields: Record<string, string> = {
+  overlap_policy: "上次任务未结束时",
+  misfire_policy: "错过计划执行时",
+  misfire_grace_seconds: "允许延迟的秒数",
+  failure_channel_id: "失败通知渠道标识（可选）",
+  health_check: "启动健康检查",
+  status_codes: "预期HTTP状态码",
+
   id: "资源标识",
   root: "资源目录",
   path: "相对路径",
@@ -567,6 +574,11 @@ export const actionLabel = (capability: Capability) =>
     ? capability.description
     : (actions[capability.name] ?? capability.description ?? capability.name);
 const choices: Record<string, string> = {
+  skip: "跳过本次",
+  allow: "允许重叠执行",
+  run_once: "补跑一次",
+  health: "配置启动健康检查",
+
   install: "安装",
   upgrade: "升级",
   uninstall: "卸载",

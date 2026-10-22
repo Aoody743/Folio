@@ -1,5 +1,7 @@
 # Folio 首发上线前差距清单
 
+> 2026-10-22：当前发行与验收状态统一见 [CURRENT-RELEASE](CURRENT-RELEASE.md)。本文件保留各历史阶段的范围与证据；旧版“当前／未实现”表述不覆盖新版实现状态。
+
 更新：2026-10-19（Asia/Singapore；本轮执行日志为 10-18 UTC）。当前状态以本节及 [RC15 证据](evidence/release-gates-rc15-20261019.json)为准，下方 RC7 及更早检查点均为历史记录。
 
 ## 当前结论

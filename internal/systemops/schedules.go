@@ -12,7 +12,16 @@ import (
 	"github.com/Aoody743/PowerLinux/internal/core"
 )
 
+type SchedulePolicy struct {
+	OverlapPolicy       string `json:"overlap_policy,omitempty"`
+	MisfirePolicy       string `json:"misfire_policy,omitempty"`
+	MisfireGraceSeconds int    `json:"misfire_grace_seconds,omitempty"`
+	FailureChannelID    string `json:"failure_channel_id,omitempty"`
+}
+
 type Schedule struct {
+	SchedulePolicy
+
 	ID              string          `json:"id"`
 	Name            string          `json:"name"`
 	Mode            string          `json:"mode"`
@@ -28,8 +37,11 @@ type Schedule struct {
 	Revision        int64           `json:"revision"`
 	LastRunAt       *time.Time      `json:"last_run_at,omitempty"`
 	LastError       string          `json:"last_error,omitempty"`
+	LastRunStatus   string          `json:"last_run_status,omitempty"`
+	LastTaskID      string          `json:"last_task_id,omitempty"`
 }
 type scheduleInput struct {
+	SchedulePolicy
 	ID               string          `json:"id,omitempty"`
 	ExpectedRevision int64           `json:"expected_revision,omitempty"`
 	Name             string          `json:"name"`
@@ -43,6 +55,11 @@ type scheduleInput struct {
 	Enabled          bool            `json:"enabled"`
 }
 type ScheduleRun struct {
+	Actor              core.Actor `json:"actor"`
+	TaskID             string     `json:"task_id,omitempty"`
+	NotificationState  string     `json:"notification_state,omitempty"`
+	NotificationTaskID string     `json:"notification_task_id,omitempty"`
+
 	ID         string    `json:"id"`
 	ScheduleID string    `json:"schedule_id"`
 	StartedAt  time.Time `json:"started_at"`
@@ -53,7 +70,7 @@ type ScheduleRun struct {
 }
 
 func scheduleFields() map[string]any {
-	return map[string]any{"id": text(96), "expected_revision": integer(1, 1<<30), "name": text(160), "mode": enum("interval", "cron", "once"), "cron": text(128), "timezone": text(128), "interval_seconds": integer(15, 365*86400), "run_at": text(64), "action": text(96), "input": map[string]any{"type": "object", "additionalProperties": true}, "enabled": boolean()}
+	return map[string]any{"id": text(96), "expected_revision": integer(1, 1<<30), "name": text(160), "mode": enum("interval", "cron", "once"), "cron": text(128), "timezone": text(128), "interval_seconds": integer(15, 365*86400), "run_at": text(64), "action": text(96), "input": map[string]any{"type": "object", "additionalProperties": true}, "enabled": boolean(), "overlap_policy": enum("skip", "allow"), "misfire_policy": enum("run_once", "skip"), "misfire_grace_seconds": integer(1, 86400), "failure_channel_id": text(96)}
 }
 func (p *Provider) scheduleResources(ctx context.Context, _ core.Actor, raw json.RawMessage) ([]string, error) {
 	var input struct {
@@ -69,12 +86,20 @@ func (p *Provider) scheduleResources(ctx context.Context, _ core.Actor, raw json
 }
 func (p *Provider) scheduleBindings() []core.Binding {
 	createFields := scheduleFields()
+	targets := make([]string, 0, len(p.scheduleTargets))
+	for name := range p.scheduleTargets {
+		targets = append(targets, name)
+	}
+	sort.Strings(targets)
+	createFields["action"] = enum(targets...)
+	updateFields := scheduleFields()
+	updateFields["action"] = enum(targets...)
 	delete(createFields, "id")
 	delete(createFields, "expected_revision")
 	bindings := []core.Binding{
 		p.bind("schedules_list", "List actual persisted schedules authorized to this identity", "schedules:read", true, object(map[string]any{}), func(context.Context, core.Actor, json.RawMessage) ([]string, error) { return nil, nil }, p.listSchedules),
 		p.bind("schedules_create", "Create a durable named-action schedule without modifying root cron", "schedules:write", false, object(createFields, "name", "mode", "timezone", "action", "input", "enabled"), p.scheduleResources, p.saveSchedule),
-		p.bind("schedules_update", "Update a schedule using its expected revision", "schedules:write", false, object(scheduleFields(), "id", "expected_revision", "name", "mode", "timezone", "action", "input", "enabled"), p.scheduleResources, p.saveSchedule),
+		p.bind("schedules_update", "Update a schedule using its expected revision", "schedules:write", false, object(updateFields, "id", "expected_revision", "name", "mode", "timezone", "action", "input", "enabled"), p.scheduleResources, p.saveSchedule),
 	}
 	for _, spec := range []struct {
 		name, scope string
@@ -175,8 +200,28 @@ func (p *Provider) saveSchedule(ctx context.Context, a core.Actor, raw json.RawM
 	if err != nil {
 		return core.ActionResult{}, invalid("Unknown IANA timezone")
 	}
+	if in.OverlapPolicy == "" {
+		in.OverlapPolicy = "skip"
+	}
+	if in.MisfirePolicy == "" {
+		in.MisfirePolicy = "run_once"
+	}
+	if in.MisfireGraceSeconds == 0 {
+		in.MisfireGraceSeconds = 60
+	}
+	if in.OverlapPolicy != "skip" && in.OverlapPolicy != "allow" || in.MisfirePolicy != "run_once" && in.MisfirePolicy != "skip" || in.MisfireGraceSeconds < 1 || in.MisfireGraceSeconds > 86400 {
+		return core.ActionResult{}, invalid("Invalid schedule execution policy")
+	}
+	if in.FailureChannelID != "" {
+		if !p.deps.Authorize(a, "notifications:write", "notification:"+in.FailureChannelID) {
+			return core.ActionResult{}, denied()
+		}
+		if _, err := p.loadChannel(ctx, in.FailureChannelID); err != nil {
+			return core.ActionResult{}, err
+		}
+	}
 	now := time.Now().UTC()
-	schedule := Schedule{ID: in.ID, Name: in.Name, Mode: in.Mode, Cron: in.Cron, Timezone: in.Timezone, IntervalSeconds: in.IntervalSeconds, RunAt: in.RunAt, Action: in.Action, Input: in.Input, Enabled: in.Enabled, CreatedBy: a.Public()}
+	schedule := Schedule{SchedulePolicy: in.SchedulePolicy, ID: in.ID, Name: in.Name, Mode: in.Mode, Cron: in.Cron, Timezone: in.Timezone, IntervalSeconds: in.IntervalSeconds, RunAt: in.RunAt, Action: in.Action, Input: in.Input, Enabled: in.Enabled, CreatedBy: a.Public()}
 	switch in.Mode {
 	case "interval":
 		if in.IntervalSeconds < 15 || in.IntervalSeconds > 365*86400 || in.Cron != "" || in.RunAt != "" {
@@ -239,6 +284,9 @@ func (p *Provider) saveSchedule(ctx context.Context, a core.Actor, raw json.RawM
 			schedule.CreatedBy = old.CreatedBy
 		}
 		schedule.LastRunAt = old.LastRunAt
+		schedule.LastRunStatus = old.LastRunStatus
+		schedule.LastTaskID = old.LastTaskID
+		schedule.LastError = old.LastError
 	}
 	schedule.Revision = in.ExpectedRevision + 1
 	value, _ := json.Marshal(schedule)
@@ -289,6 +337,14 @@ func (p *Provider) runSchedule(ctx context.Context, schedule Schedule, now time.
 	return p.runScheduleAs(ctx, schedule, now, manual, nil)
 }
 func (p *Provider) runScheduleAs(ctx context.Context, schedule Schedule, now time.Time, manual bool, caller *core.Actor) (ScheduleRun, error) {
+	p.scheduleMu.Lock()
+	defer p.scheduleMu.Unlock()
+	current, loadErr := p.loadSchedule(ctx, schedule.ID)
+	if loadErr != nil {
+		return ScheduleRun{}, loadErr
+	}
+	schedule = current
+
 	identity := schedule.CreatedBy
 	if caller != nil {
 		identity = *caller
@@ -306,11 +362,40 @@ func (p *Provider) runScheduleAs(ctx context.Context, schedule Schedule, now tim
 	if !p.deps.Authorize(actor, "schedules:write", "schedule:"+schedule.ID) {
 		return ScheduleRun{}, denied()
 	}
+	if !manual && (!schedule.Enabled || schedule.NextRunAt.After(now)) {
+		return ScheduleRun{}, nil
+	}
 	id, err := newID("run_")
 	if err != nil {
 		return ScheduleRun{}, err
 	}
-	run := ScheduleRun{ID: id, ScheduleID: schedule.ID, StartedAt: now, Status: "running"}
+	run := ScheduleRun{ID: id, ScheduleID: schedule.ID, StartedAt: now, Status: "running", Actor: actor.Public()}
+	runs, err := scheduleRuns(ctx, p.deps.State, schedule.ID)
+	if err != nil {
+		return run, err
+	}
+	active := 0
+	for _, existing := range runs {
+		if existing.Status == "running" || existing.Status == "submitted" || existing.Status == "observation_denied" {
+			active++
+		}
+	}
+	if active >= 100 || active > 0 && schedule.OverlapPolicy != "allow" {
+		run.Status = "skipped"
+		run.ErrorCode = "overlap_skipped"
+	}
+	grace := schedule.MisfireGraceSeconds
+	if grace == 0 {
+		grace = 60
+	}
+	if !manual && schedule.MisfirePolicy == "skip" && now.Sub(schedule.NextRunAt) > time.Duration(grace)*time.Second {
+		run.Status = "skipped"
+		run.ErrorCode = "misfire_skipped"
+	}
+	if manual && run.Status == "skipped" {
+		return run, conflict("A previous schedule task is still active")
+	}
+
 	if !manual {
 		schedule.LastRunAt = &now
 		switch schedule.Mode {
@@ -347,6 +432,14 @@ func (p *Provider) runScheduleAs(ctx context.Context, schedule Schedule, now tim
 	if err != nil {
 		return run, err
 	}
+	if run.Status == "skipped" {
+		run.FinishedAt = now
+		err = p.deps.State.Transaction(ctx, func(store core.MetadataStore) error { return saveScheduleRun(ctx, store, run) })
+		if err == nil {
+			p.recordScheduleOutcome(ctx, run)
+		}
+		return run, err
+	}
 	result, err := p.deps.Dispatch(ctx, actor, schedule.Action, schedule.Input)
 	run.FinishedAt = time.Now().UTC()
 	if err != nil {
@@ -354,8 +447,10 @@ func (p *Provider) runScheduleAs(ctx context.Context, schedule Schedule, now tim
 		run.ErrorCode = core.ErrorCode(err)
 	} else {
 		run.Status = "completed"
-		if object, ok := result.(map[string]any); ok && (object["task_id"] != nil || object["operation_id"] != nil) {
+		run.TaskID = scheduleTaskID(result)
+		if run.TaskID != "" {
 			run.Status = "submitted"
+			run.FinishedAt = time.Time{}
 		}
 		run.Result = result
 		bounded, _ := json.Marshal(result)
@@ -367,6 +462,12 @@ func (p *Provider) runScheduleAs(ctx context.Context, schedule Schedule, now tim
 	defer cancel()
 	if storeErr := p.deps.State.Transaction(storeCtx, func(store core.MetadataStore) error { return saveScheduleRun(storeCtx, store, run) }); storeErr != nil {
 		return run, storeErr
+	}
+	if run.Status != "submitted" {
+		p.recordScheduleOutcome(storeCtx, run)
+	}
+	if run.Status == "failed" {
+		p.notifyScheduleFailure(storeCtx, schedule, &run)
 	}
 	return run, err
 }
@@ -399,8 +500,18 @@ func saveScheduleRun(ctx context.Context, store core.MetadataStore, run Schedule
 	if !found {
 		runs = append(runs, run)
 	}
-	if len(runs) > 100 {
-		runs = runs[len(runs)-100:]
+	for len(runs) > 100 {
+		remove := -1
+		for i, r := range runs {
+			if r.Status != "running" && r.Status != "submitted" && r.Status != "observation_denied" {
+				remove = i
+				break
+			}
+		}
+		if remove < 0 {
+			break
+		}
+		runs = append(runs[:remove], runs[remove+1:]...)
 	}
 	value, _ := json.Marshal(runs)
 	return store.Save(ctx, "schedule_runs", run.ScheduleID, value)

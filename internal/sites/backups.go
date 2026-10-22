@@ -147,7 +147,6 @@ func (e *AgentExecutor) backup(ctx context.Context, in request) (backup Backup, 
 		return backup, err
 	}
 	defer root.Close()
-	var total int64
 	entries := 0
 	directories := map[string]fs.FileInfo{}
 	err = fs.WalkDir(root.FS(), ".", func(path string, entry fs.DirEntry, walkErr error) error {
@@ -196,10 +195,6 @@ func (e *AgentExecutor) backup(ctx context.Context, in request) (backup Backup, 
 		opened, err := source.Stat()
 		if err != nil || !os.SameFile(info, opened) || !opened.Mode().IsRegular() {
 			return failure("source_changed", "Website file changed during backup", 409)
-		}
-		total += opened.Size()
-		if total > 2<<30 {
-			return failure("too_large", "Website backup exceeds its two-GiB uncompressed limit", 413)
 		}
 		if err = writer.WriteHeader(header); err != nil {
 			return err
@@ -349,7 +344,6 @@ func (e *AgentExecutor) restore(ctx context.Context, in request) (any, error) {
 	}
 	defer compressed.Close()
 	reader := tar.NewReader(compressed)
-	var total int64
 	count := 0
 	paths := map[string]bool{}
 	directoryModes := map[string]fs.FileMode{".": 0750}
@@ -398,10 +392,6 @@ func (e *AgentExecutor) restore(ctx context.Context, in request) (any, error) {
 		case tar.TypeReg:
 			if header.Size < 0 {
 				return nil, invalid("Backup has a negative file size")
-			}
-			total += header.Size
-			if total > 2<<30 {
-				return nil, failure("too_large", "Backup restore exceeds the two-GiB limit", 413)
 			}
 			if err = ensureDirectories(filepath.Dir(path)); err != nil {
 				return nil, err

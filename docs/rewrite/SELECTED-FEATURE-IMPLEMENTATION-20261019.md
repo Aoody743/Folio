@@ -1,5 +1,7 @@
 # phpMyAdmin/pgAdmin、ACME/DNS 与应用入口执行记录
 
+> 2026-10-22：当前发行与验收状态统一见 [CURRENT-RELEASE](CURRENT-RELEASE.md)。本文件保留各历史阶段的范围与证据；旧版“当前／未实现”表述不覆盖新版实现状态。
+
 更新时间：2026-10-20。本文记录范围计划的代码改动与验收边界。beta2 的系统目标按用户确认收敛为 Ubuntu 24.04 amd64。逐项目标系统证据见[验收记录](./SELECTED-FEATURE-ACCEPTANCE-20261019.md)；源码测试不代表生产支持承诺。
 
 ## 已完成的本地实现

@@ -34,7 +34,7 @@ func actualProvider(t *testing.T, roots *x509.CertPool) (*core.Service, *Provide
 	if err != nil {
 		t.Fatal(err)
 	}
-	provider, err := New(service.Runtime("systemops"), Options{TLSRoots: roots, AllowedScheduleActions: []string{"system_get_status", "notifications_send"}, SampleInterval: time.Minute, Status: func(context.Context) (core.SystemStatus, error) { return service.StatusSnapshot(), nil }})
+	provider, err := New(service.Runtime("systemops"), Options{TLSRoots: roots, AllowedScheduleActions: []string{"system_get_status", "notifications_send", "test_schedule_action"}, SampleInterval: time.Minute, Status: func(context.Context) (core.SystemStatus, error) { return service.StatusSnapshot(), nil }})
 	if err != nil {
 		t.Fatal(err)
 	}

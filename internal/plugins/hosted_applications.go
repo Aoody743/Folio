@@ -25,21 +25,22 @@ import (
 var hostedAppIDPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,31}$`)
 
 type HostedApplication struct {
-	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	Runtime          string    `json:"runtime"`
-	RuntimeInstance  string    `json:"runtime_instance"`
-	User             string    `json:"user"`
-	Status           string    `json:"status"`
-	Port             int       `json:"port"`
-	Revision         int64     `json:"revision"`
-	Running          bool      `json:"running"`
-	Upstream         string    `json:"upstream"`
-	SourceSHA256     string    `json:"source_sha256,omitempty"`
-	SourceRepository string    `json:"source_repository,omitempty"`
-	SourceBranch     string    `json:"source_branch,omitempty"`
-	SourceCommit     string    `json:"source_commit,omitempty"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	HealthCheck      HostedAppHealthCheck `json:"health_check"`
+	ID               string               `json:"id"`
+	Name             string               `json:"name"`
+	Runtime          string               `json:"runtime"`
+	RuntimeInstance  string               `json:"runtime_instance"`
+	User             string               `json:"user"`
+	Status           string               `json:"status"`
+	Port             int                  `json:"port"`
+	Revision         int64                `json:"revision"`
+	Running          bool                 `json:"running"`
+	Upstream         string               `json:"upstream"`
+	SourceSHA256     string               `json:"source_sha256,omitempty"`
+	SourceRepository string               `json:"source_repository,omitempty"`
+	SourceBranch     string               `json:"source_branch,omitempty"`
+	SourceCommit     string               `json:"source_commit,omitempty"`
+	UpdatedAt        time.Time            `json:"updated_at"`
 }
 
 type hostedAppReceipt struct {
@@ -64,10 +65,11 @@ type hostedAppCreateInput struct {
 }
 
 type hostedAppInput struct {
-	ID               string `json:"id"`
-	ExpectedRevision int64  `json:"expected_revision,omitempty"`
-	Command          string `json:"command,omitempty"`
-	Limit            int    `json:"limit,omitempty"`
+	HealthCheck      *HostedAppHealthCheck `json:"health_check,omitempty"`
+	ID               string                `json:"id"`
+	ExpectedRevision int64                 `json:"expected_revision,omitempty"`
+	Command          string                `json:"command,omitempty"`
+	Limit            int                   `json:"limit,omitempty"`
 }
 
 type hostedAppPurgeInput struct {
@@ -835,10 +837,18 @@ func (e *PrivilegedExecutor) controlHostedApp(ctx context.Context, input hostedA
 			return empty, err
 		}
 	}
-	if receipt.Status == "created" && input.Command != "delete" && input.Command != "rollback" {
+	if receipt.Status == "created" && input.Command != "delete" && input.Command != "rollback" && input.Command != "health" {
 		return empty, failure("application_not_built", "Build the application before starting its service", 412)
 	}
-	if input.Command == "rollback" {
+	if input.Command == "health" {
+		if input.HealthCheck == nil {
+			return empty, failure("invalid_input", "Health check configuration required", 400)
+		}
+		if err = validateHostedAppHealth(*input.HealthCheck); err != nil {
+			return empty, err
+		}
+		receipt.HealthCheck = *input.HealthCheck
+	} else if input.Command == "rollback" {
 		if running, stateErr := e.hostedAppRunning(ctx, receipt, true); stateErr != nil {
 			return empty, stateErr
 		} else if running {
@@ -912,7 +922,7 @@ func (e *PrivilegedExecutor) controlHostedApp(ctx context.Context, input hostedA
 			return empty, failure("service_control_failed", "Hosted application service operation failed; inspect its status and logs", 502)
 		}
 		if input.Command != "stop" {
-			if err = waitHostedAppReady(ctx, receipt.Port); err != nil {
+			if err = waitHostedAppHealthy(ctx, receipt.Port, receipt.HealthCheck); err != nil {
 				stopCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 				_, _ = runFixed(stopCtx, "/usr/bin/systemctl", []string{"stop", unit}, 15*time.Second, nil)
 				cancel()
@@ -1272,8 +1282,19 @@ func (e *PrivilegedExecutor) validateHostedApp(request agent.Request) error {
 				return failure("invalid_input", "Application revision is required", 400)
 			}
 		}
-		if request.Operation == "hosted_app_control" && input.Command != "start" && input.Command != "stop" && input.Command != "restart" && input.Command != "rollback" {
+		if request.Operation == "hosted_app_control" && input.Command != "start" && input.Command != "stop" && input.Command != "restart" && input.Command != "rollback" && input.Command != "health" {
 			return failure("invalid_input", "Invalid hosted application service operation", 400)
+		}
+		if input.HealthCheck != nil {
+			if request.Operation != "hosted_app_control" || input.Command != "health" {
+				return failure("invalid_input", "Health settings require the health command", 400)
+			}
+			if err := validateHostedAppHealth(*input.HealthCheck); err != nil {
+				return err
+			}
+		}
+		if request.Operation == "hosted_app_control" && input.Command == "health" && input.HealthCheck == nil {
+			return failure("invalid_input", "Health check configuration required", 400)
 		}
 		if request.Operation == "hosted_app_logs" && input.Limit != 0 && (input.Limit < 1 || input.Limit > 500) {
 			return failure("invalid_input", "Application log limit must be 1 to 500", 400)
@@ -1392,7 +1413,7 @@ func (m *Manager) hostedAppBindings() []core.Binding {
 	bindings = append(bindings, m.binding("hosted_apps_deploy", "Build and start a hosted application under its own unprivileged system user", "hosted_apps:manage", false, obj(map[string]any{"id": idSchema(), "expected_revision": revisionSchema()}, "id", "expected_revision"), resources, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 		return m.hostedAppTask(ctx, actor, "hosted_app_deploy", raw, resources)
 	}))
-	bindings = append(bindings, m.binding("hosted_apps_control", "Start, stop, restart or roll back a hosted application through its owned systemd unit", "hosted_apps:manage", false, obj(map[string]any{"id": idSchema(), "command": enumSchema("start", "stop", "restart", "rollback"), "expected_revision": revisionSchema()}, "id", "command", "expected_revision"), resources, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
+	bindings = append(bindings, m.binding("hosted_apps_control", "Start, stop, restart or roll back a hosted application through its owned systemd unit", "hosted_apps:manage", false, obj(map[string]any{"id": idSchema(), "command": enumSchema("start", "stop", "restart", "rollback", "health"), "health_check": hostedAppHealthSchema(), "expected_revision": revisionSchema()}, "id", "command", "expected_revision"), resources, func(ctx context.Context, actor core.Actor, raw json.RawMessage) (core.ActionResult, error) {
 		return m.hostedAppTask(ctx, actor, "hosted_app_control", raw, resources)
 	}))
 	bindings = append(bindings, m.binding("hosted_apps_logs", "Read bounded logs from the owned application systemd unit", "hosted_apps:read", true, obj(map[string]any{"id": idSchema(), "limit": map[string]any{"type": "integer", "minimum": 1, "maximum": 500}}, "id"), resources, m.hostedAppsLogsAction))

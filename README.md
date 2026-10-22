@@ -16,6 +16,8 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 - 查看数据库与缓存连接、任务进度和操作记录。
 - 管理账户安全、会话、MCP 客户端授权和界面主题。
 
+网站与数据库备份不再设置固定总大小上限，仍使用流式处理和完整性校验。计划任务支持数据库备份、最终任务结果、失败通知、重叠执行和错过执行策略。
+
 ## 界面预览
 
 下面展示 5 个重点页面的完整滚动截图。截图使用隔离的示例数据，不是某台服务器的实时信息。
@@ -44,13 +46,13 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 
 ## 安装与首次登录
 
-当前发行版是 [Folio 1.0-beta1](https://github.com/Aoody743/Folio/releases/tag/1.0-beta1)，提供 Linux amd64 安装包和一键安装脚本。在 Linux amd64、运行 systemd 的服务器上执行：
+当前发行版是 [Folio 1.0-beta3](https://github.com/Aoody743/Folio/releases/tag/1.0-beta3)，提供 Linux amd64 安装包和一键安装脚本。在 Ubuntu 24.04 amd64、运行 systemd 的服务器上执行：
 
 ```sh
-curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta1/install-1.0-beta1.sh | sudo bash
+curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta3/install-1.0-beta3.sh | sudo bash
 ```
 
-安装脚本会下载发行包和 `SHA256SUMS.txt`，校验发行包后再运行包内安装器。可以先查看[一键安装脚本](scripts/rewrite/install-1.0-beta1.sh)及[发行校验清单](https://github.com/Aoody743/Folio/releases/download/1.0-beta1/SHA256SUMS.txt)。
+安装脚本会下载发行包和 `SHA256SUMS.txt`，校验发行包后再运行包内安装器。可以先查看[一键安装脚本](scripts/rewrite/install-1.0-beta3.sh)及[发行校验清单](https://github.com/Aoody743/Folio/releases/download/1.0-beta3/SHA256SUMS.txt)。
 
 安装完成后，服务由 systemd 管理，默认只监听服务器本机的 `127.0.0.1:9000`。在自己的电脑上建立 SSH 隧道：
 
@@ -66,7 +68,7 @@ ssh -L 9000:127.0.0.1:9000 your-user@your-server
 sudo systemctl status powerlinux.service
 sudo /opt/powerlinux/current/folio healthcheck \
   --server-config /etc/powerlinux/server.json \
-  --expected-version 1.0-beta1
+  --expected-version 1.0-beta3
 ```
 
 默认配置不向公网开放服务。如需通过其他入口访问，请先按[安装与运维手册](scripts/rewrite/README.md)配置并验证 HTTPS、监听地址和允许的来源。
@@ -97,7 +99,8 @@ make rewrite-dev
 
 ## 项目文档
 
-- [1.0-beta1 发布说明](.github/release-notes/1.0-beta1.md)
+- [1.0-beta3 发布说明](.github/release-notes/1.0-beta3.md)
+- [当前版本与验收范围](docs/rewrite/CURRENT-RELEASE.md)
 - [面板截图索引](docs/screenshots/panel-1.0-beta1/README.md)
 - [MCP 接入设计](docs/rewrite/AI-NATIVE-MCP.md)
 - [界面设计规范](docs/rewrite/UI-SPEC.md)

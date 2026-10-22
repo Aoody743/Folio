@@ -24,7 +24,7 @@ type databaseStreamExecutor interface {
 func databaseDownloadSchema(chunk bool) map[string]any {
 	fields := map[string]any{"instance_id": idSchema(), "database": map[string]any{"type": "string", "pattern": databaseIdentifier.String()}, "backup_id": map[string]any{"type": "string", "pattern": artifactName.String()}}
 	if chunk {
-		fields["offset"] = map[string]any{"type": "integer", "minimum": 0, "maximum": maxExtractedBytes}
+		fields["offset"] = map[string]any{"type": "integer", "minimum": 0}
 		fields["length"] = map[string]any{"type": "integer", "minimum": 1, "maximum": 64 << 10}
 	}
 	return obj(fields, "instance_id", "database", "backup_id")

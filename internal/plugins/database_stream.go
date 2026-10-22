@@ -26,7 +26,7 @@ func (e *PrivilegedExecutor) validateDatabaseArtifact(raw json.RawMessage) error
 	if err := parse(raw, &in); err != nil {
 		return err
 	}
-	if !validInstanceID(in.InstanceID) || !validDatabaseName(in.Database) || !artifactName.MatchString(in.BackupID) || in.Offset < 0 || in.Length < 0 || in.Length > maxExtractedBytes || in.Offset > maxExtractedBytes {
+	if !validInstanceID(in.InstanceID) || !validDatabaseName(in.Database) || !artifactName.MatchString(in.BackupID) || in.Offset < 0 || in.Length < 0 {
 		return failure("invalid_input", "Invalid database backup stream descriptor", 400)
 	}
 	if in.Offset != 0 && in.Length == 0 {
@@ -39,7 +39,7 @@ func (e *PrivilegedExecutor) databaseBackupMetadata(ctx context.Context, instanc
 	if err := e.load("private", id, &backup); err != nil {
 		return backup, err
 	}
-	if backup.ID != id || backup.InstanceID != instance.ID || backup.Database != database || backup.Engine != instance.PluginID || backup.Filename != backup.ID+".dump" || backup.Bytes < 1 || backup.Bytes > maxExtractedBytes || len(backup.SHA256) != 64 {
+	if backup.ID != id || backup.InstanceID != instance.ID || backup.Database != database || backup.Engine != instance.PluginID || backup.Filename != backup.ID+".dump" || backup.Bytes < 1 || len(backup.SHA256) != 64 {
 		return backup, failure("forbidden", "Backup belongs to a different database or instance", 403)
 	}
 	if backup.State == "deleted" {

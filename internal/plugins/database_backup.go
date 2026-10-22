@@ -38,9 +38,6 @@ func (w *databaseOutput) Write(data []byte) (int, error) {
 	if err := w.ctx.Err(); err != nil {
 		return 0, err
 	}
-	if w.bytes+int64(len(data)) > maxExtractedBytes {
-		return 0, failure("backup_limit", "Database backup exceeds four GiB", 413)
-	}
 	n, err := w.file.Write(data)
 	w.hash.Write(data[:n])
 	w.bytes += int64(n)
