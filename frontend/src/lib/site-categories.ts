@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import type { APIError, Capability } from "./api";
 import { normalizeInput, type Schema } from "./schema";
 
@@ -24,7 +25,11 @@ export function supportsSiteCategoryFilter(
   capability: Capability | undefined,
 ): boolean {
   const properties = capability?.input_schema?.properties;
-  return !!properties && typeof properties === "object" && "category_id" in properties;
+  return (
+    !!properties &&
+    typeof properties === "object" &&
+    "category_id" in properties
+  );
 }
 
 export function siteListInput(
@@ -50,7 +55,7 @@ export function siteCategoryReferences(
 ): Record<string, SiteCategoryReference[]> {
   return {
     category_id: [
-      { value: "", label: "未分类" },
+      { value: "", label: translate("未分类") },
       ...categories.map((category) => ({
         value: category.id,
         label: `${category.name} · ${category.id}`,
@@ -61,8 +66,12 @@ export function siteCategoryReferences(
 
 export function newSiteCategoryID(uuid: string): string {
   const normalized = uuid.toLowerCase();
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(normalized))
-    throw new Error("无法生成有效的网站分类标识。");
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+      normalized,
+    )
+  )
+    throw new Error(translate("无法生成有效的网站分类标识。"));
   return `cat-${normalized}`;
 }
 
@@ -72,10 +81,12 @@ export function siteCategoryMutationInput(
 ): Record<string, unknown> {
   if (
     !capability ||
-    !["sites_category_save", "sites_category_delete"].includes(capability.name) ||
+    !["sites_category_save", "sites_category_delete"].includes(
+      capability.name,
+    ) ||
     !capability.input_schema
   )
-    throw new Error("当前账户没有可用的网站分类写入能力。");
+    throw new Error(translate("当前账户没有可用的网站分类写入能力。"));
   return normalizeInput(capability.input_schema as Schema, input) as Record<
     string,
     unknown
@@ -86,13 +97,26 @@ export function siteCategoryErrorMessage(
   error: Pick<APIError, "code" | "message" | "status">,
 ): string {
   if (error.code === "category_in_use")
-    return "该分类仍被网站使用。请先调整这些网站的分类，再删除；服务器信息：" + error.message;
+    return (
+      translate(
+        "该分类仍被网站使用。请先调整这些网站的分类，再删除；服务器信息：",
+      ) + error.message
+    );
   if (error.code === "revision_conflict" || error.status === 412)
-    return "分类版本已变化，草稿已保留并重新读取。核对最新版本后再保存；服务器信息：" + error.message;
+    return (
+      translate(
+        "分类版本已变化，草稿已保留并重新读取。核对最新版本后再保存；服务器信息：",
+      ) + error.message
+    );
   if (error.status === 403)
-    return "当前账户无权完成此分类操作，草稿已保留并重新读取分类列表。";
+    return translate(
+      "当前账户无权完成此分类操作，草稿已保留并重新读取分类列表。",
+    );
   if (error.status === 409)
-    return "分类操作与当前状态冲突，草稿已保留并重新读取；服务器信息：" + error.message;
+    return (
+      translate("分类操作与当前状态冲突，草稿已保留并重新读取；服务器信息：") +
+      error.message
+    );
   return error.message;
 }
 

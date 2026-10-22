@@ -43,8 +43,11 @@ export function ftpAccountStateCapability(
   if (!capability) return undefined;
   const properties = capability.input_schema?.properties;
   if (task) {
-    const confirmation = isRecord(properties) ? properties.confirm_clear_legacy_deny_rule : undefined;
-    if (!isRecord(confirmation) || confirmation.const !== true) return undefined;
+    const confirmation = isRecord(properties)
+      ? properties.confirm_clear_legacy_deny_rule
+      : undefined;
+    if (!isRecord(confirmation) || confirmation.const !== true)
+      return undefined;
   }
   return capability;
 }
@@ -63,11 +66,12 @@ export function parseFTPAccountInspection(
     "legacy_recover",
   ];
   const rawCommands = value.allowed_recovery_commands;
-  const commandValues = rawCommands === null
-    ? []
-    : Array.isArray(rawCommands)
-      ? rawCommands
-      : undefined;
+  const commandValues =
+    rawCommands === null
+      ? []
+      : Array.isArray(rawCommands)
+        ? rawCommands
+        : undefined;
   const phases = [
     "active",
     "pause_pending",
@@ -89,8 +93,11 @@ export function parseFTPAccountInspection(
     typeof value.phase !== "string" ||
     !phases.includes(value.phase) ||
     !commandValues ||
-    commandValues.some((command) => typeof command !== "string" || !allowed.includes(command)) ||
-    (value.last_confirmed_enabled !== undefined && typeof value.last_confirmed_enabled !== "boolean")
+    commandValues.some(
+      (command) => typeof command !== "string" || !allowed.includes(command),
+    ) ||
+    (value.last_confirmed_enabled !== undefined &&
+      typeof value.last_confirmed_enabled !== "boolean")
   )
     return;
   const commands = [...new Set(commandValues as string[])];
@@ -131,12 +138,21 @@ export function ftpLegacyRecoveryInput(
   inspection: FTPAccountInspection | undefined,
   id: string,
   name: string,
-): { id: string; name: string; expected_revision: number; confirm_clear_legacy_deny_rule: true } | undefined {
+):
+  | {
+      id: string;
+      name: string;
+      expected_revision: number;
+      confirm_clear_legacy_deny_rule: true;
+    }
+  | undefined {
   if (
     !inspection ||
     inspection.id !== id ||
     inspection.name !== name ||
-    !["legacy_recovery_required", "legacy_recovery_pending"].includes(inspection.phase) ||
+    !["legacy_recovery_required", "legacy_recovery_pending"].includes(
+      inspection.phase,
+    ) ||
     !inspection.recovery_required ||
     !inspection.allowed_recovery_commands.includes("legacy_recover") ||
     !Number.isSafeInteger(inspection.revision) ||

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@astryxdesign/core/Button";
@@ -112,7 +113,9 @@ export function FilesView({
       return;
     }
     if (!availableRoots.some((item) => item.id === rootRequest.root)) {
-      setError("该资源目录当前不可访问，请检查目录是否仍存在及访问权限。");
+      setError(
+        translate("该资源目录当前不可访问，请检查目录是否仍存在及访问权限。"),
+      );
       return;
     }
     appliedRootRequest.current = rootRequest.sequence;
@@ -168,7 +171,10 @@ export function FilesView({
         setSelected(entry);
         setEditorOpen(true);
         setError("");
-      } else setError("符号链接与特殊文件不能直接编辑，请使用受控文件操作。");
+      } else
+        setError(
+          translate("符号链接与特殊文件不能直接编辑，请使用受控文件操作。"),
+        );
     });
   const trashAction = async (name: string, item: Trash) => {
     try {
@@ -188,11 +194,11 @@ export function FilesView({
     <div className="stack">
       <Card className="panel-card">
         <div className="card-heading">
-          <h2>文件管理</h2>
+          <h2>{translate("文件管理")}</h2>
           <div className="button-row">
             {has("fs_create") && !currentRoot?.read_only && (
               <Button
-                label="新建文件"
+                label={translate("新建文件")}
                 icon={<Icon name="plus" />}
                 onClick={() => {
                   setCreateName("fs_create");
@@ -202,7 +208,7 @@ export function FilesView({
             )}
             {has("fs_mkdir") && !currentRoot?.read_only && (
               <Button
-                label="新建目录"
+                label={translate("新建目录")}
                 onClick={() => {
                   setCreateName("fs_mkdir");
                   setCreateOpen(true);
@@ -211,7 +217,7 @@ export function FilesView({
             )}
             {has("fs_upload_begin") && !currentRoot?.read_only && (
               <Button
-                label="上传文件"
+                label={translate("上传文件")}
                 variant="primary"
                 onClick={() => setUploadOpen(true)}
               />
@@ -219,14 +225,14 @@ export function FilesView({
           </div>
         </div>
         {!has("fs_roots") ? (
-          <Unavailable title="文件资源服务暂不可用" icon="files" />
+          <Unavailable title={translate("文件资源服务暂不可用")} icon="files" />
         ) : (
           <>
             <div className="file-toolbar">
               <label className="native-field">
-                资源目录
+                {translate("资源目录")}
                 <select
-                  aria-label="文件根目录"
+                  aria-label={translate("文件根目录")}
                   value={root}
                   onChange={(e) =>
                     guard(() => {
@@ -239,7 +245,7 @@ export function FilesView({
                   {availableRoots.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.label || r.id}
-                      {r.read_only ? " · 只读" : ""}
+                      {r.read_only ? translate(" · 只读") : ""}
                     </option>
                   ))}
                 </select>
@@ -252,14 +258,14 @@ export function FilesView({
                 }}
               >
                 <TextInput
-                  label="按文件名筛选"
+                  label={translate("按文件名筛选")}
                   isLabelHidden
                   value={query}
                   onChange={setQuery}
-                  placeholder="当前目录文件名"
+                  placeholder={translate("当前目录文件名")}
                 />
                 <Button
-                  label="筛选文件"
+                  label={translate("筛选文件")}
                   icon={<Icon name="search" />}
                   isIconOnly
                   type="submit"
@@ -267,13 +273,13 @@ export function FilesView({
               </form>
               {has("fs_trash_list") && (
                 <Button
-                  label="回收站"
+                  label={translate("回收站")}
                   variant="ghost"
                   onClick={() => setTrashOpen(true)}
                 />
               )}
             </div>
-            <nav className="breadcrumbs" aria-label="文件路径">
+            <nav className="breadcrumbs" aria-label={translate("文件路径")}>
               <button
                 onClick={() =>
                   guard(() => {
@@ -282,7 +288,7 @@ export function FilesView({
                   })
                 }
               >
-                {currentRoot?.label || root || "选择目录"}
+                {currentRoot?.label || root || translate("选择目录")}
               </button>
               {path
                 .split("/")
@@ -305,14 +311,14 @@ export function FilesView({
             </nav>
             {[error, roots.error, listing.error].filter(Boolean).map((e, i) => (
               <div className="notice danger" role="alert" key={i}>
-                {e}
+                {translate(e)}
               </div>
             ))}
             {dirty && !editorOpen && (
               <div className="notice warning">
-                文件草稿已保留。
+                {translate("文件草稿已保留。")}
                 <Button
-                  label="继续编辑文件草稿"
+                  label={translate("继续编辑文件草稿")}
                   variant="ghost"
                   onClick={() => setEditorOpen(true)}
                 />
@@ -320,18 +326,18 @@ export function FilesView({
             )}
             {listing.loading && (
               <p className="muted" role="status">
-                正在读取目录…
+                {translate("正在读取目录…")}
               </p>
             )}
             <div className="resource-table-wrap">
               <table className="resource-table">
                 <thead>
                   <tr>
-                    <th>名称</th>
-                    <th>大小</th>
-                    <th>权限 / 所有者</th>
-                    <th>修改时间</th>
-                    <th>操作</th>
+                    <th>{translate("名称")}</th>
+                    <th>{translate("大小")}</th>
+                    <th>{translate("权限 / 所有者")}</th>
+                    <th>{translate("修改时间")}</th>
+                    <th>{translate("操作")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,10 +356,10 @@ export function FilesView({
                         </button>
                         <small>
                           {entry.type === "directory"
-                            ? "目录"
+                            ? translate("目录")
                             : entry.type === "symlink"
-                              ? "符号链接"
-                              : "文件"}
+                              ? translate("符号链接")
+                              : translate("文件")}
                         </small>
                       </td>
                       <td>
@@ -362,7 +368,7 @@ export function FilesView({
                       <td>
                         <code>{permissions(entry.mode)}</code>
                         <small>
-                          UID {entry.owner ?? "—"} / GID {entry.group ?? "—"}
+                          UID {entry.owner ?? "—"}/ GID {entry.group ?? "—"}
                         </small>
                       </td>
                       <td>{fullDate(entry.modified_at)}</td>
@@ -370,13 +376,13 @@ export function FilesView({
                         <div className="button-row">
                           {entry.type === "file" && (
                             <Button
-                              label={`下载 ${entry.name}`}
+                              label={translate("下载 {0}", [entry.name])}
                               href={downloadURL(root, entry.path)}
                               variant="ghost"
                             />
                           )}
                           <Button
-                            label={`操作 ${entry.name}`}
+                            label={translate("操作 {0}", [entry.name])}
                             variant="ghost"
                             onClick={() =>
                               guard(() => {
@@ -394,8 +400,8 @@ export function FilesView({
             </div>
             {!rows.length && !listing.loading && !listing.error && (
               <Unavailable
-                title="目录为空"
-                detail="创建文件、目录或上传文件。"
+                title={translate("目录为空")}
+                detail={translate("创建文件、目录或上传文件。")}
                 icon="files"
               />
             )}
@@ -413,7 +419,11 @@ export function FilesView({
       {create && (
         <ResourceDrawer
           open={createOpen}
-          title={createName === "fs_mkdir" ? "新建目录" : "新建文件"}
+          title={
+            createName === "fs_mkdir"
+              ? translate("新建目录")
+              : translate("新建文件")
+          }
           onClose={() => setCreateOpen(false)}
         >
           <ActionForm
@@ -446,7 +456,7 @@ export function FilesView({
       {selected && (
         <ResourceDrawer
           open={!!operation}
-          title={`文件操作 · ${selected.name}`}
+          title={translate("文件操作 · {0}", [selected.name])}
           onClose={() => setOperation(undefined)}
         >
           <ResourceActions
@@ -483,7 +493,7 @@ export function FilesView({
       )}
       <ResourceDrawer
         open={trashOpen}
-        title="文件回收站"
+        title={translate("文件回收站")}
         onClose={() => setTrashOpen(false)}
       >
         {trash.error && <div className="notice danger">{trash.error}</div>}
@@ -498,15 +508,15 @@ export function FilesView({
               <div className="button-row">
                 {has("fs_restore") && (
                   <Button
-                    label={`恢复 ${item.path}`}
+                    label={translate("恢复 {0}", [item.path])}
                     onClick={() => void trashAction("fs_restore", item)}
                   />
                 )}
                 <details>
-                  <summary>永久删除</summary>
+                  <summary>{translate("永久删除")}</summary>
                   {has("fs_purge") && (
                     <Button
-                      label={`确认永久删除 ${item.path}`}
+                      label={translate("确认永久删除 {0}", [item.path])}
                       variant="destructive"
                       onClick={() => void trashAction("fs_purge", item)}
                     />
@@ -516,10 +526,12 @@ export function FilesView({
             </div>
           ))}
         {!list(trash.data).filter((t) => t.state === "trashed").length &&
-          !trash.loading && <Unavailable title="回收站为空" icon="files" />}
+          !trash.loading && (
+            <Unavailable title={translate("回收站为空")} icon="files" />
+          )}
       </ResourceDrawer>
       <details className="advanced-actions">
-        <summary>其他文件与归档操作</summary>
+        <summary>{translate("其他文件与归档操作")}</summary>
         <ActionBrowser
           capabilities={capabilities}
           category="files"
@@ -615,7 +627,7 @@ function FileEditor({
     if (!base || base.truncated || !writable || recovery || latest) return;
     setSaving(true);
     setError("");
-    setStatus("正在保存");
+    setStatus(translate("正在保存"));
     const body = JSON.stringify({
       root,
       path: entry.path,
@@ -650,7 +662,7 @@ function FileEditor({
         )
           throw new APIError(
             "invalid_response",
-            "服务没有返回已验证文件摘要，草稿已保留。",
+            translate("服务没有返回已验证文件摘要，草稿已保留。"),
             response.status,
           );
         hash = result.data.sha256;
@@ -674,15 +686,15 @@ function FileEditor({
       });
       setReadEncoding(encoding);
       setLatest(undefined);
-      setStatus("已保存");
+      setStatus(translate("已保存"));
       request.current = undefined;
       onSaved();
     } catch (e) {
       setError((e as Error).message);
-      setStatus("保存失败，草稿已保留");
+      setStatus(translate("保存失败，草稿已保留"));
       if (e instanceof APIError && e.code === "operation_recovery_required") {
         setRecovery(true);
-        setStatus("操作状态待核对，草稿已保留");
+        setStatus(translate("操作状态待核对，草稿已保留"));
       } else if (
         e instanceof APIError &&
         (e.status === 409 || e.status === 412)
@@ -714,14 +726,14 @@ function FileEditor({
   return (
     <ResourceDrawer
       open={open}
-      title={`编辑文件 · ${entry.name}`}
+      title={translate("编辑文件 · {0}", [entry.name])}
       onClose={onClose}
     >
       <div className="file-editor-toolbar">
         <label className="native-field">
-          编码
+          {translate("编码")}
           <select
-            aria-label="文件编码"
+            aria-label={translate("文件编码")}
             value={encoding}
             onChange={(e) => setEncoding(e.target.value)}
           >
@@ -733,7 +745,7 @@ function FileEditor({
           </select>
         </label>
         <Button
-          label="按所选编码重新读取"
+          label={translate("按所选编码重新读取")}
           isDisabled={
             (!!base && draft !== base.content) || saving || source.loading
           }
@@ -744,13 +756,13 @@ function FileEditor({
           }}
         />
         <Button
-          label="下载原文件"
+          label={translate("下载原文件")}
           href={downloadURL(root, entry.path)}
           variant="ghost"
         />
         {capabilities.some((c) => c.name === "fs_history") && (
           <Button
-            label="文件修改历史"
+            label={translate("文件修改历史")}
             icon={<Icon name="history" />}
             onClick={() => void loadHistory()}
           />
@@ -760,48 +772,59 @@ function FileEditor({
         <div className="notice danger" role="alert">
           {error || source.error}
           <Button
-            label={error ? "重试保存文件" : "重新读取文件"}
+            label={
+              error ? translate("重试保存文件") : translate("重新读取文件")
+            }
             variant="ghost"
             isDisabled={!!error && (!writable || recovery || !!latest)}
             onClick={() => (error ? void save() : void source.reload())}
           />
           {recovery && (
             <p>
-              上次保存的状态尚未确认。请核对关联任务、审计与磁盘内容；当前草稿暂停写入，避免重复执行。
+              {translate(
+                "上次保存的状态尚未确认。请核对关联任务、审计与磁盘内容；当前草稿暂停写入，避免重复执行。",
+              )}
             </p>
           )}
         </div>
       )}
       {latest && !recovery && (
-        <section className="notice warning" aria-label="文件版本冲突">
-          <strong>文件已有新版本，草稿不会被覆盖。</strong>
+        <section
+          className="notice warning"
+          aria-label={translate("文件版本冲突")}
+        >
+          <strong>{translate("文件已有新版本，草稿不会被覆盖。")}</strong>
           <details>
-            <summary>查看最新文件</summary>
+            <summary>{translate("查看最新文件")}</summary>
             <pre>{latest.content}</pre>
           </details>
           <Button
-            label="采用最新基线并手动合并"
+            label={translate("采用最新基线并手动合并")}
             onClick={() => {
               setBase(latest);
               setLatest(undefined);
               setError("");
-              setStatus("请手动合并后保存");
+              setStatus(translate("请手动合并后保存"));
             }}
           />
         </section>
       )}
       {source.loading && !base ? (
-        <p role="status">正在读取文件…</p>
+        <p role="status">{translate("正在读取文件…")}</p>
       ) : base ? (
         <>
           <p className="muted">
-            {root} / {entry.path} ·{" "}
-            {typeof base.size === "number" ? bytes(base.size) : "大小读取中"} ·
-            SHA-256 {base.sha256.slice(0, 16)}…
+            {root}/ {entry.path}·{" "}
+            {typeof base.size === "number"
+              ? bytes(base.size)
+              : translate("大小读取中")}
+            · SHA-256 {base.sha256.slice(0, 16)}…
           </p>
           {base.truncated && (
             <div className="notice warning">
-              文件超过在线编辑上限，仅显示预览。请下载后编辑并上传，不能保存截断内容。
+              {translate(
+                "文件超过在线编辑上限，仅显示预览。请下载后编辑并上传，不能保存截断内容。",
+              )}
             </div>
           )}
           <CodeEditor
@@ -813,11 +836,11 @@ function FileEditor({
         </>
       ) : null}
       {history && (
-        <section className="history" aria-label="文件历史版本">
+        <section className="history" aria-label={translate("文件历史版本")}>
           <div className="split-label">
-            <h3>历史版本</h3>
+            <h3>{translate("历史版本")}</h3>
             <Button
-              label="关闭文件历史"
+              label={translate("关闭文件历史")}
               variant="ghost"
               onClick={() => {
                 setHistory(undefined);
@@ -839,7 +862,7 @@ function FileEditor({
                     .catch((e) => setError((e as Error).message))
                 }
               >
-                {fullDate(rev.created_at)} · {rev.actor_id} · {bytes(rev.size)}
+                {fullDate(rev.created_at)}· {rev.actor_id}· {bytes(rev.size)}
               </button>
             </div>
           ))}
@@ -848,12 +871,12 @@ function FileEditor({
               <pre>{historyText.content}</pre>
               {writable && (
                 <Button
-                  label="采用此历史内容"
+                  label={translate("采用此历史内容")}
                   onClick={() => {
                     setDraft(historyText.content);
                     setEncoding(historyText.encoding);
                     setHistoryText(undefined);
-                    setStatus("历史内容已载入草稿，请保存为新版本");
+                    setStatus(translate("历史内容已载入草稿，请保存为新版本"));
                   }}
                 />
               )}
@@ -863,12 +886,16 @@ function FileEditor({
       )}
       <div className="dialog-footer">
         <span role="status" className="save-status">
-          {saving ? "正在保存" : dirty ? "文件草稿未保存" : status || "已读取"}
+          {saving
+            ? translate("正在保存")
+            : dirty
+              ? translate("文件草稿未保存")
+              : status || translate("已读取")}
         </span>
         <div className="button-row">
           {dirty && (
             <Button
-              label="放弃文件草稿"
+              label={translate("放弃文件草稿")}
               variant="ghost"
               onClick={() => {
                 if (base) {
@@ -882,7 +909,7 @@ function FileEditor({
           )}
           {writable && (
             <Button
-              label="保存文件"
+              label={translate("保存文件")}
               variant="primary"
               isLoading={saving}
               isDisabled={
@@ -896,10 +923,10 @@ function FileEditor({
             />
           )}
           <Button
-            label="完成文件编辑"
+            label={translate("完成文件编辑")}
             onClick={() => {
               if (dirty) {
-                setError("草稿尚未保存。请保存或明确放弃后完成。");
+                setError(translate("草稿尚未保存。请保存或明确放弃后完成。"));
                 return;
               }
               onClose();
@@ -936,7 +963,7 @@ function Uploader({
   const abort = useRef<AbortController | undefined>(undefined);
   const run = async () => {
     if (!file || !path) {
-      setError("请选择文件并填写目标路径。");
+      setError(translate("请选择文件并填写目标路径。"));
       return;
     }
     setBusy(true);
@@ -956,7 +983,7 @@ function Uploader({
           setStage(label);
         },
       });
-      setStage("已校验并保存");
+      setStage(translate("已校验并保存"));
       setSession(undefined);
       setFile(undefined);
       setOverwrite(false);
@@ -964,20 +991,20 @@ function Uploader({
       onSaved();
     } catch (e) {
       setError((e as Error).message);
-      setStage("上传暂停，可续传");
+      setStage(translate("上传暂停，可续传"));
     } finally {
       setBusy(false);
     }
   };
   return (
-    <ResourceDrawer open={open} title="上传文件" onClose={onClose}>
+    <ResourceDrawer open={open} title={translate("上传文件")} onClose={onClose}>
       <div className="form-stack">
         <label className="native-field">
-          选择本地文件
+          {translate("选择本地文件")}
           <input
             ref={input}
             type="file"
-            aria-label="本地上传文件"
+            aria-label={translate("本地上传文件")}
             disabled={busy || !!session}
             onChange={(e) => {
               const chosen = e.target.files?.[0];
@@ -992,7 +1019,7 @@ function Uploader({
           />
         </label>
         <TextInput
-          label="上传目标路径"
+          label={translate("上传目标路径")}
           value={path}
           onChange={setPath}
           isDisabled={busy || !!session}
@@ -1004,12 +1031,13 @@ function Uploader({
             disabled={busy || !!session}
             onChange={(e) => setOverwrite(e.target.checked)}
           />
-          覆盖同路径已有文件
+          {translate("覆盖同路径已有文件")}
         </label>
         {file && (
           <p className="muted">
-            目标 {uploadRoot} / {path} · {file.name} · {bytes(file.size)} ·
-            分段传输与SHA-256验证
+            {translate("目标")}
+            {uploadRoot}/ {path}· {file.name}· {bytes(file.size)}
+            {translate("· 分段传输与SHA-256验证")}
           </p>
         )}
         {error && (
@@ -1019,26 +1047,33 @@ function Uploader({
         )}
         {stage && (
           <div role="status">
-            <progress value={percent} max={100} aria-label="文件上传进度" />
+            <progress
+              value={percent}
+              max={100}
+              aria-label={translate("文件上传进度")}
+            />
             <p>
-              {stage} · {percent.toFixed(0)}%
+              {stage}· {percent.toFixed(0)}%
             </p>
           </div>
         )}
         <div className="button-row">
           <Button
-            label={session ? "继续上传" : "开始上传"}
+            label={session ? translate("继续上传") : translate("开始上传")}
             variant="primary"
             isLoading={busy}
             isDisabled={!file}
             onClick={() => void run()}
           />
           {busy && (
-            <Button label="暂停上传" onClick={() => abort.current?.abort()} />
+            <Button
+              label={translate("暂停上传")}
+              onClick={() => abort.current?.abort()}
+            />
           )}{" "}
           {!busy && session && (
             <Button
-              label="取消此上传"
+              label={translate("取消此上传")}
               onClick={() =>
                 void action(
                   "fs_upload_cancel",
@@ -1050,7 +1085,7 @@ function Uploader({
                     setFile(undefined);
                     setOverwrite(false);
                     if (input.current) input.current.value = "";
-                    setStage("已取消");
+                    setStage(translate("已取消"));
                   })
                   .catch((e) => setError((e as Error).message))
               }
@@ -1058,7 +1093,9 @@ function Uploader({
           )}
         </div>
         <p className="muted">
-          失败或断线时保留所选文件与上传会话；重新打开此窗口可续传。服务器仍会核对最终大小、摘要与目标版本。
+          {translate(
+            "失败或断线时保留所选文件与上传会话；重新打开此窗口可续传。服务器仍会核对最终大小、摘要与目标版本。",
+          )}
         </p>
       </div>
     </ResourceDrawer>

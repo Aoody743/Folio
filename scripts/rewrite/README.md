@@ -2,6 +2,8 @@ Current release and version-specific acceptance: [Folio beta3](../../docs/rewrit
 
 # Folio rewrite build and installation
 
+Upcoming beta4 installer and bilingual UI: [experience notes](../../docs/rewrite/EXPERIENCE-BETA4.md). Use `--lang zh-CN|en` and `--yes` for unattended installation. Earlier versioned bootstrap scripts remain unchanged.
+
 These scripts operate the new Go/Next.js runtime. They never invoke the legacy
 Python panel, its installers, or its update URLs. Run in the existing isolated
 checkout; do not create an extra Git worktree for normal cloud tasks.

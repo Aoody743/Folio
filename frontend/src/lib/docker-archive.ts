@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import type { Capability, Task } from "./api";
 import { phase2Capability } from "./database-binlog";
 
@@ -111,7 +112,9 @@ function parseArchiveRecord(value: unknown): DockerArchiveRecord | undefined {
   };
 }
 
-export function dockerArchiveManifest(value: unknown): DockerArchiveManifest | undefined {
+export function dockerArchiveManifest(
+  value: unknown,
+): DockerArchiveManifest | undefined {
   const record = parseArchiveRecord(value);
   if (
     !record ||
@@ -129,10 +132,10 @@ export function dockerArchiveManifestText(text: string): DockerArchiveManifest {
   try {
     value = JSON.parse(text);
   } catch {
-    throw new Error("归档清单不是有效的 JSON。");
+    throw new Error(translate("归档清单不是有效的 JSON。"));
   }
   const parsed = dockerArchiveManifest(value);
-  if (!parsed) throw new Error("归档清单字段或服务端证明无效。");
+  if (!parsed) throw new Error(translate("归档清单字段或服务端证明无效。"));
   return parsed;
 }
 
@@ -161,15 +164,17 @@ export function dockerArchiveExportResult(
   return dockerArchiveManifest(dockerArchiveTaskOutput(task.result));
 }
 
-export function dockerArchiveImportResult(task: Task): {
-  archive_id: string;
-  image: string;
-  image_id: string;
-  loaded: true;
-  already_loaded: boolean;
-  sha256: string;
-  provenance?: "managed_archive" | "engine_digest";
-} | undefined {
+export function dockerArchiveImportResult(task: Task):
+  | {
+      archive_id: string;
+      image: string;
+      image_id: string;
+      loaded: true;
+      already_loaded: boolean;
+      sha256: string;
+      provenance?: "managed_archive" | "engine_digest";
+    }
+  | undefined {
   const value = dockerArchiveTaskOutput(task.result);
   if (
     !value ||
@@ -188,7 +193,8 @@ export function dockerArchiveImportResult(task: Task): {
     loaded: true,
     already_loaded: value.already_loaded,
     sha256: value.sha256,
-    ...(value.provenance === "managed_archive" || value.provenance === "engine_digest"
+    ...(value.provenance === "managed_archive" ||
+    value.provenance === "engine_digest"
       ? { provenance: value.provenance }
       : {}),
   };
@@ -212,7 +218,11 @@ export function dockerArchiveUploadStatus(
     value.complete !== (value.next_offset === record.bytes)
   )
     return undefined;
-  return { archive: record, next_offset: value.next_offset, complete: value.complete };
+  return {
+    archive: record,
+    next_offset: value.next_offset,
+    complete: value.complete,
+  };
 }
 
 export function dockerArchiveUploadBegin(
@@ -229,7 +239,11 @@ export function dockerArchiveUploadBegin(
   )
     return undefined;
   const parsed = dockerArchiveUploadStatus(
-    { archive: value.archive, next_offset: value.next_offset, complete: value.complete },
+    {
+      archive: value.archive,
+      next_offset: value.next_offset,
+      complete: value.complete,
+    },
     {
       id: value.archive.archive_id,
       image: manifest.image,
@@ -261,8 +275,10 @@ export function dockerArchiveChunkReceipt(
 function decodeBase64(value: unknown): Uint8Array | undefined {
   if (
     typeof value !== "string" ||
-    value.length > Math.ceil(DOCKER_ARCHIVE_CHUNK * 4 / 3) + 4 ||
-    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)
+    value.length > Math.ceil((DOCKER_ARCHIVE_CHUNK * 4) / 3) + 4 ||
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+      value,
+    )
   )
     return undefined;
   try {
@@ -316,4 +332,3 @@ export function dockerArchiveExportResultForImage(
   const manifest = dockerArchiveExportResult(task);
   return manifest?.image === image ? manifest : undefined;
 }
-

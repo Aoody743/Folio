@@ -1,3 +1,4 @@
+import { getLocale, t as translate } from "./i18n";
 export type Actor = {
   id: string;
   name: string;
@@ -104,8 +105,7 @@ export function apiErrorMessage(
   error: unknown,
   formatError?: (error: APIError) => string | undefined,
 ): string {
-  if (error instanceof APIError)
-    return formatError?.(error) ?? error.message;
+  if (error instanceof APIError) return formatError?.(error) ?? error.message;
   return error instanceof Error ? error.message : String(error);
 }
 let csrf = "";
@@ -139,7 +139,11 @@ export async function api<T>(
     });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw error;
-    throw new APIError("network_error", "连接中断，请检查面板服务后重试。", 0);
+    throw new APIError(
+      "network_error",
+      translate("连接中断，请检查面板服务后重试。"),
+      0,
+    );
   }
   let result: {
     data?: T;
@@ -150,14 +154,14 @@ export async function api<T>(
   } catch {
     throw new APIError(
       "invalid_response",
-      "服务返回了无法读取的响应。",
+      translate("服务返回了无法读取的响应。"),
       response.status,
     );
   }
   if (!response.ok || result.error)
     throw new APIError(
       result.error?.code ?? "request_failed",
-      result.error?.message ?? `请求失败 (${response.status})`,
+      result.error?.message ?? translate("请求失败 ({0})", [response.status]),
       response.status,
       result.error?.details,
     );
@@ -206,7 +210,7 @@ export async function streamRequest(
     if (e instanceof Error && e.name === "AbortError") throw e;
     throw new APIError(
       "network_error",
-      "连接中断，请保留文件或草稿后重试。",
+      translate("连接中断，请保留文件或草稿后重试。"),
       0,
     );
   }
@@ -214,12 +218,12 @@ export async function streamRequest(
   const error = await response.json().catch(() => ({
     error: {
       code: "request_failed",
-      message: `请求失败 (${response.status})`,
+      message: translate("请求失败 ({0})", [response.status]),
     },
   }));
   throw new APIError(
     error.error?.code ?? "request_failed",
-    error.error?.message ?? "传输失败",
+    error.error?.message ?? translate("传输失败"),
     response.status,
     error.error?.details,
   );
@@ -242,14 +246,14 @@ export function list<T>(
 }
 export const source = (actor?: Actor) =>
   actor
-    ? `${actor.kind === "human" ? "人" : actor.kind === "mcp" ? "AI" : "客户端"} · ${actor.name}`
-    : "来源未提供";
+    ? `${actor.kind === "human" ? translate("人") : actor.kind === "mcp" ? "AI" : translate("客户端")} · ${actor.name}`
+    : translate("来源未提供");
 export function fullDate(value?: string) {
   if (!value) return "—";
   const d = new Date(value);
   return Number.isNaN(d.valueOf())
     ? "—"
-    : new Intl.DateTimeFormat(undefined, {
+    : new Intl.DateTimeFormat(getLocale(), {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(d);
@@ -269,5 +273,7 @@ export function duration(seconds?: number | null) {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
-  return days ? `${days} 天 ${hours} 小时` : `${hours} 小时 ${mins} 分钟`;
+  return days
+    ? translate("{0} 天 {1} 小时", [days, hours])
+    : translate("{0} 小时 {1} 分钟", [hours, mins]);
 }

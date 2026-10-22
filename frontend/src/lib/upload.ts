@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { action, intentKey, streamRequest, Task, APIError } from "./api";
 export type Upload = {
@@ -41,7 +42,7 @@ export async function waitTask(
     if (
       ["failed", "canceled", "cancelled", "interrupted"].includes(state ?? "")
     )
-      throw new Error(task.error ?? `任务${state}`);
+      throw new Error(task.error ?? translate("任务{0}", [state]));
     await new Promise<void>((resolve, reject) => {
       const t = setTimeout(() => {
         signal?.removeEventListener("abort", abort);
@@ -49,7 +50,7 @@ export async function waitTask(
       }, 500);
       const abort = () => {
         clearTimeout(t);
-        reject(new DOMException("操作已取消", "AbortError"));
+        reject(new DOMException(translate("操作已取消"), "AbortError"));
       };
       signal?.addEventListener("abort", abort, { once: true });
     });
@@ -76,7 +77,7 @@ export async function uploadFile({
   onProgress?: (percent: number, stage: string) => void;
   onSession?: (s: Upload) => void;
 }): Promise<{ upload: Upload; task: Task }> {
-  onProgress?.(0, "校验本地文件");
+  onProgress?.(0, translate("校验本地文件"));
   const checksum = await fileHash(file, signal);
   let upload: Upload;
   if (previous) {
@@ -90,7 +91,9 @@ export async function uploadFile({
       upload.size !== file.size ||
       upload.path !== path
     )
-      throw new Error("续传文件与原上传不一致。请取消原上传后重新开始。");
+      throw new Error(
+        translate("续传文件与原上传不一致。请取消原上传后重新开始。"),
+      );
   } else
     upload = await action<Upload>(
       "fs_upload_begin",
@@ -127,16 +130,19 @@ export async function uploadFile({
     offset += buffer.byteLength;
     upload = { ...upload, offset };
     onSession?.(upload);
-    onProgress?.(file.size ? (offset / file.size) * 100 : 100, "传输文件");
+    onProgress?.(
+      file.size ? (offset / file.size) * 100 : 100,
+      translate("传输文件"),
+    );
   }
-  onProgress?.(100, "核对文件并提交");
+  onProgress?.(100, translate("核对文件并提交"));
   const submitted = await action<{ id?: string; task_id?: string }>(
     "fs_upload_commit",
     { root, id: upload.id },
     { signal, idempotencyKey: `upload-commit-${upload.id}` },
   );
   const id = submitted.id ?? submitted.task_id;
-  if (!id) throw new Error("服务没有返回上传任务标识。");
+  if (!id) throw new Error(translate("服务没有返回上传任务标识。"));
   const task = await waitTask(id, signal);
   const committed = await action<Upload>(
     "fs_upload_status",
@@ -144,7 +150,7 @@ export async function uploadFile({
     { signal },
   );
   if (committed.sha256 !== checksum || committed.state !== "completed")
-    throw new Error("上传产物尚未通过最终校验。");
-  onProgress?.(100, "文件已验证并保存");
+    throw new Error(translate("上传产物尚未通过最终校验。"));
+  onProgress?.(100, translate("文件已验证并保存"));
   return { upload: committed, task };
 }

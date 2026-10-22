@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -49,7 +50,12 @@ type Order = {
   confirmation_action?: string;
   cancellation_action?: string;
   records?: { name: string; type: string; value: string }[];
-  http_challenges?: { domain: string; url: string; path: string; body: string }[];
+  http_challenges?: {
+    domain: string;
+    url: string;
+    path: string;
+    body: string;
+  }[];
 };
 export function CertificatesView({
   capabilities,
@@ -80,13 +86,17 @@ export function CertificatesView({
   const has = (name: string) => capabilities.some((c) => c.name === name);
   const pageTabs = [
     ...(has("certificates_list") || has("certificates_import")
-      ? [{ id: "certificates", label: "证书" }]
+      ? [{ id: "certificates", label: translate("证书") }]
       : []),
-    ...(capabilities.some((capability) => capability.name.startsWith("certificates_acme_"))
-      ? [{ id: "manual", label: "验证与恢复" }]
+    ...(capabilities.some((capability) =>
+      capability.name.startsWith("certificates_acme_"),
+    )
+      ? [{ id: "manual", label: translate("验证与恢复") }]
       : []),
-    ...(capabilities.some((capability) => capability.name.startsWith("certificates_dns_"))
-      ? [{ id: "dns", label: "DNS凭据与提供商" }]
+    ...(capabilities.some((capability) =>
+      capability.name.startsWith("certificates_dns_"),
+    )
+      ? [{ id: "dns", label: translate("DNS凭据与提供商") }]
       : []),
   ];
   const activePage = pageTabs.some((tab) => tab.id === page)
@@ -131,9 +141,15 @@ export function CertificatesView({
       ? manualHTTPOrder(order.data, loadedID)
       : undefined;
   const selectedAction = capabilities.find((c) => c.name === create);
-  const issueCapability = capabilities.find((c) => c.name === "certificates_acme_issue");
+  const issueCapability = capabilities.find(
+    (c) => c.name === "certificates_acme_issue",
+  );
   const issueSchema = issueCapability?.input_schema as
-    | { properties?: Record<string, unknown>; required?: string[]; [key: string]: unknown }
+    | {
+        properties?: Record<string, unknown>;
+        required?: string[];
+        [key: string]: unknown;
+      }
     | undefined;
   const challengeSchema = issueSchema?.properties?.challenge as
     | { enum?: unknown[]; [key: string]: unknown }
@@ -145,15 +161,29 @@ export function CertificatesView({
     challengeSchema?.enum?.includes("manual_http")
   );
   const manualHTTPAction = (() => {
-    if (!issueCapability || !issueSchema?.properties || !hasManualHTTP) return undefined;
-    const inputFields = ["id", "expected_revision", "domains", "email", "challenge"];
-    if (!inputFields.every((name) => Object.prototype.hasOwnProperty.call(issueSchema.properties, name)))
+    if (!issueCapability || !issueSchema?.properties || !hasManualHTTP)
+      return undefined;
+    const inputFields = [
+      "id",
+      "expected_revision",
+      "domains",
+      "email",
+      "challenge",
+    ];
+    if (
+      !inputFields.every((name) =>
+        Object.prototype.hasOwnProperty.call(issueSchema.properties, name),
+      )
+    )
       return undefined;
     const properties = Object.fromEntries(
       inputFields.map((name) => [
         name,
         name === "challenge"
-          ? { ...(issueSchema.properties![name] as object), const: "manual_http" }
+          ? {
+              ...(issueSchema.properties![name] as object),
+              const: "manual_http",
+            }
           : issueSchema.properties![name],
       ]),
     );
@@ -172,7 +202,10 @@ export function CertificatesView({
       c.scope === "certificates:write" &&
       c.task === true &&
       c.read_only === false &&
-      Object.prototype.hasOwnProperty.call(c.input_schema?.properties ?? {}, "id"),
+      Object.prototype.hasOwnProperty.call(
+        c.input_schema?.properties ?? {},
+        "id",
+      ),
   );
   const selectedFormAction =
     manualHTTPCreate && create === "certificates_acme_issue"
@@ -188,7 +221,9 @@ export function CertificatesView({
                 ...issueSchema?.properties,
                 challenge: {
                   ...challengeSchema,
-                  enum: challengeSchema.enum.filter((value) => value !== "manual_http"),
+                  enum: challengeSchema.enum.filter(
+                    (value) => value !== "manual_http",
+                  ),
                 },
               },
             },
@@ -199,7 +234,7 @@ export function CertificatesView({
       ? {
           provider: list(providers.data).map((row) => ({
             value: row.id,
-            label: row.name + (row.available ? "" : " · 不可用"),
+            label: row.name + (row.available ? "" : translate(" · 不可用")),
             disabled: !row.available,
           })),
         }
@@ -225,16 +260,23 @@ export function CertificatesView({
       await copyText(value);
       setCopiedHTTP(key);
     } catch (error) {
-      setCopyError(error instanceof Error ? error.message : "无法复制验证内容。");
+      setCopyError(
+        error instanceof Error
+          ? error.message
+          : translate("无法复制验证内容。"),
+      );
     }
   };
   const showOrder = (value: Order, task?: Task) => {
     setOrderID(value.certificate_id);
     setLoadedID(value.certificate_id);
     if (
-      ["pending_dns", "pending_http", "recovery_required", "dns_cleanup_required"].includes(
-        value.state,
-      )
+      [
+        "pending_dns",
+        "pending_http",
+        "recovery_required",
+        "dns_cleanup_required",
+      ].includes(value.state)
     ) {
       setPage("manual");
       setHTTPAcknowledged(false);
@@ -296,20 +338,22 @@ export function CertificatesView({
         })
         .catch((e) => {
           if (generation === lookupGeneration.current)
-            setLookupError(`保留订单状态未能读取：${(e as Error).message}`);
+            setLookupError(
+              translate("保留订单状态未能读取：{0}", [(e as Error).message]),
+            );
         });
     }
   };
   const statusNames: Record<string, string> = {
-    pending_dns: "待确认DNS记录",
-    pending_http: "待放置HTTP验证文件",
-    issued: "已签发",
-    cancelled: "已取消",
-    not_due: "尚未到续期时间",
-    interrupted: "已中断",
-    expired: "订单已到期",
-    recovery_required: "DNS订单待恢复",
-    dns_cleanup_required: "DNS记录待清理",
+    pending_dns: translate("待确认DNS记录"),
+    pending_http: translate("待放置HTTP验证文件"),
+    issued: translate("已签发"),
+    cancelled: translate("已取消"),
+    not_due: translate("尚未到续期时间"),
+    interrupted: translate("已中断"),
+    expired: translate("订单已到期"),
+    recovery_required: translate("DNS订单待恢复"),
+    dns_cleanup_required: translate("DNS记录待清理"),
   };
   return (
     <div className="stack">
@@ -320,11 +364,11 @@ export function CertificatesView({
           </div>
         )}
         <div className="card-heading">
-          <h2>证书与验证</h2>
+          <h2>{translate("证书与验证")}</h2>
           <div className="button-row">
             {has("certificates_import") && (
               <Button
-                label="导入证书"
+                label={translate("导入证书")}
                 onClick={() => {
                   setManualHTTPCreate(false);
                   setCreate("certificates_import");
@@ -334,7 +378,7 @@ export function CertificatesView({
             {has("certificates_acme_issue") && (
               <>
                 <Button
-                  label="申请ACME证书"
+                  label={translate("申请ACME证书")}
                   variant="primary"
                   onClick={() => {
                     setManualHTTPCreate(false);
@@ -343,7 +387,7 @@ export function CertificatesView({
                 />
                 {manualHTTPAction && (
                   <Button
-                    label="手动HTTP验证"
+                    label={translate("手动HTTP验证")}
                     variant="ghost"
                     onClick={() => {
                       setManualHTTPCreate(true);
@@ -355,7 +399,11 @@ export function CertificatesView({
             )}
           </div>
         </div>
-        <div className="section-tabs" role="tablist" aria-label="证书资源类型">
+        <div
+          className="section-tabs"
+          role="tablist"
+          aria-label={translate("证书资源类型")}
+        >
           {pageTabs.map((tab) => (
             <button
               role="tab"
@@ -379,17 +427,17 @@ export function CertificatesView({
               </div>
             )}
             {!has("certificates_list") ? (
-              <Unavailable title="证书服务暂不可用" />
+              <Unavailable title={translate("证书服务暂不可用")} />
             ) : (
               <>
                 <div className="resource-table-wrap">
                   <table className="resource-table">
                     <thead>
                       <tr>
-                        <th>名称 / 域名</th>
-                        <th>颁发者</th>
-                        <th>到期</th>
-                        <th>来源</th>
+                        <th>{translate("名称 / 域名")}</th>
+                        <th>{translate("颁发者")}</th>
+                        <th>{translate("到期")}</th>
+                        <th>{translate("来源")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -420,11 +468,15 @@ export function CertificatesView({
                   !certificates.loading &&
                   !certificates.error && (
                     <Unavailable
-                      title="暂无可见证书"
+                      title={translate("暂无可见证书")}
                       detail={
                         has("certificates_acme_issue")
-                          ? "导入已有证书，或通过真实ACME流程申请。没有签发产物时不会显示已签发。"
-                          : "导入已有证书，再绑定到需要启用HTTPS的网站。"
+                          ? translate(
+                              "导入已有证书，或通过真实ACME流程申请。没有签发产物时不会显示已签发。",
+                            )
+                          : translate(
+                              "导入已有证书，再绑定到需要启用HTTPS的网站。",
+                            )
                       }
                     />
                   )}
@@ -445,12 +497,12 @@ export function CertificatesView({
               className="button-row"
             >
               <TextInput
-                label="待验证证书标识"
+                label={translate("待验证证书标识")}
                 value={orderID}
                 onChange={setOrderID}
               />
               <Button
-                label="读取验证订单"
+                label={translate("读取验证订单")}
                 type="submit"
                 isDisabled={!orderID || !has("certificates_acme_status")}
               />
@@ -466,81 +518,137 @@ export function CertificatesView({
             {order.data && (
               <>
                 <p className="muted">
-                  读取于 {fullDate(order.loadedAt)}
-                  {order.error ? " · 当前状态未能刷新" : ""}
+                  {translate("读取于")}
+                  {fullDate(order.loadedAt)}
+                  {order.error ? translate(" · 当前状态未能刷新") : ""}
                 </p>
                 <div className="resource-summary">
                   <strong>
                     {statusNames[order.data.state] ?? order.data.state}
                   </strong>
                   <span className="muted">
-                    到期 {fullDate(order.data.expires_at)}
+                    {translate("到期")}
+                    {fullDate(order.data.expires_at)}
                   </span>
                 </div>
                 {order.data.state === "pending_http" ? (
                   <p className="muted">
-                    为每个域名在可通过 HTTP 访问的网站根目录中放置指定文件。必须写入完全相同的正文，不要添加换行；服务不会代替你上传或探测文件。
+                    {translate(
+                      "为每个域名在可通过 HTTP 访问的网站根目录中放置指定文件。必须写入完全相同的正文，不要添加换行；服务不会代替你上传或探测文件。",
+                    )}
                   </p>
                 ) : order.data.state === "pending_dns" ? (
                   <p className="muted">
-                    在域名DNS中添加以下实际TXT记录，再确认验证。等待记录与创建订单均不代表证书已经签发。
+                    {translate(
+                      "在域名DNS中添加以下实际TXT记录，再确认验证。等待记录与创建订单均不代表证书已经签发。",
+                    )}
                   </p>
                 ) : (
                   <div className="notice warning">
                     {order.data.provider && (
-                      <p>DNS提供商：{order.data.provider}</p>
+                      <p>
+                        {translate("DNS提供商：")}
+                        {order.data.provider}
+                      </p>
                     )}
                     <p>
-                      此订单保留了DNS验证或清理状态。确认会使用原凭据继续验证；取消会清理此订单创建的记录。清理失败时订单仍保留，可以再次恢复。
+                      {translate(
+                        "此订单保留了DNS验证或清理状态。确认会使用原凭据继续验证；取消会清理此订单创建的记录。清理失败时订单仍保留，可以再次恢复。",
+                      )}
                     </p>
-                    <p>订单待恢复不代表证书已经签发。</p>
+                    <p>{translate("订单待恢复不代表证书已经签发。")}</p>
                   </div>
                 )}
                 {order.data.state === "pending_http" && httpOrder && (
-                  <section className="stack" aria-label="HTTP验证文件">
+                  <section
+                    className="stack"
+                    aria-label={translate("HTTP验证文件")}
+                  >
                     {httpOrder.http_challenges.map((challenge) => (
-                      <div className="stack notice warning" key={challenge.domain}>
+                      <div
+                        className="stack notice warning"
+                        key={challenge.domain}
+                      >
                         <strong>{challenge.domain}</strong>
                         <div>
-                          <small>完整验证 URL</small>
+                          <small>{translate("完整验证 URL")}</small>
                           <code className="wrap-code">{challenge.url}</code>
                           <Button
-                            label={copiedHTTP === `${challenge.domain}:url` ? "已复制 URL" : "复制 URL"}
+                            label={
+                              copiedHTTP === `${challenge.domain}:url`
+                                ? translate("已复制 URL")
+                                : translate("复制 URL")
+                            }
                             variant="ghost"
-                            onClick={() => void copyHTTP(`${challenge.domain}:url`, challenge.url)}
+                            onClick={() =>
+                              void copyHTTP(
+                                `${challenge.domain}:url`,
+                                challenge.url,
+                              )
+                            }
                           />
                         </div>
                         <div>
-                          <small>网站根目录下的文件路径</small>
+                          <small>{translate("网站根目录下的文件路径")}</small>
                           <code className="wrap-code">{challenge.path}</code>
                           <Button
-                            label={copiedHTTP === `${challenge.domain}:path` ? "已复制路径" : "复制路径"}
+                            label={
+                              copiedHTTP === `${challenge.domain}:path`
+                                ? translate("已复制路径")
+                                : translate("复制路径")
+                            }
                             variant="ghost"
-                            onClick={() => void copyHTTP(`${challenge.domain}:path`, challenge.path)}
+                            onClick={() =>
+                              void copyHTTP(
+                                `${challenge.domain}:path`,
+                                challenge.path,
+                              )
+                            }
                           />
                         </div>
                         <div>
-                          <small>文件正文（精确内容）</small>
+                          <small>{translate("文件正文（精确内容）")}</small>
                           <pre className="json-result">{challenge.body}</pre>
                           <Button
-                            label={copiedHTTP === `${challenge.domain}:body` ? "已复制正文" : "复制正文"}
+                            label={
+                              copiedHTTP === `${challenge.domain}:body`
+                                ? translate("已复制正文")
+                                : translate("复制正文")
+                            }
                             variant="ghost"
-                            onClick={() => void copyHTTP(`${challenge.domain}:body`, challenge.body)}
+                            onClick={() =>
+                              void copyHTTP(
+                                `${challenge.domain}:body`,
+                                challenge.body,
+                              )
+                            }
                           />
                         </div>
                       </div>
                     ))}
-                    {copyError && <div className="notice danger" role="alert">{copyError}</div>}
+                    {copyError && (
+                      <div className="notice danger" role="alert">
+                        {copyError}
+                      </div>
+                    )}
                     <p className="muted">
-                      放置完成后，请从外部网络确认上方 URL 能通过普通 HTTP 返回完全相同的正文，再继续验证。
+                      {translate(
+                        "放置完成后，请从外部网络确认上方 URL 能通过普通 HTTP 返回完全相同的正文，再继续验证。",
+                      )}
                     </p>
                     <label className="check-label">
                       <input
                         type="checkbox"
                         checked={httpAcknowledged}
-                        onChange={(event) => setHTTPAcknowledged(event.target.checked)}
+                        onChange={(event) =>
+                          setHTTPAcknowledged(event.target.checked)
+                        }
                       />
-                      <span>已放置所有验证文件；我确认 URL 与正文都与此订单完全一致，继续验证。</span>
+                      <span>
+                        {translate(
+                          "已放置所有验证文件；我确认 URL 与正文都与此订单完全一致，继续验证。",
+                        )}
+                      </span>
                     </label>
                     {httpAcknowledged && manualHTTPConfirm && (
                       <ActionForm
@@ -553,14 +661,20 @@ export function CertificatesView({
                       />
                     )}
                     {httpAcknowledged && !manualHTTPConfirm && (
-                      <Unavailable title="当前账户没有继续验证此证书订单的权限" />
+                      <Unavailable
+                        title={translate(
+                          "当前账户没有继续验证此证书订单的权限",
+                        )}
+                      />
                     )}
                   </section>
                 )}
                 {order.data.state === "pending_http" && !httpOrder && (
                   <Unavailable
-                    title="HTTP挑战响应无效"
-                    detail="返回内容没有通过证书标识、URL、路径和正文校验。请重新读取订单或检查任务结果。"
+                    title={translate("HTTP挑战响应无效")}
+                    detail={translate(
+                      "返回内容没有通过证书标识、URL、路径和正文校验。请重新读取订单或检查任务结果。",
+                    )}
                   />
                 )}
                 {!!order.data.records?.length && (
@@ -568,9 +682,9 @@ export function CertificatesView({
                     <table className="resource-table">
                       <thead>
                         <tr>
-                          <th>记录名称</th>
-                          <th>类型</th>
-                          <th>实际值</th>
+                          <th>{translate("记录名称")}</th>
+                          <th>{translate("类型")}</th>
+                          <th>{translate("实际值")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -611,10 +725,10 @@ export function CertificatesView({
         ) : (
           <>
             <div className="card-heading">
-              <h3>受保护的DNS凭据</h3>
+              <h3>{translate("受保护的DNS凭据")}</h3>
               {has("certificates_dns_credentials_save") && (
                 <Button
-                  label="添加DNS凭据"
+                  label={translate("添加DNS凭据")}
                   onClick={() => {
                     setManualHTTPCreate(false);
                     setCreate("certificates_dns_credentials_save");
@@ -641,22 +755,26 @@ export function CertificatesView({
                   <div>
                     <strong>{item.name}</strong>
                     <p>
-                      {item.provider} · {fullDate(item.updated_at)}
+                      {item.provider}· {fullDate(item.updated_at)}
                     </p>
                   </div>
                   <span>
-                    {item.credential_configured ? "已保存凭据" : "未配置凭据"}
+                    {item.credential_configured
+                      ? translate("已保存凭据")
+                      : translate("未配置凭据")}
                   </span>
                 </button>
               ))}
             </div>
             {!list(credentials.data).length && !credentials.loading && (
               <Unavailable
-                title="暂无DNS凭据"
-                detail="凭据保存在服务器，网页和MCP读取列表都不会得到密钥。"
+                title={translate("暂无DNS凭据")}
+                detail={translate(
+                  "凭据保存在服务器，网页和MCP读取列表都不会得到密钥。",
+                )}
               />
             )}
-            <h3>DNS提供商</h3>
+            <h3>{translate("DNS提供商")}</h3>
             {providers.error && (
               <div className="notice danger" role="alert">
                 {providers.error}
@@ -674,7 +792,7 @@ export function CertificatesView({
                   <code>{provider.id}</code>
                   <p className="muted">{provider.reason}</p>
                   <details>
-                    <summary>凭据字段</summary>
+                    <summary>{translate("凭据字段")}</summary>
                     <code className="wrap-code">
                       {provider.fields.join(" · ")}
                     </code>
@@ -690,12 +808,12 @@ export function CertificatesView({
           open={!!create}
           title={
             create === "certificates_import"
-              ? "导入证书"
+              ? translate("导入证书")
               : create === "certificates_dns_credentials_save"
-                ? "添加DNS凭据"
+                ? translate("添加DNS凭据")
                 : manualHTTPCreate
-                  ? "申请ACME证书 · 手动HTTP验证"
-                  : "申请ACME证书"
+                  ? translate("申请ACME证书 · 手动HTTP验证")
+                  : translate("申请ACME证书")
           }
           onClose={() => {
             setCreate(undefined);
@@ -704,7 +822,9 @@ export function CertificatesView({
         >
           {manualHTTPCreate && (
             <p className="muted">
-              只填写证书标识、域名和联系人邮箱。此流程不需要网站选择、DNS别名或提供商凭据；验证文件由你放置后再明确继续验证。
+              {translate(
+                "只填写证书标识、域名和联系人邮箱。此流程不需要网站选择、DNS别名或提供商凭据；验证文件由你放置后再明确继续验证。",
+              )}
             </p>
           )}
           <ActionForm
@@ -713,10 +833,18 @@ export function CertificatesView({
               expected_revision: 0,
               ...(!manualHTTPCreate && siteID ? { site_id: siteID } : {}),
               ...(create === "certificates_acme_issue"
-                ? { challenge: manualHTTPCreate ? "manual_http" : siteID ? "http_webroot" : "manual_dns" }
+                ? {
+                    challenge: manualHTTPCreate
+                      ? "manual_http"
+                      : siteID
+                        ? "http_webroot"
+                        : "manual_dns",
+                  }
                 : {}),
             }}
-            lockedPresetFields={manualHTTPCreate ? ["expected_revision", "challenge"] : []}
+            lockedPresetFields={
+              manualHTTPCreate ? ["expected_revision", "challenge"] : []
+            }
             onExecuted={saved}
             references={references}
           />
@@ -725,16 +853,16 @@ export function CertificatesView({
       {activePage === "certificates" && current && (
         <ResourceDrawer
           open={open}
-          title={`证书 · ${current.name}`}
+          title={translate("证书 · {0}", [current.name])}
           onClose={() => setOpen(false)}
         >
           <div className="detail-grid">
             <div>
-              <small>域名</small>
+              <small>{translate("域名")}</small>
               <span>{current.domains.join(" · ")}</span>
             </div>
             <div>
-              <small>到期</small>
+              <small>{translate("到期")}</small>
               <span>{fullDate(current.expires_at)}</span>
             </div>
           </div>
@@ -764,7 +892,7 @@ export function CertificatesView({
       {activePage === "dns" && currentCredential && (
         <ResourceDrawer
           open={open}
-          title={`DNS凭据 · ${currentCredential.name}`}
+          title={translate("DNS凭据 · {0}", [currentCredential.name])}
           onClose={() => setOpen(false)}
         >
           <ResourceActions

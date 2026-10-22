@@ -1,11 +1,26 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { t as translate } from "@/lib/i18n";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import dynamic from "next/dynamic";
 import { clearDrafts } from "@/lib/draft-cache";
 import { firstReleaseCapabilities } from "@/lib/first-release-surface";
 import { authorizationReturn, AuthValues, loginHints } from "@/lib/auth-hints";
 import { Theme } from "@astryxdesign/core/theme";
 import { InternationalizationProvider } from "@astryxdesign/core/i18n";
+import en from "@astryxdesign/core/locales/en.json";
+import {
+  getLocale,
+  initializeLocale,
+  serverLocale,
+  subscribeLocale,
+} from "@/lib/i18n";
+import { LanguageControl } from "./language-control";
 import zhCN from "@astryxdesign/core/locales/zh-CN.generated.js";
 import { neutralTheme } from "@astryxdesign/theme-neutral/built";
 import { Button } from "@astryxdesign/core/Button";
@@ -29,6 +44,8 @@ import {
   Task,
 } from "@/lib/api";
 import { Icon, IconName } from "./icon";
+import { TaskResult } from "./task-result";
+import { actionLabel } from "@/lib/labels";
 import { HostingStackSetup } from "./hosting-stack-setup";
 const NoteEditor = dynamic(() => import("./notes").then((m) => m.NoteEditor), {
   ssr: false,
@@ -64,42 +81,203 @@ const TerminalView = dynamic(
   { ssr: false },
 );
 
+function displayPanelName(name?: string) {
+  return !name || name === "Folio · 折纸面板"
+    ? translate("Folio · 折纸面板")
+    : name;
+}
+
 export type Palette = "moon" | "space" | "violet" | "pine" | "sand";
 export const palettes: { id: Palette; name: string; desc: string }[] = [
-  { id: "moon", name: "月白", desc: "清晰 · 浅色" },
-  { id: "space", name: "深空", desc: "沉静 · 深色" },
-  { id: "violet", name: "雾紫", desc: "柔和 · 浅色" },
-  { id: "pine", name: "松绿", desc: "自然 · 深色" },
-  { id: "sand", name: "暖砂", desc: "温暖 · 浅色" },
+  {
+    id: "moon",
+    get name() {
+      return translate("月白");
+    },
+    get desc() {
+      return translate("清晰 · 浅色");
+    },
+  },
+  {
+    id: "space",
+    get name() {
+      return translate("深空");
+    },
+    get desc() {
+      return translate("沉静 · 深色");
+    },
+  },
+  {
+    id: "violet",
+    get name() {
+      return translate("雾紫");
+    },
+    get desc() {
+      return translate("柔和 · 浅色");
+    },
+  },
+  {
+    id: "pine",
+    get name() {
+      return translate("松绿");
+    },
+    get desc() {
+      return translate("自然 · 深色");
+    },
+  },
+  {
+    id: "sand",
+    get name() {
+      return translate("暖砂");
+    },
+    get desc() {
+      return translate("温暖 · 浅色");
+    },
+  },
 ];
 const nav: { id: string; label: string; icon: IconName }[] = [
-  { id: "overview", label: "概览", icon: "overview" },
-  { id: "sites", label: "网站", icon: "sites" },
-  { id: "software", label: "软件", icon: "software" },
-  { id: "files", label: "文件", icon: "files" },
-  { id: "more", label: "更多", icon: "more" },
+  {
+    id: "overview",
+    get label() {
+      return translate("概览");
+    },
+    icon: "overview",
+  },
+  {
+    id: "sites",
+    get label() {
+      return translate("网站");
+    },
+    icon: "sites",
+  },
+  {
+    id: "software",
+    get label() {
+      return translate("软件");
+    },
+    icon: "software",
+  },
+  {
+    id: "files",
+    get label() {
+      return translate("文件");
+    },
+    icon: "files",
+  },
+  {
+    id: "more",
+    get label() {
+      return translate("更多");
+    },
+    icon: "more",
+  },
 ];
 const moreNav: { id: string; icon: string; title: string; desc: string }[] = [
-  { id: "monitor", icon: "overview", title: "监控", desc: "主机指标与状态" },
-  { id: "terminal", icon: "terminal", title: "终端", desc: "受控主机操作" },
-  { id: "schedules", icon: "tasks", title: "计划任务", desc: "自动执行与任务进度" },
-  { id: "security", icon: "shield", title: "安全与账户", desc: "密码、两步验证与会话" },
-  { id: "appearance", icon: "settings", title: "外观", desc: "五套配色与主题预览" },
-  { id: "mcp", icon: "software", title: "MCP 接入", desc: "客户端身份与授权范围" },
-  { id: "audit", icon: "history", title: "操作记录", desc: "网页与 MCP 共用审计" },
+  {
+    id: "monitor",
+    icon: "overview",
+    get title() {
+      return translate("监控");
+    },
+    get desc() {
+      return translate("主机指标与状态");
+    },
+  },
+  {
+    id: "terminal",
+    icon: "terminal",
+    get title() {
+      return translate("终端");
+    },
+    get desc() {
+      return translate("受控主机操作");
+    },
+  },
+  {
+    id: "schedules",
+    icon: "tasks",
+    get title() {
+      return translate("计划任务");
+    },
+    get desc() {
+      return translate("自动执行与任务进度");
+    },
+  },
+  {
+    id: "security",
+    icon: "shield",
+    get title() {
+      return translate("安全与账户");
+    },
+    get desc() {
+      return translate("密码、两步验证与会话");
+    },
+  },
+  {
+    id: "appearance",
+    icon: "settings",
+    get title() {
+      return translate("外观");
+    },
+    get desc() {
+      return translate("五套配色与主题预览");
+    },
+  },
+  {
+    id: "mcp",
+    icon: "software",
+    get title() {
+      return translate("MCP 接入");
+    },
+    get desc() {
+      return translate("客户端身份与授权范围");
+    },
+  },
+  {
+    id: "audit",
+    icon: "history",
+    get title() {
+      return translate("操作记录");
+    },
+    get desc() {
+      return translate("网页与 MCP 共用审计");
+    },
+  },
 ];
 const stateText: Record<string, string> = {
-  queued: "排队中",
-  running: "执行中",
-  succeeded: "执行成功",
-  success: "执行成功",
-  completed: "执行成功",
-  failed: "执行失败",
-  cancelled: "已取消",
-  canceled: "已取消",
-  verifying: "验证中",
-  verified: "验证成功",
-  pending: "待执行",
+  get queued() {
+    return translate("排队中");
+  },
+  get running() {
+    return translate("执行中");
+  },
+  get succeeded() {
+    return translate("执行成功");
+  },
+  get success() {
+    return translate("执行成功");
+  },
+  get completed() {
+    return translate("执行成功");
+  },
+  get failed() {
+    return translate("执行失败");
+  },
+  get cancelled() {
+    return translate("已取消");
+  },
+  get canceled() {
+    return translate("已取消");
+  },
+  get verifying() {
+    return translate("验证中");
+  },
+  get verified() {
+    return translate("验证成功");
+  },
+  get pending() {
+    return translate("待执行");
+  },
 };
 export const taskState = (task: Task) => task.state ?? task.status ?? "unknown";
 function Metric({
@@ -120,7 +298,7 @@ function Metric({
       <div className="meter" aria-hidden="true">
         <span style={{ width: `${Math.min(100, Math.max(0, ratio ?? 0))}%` }} />
       </div>
-      <div className="metric-hint">{hint ?? "未提供数据"}</div>
+      <div className="metric-hint">{hint ?? translate("未提供数据")}</div>
     </div>
   );
 }
@@ -168,6 +346,15 @@ function Empty({
   );
 }
 export function Panel() {
+  const locale = useSyncExternalStore(subscribeLocale, getLocale, serverLocale);
+  useEffect(() => {
+    initializeLocale();
+    const sync = (event: StorageEvent) => {
+      if (event.key === "folio.language") initializeLocale();
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
   const [session, setSession] = useState<Session>();
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
@@ -204,13 +391,15 @@ export function Panel() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedAction, setSelectedAction] = useState<string>();
-  const hasCapability = (name: string) => caps.some((capability) => capability.name === name);
-  const visibleNav = nav.filter((item) =>
-    item.id === "overview" ||
-    item.id === "more" ||
-    (item.id === "sites" && hasCapability("sites_list")) ||
-    (item.id === "software" && hasCapability("plugins_catalog")) ||
-    (item.id === "files" && hasCapability("fs_roots")),
+  const hasCapability = (name: string) =>
+    caps.some((capability) => capability.name === name);
+  const visibleNav = nav.filter(
+    (item) =>
+      item.id === "overview" ||
+      item.id === "more" ||
+      (item.id === "sites" && hasCapability("sites_list")) ||
+      (item.id === "software" && hasCapability("plugins_catalog")) ||
+      (item.id === "files" && hasCapability("fs_roots")),
   );
   const visibleMoreNav = moreNav.filter((item) =>
     item.id === "monitor"
@@ -283,7 +472,7 @@ export function Panel() {
       }
     }
     setSession(next);
-    document.title = next.panel?.panel_name || "Folio · 折纸面板";
+    document.title = displayPanelName(next.panel?.panel_name);
   }, []);
   const loadSession = useCallback(async () => {
     try {
@@ -327,7 +516,9 @@ export function Panel() {
     results.forEach((result, i) => {
       if (result.status === "rejected") {
         nextErrors[names[i]] =
-          result.reason instanceof Error ? result.reason.message : "读取失败";
+          result.reason instanceof Error
+            ? result.reason.message
+            : translate("读取失败");
         if (result.reason instanceof APIError && result.reason.status === 401)
           void loadSession();
         return;
@@ -539,7 +730,10 @@ export function Panel() {
   const failedTasks = recentTasks.filter((t) => taskState(t) === "failed");
   const rootClass = `app palette-${palette}`;
   return (
-    <InternationalizationProvider locale="zh-CN" messages={{ "zh-CN": zhCN }}>
+    <InternationalizationProvider
+      locale={locale}
+      messages={{ "zh-CN": zhCN, en }}
+    >
       <Theme
         theme={neutralTheme}
         mode={palette === "space" || palette === "pine" ? "dark" : "light"}
@@ -559,7 +753,7 @@ export function Panel() {
           ) : (
             <>
               <a className="skip-link" href="#main">
-                跳至内容
+                {translate("跳至内容")}
               </a>
               <header className="topbar">
                 <button
@@ -568,7 +762,9 @@ export function Panel() {
                     setSection("overview");
                     setNotesAll(false);
                   }}
-                  aria-label={`${session?.panel?.panel_name ?? "Folio · 折纸面板"} 概览`}
+                  aria-label={translate("{0} 概览", [
+                    displayPanelName(session?.panel?.panel_name),
+                  ])}
                 >
                   <img
                     className="brand-logo"
@@ -576,33 +772,36 @@ export function Panel() {
                     alt=""
                     aria-hidden="true"
                   />
-                  <strong>{session?.panel?.panel_name ?? "Folio · 折纸面板"}</strong>
+                  <strong>
+                    {displayPanelName(session?.panel?.panel_name)}
+                  </strong>
                 </button>
                 <div className="host-pill">
                   <span
                     className={`status-dot ${connection === "online" && !errors.system ? "online" : "offline"}`}
                   />
-                  <span>{status?.hostname ?? "当前主机"}</span>
+                  <span>{status?.hostname ?? translate("当前主机")}</span>
                   <small>
                     {errors.system
-                      ? "数据读取失败"
+                      ? translate("数据读取失败")
                       : connection === "online"
-                        ? "在线"
+                        ? translate("在线")
                         : connection === "connecting"
-                          ? "连接中"
-                          : "实时通道断开"}
+                          ? translate("连接中")
+                          : translate("实时通道断开")}
                   </small>
                 </div>
                 <div className="top-actions">
+                  <LanguageControl />
                   <Button
-                    label="全局搜索"
+                    label={translate("全局搜索")}
                     icon={<Icon name="search" />}
                     isIconOnly
                     variant="ghost"
                     onClick={() => setSearchOpen(true)}
                   />
                   <Button
-                    label="最近任务"
+                    label={translate("最近任务")}
                     icon={<Icon name="tasks" />}
                     isIconOnly
                     variant="ghost"
@@ -611,7 +810,7 @@ export function Panel() {
                   <button
                     className="user-badge"
                     title={session.user?.name}
-                    aria-label="账户设置"
+                    aria-label={translate("账户设置")}
                     onClick={() => {
                       setSection("more");
                       setMorePage("security");
@@ -630,25 +829,25 @@ export function Panel() {
                     <h1>
                       {section === "overview"
                         ? notesAll
-                          ? "共享便签"
-                          : "主机概览"
+                          ? translate("共享便签")
+                          : translate("主机概览")
                         : nav.find((n) => n.id === section)?.label}
                     </h1>
                     <p>
                       {section === "overview"
-                        ? "状态、任务与共享信息，在一处查看。"
+                        ? translate("状态、任务与共享信息，在一处查看。")
                         : section === "sites"
-                          ? "网站、域名与证书管理。"
+                          ? translate("网站、域名与证书管理。")
                           : section === "software"
-                            ? "软件、数据库与容器管理。"
+                            ? translate("软件、数据库与容器管理。")
                             : section === "files"
-                              ? "文件与配置管理。"
-                              : "主机管理、接入与个人设置。"}
+                              ? translate("文件与配置管理。")
+                              : translate("主机管理、接入与个人设置。")}
                     </p>
                   </div>
                   <div className="button-row">
                     <Button
-                      label="刷新数据"
+                      label={translate("刷新数据")}
                       icon={<Icon name="refresh" />}
                       variant="ghost"
                       isLoading={loading}
@@ -656,7 +855,7 @@ export function Panel() {
                     />
                     {section === "overview" && canWriteNotes && (
                       <Button
-                        label="新建便签"
+                        label={translate("新建便签")}
                         icon={<Icon name="plus" />}
                         variant="primary"
                         onClick={() => openNote()}
@@ -671,9 +870,9 @@ export function Panel() {
                 )}
                 {hasDraft && !noteOpen && (
                   <div className="notice warning" role="status">
-                    便签草稿已保留。
+                    {translate("便签草稿已保留。")}
                     <Button
-                      label="继续编辑草稿"
+                      label={translate("继续编辑草稿")}
                       variant="ghost"
                       onClick={() => setNoteOpen(true)}
                     />
@@ -681,9 +880,9 @@ export function Panel() {
                 )}
                 {draftWarning && (
                   <div className="notice warning" role="alert">
-                    请先保存或放弃当前便签草稿，再打开其他便签。
+                    {translate("请先保存或放弃当前便签草稿，再打开其他便签。")}
                     <Button
-                      label="知道了"
+                      label={translate("知道了")}
                       variant="ghost"
                       onClick={() => setDraftWarning(false)}
                     />
@@ -691,8 +890,9 @@ export function Panel() {
                 )}
                 {connection === "offline" && (
                   <div className="notice warning" role="status">
-                    实时更新已断开，保留最近快照。每 15
-                    秒尝试读取，恢复后自动同步。
+                    {translate(
+                      "实时更新已断开，保留最近快照。每 15 秒尝试读取，恢复后自动同步。",
+                    )}
                   </div>
                 )}
                 {section === "overview" && !notesAll && (
@@ -703,21 +903,27 @@ export function Panel() {
                     <Card className="panel-card">
                       <div className="card-heading">
                         <h2>
-                          全部便签{" "}
+                          {translate("全部便签")}{" "}
                           <span className="status-chip neutral">
-                            本页 {displayedNotes.length} 条
+                            {translate("本页")}
+                            {displayedNotes.length}
+                            {translate("条")}
                           </span>
                         </h2>
                         <div className="button-row">
                           <Button
-                            label={archived ? "查看未归档" : "查看归档"}
+                            label={
+                              archived
+                                ? translate("查看未归档")
+                                : translate("查看归档")
+                            }
                             onClick={() => {
                               setArchived(!archived);
                               setNotesPage(0);
                             }}
                           />
                           <Button
-                            label="返回概览"
+                            label={translate("返回概览")}
                             variant="ghost"
                             onClick={() => {
                               setNotesAll(false);
@@ -741,7 +947,7 @@ export function Panel() {
                       </div>
                       {loading && (
                         <p className="muted" role="status">
-                          正在读取共享便签…
+                          {translate("正在读取共享便签…")}
                         </p>
                       )}
                       {!displayedNotes.length && !errors.notes && !loading && (
@@ -749,21 +955,28 @@ export function Panel() {
                           icon="note"
                           title={
                             notesPage > 0
-                              ? "这一页没有便签"
+                              ? translate("这一页没有便签")
                               : archived
-                                ? "暂无归档便签"
-                                : "还没有共享便签"
+                                ? translate("暂无归档便签")
+                                : translate("还没有共享便签")
                           }
-                          detail="记录待办或交接信息，人和已授权的 AI 都可编辑。"
+                          detail={translate(
+                            "记录待办或交接信息，人和已授权的 AI 都可编辑。",
+                          )}
                         />
                       )}
-                      <div className="pagination" aria-label="便签分页">
+                      <div
+                        className="pagination"
+                        aria-label={translate("便签分页")}
+                      >
                         <span className="muted">
-                          第 {notesPage + 1} 页 · 每页 20 条
+                          {translate("第")}
+                          {notesPage + 1}
+                          {translate("页 · 每页 20 条")}
                         </span>
                         <div className="button-row">
                           <Button
-                            label="上一页便签"
+                            label={translate("上一页便签")}
                             isDisabled={notesPage === 0 || loading}
                             onClick={() => {
                               setNotes([]);
@@ -771,7 +984,7 @@ export function Panel() {
                             }}
                           />
                           <Button
-                            label="下一页便签"
+                            label={translate("下一页便签")}
                             isDisabled={displayedNotes.length < 20 || loading}
                             onClick={() => {
                               setNotes([]);
@@ -784,11 +997,16 @@ export function Panel() {
                   ) : (
                     <div className="overview-grid">
                       <Card className="panel-card primary-card system-card">
-                        <CardTitle icon="overview" title="主机总览">
+                        <CardTitle
+                          icon="overview"
+                          title={translate("主机总览")}
+                        >
                           <span
                             className={`status-chip ${errors.system ? "warning" : "neutral"}`}
                           >
-                            {errors.system ? "快照过期" : "主机用量"}
+                            {errors.system
+                              ? translate("快照过期")
+                              : translate("主机用量")}
                           </span>
                         </CardTitle>
                         {errors.system && (
@@ -799,7 +1017,9 @@ export function Panel() {
                         <div className="host-summary">
                           <strong>
                             {status?.hostname ??
-                              (loading ? "正在读取…" : "主机信息未提供")}
+                              (loading
+                                ? translate("正在读取…")
+                                : translate("主机信息未提供"))}
                           </strong>
                           <span>
                             {[status?.os, status?.architecture]
@@ -818,12 +1038,14 @@ export function Panel() {
                             ratio={status?.cpu_percent}
                             hint={
                               status?.cpu_cores
-                                ? `${status.cpu_cores} 个逻辑核心`
-                                : "主机 CPU 总用量"
+                                ? translate("{0} 个逻辑核心", [
+                                    status.cpu_cores,
+                                  ])
+                                : translate("主机 CPU 总用量")
                             }
                           />
                           <Metric
-                            label="内存"
+                            label={translate("内存")}
                             value={bytes(status?.memory?.used_bytes)}
                             ratio={
                               status?.memory
@@ -834,12 +1056,14 @@ export function Panel() {
                             }
                             hint={
                               status?.memory
-                                ? `共 ${bytes(status.memory.total_bytes)}`
+                                ? translate("共 {0}", [
+                                    bytes(status.memory.total_bytes),
+                                  ])
                                 : undefined
                             }
                           />
                           <Metric
-                            label="磁盘"
+                            label={translate("磁盘")}
                             value={bytes(status?.disk?.used_bytes)}
                             ratio={
                               status?.disk
@@ -850,13 +1074,18 @@ export function Panel() {
                             }
                             hint={
                               status?.disk
-                                ? `共 ${bytes(status.disk.total_bytes)}`
+                                ? translate("共 {0}", [
+                                    bytes(status.disk.total_bytes),
+                                  ])
                                 : undefined
                             }
                           />
                         </div>
                         <div className="card-foot">
-                          <span>已运行 {duration(status?.uptime_seconds)}</span>
+                          <span>
+                            {translate("已运行 ")}
+                            {duration(status?.uptime_seconds)}
+                          </span>
                           <time
                             title={fullDate(
                               status?.updated_at ??
@@ -864,7 +1093,7 @@ export function Panel() {
                                 lastLoaded,
                             )}
                           >
-                            更新于{" "}
+                            {translate("更新于")}{" "}
                             {fullDate(
                               status?.updated_at ??
                                 status?.sampled_at ??
@@ -873,8 +1102,10 @@ export function Panel() {
                           </time>
                         </div>
                       </Card>
-                      <Card className="panel-card primary-card notes-card">
-                        <CardTitle icon="note" title="共享便签">
+                      <Card
+                        className={`panel-card primary-card notes-card ${displayedNotes.length ? "" : "compact-empty"}`}
+                      >
+                        <CardTitle icon="note" title={translate("共享便签")}>
                           <button
                             className="text-button"
                             onClick={() => {
@@ -883,7 +1114,8 @@ export function Panel() {
                               setNotesAll(true);
                             }}
                           >
-                            查看全部 <Icon name="arrow" size={14} />
+                            {translate("查看全部")}
+                            <Icon name="arrow" size={14} />
                           </button>
                         </CardTitle>
                         {errors.notes ? (
@@ -903,12 +1135,14 @@ export function Panel() {
                         ) : (
                           <Empty
                             icon="note"
-                            title="留下一条共享信息"
-                            detail="记录待办或交接信息，人和已授权的 AI 都可编辑。"
+                            title={translate("留下一条共享信息")}
+                            detail={translate(
+                              "记录待办或交接信息，人和已授权的 AI 都可编辑。",
+                            )}
                           >
                             {canWriteNotes && (
                               <Button
-                                label="创建第一条便签"
+                                label={translate("创建第一条便签")}
                                 variant="ghost"
                                 icon={<Icon name="plus" />}
                                 onClick={() => openNote()}
@@ -917,13 +1151,16 @@ export function Panel() {
                           </Empty>
                         )}
                       </Card>
-                      <Card className="panel-card secondary-card">
-                        <CardTitle icon="tasks" title="最近任务">
+                      <Card
+                        className={`panel-card secondary-card ${recentTasks.length ? "" : "compact-empty"}`}
+                      >
+                        <CardTitle icon="tasks" title={translate("最近任务")}>
                           <button
                             className="text-button"
                             onClick={() => setTaskOpen(true)}
                           >
-                            查看全部 <Icon name="arrow" size={14} />
+                            {translate("查看全部")}
+                            <Icon name="arrow" size={14} />
                           </button>
                         </CardTitle>
                         {errors.tasks ? (
@@ -946,18 +1183,25 @@ export function Panel() {
                         ) : (
                           <Empty
                             icon="tasks"
-                            title="暂无任务"
-                            detail="安装、备份和升级的进度将显示在这里。"
+                            title={translate("暂无任务")}
+                            detail={translate(
+                              "安装、备份和升级的进度将显示在这里。",
+                            )}
                           />
                         )}
                       </Card>
-                      <Card className="panel-card secondary-card">
-                        <CardTitle icon="events" title="待处理事件">
+                      <Card
+                        className={`panel-card secondary-card ${failedTasks.length ? "" : "compact-empty"}`}
+                      >
+                        <CardTitle
+                          icon="events"
+                          title={translate("待处理事件")}
+                        >
                           <span className="count">{failedTasks.length}</span>
                         </CardTitle>
                         {errors.tasks ? (
                           <div className="notice warning">
-                            任务状态暂时无法读取。
+                            {translate("任务状态暂时无法读取。")}
                           </div>
                         ) : failedTasks.length ? (
                           <div className="rows">
@@ -976,10 +1220,13 @@ export function Panel() {
                                     {t.name ??
                                       t.operation ??
                                       t.action ??
-                                      "任务"}
-                                    执行失败
+                                      translate("任务")}
+                                    {translate("执行失败")}
                                   </strong>
-                                  <p>{t.error ?? "打开任务查看失败原因。"}</p>
+                                  <p>
+                                    {t.error ??
+                                      translate("打开任务查看失败原因。")}
+                                  </p>
                                 </div>
                                 <Icon name="arrow" size={16} />
                               </button>
@@ -988,56 +1235,64 @@ export function Panel() {
                         ) : (
                           <Empty
                             icon="check"
-                            title="当前没有待处理任务异常"
-                            detail="这里只显示实际任务错误与提醒。"
+                            title={translate("当前没有待处理任务异常")}
+                            detail={translate("这里只显示实际任务错误与提醒。")}
                           />
                         )}
                       </Card>
                       <Card className="panel-card secondary-card">
-                        <CardTitle icon="overview" title="常用入口" />
+                        <CardTitle
+                          icon="overview"
+                          title={translate("常用入口")}
+                        />
                         <div className="rows">
                           {[
                             {
                               id: "sites",
                               icon: "sites",
-                              title: "网站管理",
-                              detail: "网站、域名与证书",
+                              title: translate("网站管理"),
+                              detail: translate("网站、域名与证书"),
                             },
                             {
                               id: "software",
                               icon: "software",
-                              title: "软件管理",
-                              detail: "服务、数据库与容器",
+                              title: translate("软件管理"),
+                              detail: translate("服务、数据库与容器"),
                             },
                             {
                               id: "files",
                               icon: "files",
-                              title: "文件管理",
-                              detail: "浏览文件与配置",
+                              title: translate("文件管理"),
+                              detail: translate("浏览文件与配置"),
                             },
                           ]
                             .filter((item) =>
-                              visibleNav.some((navItem) => navItem.id === item.id),
+                              visibleNav.some(
+                                (navItem) => navItem.id === item.id,
+                              ),
                             )
                             .map((item) => (
-                            <button
-                              className="event-row quick-link-row"
-                              key={item.id}
-                              onClick={() => {
-                                setSection(item.id);
-                                setSelectedAction(undefined);
-                                setNotesAll(false);
-                              }}
-                            >
-                              <span className="heading-icon">
-                                <Icon name={item.icon as IconName} size={16} />
-                              </span>
-                              <div>
-                                <strong>{item.title}</strong>
-                                <p>{item.detail}</p>
-                              </div>
-                              <Icon name="arrow" size={16} />
-                            </button>
+                              <button
+                                className="event-row quick-link-row"
+                                key={item.id}
+                                onClick={() => {
+                                  setSection(item.id);
+                                  setSelectedAction(undefined);
+                                  setNotesAll(false);
+                                }}
+                              >
+                                <span className="heading-icon">
+                                  <Icon
+                                    name={item.icon as IconName}
+                                    size={16}
+                                  />
+                                </span>
+                                <div>
+                                  <strong>{item.title}</strong>
+                                  <p>{item.detail}</p>
+                                </div>
+                                <Icon name="arrow" size={16} />
+                              </button>
                             ))}
                         </div>
                       </Card>
@@ -1122,7 +1377,7 @@ export function Panel() {
                           </button>
                         ))}
                         <Button
-                          label="退出登录"
+                          label={translate("退出登录")}
                           variant="ghost"
                           icon={<Icon name="logout" />}
                           onClick={() => void logout()}
@@ -1131,7 +1386,7 @@ export function Panel() {
                     ) : (
                       <>
                         <Button
-                          label="返回更多"
+                          label={translate("返回更多")}
                           variant="ghost"
                           onClick={() => setMorePage("menu")}
                         />
@@ -1150,7 +1405,9 @@ export function Panel() {
                             />
                             {morePage === "security" && (
                               <details className="advanced-actions">
-                                <summary>其他已授权的安全与凭据操作</summary>
+                                <summary>
+                                  {translate("其他已授权的安全与凭据操作")}
+                                </summary>
                                 <PanelSettings
                                   capabilities={caps}
                                   onExecuted={() => {
@@ -1170,7 +1427,10 @@ export function Panel() {
                           </>
                         ) : morePage === "audit" ? (
                           <Card className="panel-card">
-                            <CardTitle icon="history" title="操作记录" />
+                            <CardTitle
+                              icon="history"
+                              title={translate("操作记录")}
+                            />
                             {errors.audit && (
                               <div className="notice danger">
                                 {errors.audit}
@@ -1188,13 +1448,13 @@ export function Panel() {
                                     >
                                       {entry.success === false ||
                                       entry.status === "failed"
-                                        ? "失败"
-                                        : "已记录"}
+                                        ? translate("失败")
+                                        : translate("已记录")}
                                     </span>
                                     <div>
                                       <strong>{entry.action}</strong>
                                       <p>
-                                        {source(entry.actor)} ·{" "}
+                                        {source(entry.actor)}·{" "}
                                         {fullDate(entry.created_at)}
                                         {(entry.error ?? entry.error_code)
                                           ? ` · ${entry.error ?? entry.error_code}`
@@ -1205,7 +1465,10 @@ export function Panel() {
                                 ))}
                               </div>
                             ) : (
-                              <Empty icon="history" title="暂无操作记录" />
+                              <Empty
+                                icon="history"
+                                title={translate("暂无操作记录")}
+                              />
                             )}
                           </Card>
                         ) : morePage === "terminal" ? null : [
@@ -1239,11 +1502,11 @@ export function Panel() {
                 )}
                 {session.panel?.footer && (
                   <footer className="panel-footer">
-                    {session.panel.footer}
+                    {displayPanelName(session.panel.footer)}
                   </footer>
                 )}
               </main>
-              <nav className="bottom-nav" aria-label="主导航">
+              <nav className="bottom-nav" aria-label={translate("主导航")}>
                 {visibleNav.map((item) => (
                   <button
                     key={item.id}
@@ -1284,12 +1547,16 @@ export function Panel() {
                 onOpenChange={setTaskOpen}
                 width={720}
                 padding={6}
-                aria-label="任务列表"
+                aria-label={translate("任务列表")}
               >
                 <div className="dialog-title">
-                  <h2>{selectedTask ? "任务详情" : "最近任务"}</h2>
+                  <h2>
+                    {selectedTask
+                      ? translate("任务详情")
+                      : translate("最近任务")}
+                  </h2>
                   <Button
-                    label="关闭任务"
+                    label={translate("关闭任务")}
                     isIconOnly
                     icon={<Icon name="close" />}
                     variant="ghost"
@@ -1307,20 +1574,13 @@ export function Panel() {
                         selectedTask
                       }
                     />
-                    <p className="muted">任务 ID · {selectedTask.id}</p>
-                    {selectedTask.error && (
-                      <div className="notice danger">{selectedTask.error}</div>
-                    )}
-                    <pre className="json-result">
-                      {JSON.stringify(
-                        tasks.find((t) => t.id === selectedTask.id) ??
-                          selectedTask,
-                        null,
-                        2,
-                      )}
-                    </pre>
+                    <TaskResult
+                      submitted={selectedTask}
+                      capabilities={caps}
+                      onFinished={() => void refresh()}
+                    />
                     <Button
-                      label="返回任务列表"
+                      label={translate("返回任务列表")}
                       onClick={() => setSelectedTask(undefined)}
                     />
                   </>
@@ -1334,7 +1594,7 @@ export function Panel() {
                       />
                     ))}
                     {!recentTasks.length && (
-                      <Empty icon="tasks" title="暂无任务" />
+                      <Empty icon="tasks" title={translate("暂无任务")} />
                     )}
                   </div>
                 )}
@@ -1344,12 +1604,12 @@ export function Panel() {
                 onOpenChange={setSearchOpen}
                 width={640}
                 padding={6}
-                aria-label="全局搜索"
+                aria-label={translate("全局搜索")}
               >
                 <div className="dialog-title">
-                  <h2>搜索页面与资源</h2>
+                  <h2>{translate("搜索页面与资源")}</h2>
                   <Button
-                    label="关闭搜索"
+                    label={translate("关闭搜索")}
                     icon={<Icon name="close" />}
                     isIconOnly
                     variant="ghost"
@@ -1357,12 +1617,12 @@ export function Panel() {
                   />
                 </div>
                 <TextInput
-                  label="搜索"
+                  label={translate("搜索")}
                   isLabelHidden
                   hasAutoFocus
                   value={query}
                   onChange={setQuery}
-                  placeholder="页面、便签、软件与操作…"
+                  placeholder={translate("页面、便签、软件与操作…")}
                   startIcon={<Icon name="search" />}
                 />
                 <div className="search-results">
@@ -1379,7 +1639,7 @@ export function Panel() {
                       >
                         <Icon name={n.icon} />
                         <span>{n.label}</span>
-                        <small>页面</small>
+                        <small>{translate("页面")}</small>
                       </button>
                     ))}
                   {notes
@@ -1399,14 +1659,17 @@ export function Panel() {
                       >
                         <Icon name="note" />
                         <span>{n.title}</span>
-                        <small>便签</small>
+                        <small>{translate("便签")}</small>
                       </button>
                     ))}
                   {caps
                     .filter(
                       (c) =>
                         c.name.includes(query) ||
-                        c.description?.includes(query),
+                        c.description?.includes(query) ||
+                        actionLabel(c)
+                          .toLowerCase()
+                          .includes(query.toLowerCase()),
                     )
                     .slice(0, 15)
                     .map((c) => (
@@ -1414,18 +1677,21 @@ export function Panel() {
                         key={c.name}
                         onClick={() => {
                           setSelectedAction(c.name);
-                          setSection("software");
+                          setSection("more");
+                          setMorePage("actions");
                           setSearchOpen(false);
                         }}
                       >
                         <Icon name="software" />
-                        <span>{c.description || c.name}</span>
-                        <small>动作</small>
+                        <span>{actionLabel(c)}</span>
+                        <small>{translate("动作")}</small>
                       </button>
                     ))}
                 </div>
                 <p className="muted">
-                  搜索用于导航。选择动作后，在操作页面填写参数并执行。
+                  {translate(
+                    "搜索用于导航。选择动作后，在操作页面填写参数并执行。",
+                  )}
                 </p>
               </Dialog>
             </>
@@ -1442,7 +1708,7 @@ function NoteTile({ note, open }: { note: Note; open: () => void }) {
         <strong>{note.title}</strong>
         {note.pinned && <Icon name="pin" size={15} />}
       </div>
-      <p>{note.content || "暂无正文"}</p>
+      <p>{note.content || translate("暂无正文")}</p>
       <div className="note-tile-meta">
         <span>{source(note.updated_by)}</span>
         <time title={fullDate(note.updated_at)}>
@@ -1469,13 +1735,19 @@ function TaskRow({ task, open }: { task: Task; open?: () => void }) {
         />
       </span>
       <div className="task-info">
-        <strong>{task.name ?? task.operation ?? task.action ?? "任务"}</strong>
+        <strong>
+          {task.name ?? task.operation ?? task.action ?? translate("任务")}
+        </strong>
         <p>
-          {task.target ?? task.resource ?? source(task.actor)} ·{" "}
+          {task.target ?? task.resource ?? source(task.actor)}·{" "}
           {fullDate(task.created_at)}
         </p>
         {task.progress !== undefined && (
-          <progress max={100} value={task.progress} aria-label="任务进度" />
+          <progress
+            max={100}
+            value={task.progress}
+            aria-label={translate("任务进度")}
+          />
         )}
       </div>
       <span
@@ -1534,7 +1806,7 @@ function Auth({
         "/auth/captcha",
       );
       if (!next.image.startsWith("data:image/png;base64,"))
-        throw new Error("验证码图像格式无效。");
+        throw new Error(translate("验证码图像格式无效。"));
       setCaptcha(next);
     } catch (e) {
       setCaptcha(undefined);
@@ -1559,6 +1831,9 @@ function Auth({
   }, [captcha, refreshCaptcha]);
   return (
     <main className="auth-shell">
+      <div className="auth-language">
+        <LanguageControl />
+      </div>
       <div className="auth-brand">
         <img
           className="brand-logo"
@@ -1566,27 +1841,31 @@ function Auth({
           alt=""
           aria-hidden="true"
         />
-        <strong>{panel?.panel_name ?? "Folio · 折纸面板"}</strong>
+        <strong>{displayPanelName(panel?.panel_name)}</strong>
       </div>
       <Card className="auth-card panel-card">
         <span className="eyebrow">YOUR LINUX WORKSPACE</span>
-        <h1>{initialized === false ? "初始化面板" : "欢迎回来"}</h1>
+        <h1>
+          {initialized === false
+            ? translate("初始化面板")
+            : translate("欢迎回来")}
+        </h1>
         <p className="muted">
           {initialized === false
-            ? "创建管理员账户，开始管理你的主机。"
-            : "登录后查看状态、任务与共享信息。"}
+            ? translate("创建管理员账户，开始管理你的主机。")
+            : translate("登录后查看状态、任务与共享信息。")}
         </p>
         {error && (
           <div className="notice danger" role="alert">
             {error}
             {initialized === undefined && (
-              <Button label="重新连接" onClick={retry} />
+              <Button label={translate("重新连接")} onClick={retry} />
             )}
           </div>
         )}
         {loading ? (
           <p role="status" className="loading-message">
-            正在连接面板服务…
+            {translate("正在连接面板服务…")}
           </p>
         ) : (
           initialized !== undefined && (
@@ -1613,7 +1892,7 @@ function Auth({
               }}
             >
               <TextInput
-                label="用户名"
+                label={translate("用户名")}
                 value={username}
                 onChange={setUsername}
                 isRequired
@@ -1622,7 +1901,7 @@ function Auth({
                 htmlName="username"
               />
               <TextInput
-                label="密码"
+                label={translate("密码")}
                 type="password"
                 value={password}
                 onChange={setPassword}
@@ -1632,45 +1911,54 @@ function Auth({
               />
               {initialized ? (
                 <TextInput
-                  label="两步验证码"
+                  label={translate("两步验证码")}
                   value={otp}
                   onChange={setOTP}
                   isOptional
                   autoComplete="one-time-code"
-                  description="已启用两步验证时填写。"
+                  description={translate("已启用两步验证时填写。")}
                 />
               ) : (
                 <TextInput
-                  label="初始化令牌"
+                  label={translate("初始化令牌")}
                   type="password"
                   value={token}
                   onChange={setToken}
                   isRequired
                   autoComplete="off"
-                  description="从服务器数据目录的 bootstrap-token 文件读取；不会通过网页公开。"
+                  description={translate(
+                    "从服务器数据目录的 bootstrap-token 文件读取；不会通过网页公开。",
+                  )}
                 />
               )}
               {initialized && panel?.custom_login_entry && (
                 <TextInput
-                  label="登录入口"
+                  label={translate("登录入口")}
                   type="password"
                   value={entry}
                   onChange={setEntry}
                   autoComplete="off"
-                  description="使用管理员提供的入口链接，或填写入口名称。"
+                  description={translate(
+                    "使用管理员提供的入口链接，或填写入口名称。",
+                  )}
                 />
               )}
               {initialized && panel?.captcha_enabled && (
                 <div className="captcha-field">
-                  {captcha && <img src={captcha.image} alt="登录图形验证码" />}
+                  {captcha && (
+                    <img
+                      src={captcha.image}
+                      alt={translate("登录图形验证码")}
+                    />
+                  )}
                   <Button
-                    label="刷新图形验证码"
+                    label={translate("刷新图形验证码")}
                     variant="ghost"
                     isLoading={captchaBusy}
                     onClick={() => void refreshCaptcha()}
                   />
                   <TextInput
-                    label="图形验证码"
+                    label={translate("图形验证码")}
                     value={answer}
                     onChange={setAnswer}
                     isRequired
@@ -1685,11 +1973,13 @@ function Auth({
               )}
               {panel?.maintenance && (
                 <div className="notice warning">
-                  面板正在维护，暂不能建立新的登录会话。
+                  {translate("面板正在维护，暂不能建立新的登录会话。")}
                 </div>
               )}
               <Button
-                label={initialized ? "登录" : "初始化面板"}
+                label={
+                  initialized ? translate("登录") : translate("初始化面板")
+                }
                 variant="primary"
                 type="submit"
                 isLoading={busy}
@@ -1708,11 +1998,11 @@ function Auth({
         )}
         <div className="auth-footer">
           <Icon name="shield" size={16} />
-          <span>一个面板 · 网页与 MCP 共用授权</span>
+          <span>{translate("一个面板 · 网页与 MCP 共用授权")}</span>
         </div>
       </Card>
       <p className="auth-caption">
-        {panel?.footer ?? "信息清晰，操作可追溯。"}
+        {panel?.footer ?? translate("信息清晰，操作可追溯。")}
       </p>
     </main>
   );

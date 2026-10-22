@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@astryxdesign/core/Button";
@@ -20,11 +21,17 @@ const PostgreSQLMaintenance = dynamic(
   { ssr: false },
 );
 const DatabaseReplicationManagement = dynamic(
-  () => import("./database-replication").then((m) => m.DatabaseReplicationManagement),
+  () =>
+    import("./database-replication").then(
+      (m) => m.DatabaseReplicationManagement,
+    ),
   { ssr: false },
 );
 const DatabaseTableMaintenance = dynamic(
-  () => import("./database-table-maintenance").then((m) => m.DatabaseTableMaintenance),
+  () =>
+    import("./database-table-maintenance").then(
+      (m) => m.DatabaseTableMaintenance,
+    ),
   { ssr: false },
 );
 type Database = {
@@ -95,23 +102,28 @@ export function ManagedDatabaseResources({
   if (!activeDatabase) {
     const deleted = isDeletedManagedDatabaseState(current.state);
     return (
-      <section className="stack" aria-label="数据库记录状态">
+      <section className="stack" aria-label={translate("数据库记录状态")}>
         <div className="detail-grid">
           <div>
-            <small>数据库名称</small>
+            <small>{translate("数据库名称")}</small>
             <strong>{current.database}</strong>
             <span>{current.username}</span>
           </div>
           <div>
-            <small>记录状态</small>
+            <small>{translate("记录状态")}</small>
             <State value={current.state || "unknown"} />
-            <span className="muted">保留版本 {current.revision}</span>
+            <span className="muted">
+              {translate("保留版本 ")}
+              {current.revision}
+            </span>
           </div>
         </div>
         {deleted ? (
           <>
             <div className="notice warning">
-              此数据库已删除，不能修改账户或读取、创建及恢复备份。重建前会重新读取权威管理记录。
+              {translate(
+                "此数据库已删除，不能修改账户或读取、创建及恢复备份。重建前会重新读取权威管理记录。",
+              )}
             </div>
             {canRecreateDeletedManagedDatabase(current) &&
             databaseCreate &&
@@ -128,56 +140,71 @@ export function ManagedDatabaseResources({
                 />
               ) : (
                 <Button
-                  label="查询后按此版本重建"
+                  label={translate("查询后按此版本重建")}
                   variant="primary"
                   onClick={() => setRecreatingDatabase(true)}
                 />
               )
             ) : current.engine === "mongodb" ? (
               <Unavailable
-                title="MongoDB 暂不支持重建已删除数据库"
-                detail="服务目前无法为 MongoDB tombstone 提供原子所有权保护，因此不会提交重建操作。"
+                title={translate("MongoDB 暂不支持重建已删除数据库")}
+                detail={translate(
+                  "服务目前无法为 MongoDB tombstone 提供原子所有权保护，因此不会提交重建操作。",
+                )}
               />
             ) : (
               <Unavailable
-                title="当前没有安全重建所需的权限"
-                detail="需要读取数据库管理记录和创建数据库的权限。"
+                title={translate("当前没有安全重建所需的权限")}
+                detail={translate("需要读取数据库管理记录和创建数据库的权限。")}
               />
             )}
           </>
         ) : (
           <Unavailable
-            title="数据库记录当前不可操作"
-            detail={`当前状态为 ${current.state || "unknown"}；仅 active 记录可管理账户和备份。`}
+            title={translate("数据库记录当前不可操作")}
+            detail={translate(
+              "当前状态为 {0}；仅 active 记录可管理账户和备份。",
+              [current.state || "unknown"],
+            )}
           />
         )}
       </section>
     );
   }
   return (
-    <section className="stack" aria-label="数据库资源管理">
+    <section className="stack" aria-label={translate("数据库资源管理")}>
       <div className="detail-grid">
         <div>
-          <small>数据库账户</small>
+          <small>{translate("数据库账户")}</small>
           <strong>{current.username}</strong>
           <span>{current.database}</span>
         </div>
         <div>
-          <small>账户权限</small>
+          <small>{translate("账户权限")}</small>
           <strong>{choiceLabel(current.permission, "permission")}</strong>
-          <span className="muted">版本 {current.revision}</span>
+          <span className="muted">
+            {translate("版本 ")}
+            {current.revision}
+          </span>
         </div>
       </div>
       <p className="muted">
-        授权资源 <code>{`db:${instanceID}:${current.database}`}</code>
-        。网页和MCP检查同一资源；账户权限与客户端获授的动作范围分别生效。
+        {translate("授权资源")}
+        <code>{`db:${instanceID}:${current.database}`}</code>
+        {translate(
+          "。网页和MCP检查同一资源；账户权限与客户端获授的动作范围分别生效。",
+        )}
       </p>
-      <div className="section-tabs" role="tablist" aria-label="数据库资源分类">
+      <div
+        className="section-tabs"
+        role="tablist"
+        aria-label={translate("数据库资源分类")}
+      >
         {[
-          { id: "accounts", label: "权限与账户" },
-          { id: "backups", label: "备份" },
-          { id: "imports", label: "导入" },
-          { id: "diagnostics", label: "诊断与复制" },
+          { id: "accounts", label: translate("权限与账户") },
+          { id: "backups", label: translate("备份") },
+          { id: "imports", label: translate("导入") },
+          { id: "diagnostics", label: translate("诊断与复制") },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -193,16 +220,22 @@ export function ManagedDatabaseResources({
         ))}
       </div>
       {group === "imports" ? (
-        <DatabaseImport key={`${instanceID}:${current.database}:${current.revision}`} instanceID={instanceID}
-          database={current.database} revision={current.revision} engine={current.engine}
-          capabilities={capabilities} onExecuted={refresh} />
+        <DatabaseImport
+          key={`${instanceID}:${current.database}:${current.revision}`}
+          instanceID={instanceID}
+          database={current.database}
+          revision={current.revision}
+          engine={current.engine}
+          capabilities={capabilities}
+          onExecuted={refresh}
+        />
       ) : group === "backups" ? (
         <>
           <div className="card-heading">
-            <h3>实际数据库备份</h3>
+            <h3>{translate("实际数据库备份")}</h3>
             {create && (
               <Button
-                label="创建数据库备份"
+                label={translate("创建数据库备份")}
                 onClick={() => {
                   setCreatingBackup(!creatingBackup);
                   setOperation(undefined);
@@ -216,10 +249,12 @@ export function ManagedDatabaseResources({
             </div>
           )}
           {!has("managed_database_backups_list") ? (
-            <Unavailable title="当前没有数据库备份读取权限" />
+            <Unavailable title={translate("当前没有数据库备份读取权限")} />
           ) : (
             <>
-              {backups.loading && <p role="status">正在读取实际备份…</p>}
+              {backups.loading && (
+                <p role="status">{translate("正在读取实际备份…")}</p>
+              )}
               <div className="instance-list">
                 {rows.slice(offset, offset + 20).map((row) => (
                   <button
@@ -235,7 +270,7 @@ export function ManagedDatabaseResources({
                     <div>
                       <strong>{fullDate(row.created_at)}</strong>
                       <p>
-                        {bytes(row.bytes)} · {row.filename}
+                        {bytes(row.bytes)}· {row.filename}
                       </p>
                       <small className="monospace">SHA-256 {row.sha256}</small>
                     </div>
@@ -244,8 +279,8 @@ export function ManagedDatabaseResources({
               </div>
               {!rows.length && !backups.loading && !backups.error && (
                 <Unavailable
-                  title="暂无数据库备份"
-                  detail="备份任务完成、产物完整校验后才会列出。"
+                  title={translate("暂无数据库备份")}
+                  detail={translate("备份任务完成、产物完整校验后才会列出。")}
                 />
               )}
               <Pager
@@ -270,7 +305,7 @@ export function ManagedDatabaseResources({
             <>
               {has("managed_database_backup_download") && (
                 <Button
-                  label="下载已验证数据库备份"
+                  label={translate("下载已验证数据库备份")}
                   href={`/api/v1/databases/backups/download?${new URLSearchParams({ instance_id: instanceID, database: current.database, backup_id: backup.id })}`}
                 />
               )}
@@ -290,58 +325,59 @@ export function ManagedDatabaseResources({
         </>
       ) : (
         <>
-        {group === "diagnostics" && current.engine.toLowerCase() === "postgresql" && (
-          <PostgreSQLMaintenance
-            key={`${instanceID}:${current.database}`}
-            instanceID={instanceID}
-            database={current.database}
+          {group === "diagnostics" &&
+            current.engine.toLowerCase() === "postgresql" && (
+              <PostgreSQLMaintenance
+                key={`${instanceID}:${current.database}`}
+                instanceID={instanceID}
+                database={current.database}
+                capabilities={capabilities}
+                onExecuted={onExecuted}
+                active={active}
+              />
+            )}
+          {group === "diagnostics" && (
+            <DatabaseReplicationManagement
+              key={`database-replication:${instanceID}:${current.database}`}
+              instanceID={instanceID}
+              database={current.database}
+              engine={current.engine}
+              capabilities={capabilities}
+              onExecuted={onExecuted}
+              active={active}
+            />
+          )}
+          {group === "diagnostics" && (
+            <DatabaseTableMaintenance
+              key={`database-table-maintenance:${instanceID}:${current.database}`}
+              instanceID={instanceID}
+              database={current.database}
+              engine={current.engine}
+              capabilities={capabilities}
+              onExecuted={onExecuted}
+              active={active}
+            />
+          )}
+          <ResourceActions
             capabilities={capabilities}
-            onExecuted={onExecuted}
-            active={active}
+            names={(name) =>
+              group === "diagnostics"
+                ? name === "managed_database_diagnostics" ||
+                  name === "managed_database_replication_status"
+                : [
+                    "managed_database_set_permission",
+                    "managed_database_credentials",
+                    "managed_database_set_password",
+                    "managed_database_delete",
+                  ].includes(name)
+            }
+            preset={
+              group === "diagnostics" ? { instance_id: instanceID } : preset
+            }
+            selected={operation}
+            onSelect={setOperation}
+            onExecuted={refresh}
           />
-        )}
-        {group === "diagnostics" && (
-          <DatabaseReplicationManagement
-            key={`database-replication:${instanceID}:${current.database}`}
-            instanceID={instanceID}
-            database={current.database}
-            engine={current.engine}
-            capabilities={capabilities}
-            onExecuted={onExecuted}
-            active={active}
-          />
-        )}
-        {group === "diagnostics" && (
-          <DatabaseTableMaintenance
-            key={`database-table-maintenance:${instanceID}:${current.database}`}
-            instanceID={instanceID}
-            database={current.database}
-            engine={current.engine}
-            capabilities={capabilities}
-            onExecuted={onExecuted}
-            active={active}
-          />
-        )}
-        <ResourceActions
-          capabilities={capabilities}
-          names={(name) =>
-            group === "diagnostics"
-              ? name === "managed_database_diagnostics" ||
-                name === "managed_database_replication_status"
-              : [
-                  "managed_database_set_permission",
-                  "managed_database_credentials",
-                  "managed_database_set_password",
-                  "managed_database_delete",
-                ].includes(name)
-          }
-          preset={
-            group === "diagnostics" ? { instance_id: instanceID } : preset
-          }
-          selected={operation}
-          onSelect={setOperation}
-          onExecuted={refresh}
-        />
         </>
       )}
     </section>

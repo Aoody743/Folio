@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -64,7 +65,9 @@ export function ConnectionsView({
   const current =
     detail.data ??
     rows.find((r) => r.id === selected?.id) ??
-    (kind === "database" && selected?.engine === "mongodb" ? undefined : selected);
+    (kind === "database" && selected?.engine === "mongodb"
+      ? undefined
+      : selected);
   const rawRegister = capabilities.find(
     (c) => c.name === `${kind}_connection_register`,
   );
@@ -91,7 +94,8 @@ export function ConnectionsView({
         }
       : rawRegister
     : undefined;
-  const title = kind === "database" ? "数据库连接" : "缓存空间";
+  const title =
+    kind === "database" ? translate("数据库连接") : translate("缓存空间");
   const refresh = () => {
     void resources.reload();
     void detail.reload();
@@ -100,7 +104,7 @@ export function ConnectionsView({
   const accessLabel = (access?: string) =>
     access === "instance" || access === "database"
       ? choiceLabel(access, "access")
-      : "授权范围未提供";
+      : translate("授权范围未提供");
   const allowed = (name: string) => {
     if (kind === "database") {
       if (name.startsWith("mongodb_")) return current?.engine === "mongodb";
@@ -123,32 +127,35 @@ export function ConnectionsView({
     selectedGroup === "cluster"
       ? name.startsWith("cache_cluster_")
       : selectedGroup === "status"
-      ? /status|get$|tables_list$|scan$|type$/.test(name)
-      : selectedGroup === "query"
-        ? /query|documents_/.test(name)
-        : selectedGroup === "data"
-          ? /key_|keys_|hash_|list_|set_/.test(name)
-          : selectedGroup === "config"
-            ? /connection_register$|connection_delete$/.test(name)
-            : true;
+        ? /status|get$|tables_list$|scan$|type$/.test(name)
+        : selectedGroup === "query"
+          ? /query|documents_/.test(name)
+          : selectedGroup === "data"
+            ? /key_|keys_|hash_|list_|set_/.test(name)
+            : selectedGroup === "config"
+              ? /connection_register$|connection_delete$/.test(name)
+              : true;
   const groups =
     kind === "database"
       ? [
-          { id: "status", label: "状态与表" },
-          { id: "query", label: "查询与数据" },
-          { id: "config", label: "连接设置" },
+          { id: "status", label: translate("状态与表") },
+          { id: "query", label: translate("查询与数据") },
+          { id: "config", label: translate("连接设置") },
         ]
       : [
-          { id: "status", label: "状态与键列表" },
-          { id: "cluster", label: "集群状态" },
-          { id: "data", label: "键与集合" },
-          { id: "config", label: "连接设置" },
+          { id: "status", label: translate("状态与键列表") },
+          { id: "cluster", label: translate("集群状态") },
+          { id: "data", label: translate("键与集合") },
+          { id: "config", label: translate("连接设置") },
         ];
   const visibleGroups = current
     ? groups.filter((tab) =>
         tab.id === "config"
-          ? !!register || capabilities.some((capability) =>
-              allowed(capability.name) && /connection_delete$/.test(capability.name),
+          ? !!register ||
+            capabilities.some(
+              (capability) =>
+                allowed(capability.name) &&
+                /connection_delete$/.test(capability.name),
             )
           : capabilities.some(
               (capability) =>
@@ -172,7 +179,11 @@ export function ConnectionsView({
         <h2>{title}</h2>
         {register && (
           <Button
-            label={kind === "database" ? "添加数据库连接" : "添加缓存空间"}
+            label={
+              kind === "database"
+                ? translate("添加数据库连接")
+                : translate("添加缓存空间")
+            }
             variant="primary"
             onClick={() => setCreateOpen(true)}
           />
@@ -180,8 +191,12 @@ export function ConnectionsView({
       </div>
       <p className="section-caption">
         {kind === "database"
-          ? "连接凭据由服务器保护；单库连接必须通过真实权限检查。实例管理员连接拥有独立授权范围。"
-          : "每个连接绑定明确的数据库与键前缀。网页和MCP使用同一缓存空间权限。"}
+          ? translate(
+              "连接凭据由服务器保护；单库连接必须通过真实权限检查。实例管理员连接拥有独立授权范围。",
+            )
+          : translate(
+              "每个连接绑定明确的数据库与键前缀。网页和MCP使用同一缓存空间权限。",
+            )}
       </p>
       {resources.error && (
         <div className="notice danger" role="alert">
@@ -189,17 +204,19 @@ export function ConnectionsView({
         </div>
       )}
       {!capabilities.some((c) => c.name === name) ? (
-        <Unavailable title={`${title}服务暂不可用`} />
+        <Unavailable title={translate("{0}服务暂不可用", [title])} />
       ) : (
         <>
           <div className="resource-table-wrap">
             <table className="resource-table">
               <thead>
                 <tr>
-                  <th>名称</th>
-                  <th>引擎 / 地址</th>
+                  <th>{translate("名称")}</th>
+                  <th>{translate("引擎 / 地址")}</th>
                   <th>
-                    {kind === "database" ? "数据库 / 权限" : "数据库 / 键前缀"}
+                    {kind === "database"
+                      ? translate("数据库 / 权限")
+                      : translate("数据库 / 键前缀")}
                   </th>
                   <th>TLS</th>
                 </tr>
@@ -235,7 +252,11 @@ export function ConnectionsView({
                           : row.prefix}
                       </small>
                     </td>
-                    <td>{row.tls ? "启用TLS校验" : "未启用TLS"}</td>
+                    <td>
+                      {row.tls
+                        ? translate("启用TLS校验")
+                        : translate("未启用TLS")}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -243,8 +264,10 @@ export function ConnectionsView({
           </div>
           {!rows.length && !resources.loading && !resources.error && (
             <Unavailable
-              title={`暂无${title}`}
-              detail="添加已有服务的连接后，服务器会验证可用性与授权。不会自动安装软件或创建数据库。"
+              title={translate("暂无{0}", [title])}
+              detail={translate(
+                "添加已有服务的连接后，服务器会验证可用性与授权。不会自动安装软件或创建数据库。",
+              )}
             />
           )}
         </>
@@ -252,7 +275,11 @@ export function ConnectionsView({
       {register && (
         <ResourceDrawer
           open={createOpen}
-          title={kind === "database" ? "添加数据库连接" : "添加缓存空间"}
+          title={
+            kind === "database"
+              ? translate("添加数据库连接")
+              : translate("添加缓存空间")
+          }
           onClose={() => setCreateOpen(false)}
         >
           <ActionForm
@@ -272,16 +299,18 @@ export function ConnectionsView({
             <div className="notice danger" role="alert">
               {detail.error}
               <Button
-                label="重试连接详情"
+                label={translate("重试连接详情")}
                 variant="ghost"
                 onClick={() => void detail.reload()}
               />
             </div>
           )}
-          {detail.loading && <p role="status">正在读取连接的实际配置与版本…</p>}
+          {detail.loading && (
+            <p role="status">{translate("正在读取连接的实际配置与版本…")}</p>
+          )}
           <div className="detail-grid">
             <div>
-              <small>服务器</small>
+              <small>{translate("服务器")}</small>
               <strong>
                 {current.host}:{current.port}
               </strong>
@@ -289,45 +318,54 @@ export function ConnectionsView({
             </div>
             <div>
               <small>
-                {kind === "database" ? "数据库与角色" : "数据库与键前缀"}
+                {kind === "database"
+                  ? translate("数据库与角色")
+                  : translate("数据库与键前缀")}
               </small>
               <strong>
-                {current.database} {current.prefix ?? ""}
+                {current.database}
+                {current.prefix ?? ""}
               </strong>
               <span>
                 {kind === "database"
                   ? accessLabel(current.access)
                   : current.tls
-                    ? "启用TLS校验"
-                    : "未启用TLS"}
+                    ? translate("启用TLS校验")
+                    : translate("未启用TLS")}
               </span>
             </div>
           </div>
           {typeof current.resource === "string" && (
             <p className="muted">
-              授权资源 <code>{current.resource}</code>
+              {translate("授权资源")}
+              <code>{current.resource}</code>
             </p>
           )}
           {kind === "database" && (
             <p className="muted">
-              这里的范围控制连接使用哪个身份。数据库账户的只读、数据读写、完整库权限在所属软件实例中管理；客户端仍需获授相应动作和资源。
+              {translate(
+                "这里的范围控制连接使用哪个身份。数据库账户的只读、数据读写、完整库权限在所属软件实例中管理；客户端仍需获授相应动作和资源。",
+              )}
             </p>
           )}
           {kind === "cache" && (
             <p className="muted">
-              填写键时不需要添加前缀；此空间使用 {current.prefix ?? "未提供"}:
-              前缀。当前客户端的读写范围由所授动作和资源决定。
+              {translate("填写键时不需要添加前缀；此空间使用")}
+              {current.prefix ?? translate("未提供")}
+              {translate(": 前缀。当前客户端的读写范围由所授动作和资源决定。")}
             </p>
           )}
           {current.engine === "memcached" && (
             <p className="muted">
-              Memcached提供键的读取、写入与删除，不提供键扫描或集合数据类型。
+              {translate(
+                "Memcached提供键的读取、写入与删除，不提供键扫描或集合数据类型。",
+              )}
             </p>
           )}
           <div
             className="section-tabs"
             role="tablist"
-            aria-label={`${title}分类`}
+            aria-label={translate("{0}分类", [title])}
           >
             {visibleGroups.map((tab) => (
               <button
@@ -347,8 +385,11 @@ export function ConnectionsView({
             <>
               {kind === "database" && current.instance_id ? (
                 <p className="notice warning">
-                  此连接由软件实例 {current.instance_id}{" "}
-                  的数据库账户管理。请在实例数据库中修改密码或账户权限；这里可以删除连接记录，数据库内容保留。
+                  {translate("此连接由软件实例")}
+                  {current.instance_id}{" "}
+                  {translate(
+                    "的数据库账户管理。请在实例数据库中修改密码或账户权限；这里可以删除连接记录，数据库内容保留。",
+                  )}
                 </p>
               ) : detail.data ? (
                 <ActionForm
@@ -363,8 +404,8 @@ export function ConnectionsView({
                 />
               ) : (
                 <Unavailable
-                  title="请先读取当前连接版本"
-                  detail="实际版本读取后才能更新连接。"
+                  title={translate("请先读取当前连接版本")}
+                  detail={translate("实际版本读取后才能更新连接。")}
                 />
               )}
               <ResourceActions

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 const CertificatesView = dynamic(
@@ -52,15 +53,50 @@ import {
   Unavailable,
 } from "./resource-ui";
 const groups = [
-  { id: "overview", label: "总览" },
-  { id: "domains", label: "域名" },
+  {
+    id: "overview",
+    get label() {
+      return translate("总览");
+    },
+  },
+  {
+    id: "domains",
+    get label() {
+      return translate("域名");
+    },
+  },
   { id: "tls", label: "TLS" },
   { id: "php", label: "PHP" },
-  { id: "routing", label: "代理与重定向" },
-  { id: "backup", label: "备份" },
-  { id: "logs", label: "日志" },
-  { id: "config", label: "配置" },
-  { id: "migration", label: "迁移" },
+  {
+    id: "routing",
+    get label() {
+      return translate("代理与重定向");
+    },
+  },
+  {
+    id: "backup",
+    get label() {
+      return translate("备份");
+    },
+  },
+  {
+    id: "logs",
+    get label() {
+      return translate("日志");
+    },
+  },
+  {
+    id: "config",
+    get label() {
+      return translate("配置");
+    },
+  },
+  {
+    id: "migration",
+    get label() {
+      return translate("迁移");
+    },
+  },
 ];
 const inGroup = (name: string, group: string) =>
   group === "domains"
@@ -105,7 +141,8 @@ export function SitesView({
   const categoryCapabilities = siteCategoryCapabilities(capabilities);
   const available = !!siteListCapability;
   const categoryFilterAvailable =
-    !!categoryCapabilities.list && supportsSiteCategoryFilter(siteListCapability);
+    !!categoryCapabilities.list &&
+    supportsSiteCategoryFilter(siteListCapability);
   const categoryResources = useResource<Page<SiteCategory>>(
     "sites_categories_list",
     {},
@@ -176,11 +213,12 @@ export function SitesView({
               label: `${item.plugin_id === "nginx" ? "Nginx" : "OpenResty"} · ${item.instance_id}`,
             })),
           php_instance: [
-            { value: "", label: "静态内容，不绑定PHP" },
+            { value: "", label: translate("静态内容，不绑定PHP") },
             ...list(instances.data)
-              .filter((item) =>
-                ["php", "php-apt", "php-yum"].includes(item.plugin_id) &&
-                item.status !== "uninstalled",
+              .filter(
+                (item) =>
+                  ["php", "php-apt", "php-yum"].includes(item.plugin_id) &&
+                  item.status !== "uninstalled",
               )
               .map((item) => ({
                 value: item.id,
@@ -260,7 +298,9 @@ export function SitesView({
     if (tab.id === "tls")
       return (
         hasGroupActions("tls") ||
-        capabilities.some((capability) => capability.name === "certificates_list")
+        capabilities.some(
+          (capability) => capability.name === "certificates_list",
+        )
       );
     if (tab.id === "backup")
       return capabilities.some((capability) =>
@@ -275,38 +315,44 @@ export function SitesView({
   });
   const activeGroup = supportedGroups.some((tab) => tab.id === group)
     ? group
-    : supportedGroups[0]?.id ?? "overview";
-  const groupedUpdate = update && allowedFields[activeGroup]
-    ? {
-        ...update,
-        description: `修改网站${groups.find((g) => g.id === activeGroup)?.label ?? "设置"}`,
-        input_schema: {
-          ...update.input_schema,
-          properties: Object.fromEntries(
-            [
-              "id",
-              "expected_revision",
-              "reset_advanced_config",
-              ...allowedFields[activeGroup],
-            ]
-              .filter((k) => updateProperties?.[k])
-              .map((k) => [k, updateProperties![k]]),
-          ),
-        },
-      }
-    : undefined;
+    : (supportedGroups[0]?.id ?? "overview");
+  const groupedUpdate =
+    update && allowedFields[activeGroup]
+      ? {
+          ...update,
+          description: translate("修改网站{0}", [
+            groups.find((g) => g.id === activeGroup)?.label ??
+              translate("设置"),
+          ]),
+          input_schema: {
+            ...update.input_schema,
+            properties: Object.fromEntries(
+              [
+                "id",
+                "expected_revision",
+                "reset_advanced_config",
+                ...allowedFields[activeGroup],
+              ]
+                .filter((k) => updateProperties?.[k])
+                .map((k) => [k, updateProperties![k]]),
+            ),
+          },
+        }
+      : undefined;
   const siteResourceTabs = [
-    { id: "sites", label: "网站" },
+    { id: "sites", label: translate("网站") },
     ...(capabilities.some((capability) =>
       ["certificates_list", "certificates_import"].includes(capability.name),
     )
-      ? [{ id: "certificates", label: "证书" }]
+      ? [{ id: "certificates", label: translate("证书") }]
       : []),
     ...(capabilities.some((c) => c.name === "sites_retained_list")
-      ? [{ id: "retained", label: "保留内容" }]
+      ? [{ id: "retained", label: translate("保留内容") }]
       : []),
   ];
-  const activeResourcePage = siteResourceTabs.some((tab) => tab.id === resourcePage)
+  const activeResourcePage = siteResourceTabs.some(
+    (tab) => tab.id === resourcePage,
+  )
     ? resourcePage
     : siteResourceTabs[0]?.id;
   const refresh = () => {
@@ -325,7 +371,11 @@ export function SitesView({
   };
   return (
     <div className="stack">
-      <div className="section-tabs" role="tablist" aria-label="网站资源类型">
+      <div
+        className="section-tabs"
+        role="tablist"
+        aria-label={translate("网站资源类型")}
+      >
         {siteResourceTabs.map((tab) => (
           <button
             role="tab"
@@ -353,22 +403,22 @@ export function SitesView({
       ) : (
         <Card className="panel-card">
           <div className="card-heading">
-            <h2>网站资源</h2>
+            <h2>{translate("网站资源")}</h2>
             <div className="button-row">
               <TextInput
-                label="筛选网站"
+                label={translate("筛选网站")}
                 isLabelHidden
                 value={query}
                 onChange={(value) => {
                   setQuery(value);
                   setOffset(0);
                 }}
-                placeholder="名称或域名"
+                placeholder={translate("名称或域名")}
                 startIcon={<Icon name="search" />}
               />
               {categoryFilterAvailable && (
                 <label className="native-field">
-                  网站分类筛选
+                  {translate("网站分类筛选")}
                   <select
                     value={categoryFilter}
                     onChange={(event) => {
@@ -376,14 +426,14 @@ export function SitesView({
                       setOffset(0);
                     }}
                   >
-                    <option value="">全部分类</option>
+                    <option value="">{translate("全部分类")}</option>
                     {visibleCategories.map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
                       </option>
                     ))}
                   </select>
-                  <small>空值表示全部分类。</small>
+                  <small>{translate("空值表示全部分类。")}</small>
                 </label>
               )}
               <SiteCategoriesManager
@@ -396,7 +446,7 @@ export function SitesView({
               />
               {create && (
                 <Button
-                  label="创建网站"
+                  label={translate("创建网站")}
                   variant="primary"
                   icon={<Icon name="plus" />}
                   onClick={() => setCreating(true)}
@@ -405,14 +455,17 @@ export function SitesView({
             </div>
           </div>
           {!available ? (
-            <Unavailable title="网站资源服务暂不可用" icon="sites" />
+            <Unavailable
+              title={translate("网站资源服务暂不可用")}
+              icon="sites"
+            />
           ) : (
             <>
               {resources.error && (
                 <div className="notice danger" role="alert">
                   {resources.error}
                   <Button
-                    label="重试网站列表"
+                    label={translate("重试网站列表")}
                     variant="ghost"
                     onClick={() => void resources.reload()}
                   />
@@ -420,14 +473,14 @@ export function SitesView({
               )}
               {resources.loading && (
                 <p className="muted" role="status">
-                  正在读取网站…
+                  {translate("正在读取网站…")}
                 </p>
               )}
               {categoryResources.error && (
                 <div className="notice warning" role="status">
-                  分类列表读取失败，网站列表已清除分类筛选条件。
+                  {translate("分类列表读取失败，网站列表已清除分类筛选条件。")}
                   <Button
-                    label="重试分类列表"
+                    label={translate("重试分类列表")}
                     variant="ghost"
                     onClick={() => void categoryResources.reload()}
                   />
@@ -437,11 +490,11 @@ export function SitesView({
                 <table className="resource-table">
                   <thead>
                     <tr>
-                      <th>网站 / 域名</th>
-                      <th>状态</th>
-                      <th>运行环境</th>
+                      <th>{translate("网站 / 域名")}</th>
+                      <th>{translate("状态")}</th>
+                      <th>{translate("运行环境")}</th>
                       <th>TLS</th>
-                      <th>更新</th>
+                      <th>{translate("更新")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -467,11 +520,12 @@ export function SitesView({
                             </button>
                             {site.default && (
                               <span className="status-chip neutral">
-                                默认网站
+                                {translate("默认网站")}
                               </span>
                             )}
                             <small>
-                              {site.domains?.join(" · ") || "未配置域名"}
+                              {site.domains?.join(" · ") ||
+                                translate("未配置域名")}
                             </small>
                           </td>
                           <td>
@@ -483,10 +537,11 @@ export function SitesView({
                           <td>
                             {site.tls?.enabled ? (
                               <span title={fullDate(site.tls.expires_at)}>
-                                已配置 · {fullDate(site.tls.expires_at)}
+                                {translate("已配置 ·")}
+                                {fullDate(site.tls.expires_at)}
                               </span>
                             ) : (
-                              "未配置"
+                              translate("未配置")
                             )}
                           </td>
                           <td>{fullDate(site.updated_at)}</td>
@@ -497,8 +552,10 @@ export function SitesView({
               </div>
               {!rows.length && !resources.loading && !resources.error && (
                 <Unavailable
-                  title="暂无网站"
-                  detail="先安装受支持的网站服务，再创建域名与站点。"
+                  title={translate("暂无网站")}
+                  detail={translate(
+                    "先安装受支持的网站服务，再创建域名与站点。",
+                  )}
                   icon="sites"
                 />
               )}
@@ -517,7 +574,7 @@ export function SitesView({
       {creating && create && (
         <ResourceDrawer
           open={creating}
-          title="创建网站"
+          title={translate("创建网站")}
           onClose={() => setCreating(false)}
         >
           <ActionForm
@@ -540,7 +597,7 @@ export function SitesView({
       {current && (
         <ResourceDrawer
           open={open}
-          title={`网站 · ${current.name}`}
+          title={translate("网站 · {0}", [current.name])}
           onClose={() => setOpen(false)}
         >
           <div className="resource-summary">
@@ -550,29 +607,31 @@ export function SitesView({
           <div
             className="section-tabs"
             role="tablist"
-            aria-label="网站详情分类"
+            aria-label={translate("网站详情分类")}
           >
             {supportedGroups.map((tab) => (
-                <button
-                  role="tab"
-                  aria-selected={activeGroup === tab.id}
-                  key={tab.id}
-                  onClick={() => {
-                    setGroup(tab.id);
-                    setOperation(undefined);
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              <button
+                role="tab"
+                aria-selected={activeGroup === tab.id}
+                key={tab.id}
+                onClick={() => {
+                  setGroup(tab.id);
+                  setOperation(undefined);
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
           {detail.error && <div className="notice danger">{detail.error}</div>}
           {current.configuration_mode === "advanced" &&
             activeGroup !== "migration" && (
               <div className="notice warning">
-                <strong>此网站使用手工配置。</strong>
+                <strong>{translate("此网站使用手工配置。")}</strong>
                 <p>
-                  修改域名、PHP或路由前，确认是否放弃手工配置并重新生成。原配置不会因切换详情分类而修改。
+                  {translate(
+                    "修改域名、PHP或路由前，确认是否放弃手工配置并重新生成。原配置不会因切换详情分类而修改。",
+                  )}
                 </p>
               </div>
             )}
@@ -580,28 +639,34 @@ export function SitesView({
             <>
               <div className="detail-grid">
                 <div>
-                  <small>站点目录</small>
-                  <code>{current.document_root || "未提供"}</code>
+                  <small>{translate("站点目录")}</small>
+                  <code>{current.document_root || translate("未提供")}</code>
                 </div>
                 <div>
-                  <small>运行环境</small>
+                  <small>{translate("运行环境")}</small>
                   <strong>
                     {current.php_version
                       ? `PHP ${current.php_version}`
-                      : "未提供"}
+                      : translate("未提供")}
                   </strong>
                 </div>
                 <div>
                   <small>TLS</small>
-                  <strong>{current.tls?.enabled ? "已配置" : "未配置"}</strong>
+                  <strong>
+                    {current.tls?.enabled
+                      ? translate("已配置")
+                      : translate("未配置")}
+                  </strong>
                   <span className="muted">
                     {current.tls?.expires_at
-                      ? `到期 ${fullDate(current.tls.expires_at)}`
+                      ? translate("到期 {0}", [
+                          fullDate(current.tls.expires_at),
+                        ])
                       : ""}
                   </span>
                 </div>
                 <div>
-                  <small>更新</small>
+                  <small>{translate("更新")}</small>
                   <span>{fullDate(current.updated_at)}</span>
                 </div>
               </div>
@@ -649,7 +714,9 @@ export function SitesView({
                   (category) => category.id === current.category_id,
                 ) && (
                   <div className="notice warning" role="status">
-                    当前分类不在可见分类列表中。若要清除已删除或不可见的旧绑定，请在“网站分类”中选择“未分类”；其他配置字段仍会按本表单提交。
+                    {translate(
+                      "当前分类不在可见分类列表中。若要清除已删除或不可见的旧绑定，请在“网站分类”中选择“未分类”；其他配置字段仍会按本表单提交。",
+                    )}
                   </div>
                 )}
               <ResourceActions
@@ -684,13 +751,13 @@ export function SitesView({
                     capability.name,
                   ),
                 ) && (
-                <CertificatesView
-                  capabilities={capabilities}
-                  onExecuted={refresh}
-                  active={active && open}
-                  siteID={current.id}
-                />
-              )}
+                  <CertificatesView
+                    capabilities={capabilities}
+                    onExecuted={refresh}
+                    active={active && open}
+                    siteID={current.id}
+                  />
+                )}
               {groupedUpdate && (
                 <ActionForm
                   key={current.id + activeGroup}
@@ -730,7 +797,7 @@ export function SitesView({
         </ResourceDrawer>
       )}
       <details className="advanced-actions">
-        <summary>其他已授权的网站操作</summary>
+        <summary>{translate("其他已授权的网站操作")}</summary>
         <ActionBrowser
           capabilities={capabilities.filter(
             (capability) => !isDedicatedSiteMigrationAction(capability.name),

@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 type ExpectedBackup = {
   siteID: string;
   backupID: string;
@@ -15,7 +16,8 @@ export function verifiedSiteBackupDownloadHref(
   expected: ExpectedBackup,
   origin: string,
 ): string {
-  const invalid = () => new Error("服务返回的网站备份信息无效，请刷新后重试。");
+  const invalid = () =>
+    new Error(translate("服务返回的网站备份信息无效，请刷新后重试。"));
   if (!isRecord(value) || !isRecord(value.backup)) throw invalid();
   const backup = value.backup;
   if (

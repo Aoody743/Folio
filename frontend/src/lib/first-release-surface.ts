@@ -12,7 +12,7 @@ const deferredCapabilityPatterns = [
 ];
 
 export const deferredCatalogPluginIDs = new Set([
-	"acme_pandominassl_apply",
+  "acme_pandominassl_apply",
   "backup_ftp",
   "data_query",
   "mongodb",

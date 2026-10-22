@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 import { phase2Capability } from "./database-binlog";
 
@@ -35,7 +36,12 @@ export function dockerExecCapability(capabilities: Capability[]) {
     false,
   );
   const properties = capability?.input_schema?.properties;
-  if (!capability || !properties || typeof properties !== "object" || Array.isArray(properties))
+  if (
+    !capability ||
+    !properties ||
+    typeof properties !== "object" ||
+    Array.isArray(properties)
+  )
     return undefined;
   const propertyMap = properties as Record<string, unknown>;
   const argv = propertyMap.argv as Row | undefined;
@@ -46,10 +52,15 @@ export function dockerExecCapability(capabilities: Capability[]) {
     items.maxLength !== 4096 ||
     argv.minItems !== 1 ||
     argv.maxItems !== 16 ||
-    (propertyMap.name as Row | undefined)?.pattern !== "^[a-z][a-z0-9_-]{0,31}$" ||
-    !["env", "working_dir", "stdin", "timeout_seconds", "output_limit_bytes"].every(
-      (field) => Object.prototype.hasOwnProperty.call(propertyMap, field),
-    )
+    (propertyMap.name as Row | undefined)?.pattern !==
+      "^[a-z][a-z0-9_-]{0,31}$" ||
+    ![
+      "env",
+      "working_dir",
+      "stdin",
+      "timeout_seconds",
+      "output_limit_bytes",
+    ].every((field) => Object.prototype.hasOwnProperty.call(propertyMap, field))
   )
     return undefined;
   return capability;
@@ -61,7 +72,7 @@ export function dockerExecInput(
   name: string,
 ): DockerExecInput {
   if (!id || !/^[a-z][a-z0-9_-]{0,31}$/.test(name))
-    throw new Error("当前容器不是有效的面板受管容器。");
+    throw new Error(translate("当前容器不是有效的面板受管容器。"));
   if (
     !Array.isArray(values.argv) ||
     values.argv.length < 1 ||
@@ -74,7 +85,11 @@ export function dockerExecInput(
     ) ||
     values.argv.reduce((sum, item) => sum + byteLength(item), 0) > 16 * 1024
   )
-    throw new Error("请填写 1 到 16 个参数项，每项最多 4096 字节，总计最多 16 KiB。");
+    throw new Error(
+      translate(
+        "请填写 1 到 16 个参数项，每项最多 4096 字节，总计最多 16 KiB。",
+      ),
+    );
 
   const result: DockerExecInput = { id, name, argv: [...values.argv] };
   if (values.env && Object.keys(values.env).length) {
@@ -90,9 +105,12 @@ export function dockerExecInput(
       Object.entries(env).reduce(
         (sum, [key, value]) => sum + byteLength(key) + byteLength(value),
         0,
-      ) > 4 * 1024
+      ) >
+        4 * 1024
     )
-      throw new Error("环境变量最多 16 项；键名和每项大小必须符合服务端限制。");
+      throw new Error(
+        translate("环境变量最多 16 项；键名和每项大小必须符合服务端限制。"),
+      );
     result.env = { ...env };
   }
   if (values.working_dir) {
@@ -101,15 +119,17 @@ export function dockerExecInput(
       !values.working_dir.startsWith("/") ||
       values.working_dir.includes("\\") ||
       values.working_dir.includes("\0") ||
-      values.working_dir.split("/").some((part) => part === "." || part === "..") ||
+      values.working_dir
+        .split("/")
+        .some((part) => part === "." || part === "..") ||
       values.working_dir.includes("//")
     )
-      throw new Error("工作目录必须是最长 256 字节的规范绝对路径。");
+      throw new Error(translate("工作目录必须是最长 256 字节的规范绝对路径。"));
     result.working_dir = values.working_dir;
   }
   if (values.stdin !== undefined && values.stdin !== "") {
     if (byteLength(values.stdin) > 16 * 1024 || values.stdin.includes("\0"))
-      throw new Error("标准输入最多 16 KiB，且不能包含 NUL 字符。");
+      throw new Error(translate("标准输入最多 16 KiB，且不能包含 NUL 字符。"));
     result.stdin = values.stdin;
   }
   if (values.timeout_seconds !== undefined) {
@@ -118,7 +138,7 @@ export function dockerExecInput(
       values.timeout_seconds < 1 ||
       values.timeout_seconds > 120
     )
-      throw new Error("执行超时必须在 1 到 120 秒之间。");
+      throw new Error(translate("执行超时必须在 1 到 120 秒之间。"));
     result.timeout_seconds = values.timeout_seconds;
   }
   if (values.output_limit_bytes !== undefined) {
@@ -127,7 +147,7 @@ export function dockerExecInput(
       values.output_limit_bytes < 1 ||
       values.output_limit_bytes > 65536
     )
-      throw new Error("输出限制必须在 1 到 65536 字节之间。");
+      throw new Error(translate("输出限制必须在 1 到 65536 字节之间。"));
     result.output_limit_bytes = values.output_limit_bytes;
   }
   return result;
@@ -178,7 +198,9 @@ export type DockerExecStatus = {
   exit_code?: number;
 };
 
-export function dockerExecRecovery(value: unknown): DockerExecRecovery | undefined {
+export function dockerExecRecovery(
+  value: unknown,
+): DockerExecRecovery | undefined {
   const source = row(value) && row(value.data) ? value.data : value;
   if (
     !row(source) ||
@@ -189,7 +211,8 @@ export function dockerExecRecovery(value: unknown): DockerExecRecovery | undefin
     return undefined;
   return {
     execution_id: source.execution_id,
-    execution_state: source.execution_state as DockerExecRecovery["execution_state"],
+    execution_state:
+      source.execution_state as DockerExecRecovery["execution_state"],
   };
 }
 
@@ -202,13 +225,17 @@ export function dockerExecStatus(value: unknown): DockerExecStatus | undefined {
     typeof value.running !== "boolean" ||
     value.running !== (value.execution_state === "running") ||
     (value.exit_code !== undefined &&
-      (typeof value.exit_code !== "number" || !Number.isInteger(value.exit_code)))
+      (typeof value.exit_code !== "number" ||
+        !Number.isInteger(value.exit_code)))
   )
     return undefined;
   return {
     execution_id: value.execution_id,
-    execution_state: value.execution_state as DockerExecStatus["execution_state"],
+    execution_state:
+      value.execution_state as DockerExecStatus["execution_state"],
     running: value.running,
-    ...(typeof value.exit_code === "number" ? { exit_code: value.exit_code } : {}),
+    ...(typeof value.exit_code === "number"
+      ? { exit_code: value.exit_code }
+      : {}),
   };
 }

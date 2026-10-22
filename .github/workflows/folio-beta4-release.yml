@@ -1,0 +1,90 @@
+name: Publish Folio 1.0-beta4 prerelease
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: folio-1.0-beta4-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'Aoody743/Folio' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/../folio-beta4-build-cache
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve acceptance for the frozen product
+        run: |
+          set -Eeuo pipefail
+          cp -a docs/rewrite/evidence/beta4-20261022 "$RUNNER_TEMP/beta4-acceptance"
+          changed=$(git diff --name-only 1.0-beta4 "$GITHUB_SHA" -- cmd internal frontend go.mod go.sum third_party scripts Makefile)
+          [[ -z "$changed" ]] || { printf '%s\n' "$changed"; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          ref: 1.0-beta4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Verify source and build the immutable release
+        run: |
+          set -Eeuo pipefail
+          make rewrite-deps REWRITE_CACHE="$POWERLINUX_BUILD_CACHE"
+          umask 077
+          make rewrite-test REWRITE_CACHE="$POWERLINUX_BUILD_CACHE"
+          bash scripts/rewrite/build.sh --version 1.0-beta4 --architectures amd64 --output "$GITHUB_WORKSPACE/release-assets"
+          archive=release-assets/folio-1.0-beta4-linux-amd64.tar.gz
+          expected=$(jq -er '.artifact_sha256' "$RUNNER_TEMP/beta4-acceptance/ACCEPTANCE.json")
+          printf '%s  %s\n' "$expected" "$archive" | sha256sum --check
+          python3 scripts/rewrite/test-package.py "$archive"
+          mkdir release-extracted
+          tar -xzf "$archive" -C release-extracted
+      - name: Verify the real bilingual panel in Chromium
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          python3 -m venv "$RUNNER_TEMP/browser-venv"
+          "$RUNNER_TEMP/browser-venv/bin/pip" install playwright==1.62.0
+          "$RUNNER_TEMP/browser-venv/bin/python" -m playwright install --with-deps chromium
+          export POWERLINUX_CHROMIUM=$("$RUNNER_TEMP/browser-venv/bin/python" -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')
+          export POWERLINUX_TEST_BINARY="$GITHUB_WORKSPACE/release-extracted/folio"
+          export POWERLINUX_QA_ARTIFACTS="$RUNNER_TEMP/beta4-browser"
+          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_browser.py
+          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_beta3_browser.py
+          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_experience_browser.py
+      - name: Prepare verified release assets
+        run: |
+          set -Eeuo pipefail
+          install -m 0755 scripts/rewrite/install-1.0-beta4.sh release-assets/install-1.0-beta4.sh
+          cp "$RUNNER_TEMP/beta4-acceptance/ACCEPTANCE.json" "$RUNNER_TEMP/beta4-acceptance/verification-logs.tar.gz" release-assets/
+          cd release-assets
+          cp CHECKSUMS.txt SHA256SUMS.txt
+          sha256sum install-1.0-beta4.sh ACCEPTANCE.json verification-logs.tar.gz >> SHA256SUMS.txt
+          sha256sum --check --strict SHA256SUMS.txt
+      - name: Publish prerelease without replacing published assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          if gh release view 1.0-beta4 >/dev/null 2>&1; then
+            echo 'Release exists; refusing to replace published assets' >&2
+            exit 1
+          fi
+          gh release create 1.0-beta4 \
+            release-assets/folio-1.0-beta4-linux-amd64.tar.gz \
+            release-assets/install-1.0-beta4.sh \
+            release-assets/SHA256SUMS.txt \
+            release-assets/ACCEPTANCE.json \
+            release-assets/verification-logs.tar.gz \
+            --verify-tag --title 'Folio 1.0-beta4' \
+            --notes-file .github/release-notes/1.0-beta4.md --prerelease

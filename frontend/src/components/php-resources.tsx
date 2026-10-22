@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@astryxdesign/core/Button";
@@ -69,9 +70,9 @@ export function PHPResources({
     onExecuted();
   };
   return (
-    <section className="stack" aria-label="PHP运行环境">
+    <section className="stack" aria-label={translate("PHP运行环境")}>
       <div className="card-heading">
-        <h3>PHP运行环境</h3>
+        <h3>{translate("PHP运行环境")}</h3>
         {status.data && (
           <State
             value={status.data.health.status}
@@ -87,10 +88,14 @@ export function PHPResources({
       {status.data?.version && (
         <pre className="runtime-version">{status.data.version}</pre>
       )}
-      <div className="section-tabs" role="tablist" aria-label="PHP管理分类">
+      <div
+        className="section-tabs"
+        role="tablist"
+        aria-label={translate("PHP管理分类")}
+      >
         {[
-          { id: "extensions", label: "扩展模块" },
-          { id: "configuration", label: "运行参数" },
+          { id: "extensions", label: translate("扩展模块") },
+          { id: "configuration", label: translate("运行参数") },
         ].map((item) => (
           <button
             role="tab"
@@ -110,22 +115,28 @@ export function PHPResources({
             </div>
           )}
           {!has("php_extensions") ? (
-            <Unavailable title="当前没有扩展读取权限" />
+            <Unavailable title={translate("当前没有扩展读取权限")} />
           ) : modules.data ? (
             <>
               <p className="muted">
-                载入状态来自该运行环境。启用前会检查模块文件与实际载入结果；内置模块不能通过开关卸载。
+                {translate(
+                  "载入状态来自该运行环境。启用前会检查模块文件与实际载入结果；内置模块不能通过开关卸载。",
+                )}
               </p>
               <div className="extension-grid">
                 {names.map((name) => (
                   <div className="extension-row" key={name}>
                     <div>
                       <strong>{name}</strong>
-                      <small>{loaded.has(name) ? "已载入" : "未载入"}</small>
+                      <small>
+                        {loaded.has(name)
+                          ? translate("已载入")
+                          : translate("未载入")}
+                      </small>
                     </div>
                     {toggle && approved.includes(name) && (
                       <Button
-                        label={`${loaded.has(name) ? "停用" : "启用"} ${name}`}
+                        label={`${loaded.has(name) ? translate("停用") : translate("启用")} ${name}`}
                         variant="ghost"
                         onClick={() =>
                           setSelected({ name, enabled: !loaded.has(name) })
@@ -151,12 +162,14 @@ export function PHPResources({
               )}
             </>
           ) : (
-            <p role="status">正在读取实际扩展…</p>
+            <p role="status">{translate("正在读取实际扩展…")}</p>
           )}
           <PHPExtensionPackages
             key={`packages:${id}`}
             id={id}
-            currentRevision={modules.data?.revision ?? configuration.data?.revision}
+            currentRevision={
+              modules.data?.revision ?? configuration.data?.revision
+            }
             capabilities={capabilities}
             onExecuted={refresh}
             active={active}
@@ -182,7 +195,9 @@ export function PHPResources({
               onExecuted={refresh}
             />
           ) : (
-            <Unavailable title="运行参数尚未读取，或没有配置权限" />
+            <Unavailable
+              title={translate("运行参数尚未读取，或没有配置权限")}
+            />
           )}
         </>
       )}

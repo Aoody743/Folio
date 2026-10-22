@@ -147,7 +147,8 @@ export function parsePostgreSQLAccessList(
     instance_revision: value.instance_revision,
     database_revision: value.database_revision,
     config_revision: value.config_revision,
-    configuration_state: value.configuration_state as PostgreSQLAccessList["configuration_state"],
+    configuration_state:
+      value.configuration_state as PostgreSQLAccessList["configuration_state"],
     protected_local_admin_preserved: true,
     remote_access_supported: false,
     remote_access_limitation: "managed_tls_not_configured",
@@ -158,7 +159,10 @@ export function parsePostgreSQLAccessList(
 export function isLoopbackPostgreSQLCIDR(value: string): boolean {
   const cidr = value.trim();
   if (cidr === "::1/128") return true;
-  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d|[12]\d|3[0-2])$/.exec(cidr);
+  const match =
+    /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d|[12]\d|3[0-2])$/.exec(
+      cidr,
+    );
   if (!match) return false;
   const octetStrings = match.slice(1, 5);
   const octets = octetStrings.map(Number);
@@ -175,9 +179,10 @@ export function isLoopbackPostgreSQLCIDR(value: string): boolean {
     (((octets[0] << 24) >>> 0) |
       (octets[1] << 16) |
       (octets[2] << 8) |
-      octets[3]) >>> 0;
+      octets[3]) >>>
+    0;
   const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
-  return ((address & mask) >>> 0) === address && prefix >= 8;
+  return (address & mask) >>> 0 === address && prefix >= 8;
 }
 
 export function postgresqlAccessMutationInput(
@@ -192,7 +197,8 @@ export function postgresqlAccessMutationInput(
     access.instance_id !== instanceID ||
     access.database !== database ||
     !digest(access.config_revision) ||
-    (operation !== "recover" && access.configuration_state === "pending_recovery")
+    (operation !== "recover" &&
+      access.configuration_state === "pending_recovery")
   )
     return;
   const base = {
@@ -207,7 +213,13 @@ export function postgresqlAccessMutationInput(
     return { ...base, cidr: value.trim(), auth_method: "scram-sha-256" };
   }
   if (operation === "remove") {
-    if (!value || !access.rules.some((rule) => rule.rule_id === value && rule.state === "allowed")) return;
+    if (
+      !value ||
+      !access.rules.some(
+        (rule) => rule.rule_id === value && rule.state === "allowed",
+      )
+    )
+      return;
     return { ...base, rule_id: value };
   }
   return access.configuration_state === "pending_recovery" &&
@@ -253,7 +265,8 @@ function parseSlowStatus(
     config_revision: value.config_revision,
     enabled: value.enabled,
     minimum_duration_ms: value.minimum_duration_ms,
-    configuration_state: state as PostgreSQLSlowlogStatus["configuration_state"],
+    configuration_state:
+      state as PostgreSQLSlowlogStatus["configuration_state"],
     reload_applied: value.reload_applied,
   };
 }
@@ -336,7 +349,9 @@ export function postgresqlSlowlogInput(
       typeof enabled !== "boolean" ||
       !integer(minimumDuration, 1) ||
       minimumDuration > 600000 ||
-      ["pending_reload", "pending_recovery", "unmanaged"].includes(status.configuration_state)
+      ["pending_reload", "pending_recovery", "unmanaged"].includes(
+        status.configuration_state,
+      )
     )
       return;
     return { ...base, enabled, minimum_duration_ms: minimumDuration };
@@ -349,5 +364,10 @@ export function postgresqlSlowlogInput(
 export function postgresqlSlowlogMayConfigure(
   status: PostgreSQLSlowlogStatus | undefined,
 ): boolean {
-  return !!status && !["pending_reload", "pending_recovery", "unmanaged"].includes(status.configuration_state);
+  return (
+    !!status &&
+    !["pending_reload", "pending_recovery", "unmanaged"].includes(
+      status.configuration_state,
+    )
+  );
 }

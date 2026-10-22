@@ -1,8 +1,9 @@
+import { i18nURL } from "./i18n-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import ts from "typescript";
-const js=ts.transpileModule(readFileSync(new URL("../src/lib/docker-management.ts",import.meta.url),"utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const js=ts.transpileModule(readFileSync(new URL("../src/lib/docker-management.ts",import.meta.url),"utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText.replace(/([\"\'])(?:@\/lib\/|\.\/)i18n\1/g, JSON.stringify(i18nURL));
 const {dockerImages,registryCredential,dockerPullInput,dockerCapability}=await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
 const image=`registry.example/team/app@sha256:${"a".repeat(64)}`;
 const credential={id:"opaque",name:"prod",registry:"registry.example",username:"robot",revision:7,credential_configured:true};

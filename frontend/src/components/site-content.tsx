@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -123,11 +124,13 @@ export function SiteDefault({
     }
   };
   return (
-    <section className="stack" aria-label="默认网站切换">
+    <section className="stack" aria-label={translate("默认网站切换")}>
       <div className="card-heading">
-        <h3>默认网站</h3>
+        <h3>{translate("默认网站")}</h3>
         <Button
-          label={expanded ? "收起默认网站设置" : "设置默认网站"}
+          label={
+            expanded ? translate("收起默认网站设置") : translate("设置默认网站")
+          }
           variant="ghost"
           onClick={() => {
             setExpanded(!expanded);
@@ -138,11 +141,11 @@ export function SiteDefault({
       {expanded && (
         <>
           {!canRead ? (
-            <Unavailable title="当前没有默认网站读取权限" />
+            <Unavailable title={translate("当前没有默认网站读取权限")} />
           ) : (
             <>
               {selection.loading && (
-                <p role="status">正在读取当前默认网站与版本…</p>
+                <p role="status">{translate("正在读取当前默认网站与版本…")}</p>
               )}
               {selection.error && (
                 <div className="notice danger" role="alert">
@@ -153,53 +156,68 @@ export function SiteDefault({
                 <>
                   <div className="detail-grid">
                     <div>
-                      <small>将设为默认的网站</small>
+                      <small>{translate("将设为默认的网站")}</small>
                       <strong>{current.selected.name}</strong>
                       <span className="muted">
-                        版本 {current.selected.revision} ·{" "}
+                        {translate("版本")}
+                        {current.selected.revision}·{" "}
                         {current.selected.web_instance}
                       </span>
                     </div>
                     <div>
-                      <small>原默认网站</small>
+                      <small>{translate("原默认网站")}</small>
                       <strong>
                         {current.previous?.name ??
                           (current.selected.default
-                            ? "当前网站已是默认网站"
-                            : "此实例未设置默认网站")}
+                            ? translate("当前网站已是默认网站")
+                            : translate("此实例未设置默认网站"))}
                       </strong>
                       {current.previous && (
                         <span className="muted">
-                          版本 {current.previous.revision}
+                          {translate("版本")}
+                          {current.previous.revision}
                         </span>
                       )}
                     </div>
                   </div>
                   {advanced && (
                     <div className="notice warning">
-                      涉及的网站有手工配置。请在配置中明确恢复面板管理后再切换默认网站。
+                      {translate(
+                        "涉及的网站有手工配置。请在配置中明确恢复面板管理后再切换默认网站。",
+                      )}
                     </div>
                   )}
                   {!current.selected.default && (
                     <>
                       {confirm && (
                         <div className="notice warning">
-                          <strong>确认切换默认网站</strong>
+                          <strong>{translate("确认切换默认网站")}</strong>
                           <p>
                             {current.selected.name}{" "}
-                            将接收该网站服务实例中未匹配域名的请求。
+                            {translate(
+                              "将接收该网站服务实例中未匹配域名的请求。",
+                            )}
                             {current.previous
-                              ? `${current.previous.name} 将取消默认身份，网站内容保留。`
+                              ? translate(
+                                  "{0} 将取消默认身份，网站内容保留。",
+                                  [current.previous.name],
+                                )
                               : ""}
                           </p>
                           <p>
-                            两份网站版本都会检查；配置验证和实际生效后任务才完成。
+                            {translate(
+                              "两份网站版本都会检查；配置验证和实际生效后任务才完成。",
+                            )}
                           </p>
                         </div>
                       )}
                       <div className="button-row">
                         <Button
-                          label={confirm ? "确认切换默认网站" : "设为默认网站"}
+                          label={
+                            confirm
+                              ? translate("确认切换默认网站")
+                              : translate("设为默认网站")
+                          }
                           variant="primary"
                           isLoading={busy}
                           isDisabled={
@@ -211,7 +229,7 @@ export function SiteDefault({
                         />
                         {confirm && (
                           <Button
-                            label="取消默认网站切换"
+                            label={translate("取消默认网站切换")}
                             onClick={() => setConfirm(false)}
                           />
                         )}
@@ -221,7 +239,7 @@ export function SiteDefault({
                 </>
               )}
               <Button
-                label="重新读取默认网站版本"
+                label={translate("重新读取默认网站版本")}
                 variant="ghost"
                 isDisabled={busy || selection.loading}
                 onClick={() => {
@@ -238,7 +256,9 @@ export function SiteDefault({
           )}
           {recovery && (
             <div className="notice warning">
-              上次操作状态尚未确认，请核对任务和实际默认网站；此请求暂停写入。
+              {translate(
+                "上次操作状态尚未确认，请核对任务和实际默认网站；此请求暂停写入。",
+              )}
             </div>
           )}
           {submitted !== undefined && (
@@ -295,9 +315,7 @@ export function SiteBackups({
   const rows = list(records.data);
   const current = rows.find((row) => row.id === selected);
   const create = capabilities.find((c) => c.name === "sites_backup_create");
-  const download = capabilities.some(
-    (c) => c.name === "sites_backup_download",
-  );
+  const download = capabilities.some((c) => c.name === "sites_backup_download");
   const refresh = () => {
     void records.reload();
     onExecuted();
@@ -329,22 +347,22 @@ export function SiteBackups({
     } catch (error) {
       setDownloadError(
         error instanceof APIError && error.code === "forbidden"
-          ? "下载被服务器拒绝：请检查网站备份与站点文件读取权限。"
+          ? translate("下载被服务器拒绝：请检查网站备份与站点文件读取权限。")
           : error instanceof Error
             ? error.message
-            : "网站备份下载准备失败。",
+            : translate("网站备份下载准备失败。"),
       );
     } finally {
       setDownloading(false);
     }
   };
   return (
-    <section className="stack" aria-label="网站备份">
+    <section className="stack" aria-label={translate("网站备份")}>
       <div className="card-heading">
-        <h3>网站备份</h3>
+        <h3>{translate("网站备份")}</h3>
         {create && (
           <Button
-            label="创建网站备份"
+            label={translate("创建网站备份")}
             isDisabled={downloading}
             onClick={() => {
               setDownloadError("");
@@ -360,7 +378,7 @@ export function SiteBackups({
         </div>
       )}
       {!capabilities.some((c) => c.name === "sites_backups_list") ? (
-        <Unavailable title="当前没有备份读取权限" />
+        <Unavailable title={translate("当前没有备份读取权限")} />
       ) : (
         <>
           <div className="instance-list">
@@ -380,8 +398,10 @@ export function SiteBackups({
                 <div>
                   <strong>{fullDate(row.created_at)}</strong>
                   <p>
-                    {bytes(row.size)} ·{" "}
-                    {row.includes_tls ? "包含TLS配置" : "不含TLS配置"}
+                    {bytes(row.size)}·{" "}
+                    {row.includes_tls
+                      ? translate("包含TLS配置")
+                      : translate("不含TLS配置")}
                   </p>
                   <small className="monospace">SHA-256 {row.sha256}</small>
                 </div>
@@ -390,8 +410,10 @@ export function SiteBackups({
           </div>
           {!rows.length && !records.loading && !records.error && (
             <Unavailable
-              title="暂无网站备份"
-              detail="备份任务完成并校验实际产物后，这里会显示备份。"
+              title={translate("暂无网站备份")}
+              detail={translate(
+                "备份任务完成并校验实际产物后，这里会显示备份。",
+              )}
             />
           )}
           <Pager
@@ -415,12 +437,14 @@ export function SiteBackups({
       {current && !creating && (
         <>
           <p className="muted">
-            选定备份 {current.id}。恢复会使用当前网站版本检查，并验证备份产物。
+            {translate("选定备份")}
+            {current.id}
+            {translate("。恢复会使用当前网站版本检查，并验证备份产物。")}
           </p>
           {download && (
             <div className="stack">
               <Button
-                label="下载已验证网站备份"
+                label={translate("下载已验证网站备份")}
                 variant="primary"
                 isLoading={downloading}
                 isDisabled={downloading}
@@ -428,7 +452,7 @@ export function SiteBackups({
               />
               {downloading && (
                 <p className="muted" role="status">
-                  正在验证备份并准备下载…
+                  {translate("正在验证备份并准备下载…")}
                 </p>
               )}
               {downloadError && (
@@ -488,10 +512,12 @@ export function RetainedSites({
   return (
     <Card className="panel-card">
       <div className="card-heading">
-        <h2>保留的网站内容</h2>
+        <h2>{translate("保留的网站内容")}</h2>
       </div>
       <p className="muted">
-        这里是删除网站后仍保留的内容，保留内容不代表网站正在提供服务。
+        {translate(
+          "这里是删除网站后仍保留的内容，保留内容不代表网站正在提供服务。",
+        )}
       </p>
       {records.error && (
         <div className="notice danger" role="alert">
@@ -499,7 +525,7 @@ export function RetainedSites({
         </div>
       )}
       {!capabilities.some((c) => c.name === "sites_retained_list") ? (
-        <Unavailable title="当前没有保留内容读取权限" />
+        <Unavailable title={translate("当前没有保留内容读取权限")} />
       ) : (
         <>
           <div className="instance-list">
@@ -515,15 +541,18 @@ export function RetainedSites({
               >
                 <div>
                   <strong>{row.name}</strong>
-                  <p>保留于 {fullDate(row.retained_at)}</p>
+                  <p>
+                    {translate("保留于 ")}
+                    {fullDate(row.retained_at)}
+                  </p>
                   <code>{row.root_id}</code>
                 </div>
-                <span>已删除网站</span>
+                <span>{translate("已删除网站")}</span>
               </button>
             ))}
           </div>
           {!rows.length && !records.loading && !records.error && (
-            <Unavailable title="暂无保留的网站内容" />
+            <Unavailable title={translate("暂无保留的网站内容")} />
           )}
           <Pager
             offset={offset}
@@ -539,7 +568,7 @@ export function RetainedSites({
         <section className="stack">
           {onFiles && capabilities.some((c) => c.name === "fs_roots") && (
             <Button
-              label="查看保留文件"
+              label={translate("查看保留文件")}
               onClick={() => onFiles(current.root_id)}
             />
           )}

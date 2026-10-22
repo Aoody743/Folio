@@ -105,34 +105,47 @@ function hasSchema(
   );
 }
 
-function propertiesOf(capability: Capability | undefined): Record<string, unknown> | undefined {
+function propertiesOf(
+  capability: Capability | undefined,
+): Record<string, unknown> | undefined {
   const properties = capability?.input_schema?.properties;
   return object(properties) ? properties : undefined;
 }
 
-function exactPropertySet(capability: Capability | undefined, names: string[]): boolean {
+function exactPropertySet(
+  capability: Capability | undefined,
+  names: string[],
+): boolean {
   const properties = propertiesOf(capability);
-  return !!properties && Object.keys(properties).length === names.length &&
-    names.every((name) => Object.hasOwn(properties, name));
+  return (
+    !!properties &&
+    Object.keys(properties).length === names.length &&
+    names.every((name) => Object.hasOwn(properties, name))
+  );
 }
 
-function stringSchema(value: unknown, options: { pattern?: string; minLength?: number; maxLength?: number } = {}): boolean {
-  return object(value) && value.type === "string" &&
+function stringSchema(
+  value: unknown,
+  options: { pattern?: string; minLength?: number; maxLength?: number } = {},
+): boolean {
+  return (
+    object(value) &&
+    value.type === "string" &&
     (options.pattern === undefined || value.pattern === options.pattern) &&
-    (options.minLength === undefined || value.minLength === options.minLength) &&
-    (options.maxLength === undefined || value.maxLength === options.maxLength);
+    (options.minLength === undefined ||
+      value.minLength === options.minLength) &&
+    (options.maxLength === undefined || value.maxLength === options.maxLength)
+  );
 }
 
 function revisionSchema(value: unknown): boolean {
   return object(value) && value.type === "integer" && value.minimum === 1;
 }
 
-export function phpExtensionActions(
-  capabilities: Capability[],
-): {
+export function phpExtensionActions(capabilities: Capability[]): {
   plan?: Capability;
   apply?: Capability;
-    recoveryInspect?: Capability;
+  recoveryInspect?: Capability;
   modules: (typeof phpExtensionModuleIDs)[number][];
 } {
   const plan = capabilities.find((capability) =>
@@ -145,42 +158,55 @@ export function phpExtensionActions(
       true,
     ),
   );
-  const apply = capabilities.find((capability) =>
-    hasSchema(
-      capability,
-      "php_extension_apply",
-      "php:manage",
-      ["id", "plan_id", "expected_revision", "idempotency_key"],
-      true,
-      false,
-    ) && exactPropertySet(capability, ["id", "plan_id", "expected_revision", "idempotency_key"]) &&
-    stringSchema(propertiesOf(capability)?.id) &&
-    stringSchema(propertiesOf(capability)?.plan_id, { pattern: "^plan_[a-f0-9]{48}$" }) &&
-    revisionSchema(propertiesOf(capability)?.expected_revision) &&
-    stringSchema(propertiesOf(capability)?.idempotency_key, {
-      pattern: "^[A-Za-z0-9_.:-]{8,128}$",
-      minLength: 8,
-      maxLength: 128,
-    }),
+  const apply = capabilities.find(
+    (capability) =>
+      hasSchema(
+        capability,
+        "php_extension_apply",
+        "php:manage",
+        ["id", "plan_id", "expected_revision", "idempotency_key"],
+        true,
+        false,
+      ) &&
+      exactPropertySet(capability, [
+        "id",
+        "plan_id",
+        "expected_revision",
+        "idempotency_key",
+      ]) &&
+      stringSchema(propertiesOf(capability)?.id) &&
+      stringSchema(propertiesOf(capability)?.plan_id, {
+        pattern: "^plan_[a-f0-9]{48}$",
+      }) &&
+      revisionSchema(propertiesOf(capability)?.expected_revision) &&
+      stringSchema(propertiesOf(capability)?.idempotency_key, {
+        pattern: "^[A-Za-z0-9_.:-]{8,128}$",
+        minLength: 8,
+        maxLength: 128,
+      }),
   );
-  const recoveryInspect = capabilities.find((capability) =>
-    hasSchema(
-      capability,
-      "php_extension_recovery_inspect",
-      "php:manage",
-      ["id"],
-      false,
-      true,
-    ) &&
-    exactPropertySet(capability, ["id"]) &&
-    stringSchema(propertiesOf(capability)?.id),
+  const recoveryInspect = capabilities.find(
+    (capability) =>
+      hasSchema(
+        capability,
+        "php_extension_recovery_inspect",
+        "php:manage",
+        ["id"],
+        false,
+        true,
+      ) &&
+      exactPropertySet(capability, ["id"]) &&
+      stringSchema(propertiesOf(capability)?.id),
   );
   const properties = plan?.input_schema?.properties;
   const moduleSchema = object(properties) ? properties.module_id : undefined;
-  const enumValues = object(moduleSchema) && Array.isArray(moduleSchema.enum)
-    ? moduleSchema.enum
-    : [];
-  const modules = phpExtensionModuleIDs.filter((module) => enumValues.includes(module));
+  const enumValues =
+    object(moduleSchema) && Array.isArray(moduleSchema.enum)
+      ? moduleSchema.enum
+      : [];
+  const modules = phpExtensionModuleIDs.filter((module) =>
+    enumValues.includes(module),
+  );
   return {
     ...(plan ? { plan } : {}),
     ...(apply ? { apply } : {}),
@@ -203,23 +229,52 @@ export function parsePHPExtensionRecovery(
   value: unknown,
   id: string,
 ): PHPExtensionRecovery | undefined {
-  if (!object(value) || value.id !== id || typeof value.pending !== "boolean" ||
-      typeof value.replay_available !== "boolean" || typeof value.can_apply_package_grant !== "boolean") return;
+  if (
+    !object(value) ||
+    value.id !== id ||
+    typeof value.pending !== "boolean" ||
+    typeof value.replay_available !== "boolean" ||
+    typeof value.can_apply_package_grant !== "boolean"
+  )
+    return;
   if (!value.pending) {
-    if (value.replay_available || value.plan_id !== undefined || value.operation !== undefined ||
-        value.module_id !== undefined || value.expected_revision !== undefined || value.phase !== undefined ||
-        (value.started_at !== undefined &&
-          (typeof value.started_at !== "string" || !Number.isFinite(Date.parse(value.started_at)))) ||
-        (value.updated_at !== undefined &&
-          (typeof value.updated_at !== "string" || !Number.isFinite(Date.parse(value.updated_at))))) return;
-    return { id, pending: false, replay_available: false, can_apply_package_grant: value.can_apply_package_grant };
+    if (
+      value.replay_available ||
+      value.plan_id !== undefined ||
+      value.operation !== undefined ||
+      value.module_id !== undefined ||
+      value.expected_revision !== undefined ||
+      value.phase !== undefined ||
+      (value.started_at !== undefined &&
+        (typeof value.started_at !== "string" ||
+          !Number.isFinite(Date.parse(value.started_at)))) ||
+      (value.updated_at !== undefined &&
+        (typeof value.updated_at !== "string" ||
+          !Number.isFinite(Date.parse(value.updated_at))))
+    )
+      return;
+    return {
+      id,
+      pending: false,
+      replay_available: false,
+      can_apply_package_grant: value.can_apply_package_grant,
+    };
   }
-  if (typeof value.plan_id !== "string" || !extensionPlanIDPattern.test(value.plan_id) ||
-      !operation(value.operation) || !moduleID(value.module_id) || !revision(value.expected_revision) ||
-      typeof value.phase !== "string" || !extensionRecoveryPhases.has(value.phase) ||
-      typeof value.started_at !== "string" || !Number.isFinite(Date.parse(value.started_at)) ||
-      typeof value.updated_at !== "string" || !Number.isFinite(Date.parse(value.updated_at)) ||
-      Date.parse(value.updated_at) < Date.parse(value.started_at)) return;
+  if (
+    typeof value.plan_id !== "string" ||
+    !extensionPlanIDPattern.test(value.plan_id) ||
+    !operation(value.operation) ||
+    !moduleID(value.module_id) ||
+    !revision(value.expected_revision) ||
+    typeof value.phase !== "string" ||
+    !extensionRecoveryPhases.has(value.phase) ||
+    typeof value.started_at !== "string" ||
+    !Number.isFinite(Date.parse(value.started_at)) ||
+    typeof value.updated_at !== "string" ||
+    !Number.isFinite(Date.parse(value.updated_at)) ||
+    Date.parse(value.updated_at) < Date.parse(value.started_at)
+  )
+    return;
   return {
     id,
     pending: true,
@@ -239,10 +294,25 @@ export function phpExtensionRecoveryApplyInput(
   recovery: PHPExtensionRecovery | undefined,
   id: string,
   idempotencyKey: string,
-): { id: string; plan_id: string; expected_revision: number; idempotency_key: string } | undefined {
-  if (!recovery || recovery.id !== id || !recovery.pending || !recovery.replay_available ||
-      !recovery.can_apply_package_grant || !recovery.plan_id || !recovery.expected_revision ||
-      !/^[A-Za-z0-9_.:-]{8,128}$/.test(idempotencyKey)) return;
+):
+  | {
+      id: string;
+      plan_id: string;
+      expected_revision: number;
+      idempotency_key: string;
+    }
+  | undefined {
+  if (
+    !recovery ||
+    recovery.id !== id ||
+    !recovery.pending ||
+    !recovery.replay_available ||
+    !recovery.can_apply_package_grant ||
+    !recovery.plan_id ||
+    !recovery.expected_revision ||
+    !/^[A-Za-z0-9_.:-]{8,128}$/.test(idempotencyKey)
+  )
+    return;
   return {
     id,
     plan_id: recovery.plan_id,
@@ -318,25 +388,38 @@ export function parsePHPExtensionPlan(
       !nonempty(item.description, 1024)
     )
       return;
-    changes.push({ kind: item.kind, target: item.target, description: item.description });
+    changes.push({
+      kind: item.kind,
+      target: item.target,
+      description: item.description,
+    });
   }
   for (const resource of value.resources) {
-    if (typeof resource !== "string" || !resource || resource.length > 256 || resources.includes(resource)) return;
+    if (
+      typeof resource !== "string" ||
+      !resource ||
+      resource.length > 256 ||
+      resources.includes(resource)
+    )
+      return;
     resources.push(resource);
   }
-  const parsedOperation = operation(value.operation) ? value.operation : undefined;
-  const platform = object(value.platform) &&
+  const parsedOperation = operation(value.operation)
+    ? value.operation
+    : undefined;
+  const platform =
+    object(value.platform) &&
     nonempty(value.platform.os, 64) &&
     nonempty(value.platform.arch, 64) &&
     nonempty(value.platform.distro, 64) &&
     nonempty(value.platform.release, 64)
-    ? {
-        os: value.platform.os,
-        arch: value.platform.arch,
-        distro: value.platform.distro,
-        release: value.platform.release,
-      }
-    : undefined;
+      ? {
+          os: value.platform.os,
+          arch: value.platform.arch,
+          distro: value.platform.distro,
+          release: value.platform.release,
+        }
+      : undefined;
   if (
     !nonempty(value.plan_id, 128) ||
     value.id !== expected.id ||
@@ -358,7 +441,10 @@ export function parsePHPExtensionPlan(
         value.package_retained_reason.trim().length === 0))
   )
     return;
-  if (!resources.includes(`software:${expected.id}`) || !resources.includes("host:packages"))
+  if (
+    !resources.includes(`software:${expected.id}`) ||
+    !resources.includes("host:packages")
+  )
     return;
   return {
     plan_id: value.plan_id,
@@ -378,7 +464,9 @@ export function parsePHPExtensionPlan(
     already_enabled: value.already_enabled,
     package_removable: false,
     ...(typeof value.package_retained_reason === "string"
-      ? { package_retained_reason: value.package_retained_reason.slice(0, 1024) }
+      ? {
+          package_retained_reason: value.package_retained_reason.slice(0, 1024),
+        }
       : {}),
   };
 }
@@ -389,7 +477,14 @@ export function phpExtensionApplyInput(
   currentRevision: number,
   now = Date.now(),
   idempotencyKey?: string,
-): { id: string; plan_id: string; expected_revision: number; idempotency_key: string } | undefined {
+):
+  | {
+      id: string;
+      plan_id: string;
+      expected_revision: number;
+      idempotency_key: string;
+    }
+  | undefined {
   if (
     !plan ||
     plan.id !== id ||

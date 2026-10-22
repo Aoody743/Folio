@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 
 export type DockerTerminalSession = {
@@ -28,7 +29,10 @@ export type DockerTerminalRead = DockerTerminalSession & {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value);
 const safeInt = (value: unknown, min: number, max: number): value is number =>
-  typeof value === "number" && Number.isSafeInteger(value) && value >= min && value <= max;
+  typeof value === "number" &&
+  Number.isSafeInteger(value) &&
+  value >= min &&
+  value <= max;
 const validDate = (value: unknown) =>
   typeof value === "string" && Number.isFinite(Date.parse(value));
 
@@ -53,7 +57,9 @@ export function dockerTerminalCapability(
     const schemaRequired = schema?.required;
     return (
       isRecord(properties) &&
-      allowedFields.every((field) => Object.prototype.hasOwnProperty.call(properties, field)) &&
+      allowedFields.every((field) =>
+        Object.prototype.hasOwnProperty.call(properties, field),
+      ) &&
       Array.isArray(schemaRequired) &&
       required.every((field) => schemaRequired.includes(field)) &&
       schemaRequired.every((field) => allowedFields.includes(String(field)))
@@ -80,11 +86,14 @@ export function dockerTerminalSession(
     !validDate(value.created_at) ||
     !validDate(value.expires_at) ||
     typeof value.execution_state !== "string" ||
-    !["created", "starting", "running", "exited", "unknown"].includes(value.execution_state) ||
+    !["created", "starting", "running", "exited", "unknown"].includes(
+      value.execution_state,
+    ) ||
     typeof value.attached !== "boolean" ||
     typeof value.stream_started !== "boolean" ||
     typeof value.output_available !== "boolean" ||
-    (value.close_requested !== undefined && typeof value.close_requested !== "boolean") ||
+    (value.close_requested !== undefined &&
+      typeof value.close_requested !== "boolean") ||
     (value.exit_code !== undefined && !Number.isSafeInteger(value.exit_code))
   )
     return;
@@ -102,8 +111,12 @@ export function dockerTerminalSession(
     attached: value.attached,
     stream_started: value.stream_started,
     output_available: value.output_available,
-    ...(value.close_requested === undefined ? {} : { close_requested: value.close_requested }),
-    ...(value.exit_code === undefined ? {} : { exit_code: value.exit_code as number }),
+    ...(value.close_requested === undefined
+      ? {}
+      : { close_requested: value.close_requested }),
+    ...(value.exit_code === undefined
+      ? {}
+      : { exit_code: value.exit_code as number }),
   };
 }
 
@@ -111,7 +124,9 @@ const validBase64 = (value: unknown, maxLength = 5500) =>
   typeof value === "string" &&
   value.length <= maxLength &&
   (value === "" ||
-    (/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value) &&
+    (/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+      value,
+    ) &&
       value.length % 4 === 0));
 
 export function dockerTerminalRead(
@@ -131,7 +146,8 @@ export function dockerTerminalRead(
     frames.length > 32 ||
     !safeInt(value.next, after, Number.MAX_SAFE_INTEGER) ||
     typeof value.truncated !== "boolean" ||
-    (value.output_unavailable !== undefined && typeof value.output_unavailable !== "boolean")
+    (value.output_unavailable !== undefined &&
+      typeof value.output_unavailable !== "boolean")
   )
     return;
   const parsed: { sequence: number; data: string }[] = [];
@@ -171,20 +187,20 @@ export function dockerTerminalInputFrame(
     data.length === 0 ||
     data.length > 21848
   )
-    throw new Error("终端输入帧无效，请重新连接后重试。");
+    throw new Error(translate("终端输入帧无效，请重新连接后重试。"));
   const decoded = atob(data);
   if (decoded.length < 1 || decoded.length > 16 * 1024)
-    throw new Error("单个终端输入帧不能超过 16 KiB。");
+    throw new Error(translate("单个终端输入帧不能超过 16 KiB。"));
   return { session_id: sessionID, input_id: inputID, data };
 }
 
 export function dockerTerminalStateLabel(state: string): string {
   const labels: Record<string, string> = {
-    created: "已创建",
-    starting: "正在启动",
-    running: "Engine进程仍在运行",
-    exited: "Engine进程已退出",
-    unknown: "Engine状态未知",
+    created: translate("已创建"),
+    starting: translate("正在启动"),
+    running: translate("Engine进程仍在运行"),
+    exited: translate("Engine进程已退出"),
+    unknown: translate("Engine状态未知"),
   };
-  return labels[state] ?? "状态未提供";
+  return labels[state] ?? translate("状态未提供");
 }

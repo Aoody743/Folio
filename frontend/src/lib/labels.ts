@@ -1,5 +1,8 @@
+import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 const fields: Record<string, string> = {
+  changes: "变更内容",
+  packages: "软件包",
   overlap_policy: "上次任务未结束时",
   misfire_policy: "错过计划执行时",
   misfire_grace_seconds: "允许延迟的秒数",
@@ -566,13 +569,15 @@ const actions: Record<string, string> = {
   supervisor_restart: "重启守护程序",
 };
 export const fieldLabel = (name: string, title?: string) =>
-  title && /[\u3400-\u9fff]/.test(title)
-    ? title
-    : (fields[name] ?? title ?? name);
+  translate(
+    title && /[\u3400-\u9fff]/.test(title)
+      ? title
+      : (fields[name] ?? title ?? name),
+  );
 export const actionLabel = (capability: Capability) =>
-  capability.description && /[\u3400-\u9fff]/.test(capability.description)
-    ? capability.description
-    : (actions[capability.name] ?? capability.description ?? capability.name);
+  translate(
+    actions[capability.name] ?? capability.description ?? capability.name,
+  );
 const choices: Record<string, string> = {
   skip: "跳过本次",
   allow: "允许重叠执行",
@@ -643,7 +648,7 @@ const choices: Record<string, string> = {
   read: "只读",
 };
 export const choiceLabel = (value: unknown, field?: string) => {
-  if (value === "") return "留空";
+  if (value === "") return translate("留空");
   if (field === "permission") {
     const permissions: Record<string, string> = {
       read: "只读（旧r）",
@@ -651,7 +656,7 @@ export const choiceLabel = (value: unknown, field?: string) => {
       read_write: "完整库权限（旧all）",
     };
     if (typeof value === "string" && permissions[value])
-      return permissions[value];
+      return translate(permissions[value]);
   }
   if (field === "unauthorized_status") {
     const labels: Record<string, string> = {
@@ -663,9 +668,9 @@ export const choiceLabel = (value: unknown, field?: string) => {
       "408": "408 · 请求超时",
       "416": "416 · 请求范围无效",
     };
-    return labels[String(value)] ?? String(value);
+    return translate(labels[String(value)] ?? String(value));
   }
   return typeof value === "string"
-    ? (choices[value] ?? value)
+    ? translate(choices[value] ?? value)
     : JSON.stringify(value);
 };

@@ -1,3 +1,4 @@
+import { i18nURL } from "./i18n-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -11,7 +12,7 @@ const schemaJS = ts.transpileModule(
       module: ts.ModuleKind.ESNext,
     },
   },
-).outputText;
+).outputText.replace(/([\"\'])(?:@\/lib\/|\.\/)i18n\1/g, JSON.stringify(i18nURL));
 const schemaURL = `data:text/javascript;base64,${Buffer.from(schemaJS).toString("base64")}`;
 const source = readFileSync(
   new URL("../src/lib/site-categories.ts", import.meta.url),
@@ -25,7 +26,7 @@ const js = ts.transpileModule(source, {
     target: ts.ScriptTarget.ES2022,
     module: ts.ModuleKind.ESNext,
   },
-}).outputText;
+}).outputText.replace(/([\"\'])(?:@\/lib\/|\.\/)i18n\1/g, JSON.stringify(i18nURL));
 const categories = await import(
   `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`
 );
@@ -39,7 +40,7 @@ const { APIError } = await import(
           module: ts.ModuleKind.ESNext,
         },
       },
-    ).outputText,
+    ).outputText.replace(/([\"\'])(?:@\/lib\/|\.\/)i18n\1/g, JSON.stringify(i18nURL)),
   ).toString("base64")}`
 );
 

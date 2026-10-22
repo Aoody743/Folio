@@ -1,3 +1,4 @@
+import { i18nURL } from "./i18n-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -10,7 +11,7 @@ async function loadTypeScript(path) {
       target: ts.ScriptTarget.ES2022,
       module: ts.ModuleKind.ESNext,
     },
-  }).outputText;
+  }).outputText.replace(/([\"\'])(?:@\/lib\/|\.\/)i18n\1/g, JSON.stringify(i18nURL));
   return import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
 }
 

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "./i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { action } from "./api";
 export function useResource<T>(
@@ -28,7 +29,7 @@ export function useResource<T>(
       setError("");
     } catch (e) {
       if (request === generation.current)
-        setError(e instanceof Error ? e.message : "读取失败");
+        setError(e instanceof Error ? e.message : translate("读取失败"));
     } finally {
       if (request === generation.current) setLoading(false);
     }

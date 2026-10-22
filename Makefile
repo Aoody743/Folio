@@ -20,6 +20,7 @@ rewrite-ui:
 	NEXT_TELEMETRY_DISABLED=1 npm run build --prefix frontend
 
 rewrite-install-test:
+	python3 scripts/rewrite/sync-installer-ui.py --check
 	python3 -m unittest discover -s scripts/rewrite/tests -p 'test_*.py' -v
 
 rewrite-mysql-test:

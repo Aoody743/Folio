@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef } from "react";
 import { EditorView, basicSetup } from "codemirror";
 import { Compartment, EditorState, Extension } from "@codemirror/state";
@@ -55,7 +56,7 @@ export default function CodeEditor({
           EditorView.editable.of(!readOnly),
         ]),
         EditorView.contentAttributes.of({
-          "aria-label": "文件内容",
+          "aria-label": translate("文件内容"),
           role: "textbox",
           "aria-multiline": "true",
         }),

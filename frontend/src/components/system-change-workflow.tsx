@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -40,25 +41,45 @@ type Confirmation = {
 };
 
 const actionTitle: Record<SystemChangeAction, string> = {
-  system_change_apply: "应用计划",
-  system_change_confirm: "确认配置正常",
-  system_change_rollback: "回滚变更",
+  get system_change_apply() {
+    return translate("应用计划");
+  },
+  get system_change_confirm() {
+    return translate("确认配置正常");
+  },
+  get system_change_rollback() {
+    return translate("回滚变更");
+  },
 };
 
 const planStateLabels: Record<string, string> = {
-  planned: "待应用",
-  applying: "应用中",
-  awaiting_confirmation: "等待连接确认",
-  applied: "已应用",
-  rolled_back: "已回滚",
-  recovery_required: "需要恢复处置",
+  get planned() {
+    return translate("待应用");
+  },
+  get applying() {
+    return translate("应用中");
+  },
+  get awaiting_confirmation() {
+    return translate("等待连接确认");
+  },
+  get applied() {
+    return translate("已应用");
+  },
+  get rolled_back() {
+    return translate("已回滚");
+  },
+  get recovery_required() {
+    return translate("需要恢复处置");
+  },
 };
 
 function PlanState({ state }: { state: string }) {
   const tone =
     state === "recovery_required"
       ? "danger"
-      : state === "planned" || state === "applying" || state === "awaiting_confirmation"
+      : state === "planned" ||
+          state === "applying" ||
+          state === "awaiting_confirmation"
         ? "warning"
         : "neutral";
   return (
@@ -69,7 +90,8 @@ function PlanState({ state }: { state: string }) {
 }
 
 function displayValue(key: string, value: unknown): string {
-  if (typeof value === "boolean") return value ? "是" : "否";
+  if (typeof value === "boolean")
+    return value ? translate("是") : translate("否");
   if (Array.isArray(value)) return JSON.stringify(value);
   if (value && typeof value === "object") return JSON.stringify(value);
   if (key === "kind" || key === "service_state" || key === "power")
@@ -78,7 +100,9 @@ function displayValue(key: string, value: unknown): string {
 }
 
 function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "系统变更请求失败。";
+  return error instanceof Error
+    ? error.message
+    : translate("系统变更请求失败。");
 }
 
 export function SystemChangeWorkflow({
@@ -102,18 +126,15 @@ export function SystemChangeWorkflow({
   const tasksCapability = capability("tasks_get");
   const canPlan = hasSystemChangePlanSchema(planCapability);
   const canGet = hasSystemChangeGetSchema(getCapability);
-  const canApply = hasSystemChangeIDSchema(
-    applyCapability,
-    "system_change_apply",
-  ) && applyCapability?.task === true;
-  const canConfirm = hasSystemChangeIDSchema(
-    confirmCapability,
-    "system_change_confirm",
-  ) && confirmCapability?.task !== true;
-  const canRollback = hasSystemChangeIDSchema(
-    rollbackCapability,
-    "system_change_rollback",
-  ) && rollbackCapability?.task === true;
+  const canApply =
+    hasSystemChangeIDSchema(applyCapability, "system_change_apply") &&
+    applyCapability?.task === true;
+  const canConfirm =
+    hasSystemChangeIDSchema(confirmCapability, "system_change_confirm") &&
+    confirmCapability?.task !== true;
+  const canRollback =
+    hasSystemChangeIDSchema(rollbackCapability, "system_change_rollback") &&
+    rollbackCapability?.task === true;
   const canReadTasks = hasRequiredIDSchema(tasksCapability, "tasks_get");
 
   const [storageKey, setStorageKey] = useState("");
@@ -159,7 +180,9 @@ export function SystemChangeWorkflow({
     } catch {
       setStorageReady(false);
       setRecovery(undefined);
-      setStorageError("浏览器无法保存计划恢复记录，系统变更操作已停用。");
+      setStorageError(
+        translate("浏览器无法保存计划恢复记录，系统变更操作已停用。"),
+      );
     }
     setHydrated(true);
   }, [identityKey]);
@@ -174,7 +197,11 @@ export function SystemChangeWorkflow({
         return true;
       } catch {
         setStorageReady(false);
-        setStorageError("恢复记录保存失败；为避免丢失执行状态，系统变更操作已停用。");
+        setStorageError(
+          translate(
+            "恢复记录保存失败；为避免丢失执行状态，系统变更操作已停用。",
+          ),
+        );
         return false;
       }
     },
@@ -186,7 +213,7 @@ export function SystemChangeWorkflow({
       const input = systemChangeIDInput(getCapability, "system_change_get", id);
       if (!input || !canGet) {
         setPlanFresh(false);
-        setPlanError("当前账号未提供可用的系统变更计划读取能力。");
+        setPlanError(translate("当前账号未提供可用的系统变更计划读取能力。"));
         return undefined;
       }
       setPlanLoading(true);
@@ -197,7 +224,9 @@ export function SystemChangeWorkflow({
         const current = parseSystemChangePlan(value);
         if (!current || current.id !== id) {
           setPlan(undefined);
-          setPlanError("服务返回的计划记录无法验证；请保留当前状态后重试读取。");
+          setPlanError(
+            translate("服务返回的计划记录无法验证；请保留当前状态后重试读取。"),
+          );
           return undefined;
         }
         setPlan(current);
@@ -246,7 +275,7 @@ export function SystemChangeWorkflow({
   const readTask = useCallback(async () => {
     const taskId = recovery?.taskId;
     if (!taskId || !canReadTasks) {
-      setTaskError("当前账号无法读取该执行任务；计划状态仍待核对。");
+      setTaskError(translate("当前账号无法读取该执行任务；计划状态仍待核对。"));
       return;
     }
     setTaskLoading(true);
@@ -256,9 +285,9 @@ export function SystemChangeWorkflow({
       setTask(next);
       if (systemChangeTaskFinished(next.status ?? next.state)) {
         const current = await readPlan(recovery.planId);
-        if (current)
-          persistRecovery({ planId: recovery.planId });
-        else setTaskError("任务已结束，但计划读取失败；操作仍待核对。");
+        if (current) persistRecovery({ planId: recovery.planId });
+        else
+          setTaskError(translate("任务已结束，但计划读取失败；操作仍待核对。"));
       }
     } catch (error) {
       setTaskError(getErrorMessage(error));
@@ -281,7 +310,7 @@ export function SystemChangeWorkflow({
       if (!live) return;
       const taskId = recovery.taskId!;
       if (!canReadTasks) {
-        setTaskError("当前账号无法读取任务状态；操作保持待核对。");
+        setTaskError(translate("当前账号无法读取任务状态；操作保持待核对。"));
         return;
       }
       setTaskLoading(true);
@@ -292,10 +321,11 @@ export function SystemChangeWorkflow({
         setTaskError("");
         if (systemChangeTaskFinished(next.status ?? next.state)) {
           const current = await readPlan(recovery.planId);
-          if (live && current)
-            persistRecovery({ planId: recovery.planId });
+          if (live && current) persistRecovery({ planId: recovery.planId });
           else if (live)
-            setTaskError("任务已结束，但计划读取失败；操作仍待核对。");
+            setTaskError(
+              translate("任务已结束，但计划读取失败；操作仍待核对。"),
+            );
           return;
         }
       } catch (error) {
@@ -319,15 +349,16 @@ export function SystemChangeWorkflow({
       live = false;
       if (timer) clearTimeout(timer);
     };
-  }, [canReadTasks, persistRecovery, readPlan, recovery?.planId, recovery?.taskId]);
+  }, [
+    canReadTasks,
+    persistRecovery,
+    readPlan,
+    recovery?.planId,
+    recovery?.taskId,
+  ]);
 
   const available = useMemo(
-    () =>
-      canPlan ||
-      canGet ||
-      canApply ||
-      canConfirm ||
-      canRollback,
+    () => canPlan || canGet || canApply || canConfirm || canRollback,
     [canApply, canConfirm, canGet, canPlan, canRollback],
   );
 
@@ -335,13 +366,15 @@ export function SystemChangeWorkflow({
     const created = parseSystemChangePlan(value);
     if (!created) {
       setPlanFresh(false);
-      setPlanError("计划返回内容不完整；请刷新并核对服务端状态，不会继续执行。");
+      setPlanError(
+        translate("计划返回内容不完整；请刷新并核对服务端状态，不会继续执行。"),
+      );
       return;
     }
     if (!persistRecovery({ planId: created.id })) {
       setPlan(created);
       setPlanFresh(false);
-      setPlanError("计划已生成，但恢复记录未能保存；请勿继续操作。");
+      setPlanError(translate("计划已生成，但恢复记录未能保存；请勿继续操作。"));
       return;
     }
     setPlan(created);
@@ -370,7 +403,9 @@ export function SystemChangeWorkflow({
     const cap = capability(selected.action);
     const input = systemChangeIDInput(cap, selected.action, plan.id);
     if (!input) {
-      setOperationError("当前能力描述不包含所需计划参数，操作已停止。");
+      setOperationError(
+        translate("当前能力描述不包含所需计划参数，操作已停止。"),
+      );
       return;
     }
     const request: SystemChangeRecovery = {
@@ -395,25 +430,32 @@ export function SystemChangeWorkflow({
         const taskId = systemChangeTaskID(result);
         if (!taskId) {
           setOperationError(
-            "服务未返回可核对的任务编号；计划保留为待核对状态，请勿重复创建新计划。",
+            translate(
+              "服务未返回可核对的任务编号；计划保留为待核对状态，请勿重复创建新计划。",
+            ),
           );
           await readPlan(plan.id);
         } else if (!persistRecovery({ ...request, taskId })) {
-          setOperationError("任务已提交，但任务恢复记录保存失败；当前状态待核对。");
+          setOperationError(
+            translate("任务已提交，但任务恢复记录保存失败；当前状态待核对。"),
+          );
         } else if (!canReadTasks) {
-          setTaskError("任务已提交，但当前账号缺少 tasks_get 能力；状态待核对。");
+          setTaskError(
+            translate(
+              "任务已提交，但当前账号缺少 tasks_get 能力；状态待核对。",
+            ),
+          );
         } else {
           setTask(undefined);
         }
       } else {
         const current = await readPlan(plan.id);
-        if (
-          current &&
-          systemChangeIntentResolved(current, selected.action)
-        ) {
+        if (current && systemChangeIntentResolved(current, selected.action)) {
           persistRecovery({ planId: current.id });
         } else if (current) {
-          setOperationError("操作已返回，但计划状态仍未确认；请保留记录并重新读取。");
+          setOperationError(
+            translate("操作已返回，但计划状态仍未确认；请保留记录并重新读取。"),
+          );
         }
       }
       onExecuted();
@@ -426,7 +468,12 @@ export function SystemChangeWorkflow({
         setRecoveryInvalid(true);
       } else {
         const current = await readPlan(plan.id);
-        if (current && error instanceof APIError && error.status >= 400 && error.status < 500) {
+        if (
+          current &&
+          error instanceof APIError &&
+          error.status >= 400 &&
+          error.status < 500
+        ) {
           persistRecovery({ planId: current.id });
           if (["host_conflict", "plan_expired"].includes(error.code))
             setPlanStale(true);
@@ -464,15 +511,14 @@ export function SystemChangeWorkflow({
     canPlan &&
     canGet &&
     (!recovery ||
-      (!!plan &&
-        ["applied", "rolled_back"].includes(plan.state)) ||
+      (!!plan && ["applied", "rolled_back"].includes(plan.state)) ||
       planStale);
 
   if (!available)
     return (
       <Unavailable
-        title="系统变更工作流未开放"
-        detail="当前身份没有可用的系统变更计划能力。"
+        title={translate("系统变更工作流未开放")}
+        detail={translate("当前身份没有可用的系统变更计划能力。")}
       />
     );
 
@@ -480,14 +526,15 @@ export function SystemChangeWorkflow({
     <Card className="panel-card system-change-workflow">
       <div className="card-heading">
         <div>
-          <h2>系统变更计划</h2>
+          <h2>{translate("系统变更计划")}</h2>
           <p className="muted">
-            先由服务器预检并生成计划；应用、连接确认和回滚都需要单独操作。
+            {translate(
+              "先由服务器预检并生成计划；应用、连接确认和回滚都需要单独操作。",
+            )}
           </p>
         </div>
         {plan && <PlanState state={plan.state} />}
       </div>
-
       {storageError && (
         <div className="notice danger" role="alert">
           {storageError}
@@ -495,18 +542,26 @@ export function SystemChangeWorkflow({
       )}
       {recoveryInvalid && (
         <div className="notice danger" role="alert">
-          当前身份无法读取上次计划或任务，恢复记录已清除，系统变更继续停用。请先确认身份与能力后重新载入页面。
+          {translate(
+            "当前身份无法读取上次计划或任务，恢复记录已清除，系统变更继续停用。请先确认身份与能力后重新载入页面。",
+          )}
         </div>
       )}
-      {!hydrated && <Unavailable title="正在读取本地计划恢复记录…" />}
+      {!hydrated && (
+        <Unavailable title={translate("正在读取本地计划恢复记录…")} />
+      )}
       {hydrated && !canGet && (
         <div className="notice warning" role="status">
-          当前能力集没有可用的 `system_change_get`；无法验证计划状态，所有变更操作保持停用。
+          {translate(
+            "当前能力集没有可用的 `system_change_get`；无法验证计划状态，所有变更操作保持停用。",
+          )}
         </div>
       )}
       {hydrated && canGet && !canPlan && !recovery && !plan && (
         <div className="notice warning" role="status">
-          当前身份没有可用的 `system_change_plan` 写入能力，不能创建计划。
+          {translate(
+            "当前身份没有可用的 `system_change_plan` 写入能力，不能创建计划。",
+          )}
         </div>
       )}
       {planError && (
@@ -514,7 +569,7 @@ export function SystemChangeWorkflow({
           <p>{planError}</p>
           {recovery?.planId && canGet && (
             <Button
-              label="重新读取计划"
+              label={translate("重新读取计划")}
               variant="ghost"
               isLoading={planLoading}
               isDisabled={planLoading || mutationBusy}
@@ -523,16 +578,28 @@ export function SystemChangeWorkflow({
           )}
         </div>
       )}
-
       {plan && (
-        <section className="stack" aria-label="当前系统变更计划">
+        <section className="stack" aria-label={translate("当前系统变更计划")}>
           <div className="resource-summary">
-            <span>计划状态</span>
+            <span>{translate("计划状态")}</span>
             <PlanState state={plan.state} />
-            {plan.created_at && <span>创建于 {fullDate(plan.created_at)}</span>}
-            {plan.expires_at && <span>计划有效至 {fullDate(plan.expires_at)}</span>}
+            {plan.created_at && (
+              <span>
+                {translate("创建于 ")}
+                {fullDate(plan.created_at)}
+              </span>
+            )}
+            {plan.expires_at && (
+              <span>
+                {translate("计划有效至 ")}
+                {fullDate(plan.expires_at)}
+              </span>
+            )}
             {plan.confirmation_deadline && (
-              <span>连接确认截止 {fullDate(plan.confirmation_deadline)}</span>
+              <span>
+                {translate("连接确认截止 ")}
+                {fullDate(plan.confirmation_deadline)}
+              </span>
             )}
           </div>
           <div className="detail-grid">
@@ -550,21 +617,29 @@ export function SystemChangeWorkflow({
           )}
           {planStale && (
             <div className="notice warning" role="status">
-              计划基线已变化或已过期。请重新生成计划；不会沿用旧计划应用变更。
+              {translate(
+                "计划基线已变化或已过期。请重新生成计划；不会沿用旧计划应用变更。",
+              )}
             </div>
           )}
           {!planFresh && !planLoading && (
             <div className="notice warning" role="status">
-              当前显示内容不是已确认的最新状态，读取成功前不能确认或继续变更。
+              {translate(
+                "当前显示内容不是已确认的最新状态，读取成功前不能确认或继续变更。",
+              )}
             </div>
           )}
           {recovery?.pendingAction && !recovery.taskId && (
             <div className="notice warning" role="status">
-              上次“{actionTitle[recovery.pendingAction]}”的响应尚未核实。先重新读取计划；若状态仍允许，可使用同一请求标识显式重试。
+              {translate("上次“")}
+              {actionTitle[recovery.pendingAction]}
+              {translate(
+                "”的响应尚未核实。先重新读取计划；若状态仍允许，可使用同一请求标识显式重试。",
+              )}
               {planFresh && recovery.intentKey && (
                 <div className="button-row">
                   <Button
-                    label="按原请求继续核对"
+                    label={translate("按原请求继续核对")}
                     variant="ghost"
                     isDisabled={mutationBusy || planLoading || !storageReady}
                     onClick={() => void settleUnknownIntent()}
@@ -575,7 +650,9 @@ export function SystemChangeWorkflow({
           )}
           {recovery?.taskId && (
             <div className="notice warning" role="status">
-              后台任务仍是计划的执行依据。任务读取或计划回读失败时，后续操作会保持停用。
+              {translate(
+                "后台任务仍是计划的执行依据。任务读取或计划回读失败时，后续操作会保持停用。",
+              )}
             </div>
           )}
           {(taskError || task?.error) && (
@@ -584,7 +661,7 @@ export function SystemChangeWorkflow({
               {recovery?.taskId && canReadTasks && (
                 <div className="button-row">
                   <Button
-                    label="重新读取任务状态"
+                    label={translate("重新读取任务状态")}
                     variant="ghost"
                     isLoading={taskLoading}
                     isDisabled={taskLoading || mutationBusy}
@@ -596,7 +673,7 @@ export function SystemChangeWorkflow({
           )}
           {task && (
             <div className="resource-summary" aria-live="polite">
-              <span>后台任务</span>
+              <span>{translate("后台任务")}</span>
               <State value={task.status ?? task.state} />
               {(task.status === "failed" || task.state === "failed") &&
                 task.error && <span>{task.error}</span>}
@@ -609,7 +686,7 @@ export function SystemChangeWorkflow({
           )}
           <div className="button-row">
             <Button
-              label="重新读取计划状态"
+              label={translate("重新读取计划状态")}
               variant="ghost"
               isLoading={planLoading}
               isDisabled={planLoading || mutationBusy || !canGet}
@@ -617,45 +694,59 @@ export function SystemChangeWorkflow({
             />
             {allow("system_change_apply", canApply && canReadTasks) && (
               <Button
-                label="应用计划"
+                label={translate("应用计划")}
                 variant="primary"
                 onClick={() => askToRun("system_change_apply")}
               />
             )}
             {allow("system_change_confirm", canConfirm) && (
               <Button
-                label="确认配置正常"
+                label={translate("确认配置正常")}
                 variant="primary"
                 onClick={() => askToRun("system_change_confirm")}
               />
             )}
             {allow("system_change_rollback", canRollback && canReadTasks) && (
               <Button
-                label="回滚变更"
+                label={translate("回滚变更")}
                 variant="ghost"
                 onClick={() => askToRun("system_change_rollback")}
               />
             )}
           </div>
           {confirmation && (
-            <div className="notice warning" role="alertdialog" aria-label="确认系统变更">
-              <strong>{confirmation.retry ? "继续核对原请求" : `确认${actionTitle[confirmation.action]}`}</strong>
+            <div
+              className="notice warning"
+              role="alertdialog"
+              aria-label={translate("确认系统变更")}
+            >
+              <strong>
+                {confirmation.retry
+                  ? translate("继续核对原请求")
+                  : translate("确认{0}", [actionTitle[confirmation.action]])}
+              </strong>
               <p>
                 {confirmation.action === "system_change_apply"
-                  ? "服务器会再次核对计划基线并执行变更。"
+                  ? translate("服务器会再次核对计划基线并执行变更。")
                   : confirmation.action === "system_change_confirm"
-                    ? "服务器会验证连接敏感配置；只有验证成功后计划才会确认为已应用。"
-                    : "服务器会校验当前快照后恢复计划记录的原状态。"}
+                    ? translate(
+                        "服务器会验证连接敏感配置；只有验证成功后计划才会确认为已应用。",
+                      )
+                    : translate("服务器会校验当前快照后恢复计划记录的原状态。")}
               </p>
               <div className="button-row">
                 <Button
-                  label="取消"
+                  label={translate("取消")}
                   variant="ghost"
                   isDisabled={mutationBusy}
                   onClick={() => setConfirmation(undefined)}
                 />
                 <Button
-                  label={confirmation.retry ? "按原请求继续" : actionTitle[confirmation.action]}
+                  label={
+                    confirmation.retry
+                      ? translate("按原请求继续")
+                      : actionTitle[confirmation.action]
+                  }
                   variant="primary"
                   isLoading={mutationBusy}
                   isDisabled={mutationBusy || !planFresh || !storageReady}
@@ -666,12 +757,15 @@ export function SystemChangeWorkflow({
           )}
         </section>
       )}
-
-      {!plan && planLoading && <Unavailable title="正在读取系统变更计划…" />}
+      {!plan && planLoading && (
+        <Unavailable title={translate("正在读取系统变更计划…")} />
+      )}
       {canCreatePlan ? (
-        <section className="stack" aria-label="创建系统变更计划">
+        <section className="stack" aria-label={translate("创建系统变更计划")}>
           {recovery && plan && (
-            <p className="muted">当前计划已结束，可以准备新的计划。</p>
+            <p className="muted">
+              {translate("当前计划已结束，可以准备新的计划。")}
+            </p>
           )}
           {planCapability && (
             <ActionForm
@@ -688,31 +782,37 @@ export function SystemChangeWorkflow({
         !recovery &&
         !canGet && (
           <Unavailable
-            title="无法读取计划"
-            detail="需要同时具备 system_change_plan 与 system_change_get 的实际能力描述。"
+            title={translate("无法读取计划")}
+            detail={translate(
+              "需要同时具备 system_change_plan 与 system_change_get 的实际能力描述。",
+            )}
           />
         )
       )}
-
       {plan?.state === "awaiting_confirmation" && !canConfirm && (
         <div className="notice warning" role="status">
-          计划等待连接确认，但当前能力集没有可用的 `system_change_confirm`；请由具备该能力的同一身份完成核验。
+          {translate(
+            "计划等待连接确认，但当前能力集没有可用的 `system_change_confirm`；请由具备该能力的同一身份完成核验。",
+          )}
         </div>
       )}
-      {plan && (plan.state === "planned" || plan.state === "applied") &&
-        (canApply || canRollback) && !canReadTasks && (
+      {plan &&
+        (plan.state === "planned" || plan.state === "applied") &&
+        (canApply || canRollback) &&
+        !canReadTasks && (
           <div className="notice warning" role="status">
-            当前身份没有 `tasks_get` 能力，无法核实异步应用或回滚任务；这些操作保持停用。
+            {translate(
+              "当前身份没有 `tasks_get` 能力，无法核实异步应用或回滚任务；这些操作保持停用。",
+            )}
           </div>
         )}
-
       {hydrated && !storageReady && !storageError && (
         <div className="notice warning" role="status">
-          浏览器恢复记录不可用；系统变更提交已停用。
+          {translate("浏览器恢复记录不可用；系统变更提交已停用。")}
         </div>
       )}
-      {taskLoading && <p className="muted">正在读取后台任务…</p>}
-      {planLoading && <p className="muted">正在核对计划状态…</p>}
+      {taskLoading && <p className="muted">{translate("正在读取后台任务…")}</p>}
+      {planLoading && <p className="muted">{translate("正在核对计划状态…")}</p>}
     </Card>
   );
 }

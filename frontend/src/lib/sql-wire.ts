@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 export type SQLCell = {
   text: string;
   kind: "integer" | "binary" | "null" | "value" | "unsafe";
@@ -10,7 +11,7 @@ export function sqlCell(value: unknown): SQLCell {
     Number.isInteger(value) &&
     !Number.isSafeInteger(value)
   )
-    return { text: "整数精度未能确认", kind: "unsafe" };
+    return { text: translate("整数精度未能确认"), kind: "unsafe" };
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const encoded = value as {
       encoding?: unknown;
@@ -24,11 +25,15 @@ export function sqlCell(value: unknown): SQLCell {
     ) {
       const number = BigInt(encoded.value);
       if (number >= -9223372036854775808n && number <= 18446744073709551615n)
-        return { text: encoded.value, kind: "integer", detail: "精确整数" };
-      return { text: "整数超出协议范围", kind: "unsafe" };
+        return {
+          text: encoded.value,
+          kind: "integer",
+          detail: translate("精确整数"),
+        };
+      return { text: translate("整数超出协议范围"), kind: "unsafe" };
     }
     if (encoded.encoding === "integer")
-      return { text: "整数格式未能确认", kind: "unsafe" };
+      return { text: translate("整数格式未能确认"), kind: "unsafe" };
     if (
       encoded.encoding === "base64" &&
       typeof encoded.data === "string" &&
@@ -46,13 +51,15 @@ export function sqlCell(value: unknown): SQLCell {
       return {
         text: hex + (size > 32 ? " …" : ""),
         kind: "binary",
-        detail: `${size} 字节 · 二进制`,
+        detail: translate("{0} 字节 · 二进制", [size]),
       };
     }
   }
   return {
     text:
-      typeof value === "string" ? value : (JSON.stringify(value) ?? "未提供"),
+      typeof value === "string"
+        ? value
+        : (JSON.stringify(value) ?? translate("未提供")),
     kind: "value",
   };
 }
@@ -74,7 +81,9 @@ export function validateSQLParameters(input: unknown): void {
       !Number.isSafeInteger(value)
     )
       throw new Error(
-        "大整数参数请使用十进制字符串，或包含encoding:integer与字符串value的对象；当前数字可能已舍入。",
+        translate(
+          "大整数参数请使用十进制字符串，或包含encoding:integer与字符串value的对象；当前数字可能已舍入。",
+        ),
       );
     if (Array.isArray(value)) value.forEach(visit);
     else if (value && typeof value === "object")

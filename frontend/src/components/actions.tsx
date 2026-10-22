@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 const SQLResult = dynamic(
@@ -93,7 +94,9 @@ export function Field({
         onChange={onChange}
         isRequired={required}
         autoComplete="off"
-        description="输入完整十进制游标；0开始新扫描，响应0表示这一轮结束。"
+        description={translate(
+          "输入完整十进制游标；0开始新扫描，响应0表示这一轮结束。",
+        )}
       />
     );
   if (schema.oneOf || schema.anyOf)
@@ -101,7 +104,8 @@ export function Field({
       <TextArea
         label={label}
         description={
-          schema.description ?? "此参数支持联合类型；填写JSON，由服务端验证。"
+          (schema.description ? translate(schema.description) : undefined) ??
+          translate("此参数支持联合类型；填写JSON，由服务端验证。")
         }
         rows={4}
         value={
@@ -118,16 +122,21 @@ export function Field({
     return (
       <label className="native-field">
         {label}
-        {required ? " · 必填" : ""}
+        {required ? translate(" · 必填") : ""}
         <select
           value={listed || current ? current : "__choose_reference__"}
           onChange={(e) => onChange(e.target.value)}
         >
           <option value="__choose_reference__" disabled>
-            {choices.length ? "请选择资源" : "暂无可见资源"}
+            {choices.length
+              ? translate("请选择资源")
+              : translate("暂无可见资源")}
           </option>
           {current && !listed && (
-            <option value={current}>当前绑定 · {current}</option>
+            <option value={current}>
+              {translate("当前绑定 · ")}
+              {current}
+            </option>
           )}
           {choices.map((item) => (
             <option
@@ -139,7 +148,7 @@ export function Field({
             </option>
           ))}
         </select>
-        {schema.description && <small>{schema.description}</small>}
+        {schema.description && <small>{translate(schema.description)}</small>}
       </label>
     );
   }
@@ -147,7 +156,7 @@ export function Field({
     return (
       <label className="native-field">
         {label}
-        {required ? " · 必填" : ""}
+        {required ? translate(" · 必填") : ""}
         <select
           value={schema.enum.findIndex(
             (v) => JSON.stringify(v) === JSON.stringify(value),
@@ -155,7 +164,7 @@ export function Field({
           onChange={(e) => onChange(schema.enum![Number(e.target.value)])}
         >
           <option value={-1} disabled>
-            {schema.enum.length ? "请选择" : "没有可选值"}
+            {schema.enum.length ? translate("请选择") : translate("没有可选值")}
           </option>
           {schema.enum.map((v, i) => (
             <option key={i} value={i}>
@@ -163,10 +172,12 @@ export function Field({
             </option>
           ))}
         </select>
-        {schema.description && <small>{schema.description}</small>}
+        {schema.description && <small>{translate(schema.description)}</small>}
         {fieldKey === "permission" && schema.enum.includes("data_write") && (
           <small>
-            只读可查询；数据读写可增删改数据；完整库权限还可修改表结构。可选档位来自服务器，实际授权由数据库验证。
+            {translate(
+              "只读可查询；数据读写可增删改数据；完整库权限还可修改表结构。可选档位来自服务器，实际授权由数据库验证。",
+            )}
           </small>
         )}
       </label>
@@ -178,7 +189,7 @@ export function Field({
     return (
       <div className="readonly-field">
         <span>{label}</span>
-        <code>{String(value ?? "未读取")}</code>
+        <code>{String(value ?? translate("未读取"))}</code>
       </div>
     );
   if (type === "object" || schema.properties) {
@@ -193,7 +204,11 @@ export function Field({
         >
           <TextArea
             label={label}
-            description={schema.description ?? "JSON对象"}
+            description={
+              (schema.description
+                ? translate(schema.description)
+                : undefined) ?? translate("JSON对象")
+            }
             value={
               typeof value === "string"
                 ? value
@@ -211,7 +226,9 @@ export function Field({
     return (
       <fieldset className="nested-fields">
         <legend>{label}</legend>
-        {schema.description && <p className="muted">{schema.description}</p>}
+        {schema.description && (
+          <p className="muted">{translate(schema.description)}</p>
+        )}
         {Object.entries(schema.properties).map(([key, child]) => {
           const mandatory = schema.required?.includes(key) ?? false;
           const present = Object.prototype.hasOwnProperty.call(obj, key);
@@ -233,7 +250,8 @@ export function Field({
                       }
                     }}
                   />
-                  {fieldLabel(key, child.title)} · 可选
+                  {fieldLabel(key, child.title)}
+                  {translate("· 可选")}
                 </label>
               )}
               {(present || mandatory) && (
@@ -265,7 +283,9 @@ export function Field({
           label={label}
           rows={5}
           isRequired={required}
-          description='填写参数JSON数组。大整数使用带引号的十进制字符串，或{"encoding":"integer","value":"十进制"}；不能使用已舍入的数字。'
+          description={translate(
+            '填写参数JSON数组。大整数使用带引号的十进制字符串，或{"encoding":"integer","value":"十进制"}；不能使用已舍入的数字。',
+          )}
           value={
             typeof value === "string"
               ? value
@@ -279,9 +299,11 @@ export function Field({
       <fieldset className="nested-fields">
         <legend>
           {label}
-          {required ? " · 必填" : ""}
+          {required ? translate(" · 必填") : ""}
         </legend>
-        {schema.description && <p className="muted">{schema.description}</p>}
+        {schema.description && (
+          <p className="muted">{translate(schema.description)}</p>
+        )}
         {rows.map((v, i) => (
           <div className="array-field" key={i}>
             <Field
@@ -290,12 +312,12 @@ export function Field({
               onChange={(next) =>
                 onChange(rows.map((x, j) => (j === i ? next : x)))
               }
-              label={`第 ${i + 1} 项`}
+              label={translate("第 {0} 项", [i + 1])}
               fieldKey={fieldKey}
               required
             />
             <Button
-              label={`移除第 ${i + 1} 项`}
+              label={translate("移除第 {0} 项", [i + 1])}
               variant="ghost"
               icon={<Icon name="close" />}
               isIconOnly
@@ -304,7 +326,7 @@ export function Field({
           </div>
         ))}
         <Button
-          label={`添加${label}`}
+          label={translate("添加{0}", [label])}
           icon={<Icon name="plus" />}
           isDisabled={rows.length >= (schema.maxItems ?? 100)}
           onClick={() =>
@@ -328,7 +350,9 @@ export function Field({
         <span>
           {label}
           {schema.description && (
-            <small className="field-description">{schema.description}</small>
+            <small className="field-description">
+              {translate(schema.description)}
+            </small>
           )}
         </span>
       </label>
@@ -343,8 +367,8 @@ export function Field({
         <TextArea
           label={label}
           description={
-            schema.description ??
-            "仅用于本次配置输入；服务器不会在资源列表中回传密钥。"
+            (schema.description ? translate(schema.description) : undefined) ??
+            translate("仅用于本次配置输入；服务器不会在资源列表中回传密钥。")
           }
           value={
             typeof value === "string"
@@ -366,7 +390,9 @@ export function Field({
     return (
       <TextArea
         label={label}
-        description={schema.description}
+        description={
+          schema.description ? translate(schema.description) : undefined
+        }
         rows={5}
         value={String(value ?? "")}
         onChange={onChange}
@@ -379,7 +405,9 @@ export function Field({
       label={label}
       value={String(value ?? "")}
       onChange={onChange}
-      description={schema.description}
+      description={
+        schema.description ? translate(schema.description) : undefined
+      }
       type={secret ? "password" : "text"}
       autoComplete="off"
       isRequired={required}
@@ -423,12 +451,16 @@ export function ActionForm({
               minimum: 1024,
               maximum: 65535,
               default: port,
-              description: "仅监听本机回环地址；如需外部访问，请用受管站点反向代理。",
+              description: translate(
+                "仅监听本机回环地址；如需外部访问，请用受管站点反向代理。",
+              ),
             },
             target_id: {
               type: "string",
               maxLength: 128,
-              description: "可选的 MySQL/MariaDB 软件实例 ID；留空时仅在恰有一个实例时自动选择。",
+              description: translate(
+                "可选的 MySQL/MariaDB 软件实例 ID；留空时仅在恰有一个实例时自动选择。",
+              ),
             },
           }
         : pluginID === "pgadmin"
@@ -438,7 +470,9 @@ export function ActionForm({
                 minimum: 1024,
                 maximum: 65535,
                 default: port,
-                description: "仅监听本机回环地址；如需外部访问，请用受管站点反向代理。",
+                description: translate(
+                  "仅监听本机回环地址；如需外部访问，请用受管站点反向代理。",
+                ),
               },
               ...(preset.operation === "install"
                 ? {
@@ -446,7 +480,9 @@ export function ActionForm({
                       type: "string",
                       format: "email",
                       maxLength: 254,
-                      description: "首次安装创建的 pgAdmin 管理员邮箱。之后可在 pgAdmin 中修改密码。",
+                      description: translate(
+                        "首次安装创建的 pgAdmin 管理员邮箱。之后可在 pgAdmin 中修改密码。",
+                      ),
                     },
                     admin_password: {
                       type: "string",
@@ -454,7 +490,9 @@ export function ActionForm({
                       writeOnly: true,
                       minLength: 12,
                       maxLength: 128,
-                      description: "只用于首次创建管理员；不会写入实例回执或安装计划响应。",
+                      description: translate(
+                        "只用于首次创建管理员；不会写入实例回执或安装计划响应。",
+                      ),
                     },
                   }
                 : {}),
@@ -473,7 +511,9 @@ export function ActionForm({
               ? ["port", "admin_email", "admin_password"]
               : ["port"],
           additionalProperties: false,
-          description: "受管数据库 Web 工具设置。监听地址固定为 127.0.0.1。",
+          description: translate(
+            "受管数据库 Web 工具设置。监听地址固定为 127.0.0.1。",
+          ),
         },
       },
       required: [...(baseSchema.required ?? []), "config"],
@@ -689,7 +729,11 @@ export function ActionForm({
   return (
     <div className={`action-form ${compact ? "compact" : ""}`}>
       {onBack && (
-        <Button label="返回操作列表" variant="ghost" onClick={onBack} />
+        <Button
+          label={translate("返回操作列表")}
+          variant="ghost"
+          onClick={onBack}
+        />
       )}
       <div className="page-heading">
         <div>
@@ -698,10 +742,10 @@ export function ActionForm({
         </div>
         <span className="status-chip neutral">
           {capability.read_only
-            ? "只读查询"
+            ? translate("只读查询")
             : capability.task
-              ? "后台任务"
-              : "管理操作"}
+              ? translate("后台任务")
+              : translate("管理操作")}
         </span>
       </div>
       <form
@@ -713,9 +757,9 @@ export function ActionForm({
         }}
       >
         <div className="split-label">
-          <span className="muted">操作参数</span>
+          <span className="muted">{translate("操作参数")}</span>
           <Button
-            label={raw ? "使用表单" : "使用JSON输入"}
+            label={raw ? translate("使用表单") : translate("使用JSON输入")}
             variant="ghost"
             onClick={() => {
               if (!raw) setRawValue(JSON.stringify(draft, null, 2));
@@ -724,7 +768,7 @@ export function ActionForm({
                   setDraft(JSON.parse(rawValue));
                   awaitingRevision.current = undefined;
                 } catch {
-                  setError("JSON尚未正确填写。");
+                  setError(translate("JSON尚未正确填写。"));
                   return;
                 }
               }
@@ -734,7 +778,7 @@ export function ActionForm({
         </div>
         {raw ? (
           <TextArea
-            label="操作参数JSON"
+            label={translate("操作参数JSON")}
             rows={10}
             value={rawValue}
             onChange={(v) => {
@@ -752,7 +796,7 @@ export function ActionForm({
               awaitingRevision.current = undefined;
               setConfirm(false);
             }}
-            label="参数"
+            label={translate("参数")}
             fieldKey=""
             references={references}
             readonlyFields={Array.from(
@@ -770,7 +814,7 @@ export function ActionForm({
             {error}
             {details !== undefined && (
               <details>
-                <summary>查看错误详情</summary>
+                <summary>{translate("查看错误详情")}</summary>
                 <pre>{JSON.stringify(details, null, 2)}</pre>
               </details>
             )}
@@ -779,14 +823,14 @@ export function ActionForm({
               typeof preset.expected_revision === "number" && (
                 <div className="button-row">
                   <Button
-                    label="重新读取资源版本"
+                    label={translate("重新读取资源版本")}
                     variant="ghost"
                     onClick={() =>
                       window.dispatchEvent(new Event("powerlinux:invalidate"))
                     }
                   />
                   <Button
-                    label="采用最新资源版本，保留当前参数"
+                    label={translate("采用最新资源版本，保留当前参数")}
                     onClick={() => {
                       try {
                         const current = (
@@ -805,7 +849,9 @@ export function ActionForm({
                         setError("");
                         setConflict(false);
                       } catch {
-                        setError("JSON尚未正确填写，当前草稿已保留。");
+                        setError(
+                          translate("JSON尚未正确填写，当前草稿已保留。"),
+                        );
                       }
                     }}
                   />
@@ -813,7 +859,7 @@ export function ActionForm({
               )}
             {lastIntent.current && !recovery && (
               <Button
-                label="开始新的操作"
+                label={translate("开始新的操作")}
                 variant="ghost"
                 onClick={() => {
                   lastIntent.current = undefined;
@@ -829,22 +875,33 @@ export function ActionForm({
         )}
         {recovery && (
           <div className="notice warning">
-            上次操作状态尚未确认。请核对关联任务与目标资源，不能直接创建新请求重复执行。
+            {translate(
+              "上次操作状态尚未确认。请核对关联任务与目标资源，不能直接创建新请求重复执行。",
+            )}
           </div>
         )}
         {confirm && (
           <div className="notice warning">
-            <strong>确认操作与变更参数</strong>
+            <strong>{translate("确认操作与变更参数")}</strong>
             <p>{actionLabel(capability)}</p>
             <p>
-              核对目标、权限与参数。失败后的重试会保留同一请求标识，避免重复执行。
+              {translate(
+                "核对目标、权限与参数。失败后的重试会保留同一请求标识，避免重复执行。",
+              )}
             </p>
-            <Button label="取消执行" onClick={() => setConfirm(false)} />
+            <Button
+              label={translate("取消执行")}
+              onClick={() => setConfirm(false)}
+            />
           </div>
         )}
         <Button
           label={
-            confirm ? "确认执行" : capability.read_only ? "查询" : "执行操作"
+            confirm
+              ? translate("确认执行")
+              : capability.read_only
+                ? translate("查询")
+                : translate("执行操作")
           }
           variant="primary"
           type="submit"
@@ -854,11 +911,11 @@ export function ActionForm({
       </form>
       {result !== undefined && (
         <section className="action-result" aria-live="polite">
-          <h3>操作结果</h3>
+          <h3>{translate("操作结果")}</h3>
           {(capability.task || recovery) && (
             <p className="muted">
-              {recovery ? "关联任务待核对" : "任务已提交"}
-              ；最终执行、产物与健康验证请在任务详情中查看。
+              {recovery ? translate("关联任务待核对") : translate("任务已提交")}
+              {translate("；最终执行、产物与健康验证请在任务详情中查看。")}
             </p>
           )}
           {capability.task || recovery ? (
@@ -919,7 +976,9 @@ export function ActionBrowser({
   const matching = capabilities.filter(
     (c) =>
       (prefixes[category]?.test(c.name) ?? true) &&
-      (c.name.includes(filter) || c.description?.includes(filter)),
+      (c.name.includes(filter) ||
+        c.description?.includes(filter) ||
+        actionLabel(c).toLowerCase().includes(filter.toLowerCase())),
   );
   if (selectedCapability)
     return (
@@ -936,13 +995,13 @@ export function ActionBrowser({
   return (
     <Card className="panel-card">
       <div className="card-heading">
-        <h2>已授权的操作</h2>
+        <h2>{translate("已授权的操作")}</h2>
         <TextInput
-          label="筛选操作"
+          label={translate("筛选操作")}
           isLabelHidden
           value={filter}
           onChange={setFilter}
-          placeholder="按名称筛选"
+          placeholder={translate("按名称筛选")}
           startIcon={<Icon name="search" />}
         />
       </div>
@@ -974,12 +1033,12 @@ export function ActionBrowser({
           <span className="empty-icon">
             <Icon name="software" size={26} />
           </span>
-          <strong>当前没有已授权的操作</strong>
-          <p>此模块尚未提供可用动作，或当前账户无访问权限。</p>
+          <strong>{translate("当前没有已授权的操作")}</strong>
+          <p>{translate("此模块尚未提供可用动作，或当前账户无访问权限。")}</p>
         </div>
       )}
       <p className="section-caption">
-        网页与MCP使用同一业务动作、权限、任务与审计。
+        {translate("网页与MCP使用同一业务动作、权限、任务与审计。")}
       </p>
     </Card>
   );

@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { sqlCell, sqlColumns } from "@/lib/sql-wire";
 import { Pager } from "./resource-ui";
@@ -19,8 +20,9 @@ export function SQLResult({ result }: { result: unknown }) {
     const value = sqlCell(data.rows_affected);
     return (
       <p>
-        影响行数 <strong>{value.text}</strong>
-        {value.detail && <small> · {value.detail}</small>}
+        {translate("影响行数")}
+        <strong>{value.text}</strong>
+        {value.detail && <small>· {value.detail}</small>}
       </p>
     );
   }
@@ -38,22 +40,29 @@ export function SQLResult({ result }: { result: unknown }) {
     Object.values(row).some((value) => sqlCell(value).kind === "unsafe"),
   );
   return (
-    <section className="stack" aria-label="数据库查询结果">
+    <section className="stack" aria-label={translate("数据库查询结果")}>
       <p className="muted">
-        {data.database} · 本次返回 {data.items.length} 行
+        {data.database}
+        {translate(" · 本次返回 ")}
+        {data.items.length}
+        {translate("行")}
       </p>
       {data.truncated && (
         <div className="notice warning">
-          结果达到服务器行数上限，后续数据未读取。请收窄查询条件或明确分页。
+          {translate(
+            "结果达到服务器行数上限，后续数据未读取。请收窄查询条件或明确分页。",
+          )}
         </div>
       )}
       {unsafe && (
         <div className="notice danger" role="alert">
-          结果中有整数无法确认精度，不能作为原值使用。请检查服务端是否支持精确整数协议。
+          {translate(
+            "结果中有整数无法确认精度，不能作为原值使用。请检查服务端是否支持精确整数协议。",
+          )}
         </div>
       )}
       <div className="resource-table-wrap">
-        <table className="resource-table" aria-label="SQL数据表">
+        <table className="resource-table" aria-label={translate("SQL数据表")}>
           <thead>
             <tr>
               {columns.map((name) => (
@@ -72,7 +81,7 @@ export function SQLResult({ result }: { result: unknown }) {
                       {value.detail && <small>{value.detail}</small>}
                       {value.kind === "binary" && (
                         <details>
-                          <summary>Base64原值</summary>
+                          <summary>{translate("Base64原值")}</summary>
                           <code className="wrap-code">
                             {(row[name] as { data: string }).data}
                           </code>
@@ -86,7 +95,7 @@ export function SQLResult({ result }: { result: unknown }) {
           </tbody>
         </table>
       </div>
-      {!data.items.length && <p>查询没有返回行。</p>}
+      {!data.items.length && <p>{translate("查询没有返回行。")}</p>}
       <Pager
         offset={offset}
         limit={25}
@@ -97,7 +106,7 @@ export function SQLResult({ result }: { result: unknown }) {
       />
       {!unsafe && (
         <details>
-          <summary>查看类型与原值</summary>
+          <summary>{translate("查看类型与原值")}</summary>
           <pre className="json-result">{JSON.stringify(result, null, 2)}</pre>
         </details>
       )}

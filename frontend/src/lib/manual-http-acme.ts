@@ -49,7 +49,9 @@ export function manualHTTPOrder(
     const { domain, url, path, body } = entry;
     if (
       typeof domain !== "string" ||
-      !/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(domain) ||
+      !/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(
+        domain,
+      ) ||
       seen.has(domain) ||
       typeof path !== "string" ||
       path.length > 512 ||

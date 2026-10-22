@@ -1,0 +1,3381 @@
+// Application copy only. Resource data and user content are never translated.
+export const english: Record<string, string> = {
+  没有匹配的软件: "No matching software",
+  "试试其他名称，或清除筛选查看全部软件。":
+    "Try another name, or clear the filters to view all software.",
+  清除筛选: "Clear filters",
+  "选择适合你的网站运行环境，也可以稍后到软件页面设置。":
+    "Choose a web stack for your websites, or set it up later from Software.",
+  选择网站运行环境: "Choose a web stack",
+  "受管数据库 Web 工具设置。监听地址固定为 127.0.0.1。":
+    "Managed database web tool settings. The listening address is fixed at 127.0.0.1.",
+  返回操作列表: "Back to actions",
+  只读查询: "Read-only query",
+  后台任务: "Background tasks",
+  管理操作: "Manage",
+  操作参数: "Parameters",
+  使用表单: "Use form",
+  使用JSON输入: "Use JSON input",
+  "JSON尚未正确填写。": "The JSON has not been filled in correctly.",
+  操作参数JSON: "Operation parameter JSON",
+  参数: "Parameters",
+  查看错误详情: "View error details",
+  重新读取资源版本: "Reread resource version",
+  "采用最新资源版本，保留当前参数":
+    "Adopt the latest resource version and retain current parameters",
+  "JSON尚未正确填写，当前草稿已保留。":
+    "The JSON has not been filled in correctly and the current draft has been retained.",
+  开始新的操作: "Start another operation",
+  "上次操作状态尚未确认。请核对关联任务与目标资源，不能直接创建新请求重复执行。":
+    "The last operating status has not been confirmed. Please check the associated tasks and target resources. You cannot directly create a new request and execute it again.",
+  确认操作与变更参数: "Confirm operation and change parameters",
+  "核对目标、权限与参数。失败后的重试会保留同一请求标识，避免重复执行。":
+    "Check targets, permissions and parameters. Retries after failure will retain the same request ID to avoid repeated execution.",
+  取消执行: "Cancel execution",
+  确认执行: "Confirm execution",
+  查询: "Query",
+  执行操作: "Perform operation",
+  操作结果: "Operation result",
+  关联任务待核对: "Associated tasks need to be checked",
+  任务已提交: "Task has been submitted",
+  "；最终执行、产物与健康验证请在任务详情中查看。":
+    "; Please view the final execution, product and health verification in the task details.",
+  已授权的操作: "Authorized operations",
+  筛选操作: "Screening operation",
+  按名称筛选: "Filter by name",
+  当前没有已授权的操作: "There is currently no authorized operation",
+  "此模块尚未提供可用动作，或当前账户无访问权限。":
+    "This module does not yet provide available actions, or the current account does not have access rights.",
+  "网页与MCP使用同一业务动作、权限、任务与审计。":
+    "Web pages and MCP use the same business actions, permissions, tasks and audits.",
+  "服务返回的删除预览与所选目录项不一致。":
+    "The deletion preview returned by the service is inconsistent with the selected directory item.",
+  "创建预览失败。": "Failed to create preview.",
+  "预览已失效。": "Preview has expired.",
+  "远程备份 FTP": "Remote backup FTP",
+  "受保护的目的地凭据、目录浏览与预览后维护。":
+    "Protected destination credentials, directory browsing and post-preview maintenance.",
+  刷新目的地: "Refresh destination",
+  "当前账户没有 FTP 目的地读取权限":
+    "The current account does not have FTP destination read permissions",
+  "版本 ": "Version ",
+  "尚未登记 FTP 目的地": "No FTP destination has been registered yet",
+  "正在读取 FTP 目的地…": "Reading FTP destination...",
+  "FTP 目的地响应无效，请重新读取":
+    "FTP destination response is invalid, please read again",
+  "登记新 FTP 目的地": "Register new FTP destination",
+  更新连接并轮换密码: "Update connections and rotate passwords",
+  "密码仅在登记或轮换时提交；服务端验证连接后加密保存，不会回显。":
+    "The password is only submitted during registration or rotation; after the server verifies the connection, it is encrypted and saved and will not be echoed.",
+  "FTP 远程目录维护": "FTP remote directory maintenance",
+  " · 目的地版本 ": " · Destination version ",
+  当前账户没有远程目录读取权限:
+    "The current account does not have remote directory read permissions",
+  远程目录: "Remote directory",
+  "相对配置目录：/": "Relative configuration directory:/",
+  上一级目录: "Upper level directory",
+  刷新目录: "Refresh directory",
+  "正在读取远程目录…": "Reading remote directory...",
+  修改时间未提供: "Modification time is not provided",
+  "输入完整十进制游标；0开始新扫描，响应0表示这一轮结束。":
+    "Enter a complete decimal cursor; 0 starts a new scan, and a response of 0 indicates the end of this round.",
+  "此参数支持联合类型；填写JSON，由服务端验证。":
+    "This parameter supports joint type; fill in JSON and verify by the server.",
+  " · 必填": " ·Required",
+  请选择资源: "Please select resources",
+  暂无可见资源: "No visible resources yet",
+  "当前绑定 · ": "Current binding · ",
+  请选择: "Please select",
+  没有可选值: "No optional value",
+  "只读可查询；数据读写可增删改数据；完整库权限还可修改表结构。可选档位来自服务器，实际授权由数据库验证。":
+    "Read-only can be queried; data reading and writing can add, delete, and modify data; complete library permissions can also modify the table structure. The optional gears come from the server, and the actual authorization is verified by the database.",
+  未读取: "Not read",
+  JSON对象: "JSON object",
+  "· 可选": "· optional",
+  '填写参数JSON数组。大整数使用带引号的十进制字符串，或{"encoding":"integer","value":"十进制"}；不能使用已舍入的数字。':
+    'Fill in the parameter JSON array. Use quoted decimal strings, or {"encoding":"integer","value":"decimal"} for large integers; you cannot use rounded numbers.',
+  "第 {0} 项": "Item {0}",
+  "移除第 {0} 项": "Remove item {0}",
+  "添加{0}": "Add {0}",
+  "仅用于本次配置输入；服务器不会在资源列表中回传密钥。":
+    "Only used for this configuration input; the server will not return the key in the resource list.",
+  "仅监听本机回环地址；如需外部访问，请用受管站点反向代理。":
+    "Only listen to the local loopback address; if external access is required, please use the managed site reverse proxy.",
+  "可选的 MySQL/MariaDB 软件实例 ID；留空时仅在恰有一个实例时自动选择。":
+    "Optional MySQL/MariaDB software instance ID; when left blank, it will be automatically selected only when there is exactly one instance.",
+  "首次安装创建的 pgAdmin 管理员邮箱。之后可在 pgAdmin 中修改密码。":
+    "The pgAdmin administrator mailbox created by the first installation. The password can be changed later in pgAdmin.",
+  "只用于首次创建管理员；不会写入实例回执或安装计划响应。":
+    "Only used to create an administrator for the first time; no instance receipt or installation plan response will be written.",
+  此远程目录为空: "This remote directory is empty",
+  取消新建目录: "Cancel new directory",
+  在此处新建空目录: "Create a new empty directory here",
+  "只支持维护普通文件和空目录；链接或不支持的项目保持不可操作。":
+    "Only maintenance of ordinary files and empty directories is supported; links or unsupported projects remain inoperable.",
+  "目录删除仅接受空目录，服务不会递归删除内容。":
+    "Directory deletion only accepts empty directories, and the service will not delete content recursively.",
+  "文件删除前会核对预览中的名称、大小与修改时间。":
+    "Before file deletion, the name, size and modification time in the preview will be checked.",
+  当前账户没有预览并删除此远程项目的权限:
+    "The current account does not have the permission to preview and delete this remote project",
+  "正在读取删除预览…": "Reading delete preview...",
+  预览远程删除: "Preview remote deletion",
+  "删除预览 · ": "Delete preview · ",
+  "类型：": "Type: ",
+  " · 大小：": " · Size: ",
+  " · 修改时间：": " ·Modification time: ",
+  未提供: "Not provided",
+  "预览有效至 ": "Preview is valid until ",
+  "，且只能提交一次。": ", and can only be submitted once.",
+  "FTP 服务端不提供按文件标识的原子删除；外部写入者可能在最后一次核对与删除之间替换远程项目。":
+    "The FTP server does not provide atomic deletion by file identifier; external writers may replace remote items between the last check and deletion.",
+  "目的地配置版本已变化，请重新读取并预览。":
+    "The destination configuration version has changed, please read and preview again.",
+  "我已核对目标路径，并确认提交这个一次性删除预览。":
+    "I have checked the target path and confirmed submitting this one-time deletion preview.",
+  备份文件传输等待安全文件清单: "Backup file transfer waiting safe file list",
+  "服务提供传输任务，但目前没有列出实例本地已拥有备份文件的读取能力。为避免猜测文件名，此页暂不提交上传或下载任务。":
+    "The service provides transmission tasks, but currently there is no list of instances that have local backup file reading capabilities. To avoid guessing the file name, no upload or download tasks are submitted on this page.",
+  证书: "Certificate",
+  验证与恢复: "Verification and recovery",
+  DNS凭据与提供商: "DNS Credentials and Providers",
+  " · 不可用": " · Not available",
+  "无法复制验证内容。": "Unable to copy verification content.",
+  "保留订单状态未能读取：{0}": "Failed to read reserved order status: {0}",
+  待确认DNS记录: "DNS record to be confirmed",
+  待放置HTTP验证文件: "HTTP verification file to be placed",
+  已签发: "Issued",
+  已取消: "Canceled",
+  尚未到续期时间: "The renewal time has not yet come",
+  已中断: "Interrupted",
+  订单已到期: "The order has expired",
+  DNS订单待恢复: "DNS order to be restored",
+  DNS记录待清理: "DNS records need to be cleared",
+  证书与验证: "Certificate and verification",
+  导入证书: "Import certificate",
+  申请ACME证书: "Apply for ACME certificate",
+  手动HTTP验证: "Manual HTTP verification",
+  证书资源类型: "Certificate resource type",
+  证书服务暂不可用: "Certificate service is temporarily unavailable",
+  "名称 / 域名": "Name/domain name",
+  颁发者: "Issuer",
+  到期: "Expiration",
+  来源: "Source",
+  暂无可见证书: "No visible certificate yet",
+  "导入已有证书，或通过真实ACME流程申请。没有签发产物时不会显示已签发。":
+    "Import existing certificates, or apply through the real ACME process. If the product has not been issued, it will not be displayed as issued.",
+  "导入已有证书，再绑定到需要启用HTTPS的网站。":
+    "Import the existing certificate, and then bind it to the website that needs to enable HTTPS.",
+  待验证证书标识: "Certificate identification to be verified",
+  读取验证订单: "Read verification order",
+  读取于: "Read at",
+  " · 当前状态未能刷新": " · Current status cannot be refreshed",
+  "为每个域名在可通过 HTTP 访问的网站根目录中放置指定文件。必须写入完全相同的正文，不要添加换行；服务不会代替你上传或探测文件。":
+    "Place specified files for each domain name in the root directory of the website accessible via HTTP. You must write the exact same text, without adding newlines; the service will not upload or probe files on your behalf.",
+  "在域名DNS中添加以下实际TXT记录，再确认验证。等待记录与创建订单均不代表证书已经签发。":
+    "Add the following actual TXT record in the domain name DNS, and then confirm the verification. Neither waiting for records nor creating an order means that the certificate has been issued.",
+  "DNS提供商：": "DNS provider: ",
+  "此订单保留了DNS验证或清理状态。确认会使用原凭据继续验证；取消会清理此订单创建的记录。清理失败时订单仍保留，可以再次恢复。":
+    "This order retains DNS verification or cleanup status. Confirmation will continue verification using the original credentials; cancellation will clear the records created by this order. When cleanup fails, the order is still retained and can be restored again.",
+  "订单待恢复不代表证书已经签发。":
+    "The fact that the order is to be restored does not mean that the certificate has been issued.",
+  HTTP验证文件: "HTTP verification file",
+  "完整验证 URL": "Complete verification URL",
+  "已复制 URL": "URL copied",
+  "复制 URL": "Copy URL",
+  网站根目录下的文件路径: "File path under website root directory",
+  已复制路径: "Path copied",
+  复制路径: "Copy path",
+  "文件正文（精确内容）": "Document text (exact content)",
+  已复制正文: "Text has been copied",
+  复制正文: "Copy text",
+  "放置完成后，请从外部网络确认上方 URL 能通过普通 HTTP 返回完全相同的正文，再继续验证。":
+    "After the placement is completed, please confirm from the external network that the above URL can return exactly the same text through ordinary HTTP, and then continue the verification.",
+  "已放置所有验证文件；我确认 URL 与正文都与此订单完全一致，继续验证。":
+    "All verification files have been placed; I confirm that the URL and text are completely consistent with this order and continue to verify.",
+  当前账户没有继续验证此证书订单的权限:
+    "The current account does not have the authority to continue to verify this certificate order.",
+  HTTP挑战响应无效: "HTTP challenge response is invalid",
+  "返回内容没有通过证书标识、URL、路径和正文校验。请重新读取订单或检查任务结果。":
+    "The returned content did not pass certificate identification, URL, path and text verification. Please re-read the order or check the task results.",
+  记录名称: "Record name",
+  类型: "Type",
+  实际值: "Actual value",
+  受保护的DNS凭据: "Protected DNS Credentials",
+  添加DNS凭据: "Add DNS credentials",
+  已保存凭据: "Credentials saved",
+  未配置凭据: "Credentials not configured",
+  暂无DNS凭据: "No DNS credentials yet",
+  "凭据保存在服务器，网页和MCP读取列表都不会得到密钥。":
+    "The credentials are stored in the server, and neither the web page nor the MCP reading list will obtain the key.",
+  DNS提供商: "DNS provider",
+  凭据字段: "Credential fields",
+  "申请ACME证书 · 手动HTTP验证":
+    "Apply for ACME certificate · Manual HTTP verification",
+  "只填写证书标识、域名和联系人邮箱。此流程不需要网站选择、DNS别名或提供商凭据；验证文件由你放置后再明确继续验证。":
+    "Only fill in the certificate identification, domain name and contact email. This process does not require site selection, DNS aliases, or provider credentials; the verification files are placed by you before you explicitly continue verification.",
+  "证书 · {0}": "Certificate · {0}",
+  域名: "Domain name",
+  "DNS凭据 · {0}": "DNS credentials · {0}",
+  是: "Yes",
+  否: "No",
+  无: "None",
+  变更内容: "What will change",
+  "请核对目标、依赖、目录与服务变更。执行后还需查看任务的最终验证结果。":
+    "Please check the target, dependencies, directory and service changes. After execution, you need to view the final verification results of the task.",
+  "高级详情：原始计划": "Advanced: raw plan",
+  文件内容: "File content",
+  数据库连接: "Database connection",
+  缓存空间: "Cache space",
+  授权范围未提供: "Authorization scope is not provided",
+  状态与表: "Status and table",
+  查询与数据: "Query and data",
+  连接设置: "Connection settings",
+  状态与键列表: "Status and key list",
+  集群状态: "Cluster status",
+  键与集合: "Key and collection",
+  添加数据库连接: "Add database connection",
+  添加缓存空间: "Add cache space",
+  "连接凭据由服务器保护；单库连接必须通过真实权限检查。实例管理员连接拥有独立授权范围。":
+    "Connection credentials are protected by the server; single database connections must pass real permission checks. Instance administrator connections have independent authorization scopes.",
+  "每个连接绑定明确的数据库与键前缀。网页和MCP使用同一缓存空间权限。":
+    "Each connection is bound to an explicit database and key prefix. Web pages and MCP use the same cache space permissions.",
+  "{0}服务暂不可用": "{0} service is temporarily unavailable",
+  名称: "Name",
+  "引擎 / 地址": "Engine/Address",
+  "数据库 / 权限": "Database/Permissions",
+  "数据库 / 键前缀": "Database/key prefix",
+  启用TLS校验: "Enable TLS verification",
+  未启用TLS: "TLS not enabled",
+  "暂无{0}": "No {0} yet",
+  "添加已有服务的连接后，服务器会验证可用性与授权。不会自动安装软件或创建数据库。":
+    "After adding a connection to an existing service, the server will verify availability and authorization. There is no automatic software installation or database creation.",
+  重试连接详情: "Retry connection details",
+  "正在读取连接的实际配置与版本…":
+    "Reading the actual configuration and version of the connection...",
+  服务器: "Server",
+  数据库与角色: "Database and role",
+  数据库与键前缀: "Database and key prefix",
+  授权资源: "Authorized resources",
+  "这里的范围控制连接使用哪个身份。数据库账户的只读、数据读写、完整库权限在所属软件实例中管理；客户端仍需获授相应动作和资源。":
+    "The scope here controls which identity is used for the connection. The read-only, data read-write, and complete library permissions of the database account are managed in the corresponding software instance; the client still needs to be granted corresponding actions and resources.",
+  "填写键时不需要添加前缀；此空间使用":
+    "There is no need to add a prefix when filling in the key; this space is used",
+  ": 前缀。当前客户端的读写范围由所授动作和资源决定。":
+    ": prefix. The current client's read and write range is determined by the granted actions and resources.",
+  "Memcached提供键的读取、写入与删除，不提供键扫描或集合数据类型。":
+    "Memcached provides key reading, writing and deletion, but does not provide key scanning or collection data types.",
+  "{0}分类": "{0} classification",
+  此连接由软件实例: "This connection is instantiated by software",
+  "的数据库账户管理。请在实例数据库中修改密码或账户权限；这里可以删除连接记录，数据库内容保留。":
+    "Database account management. Please modify the password or account permissions in the instance database; the connection record can be deleted here, and the database content will be retained.",
+  请先读取当前连接版本: "Please read the current connection version first",
+  "实际版本读取后才能更新连接。":
+    "The connection can be updated only after the actual version is read.",
+  "密码准备响应无效，请重新读取状态。":
+    "The password preparation response is invalid, please read the status again.",
+  数据库管理员凭据: "Database Administrator Credentials",
+  "状态：": "Status: ",
+  " · 当前凭据版本：": " ·Current Credential Version: ",
+  旧版未初始化: "The old version is not initialized",
+  初始化管理员凭据版本: "Initialize administrator credential version",
+  轮换为随机管理员密码: "Rotate to random administrator password",
+  恢复凭据事务: "Recovery Credentials Transaction",
+  应用待处理凭据: "Apply pending credentials",
+  "确认{0}？操作将按当前凭据版本提交。":
+    "Confirm {0}? The operation will be submitted against the current credential version.",
+  自定义管理员新密码: "Custom administrator new password",
+  "密码经安全通道准备，持久任务仅保存密码版本编号。密码不会回显。":
+    "The password is prepared through the secure channel, and the persistent task only saves the password version number. The password will not be echoed.",
+  轮换为自定义密码: "Rotate to custom password",
+  "确认轮换数据库管理员密码？":
+    "Confirm rotation database administrator password?",
+  "服务返回的清理预览无效，请重新读取binlog列表。":
+    "The cleanup preview returned by the service is invalid, please read the binlog list again.",
+  "清理预览与当前完整日志清单不一致，请重新读取后再试。":
+    "The clean preview is inconsistent with the current complete log list, please re-read and try again.",
+  "创建清理预览失败。": "Failed to create clean preview.",
+  "清理预览已失效。": "Clean preview has expired.",
+  MySQL和MariaDB二进制日志管理: "MySQL and MariaDB binary log management",
+  "Binlog 管理": "Binlog management",
+  "MySQL / MariaDB 实例级二进制日志。":
+    "MySQL/MariaDB instance-level binary log.",
+  从第一页重新读取: "Reread from first page",
+  "刷新 Binlog 状态与列表": "Refresh Binlog status and list",
+  "当前账户没有 Binlog 状态读取能力":
+    "The current account does not have the ability to read Binlog status",
+  二进制日志: "Binary log",
+  格式未提供: "Format not provided",
+  活动日志: "Activity log",
+  "服务器 ID ": "Server ID ",
+  日志基名: "Log base name",
+  "过期设置 ": "Expiration setting ",
+  " 秒": " seconds",
+  配置状态: "Configuration status",
+  配置版本: "Configuration version",
+  " · 实例版本 ": " ·Instance version ",
+  受管设置: "Managed Settings",
+  已启用: "Enabled",
+  已停用: "Deactivated",
+  "运行时 Binlog 状态与受管配置不一致。请先恢复配置状态，再启用或停用 Binlog。":
+    "The runtime Binlog status is inconsistent with the managed configuration. Please restore the configuration status first before enabling or disabling Binlog.",
+  "此实例没有可验证的面板受管 Binlog 配置；面板不会覆盖未受管配置。":
+    "There is no verifiable panel managed binlog configuration for this instance; the panel does not override the unmanaged configuration.",
+  上一次重启状态需要恢复: "The last restart state needs to be restored",
+  "先核对受管配置与服务状态，再应用待处理配置或恢复先前配置。":
+    "First check the managed configuration and service status, and then apply the pending configuration or restore the previous configuration.",
+  "当前账户没有恢复此配置的权限。":
+    "The current account does not have the authority to restore this configuration.",
+  继续应用待处理配置: "Continue to apply pending configuration",
+  恢复先前配置: "Restore previous configuration",
+  "启用 Binlog": "Enable Binlog",
+  "停用 Binlog 配置": "Disable Binlog configuration",
+  "当前账户没有修改 Binlog 配置的权限。":
+    "The current account does not have the authority to modify the Binlog configuration.",
+  "停用受管 Binlog 配置不会删除已有日志文件。":
+    "Deactivating a managed Binlog configuration will not delete existing log files.",
+  "正在读取 Binlog 状态…": "Reading Binlog status...",
+  保留起点: "Keep starting point",
+  选择要保留的第一个日志: "Select the first log to keep",
+  " · 活动日志": " · Activity log",
+  "当前账户没有提交 Binlog 清理任务的权限。":
+    "The current account does not have the authority to submit Binlog cleaning tasks.",
+  "正在生成预览…": "Generating preview...",
+  生成清理预览: "Generate cleaning preview",
+  "清理预览 · 保留 ": "Clean Preview · Keep ",
+  将清理: "Will clean up",
+  " 个日志文件，约 ": " log files, approximately ",
+  "；活动日志 ": "; Activity log ",
+  "将保留。": "will be retained.",
+  "此保留位置没有可清理的旧日志。":
+    "There are no old logs to clean at this reserved location.",
+  预览有效至: "Preview is valid until",
+  "。服务器无法确认离线或未登记副本是否仍需要这些日志。":
+    ". The server cannot confirm whether these logs are still needed for offline or unchecked replicas.",
+  "Binlog 配置或实例版本已变化，请重新读取并生成预览。":
+    "The Binlog configuration or instance version has changed, please re-read and generate a preview.",
+  "我确认这些文件可能包含离线或未登记副本需要的历史，并继续清理此精确清单。":
+    "I acknowledge that these files may contain history needed for offline or unregistered copies and continue to clean up this precise inventory.",
+  "请选择不超过 {0} 的文件。": "Please select files no larger than {0}.",
+  "正在校验文件…": "Verifying file...",
+  "正在上传文件…": "Uploading files...",
+  "上传结果与文件不符。请刷新导入记录并核对，暂不能应用。":
+    "The upload result does not match the file. Please refresh the import record and check, it cannot be applied yet.",
+  "文件已校验，请核对导入目标后执行。":
+    "The file has been verified, please check the import target before executing.",
+  "请刷新导入记录核对传输状态，避免重复上传。":
+    "Please refresh the import record to check the transmission status to avoid repeated uploading.",
+  外部数据库导入: "External database import",
+  "请选择空的、由 Folio 管理的目标数据库。导入会验证文件和目标权限；已有表或集合的目标会被拒绝。":
+    "Please select an empty, Folio-managed target database. Import verifies file and target permissions; targets that already have tables or collections are rejected.",
+  "Binlog 状态响应无效，请重新读取":
+    "Binlog status response is invalid, please read again",
+  现有日志: "Existing log",
+  " 个日志文件": " log files",
+  " · 当前页后还有日志": " · There is a log after the current page",
+  "当前账户没有 Binlog 列表读取能力":
+    "The current account does not have the ability to read the Binlog list",
+  " · 当前活动日志": " · Current activity log",
+  "当前没有可见 Binlog 文件": "There is currently no visible Binlog file",
+  "正在读取 Binlog 列表…": "Reading Binlog list...",
+  "Binlog 列表响应无效，请重新读取":
+    "Binlog list response is invalid, please read again",
+  上一页: "Previous page",
+  读取下一页: "Read next page",
+  回到第一页: "Return to the first page",
+  "Binlog 清理预览": "Binlog cleaning preview",
+  按保留位置预览清理: "Preview and clean by retaining position",
+  "选择保留起点后，服务会冻结将清理的旧日志清单；当前活动日志和保留起点会保留。":
+    "After selecting the retention starting point, the service will freeze the old log list that will be cleaned; the current activity log and the retention starting point will be retained.",
+  "此实例没有可验证的受管配置版本，不能安全绑定清理预览。":
+    "This instance does not have a verifiable version of the managed configuration and cannot securely bind the cleanup preview.",
+  "Binlog 状态与列表版本不一致，请刷新后再生成清理预览。":
+    "The Binlog status is inconsistent with the list version. Please refresh and then generate a clean preview.",
+  "日志列表不完整，当前不会生成清理预览。请轮换或整理日志后重新读取。":
+    "The log list is incomplete and a cleanup preview will not be generated at present. Please rotate or organize the logs and read again.",
+  "日志总数与可见清单不一致，当前不会生成清理预览。":
+    "The total number of logs is inconsistent with the visible list, and a cleanup preview will not be generated currently.",
+  "当前有超过 128 个日志文件，服务端不会生成清理快照。请先轮换或整理日志，再重新读取。":
+    "There are currently more than 128 log files, and the server will not generate a cleanup snapshot. Please rotate or organize the logs before reading again.",
+  "Binlog 列表总数超过 128 个文件，服务端不会冻结清理快照；先轮换或整理日志。":
+    "If the total number of Binlog lists exceeds 128 files, the server will not freeze and clean up the snapshots; rotate or organize the logs first.",
+  "活动 Binlog 未出现在读取清单中，当前不会生成清理预览。":
+    "The active Binlog does not appear in the read list and a cleanup preview will not be generated currently.",
+  "PostgreSQL 当前支持 Folio 表数据 JSON，最大 64 MiB。原生归档导入仍在开发。":
+    "PostgreSQL currently supports Folio table data JSON, up to 64 MiB. Native archive import is still under development.",
+  "MongoDB 支持 Folio BSON 数据归档。":
+    "MongoDB supports Folio BSON data archiving.",
+  "MySQL/MariaDB 支持表结构与数据 SQL 文件；导入会拒绝账户、服务器和客户端命令。":
+    "MySQL/MariaDB supports table structure and data SQL files; importing will reject account, server and client commands.",
+  选择导入文件: "Select import file",
+  "正在处理…": "Processing...",
+  上传并校验: "Upload and verify",
+  取消上传: "Cancel upload",
+  刷新导入记录: "Refresh import record",
+  "当前没有上传导入文件的权限。":
+    "There is currently no permission to upload import files.",
+  "此记录尚未完成上传、目标版本已改变或需要恢复检查。请重新核对后再应用。":
+    "This record has not been uploaded yet, the target version has changed or needs to be restored for inspection. Please recheck before applying.",
+  导入目标: "Import target",
+  文件摘要: "Document summary",
+  "当前账号无权读取该名称的数据库管理记录，安全创建流程已停止。":
+    "The current account does not have the right to read the database management record of this name, and the security creation process has been stopped.",
+  "读取数据库管理记录失败。": "Failed to read database management records.",
+  确认数据库创建: "Confirm database creation",
+  按已删除记录版本重建: "Rebuild according to deleted record version",
+  创建无管理记录的新名称: "Create new name without administrative records",
+  数据库: "Database",
+  " · 提交版本 ": " · Submit version ",
+  数据库创建完成: "Database creation is completed",
+  "数据库创建已完成，实例资源列表已重新读取。":
+    "Database creation has been completed and the instance resource list has been re-read.",
+  返回数据库资源: "Return to database resources",
+  查询数据库管理记录: "Query database management records",
+  "先查询该名称的权威管理记录，再按当前删除版本重建或按新名称创建。":
+    "First query the authoritative management record of the name, and then rebuild it according to the currently deleted version or create it according to the new name.",
+  "无法确认当前已登记的复制对清单，请刷新后再试。":
+    "Unable to confirm the currently registered copy pair list, please refresh and try again.",
+  "所选目标数据库已有托管复制记录。请在下方选择该复制对并查看状态；不会创建第二个目标通道。":
+    "The selected target database already has managed replication records. Please select the replicated pair below and view the status; a second target channel will not be created.",
+  "服务端没有为这对实例发布预览和配置能力。":
+    "The server does not have preview and configuration capabilities for this pair of instances.",
+  "服务返回的复制预览缺少完整版本、哈希或目标保护字段；没有提交配置任务。":
+    "The replication preview returned by the service lacks the full version, hash, or target protection fields; no configuration task was submitted.",
+  "任务已提交；请查看任务状态和结果。失败或中断时先刷新复制状态，再决定是否执行下一步。":
+    "The task has been submitted; please check the task status and results. In the event of failure or interruption, refresh the replication status first, and then decide whether to perform the next step.",
+  "请求没有得到可确认的任务回执。已刷新状态；如需重试，请先检查当前复制对状态。此页面不会自动重放任务。":
+    "The request did not receive a confirmable task receipt. Status refreshed; if you need to try again, check the current replication pair status first. This page does not automatically replay tasks.",
+  "实例或数据库版本已变化，旧预览不能提交。请重新读取并生成新预览。":
+    "The instance or database version has changed, and the old preview cannot be submitted. Please reread and generate a new preview.",
+  "服务端当前没有发布此复制配置能力。":
+    "The server currently does not publish this copy configuration capability.",
+  "预览已过期或三项确认未完成。请重新预览并分别确认。":
+    "The preview has expired or the three confirmations have not been completed. Please preview again and confirm separately.",
+  "没有自动重试配置任务。请刷新端点与复制状态，检查预览是否仍然有效。":
+    "There is no automatic retry of configuration tasks. Please refresh the endpoint and replication status to check that the preview is still valid.",
+  "当前身份没有与此操作匹配的数据库管理能力；服务端还会检查两端软件和精确数据库资源授权。":
+    "The current identity does not have database management capabilities matching this operation; the server will also check the software at both ends and the accurate database resource authorization.",
+  "复制对已从授权清单中消失。请刷新并重新选择。":
+    "The replication pair has disappeared from the authorization list. Please refresh and select again.",
+  "复制对状态与最新版本不匹配。请刷新状态后再提交。":
+    "The replication pair status does not match the latest version. Please refresh the status before submitting.",
+  "服务端未明确允许的恢复选择；当前不会提交恢复任务。":
+    "Recovery selection not explicitly allowed by the server; recovery tasks will not be submitted at this time.",
+  "复制对状态不允许此操作，或需要重新确认后端明确列出的恢复选项。":
+    "The replication pair status does not allow this operation, or requires reconfirmation of recovery options explicitly listed by the backend.",
+  "操作没有自动重试。已请求刷新复制对；如果版本冲突，请重新读取状态后再决定下一步。":
+    "The operation was not automatically retried. Refresh of the replication pair has been requested; if there is a version conflict, please re-read the status before deciding the next step.",
+  数据库复制管理: "Database replication management",
+  数据库名称: "Database name",
+  读取管理记录: "Read management record",
+  "正在读取权威管理记录…": "Reading authoritative management record...",
+  "当前没有该名称的面板管理记录。若数据库服务中已有同名外部数据库或账户，服务会拒绝创建。":
+    "There is currently no panel management record of this name. If there is an external database or account with the same name in the database service, the service will refuse to create it.",
+  确认按新名称创建: "Confirm creation by new name",
+  管理记录: "Management records",
+  引擎与权限: "Engine and authority",
+  记录状态: "Record status",
+  已删除: "Deleted",
+  "MongoDB 暂不支持重建已删除数据库":
+    "MongoDB does not currently support rebuilding deleted databases",
+  "服务目前无法为 MongoDB tombstone 提供原子所有权保护，因此不会提交重建操作。":
+    "The service is currently unable to provide atomic ownership protection for MongoDB tombstones, so the rebuild operation will not be committed.",
+  "确认按版本 {0} 重建": "Confirm rebuild by version {0}",
+  当前记录不是已删除状态: "The current record is not in a deleted state",
+  "只有权威记录明确为已删除时，才能选择按该版本重建。":
+    "Only when the authoritative record is clearly deleted, you can choose to rebuild according to this version.",
+  "数据库复制请求失败。": "Database copy request failed.",
+  复制源: "Copy source",
+  只读目标: "Read-only target",
+  "需要读取两个软件实例与同名数据库的权威版本。请检查软件读取和数据库读取权限。":
+    "It is necessary to read two software instances and the authoritative version of the database with the same name. Please check software read and database read permissions.",
+  "端点或数据库权威记录缺少有效归属、运行状态或版本；请刷新并确认两端数据库都由面板管理且处于 active 状态。":
+    "The endpoint or database authoritative record lacks valid ownership, running status or version; please refresh and confirm that the databases at both ends are managed by the panel and are in the active state.",
+  "当前身份没有数据库复制能力检查权限 (databases:replication)。":
+    "The current identity does not have database replication capability check authority (databases:replication).",
+  "服务返回的复制能力结果与所选实例不匹配，请刷新后重试。":
+    "The replication capability result returned by the service does not match the selected instance. Please refresh and try again.",
+  "服务端未确认此实例对符合安全条件的托管复制。":
+    "The server has not confirmed that this instance is a managed copy that meets security conditions.",
+  数据库复制: "Database replication",
+  此数据库引擎: "This database engine",
+  "{0}暂不支持托管复制": "{0} does not currently support managed replication",
+  "当前只支持同一服务器上的托管 MySQL↔MySQL 或 MariaDB↔MariaDB。PostgreSQL、MongoDB、跨引擎和跨主机复制当前没有受管动作。":
+    "Currently only hosted MySQL↔MySQL or MariaDB↔MariaDB on the same server is supported. There are currently no managed actions for PostgreSQL, MongoDB, cross-engine, and cross-host replication.",
+  "MySQL 和 MariaDB 托管复制": "MySQL and MariaDB Managed Replication",
+  托管数据库复制: "Managed Database Replication",
+  "同主机、同引擎的单向复制；目标实例将被整体设为只读。":
+    "One-way replication of the same host and the same engine; the target instance will be set as read-only as a whole.",
+  刷新复制状态: "Refresh copy status",
+  当前数据库: "Current database",
+  "。两个实例都必须由面板管理，并且目标实例只能包含此数据库；开始配置前，服务端还会重新检查运行状态、目标空库和资源授权。复制状态读取需要两端的 ":
+    ". Both instances must be managed by the panel, and the target instance can only contain this database; before starting the configuration, the server will also recheck the running status, target empty database, and resource authorization. Replication status reading requires both ends ",
+  " 与精确数据库资源；配置和生命周期操作需要两端的 ":
+    " With accurate database resources; configuration and lifecycle operations require both ends ",
+  "授权。": "Authorization.",
+  新建复制对: "Create new copy pair",
+  缺少端点或数据库读取能力: "Lack of endpoint or database reading capabilities",
+  "选择复制端点需要软件实例列表与详情读取、以及两端同名数据库的受管记录读取权限。":
+    "Selecting a replication endpoint requires software instance list and detail reading, as well as managed record reading permissions for databases with the same name at both ends.",
+  当前实例角色: "Current instance role",
+  当前实例作为复制源: "Current instance as copy source",
+  当前实例作为只读目标: "Current instance as read-only target",
+  选择只读目标实例: "Select read-only target instance",
+  选择复制源实例: "Select replication source instance",
+  "选择另一台已授权的 ": "Select another authorized ",
+  " 实例": " Example",
+  "没有其他可见的受管 ": "No other visible managed ",
+  " 实例。列表只包含当前身份可读取的实例。":
+    " Example. The list only contains instances that are readable by the current identity.",
+  "所选实例已不在当前授权的运行实例清单中；重新选择后再继续。":
+    "The selected instance is no longer in the currently authorized running instance list; reselect before continuing.",
+  "读取的实例详情尚未证明两端都是面板管理的可用实例；请检查各自的读取权限和服务状态。":
+    "The instance details read have not proven that both ends are available instances for panel management; please check their respective read permissions and service status.",
+  "两端都必须存在同名且 active 的受管数据库记录。目标不会被自动创建或接管。":
+    "A managed database record with the same name and active must exist on both ends. Targets are not automatically created or taken over.",
+  当前身份无法检查两端复制能力:
+    "The current identity cannot check the replication capabilities of both ends",
+  "缺少 databases:replication 读取动作；服务端也会验证两个端点及精确数据库资源。":
+    "The databases:replication read action is missing; the server will also verify the two endpoints and the exact database resources.",
+  此端点组合不满足服务端支持条件:
+    "This endpoint combination does not meet the server support conditions",
+  "复制能力响应身份或字段不匹配；没有启用提交操作。":
+    "Copy capability response identity or field mismatch; commit operation not enabled.",
+  "目标实例已有此数据库的复制记录（":
+    "The target instance already has a replication record of this database (",
+  "，状态 ": ", state ",
+  "）。不会为同一个目标创建第二条通道；请在下方检查现有复制对。":
+    "). A second channel will not be created for the same target; please check below for existing replication pairs.",
+  "当前身份没有读取受管复制对清单的权限，因此不能安全确认目标是否已使用；新建预览已禁用。":
+    "The current identity does not have permission to read the Managed Replication pair manifest, so it is not safe to confirm whether the target has been used; New Preview is disabled.",
+  "复制对清单响应不完整；新建预览已禁用，请刷新后检查。":
+    "The copy response to the list is incomplete; the new preview is disabled, please refresh and check.",
+  "正在刷新端点并生成预览…": "Refreshing endpoint and generating preview...",
+  读取最新端点并生成预览: "Read the latest endpoint and generate a preview",
+  "正在核对服务器复制能力…": "Checking server replication capability...",
+  "服务端能力检查失败；请检查当前 actor 对两端及精确数据库资源的读取授权。":
+    "The server capability check failed; please check the current actor's read authorization for both ends and precise database resources.",
+  "当前身份没有生成复制预览所需的 databases:admin 权限。":
+    "The current identity does not have the databases:admin permissions required to generate a copy preview.",
+  "预览已过期；重新读取两端版本并生成新预览后才能提交。":
+    "The preview has expired; it can only be submitted after re-reading the versions at both ends and generating a new preview.",
+  "需要 databases:replication 读取权限和复制对两端的精确资源授权。":
+    "Requires databases:replication read permissions and precise resource authorization on both ends of the replication.",
+  复制对状态: "Copy pair status",
+  "状态请求使用当前受授权列表中的复制对版本。":
+    "The status request uses the copy pair version currently in the authorized list.",
+  重新读取此复制对: "Reread this copy pair",
+  "服务端状态身份、版本或字段与选中的复制对不匹配；不会显示生命周期操作。":
+    "The server status identity, version, or field does not match the selected replication pair; lifecycle operations will not be displayed.",
+  "复制状态 / 阶段": "Replication status/stage",
+  "Pair 版本": "Pair version",
+  目标写入保护: "Target write protection",
+  "服务端尚未验证受管只读配置。":
+    "The server has not verified the managed read-only configuration.",
+  "复制线程 / 延迟": "Copy Thread/Delay",
+  运行: "Run",
+  停止: "Stop",
+  延迟未知: "Delay unknown",
+  "{0} 秒": "{0} seconds",
+  源坐标: "Source coordinates",
+  "位置 {0}": "Location {0}",
+  位置未提供: "Location not provided",
+  种子: "Seed",
+  "SHA-256 未提供": "SHA-256 not provided",
+  "该复制对有未完成的受保护操作，需要显式恢复。恢复选项仅在后端状态响应明确列出时显示；当前不会根据阶段猜测回滚安全性。":
+    "The replication pair has outstanding protected operations that require explicit recovery. Recovery options are only shown if the backend status response is explicitly listed; rollback safety is not currently guessed based on the stage.",
+  " 当前操作：": " Current operation: ",
+  "服务端错误类别：": "Server error category: ",
+  "目标只读保护未得到服务端验证。界面不会将目标标记为安全只读。":
+    "The target read-only protection has not been verified by the server. The interface does not mark the target as safe read-only.",
+  启动复制: "Start copying",
+  停止复制并保留状态: "Stop copying and retain state",
+  冻结预览: "Freeze Preview",
+  " 张表": " Table",
+  "预计种子 ": "Expected seeds ",
+  预览有效期: "Preview validity period",
+  实例版本: "Example version",
+  "数据库版本 ": "Database version ",
+  "种子快照 SHA-256": "Seed snapshot SHA-256",
+  "目标实例级只读：服务端报告此实例仅包含所选数据库。MySQL 将同时启用":
+    "Target instance level read-only: The server reports that this instance only contains the selected database. MySQL will also be enabled",
+  " 与 ": " With ",
+  "；MariaDB 将启用 ": ";MariaDB will be enabled ",
+  "。这会影响目标实例中的全部数据库。":
+    ". This affects all databases in the target instance.",
+  "我确认这是一个受管的空目标数据库；预览不会自动创建或覆盖数据库。":
+    "I confirmed that this is a managed, empty target database; the preview does not automatically create or overwrite the database.",
+  "我确认将从本次冻结的快照及其 binlog 文件/位置启动一条新的单向复制流；已有复制通道或位置不会被接管，存在时服务端会拒绝预览或配置。":
+    "I confirm that a new one-way replication stream will be started from this frozen snapshot and its binlog file/location; existing replication channels or locations will not be taken over, and the server will refuse to preview or configure if they exist.",
+  "我确认目标实例会整体变为只读，不能在目标上直接写入；该保护影响目标实例的所有数据库。":
+    "I confirm that the target instance will become read-only as a whole and cannot be written directly on the target; this protection affects all databases of the target instance.",
+  "配置动作的公共 schema 未要求三项常量为 true 的确认字段；安全提交保持禁用。":
+    "The public schema of the configuration action does not require a confirmation field where the three constants are true; safe submission remains disabled.",
+  "当前身份没有提交配置任务所需的 databases:admin 授权。":
+    "The current identity does not have the databases:admin authorization required to submit the configuration task.",
+  "正在核对版本…": "Checking version...",
+  按冻结预览提交配置任务: "Press freeze preview to submit configuration task",
+  已登记复制对: "Registered copy pair",
+  当前数据库没有已登记复制对:
+    "There is no registered replication pair in the current database",
+  "仅显示当前 actor 对两端实例和精确数据库都获授权的复制记录。":
+    "Only the replication records for which the current actor is authorized for both end instances and the exact database are displayed.",
+  当前身份没有读取复制状态的权限:
+    "The current identity does not have the authority to read the copy status",
+  "移除会停止复制并删除此托管通道、生成的复制账户及源坐标。目标现有数据库数据会保留，但之后不再接收更新，也不能从此复制历史继续；源实例不变。":
+    "Removal stops replication and deletes the hosted channel, the generated replication account, and the source coordinates. Existing database data on the target is preserved, but it no longer receives updates and cannot continue from this replication history; the source instance remains unchanged.",
+  "我确认移除此托管复制通道和生成的复制账户。":
+    "I confirm the removal of this managed replication channel and the resulting replication account.",
+  "我确认目标将停止接收更新，已生成的复制历史与源坐标不会保留为可恢复通道；目标现有数据保留，源不受影响。":
+    "I confirm that the target will stop receiving updates, and the generated replication history and source coordinates will not be retained as recoverable channels; the target's existing data will be retained, and the source will not be affected.",
+  移除复制通道并保留目标数据: "Remove copy channel and retain target data",
+  继续已记录的安全步骤: "Continue with documented safety steps",
+  恢复配置前版本: "Restore pre-configuration version",
+  "后端尚未声明安全恢复选项；刷新或由管理员检查受保护的复制日志后再操作。":
+    "The backend has not declared a safe recovery option; refresh or have the administrator check the protected replication log before proceeding.",
+  "操作阶段尚未 settled。此时不会显示 start、stop 或 remove；请等待任务完成并重新读取状态。":
+    "The operational phase has not yet been settled. Start, stop, or remove will not appear at this time; please wait for the task to complete and reread the status.",
+  "复制任务已提交，但当前身份无法读取任务状态；执行结果未知。可以手动刷新复制状态，但不会把任务标记为成功。":
+    "The copy task has been submitted, but the current identity cannot read the task status; the execution result is unknown. Replication status can be refreshed manually, but the task will not be marked as successful.",
+  大小估算未知: "Size estimate unknown",
+  "至少一个表的服务端结果无法确认。请勿自动重试或再次提交；先核实数据库状态。":
+    "The server result of at least one table cannot be confirmed. Do not automatically retry or resubmit; verify database status first.",
+  "任务部分完成。逐表检查结果后，再决定是否为未完成的表创建新的预览。":
+    "Task partially completed. After checking the results table by table, decide whether to create a new preview for the unfinished table.",
+  "此预览已过期，不能用于提交维护任务。":
+    "This preview has expired and cannot be used to submit maintenance tasks.",
+  "表清单或快照版本字段无效；请刷新后再选择表。":
+    "The table list or snapshot version field is invalid; please refresh and then select the table.",
+  "分页期间数据库或表结构已变化；已清除选择，请从第一页重新读取。":
+    "The database or table structure has changed during paging; the selection has been cleared, please read again from the first page.",
+  "数据库清单分页已过期；选择已清除。请重新读取第一页。":
+    "Database list pagination has expired; selection cleared. Please reread the first page.",
+  读取表清单失败: "Failed to read table list",
+  "请输入有效的表维护预览 ID。":
+    "Please enter a valid table maintenance preview ID.",
+  "此数据库属于受管复制源；维护语句可能传播到副本并增加复制延迟、锁等待和磁盘负载。":
+    "This database belongs to a managed replication source; maintenance statements may propagate to replicas and increase replication latency, lock waits, and disk load.",
+  "当前身份可以读取和检查结果，但没有表维护预览管理权限；无法提交优化或修复。":
+    "The current identity can read and check results, but does not have table maintenance preview management rights; optimization or repair cannot be submitted.",
+  操作: "Operation",
+  "优化表（InnoDB / MyISAM）": "Optimized table (InnoDB/MyISAM)",
+  "修复表（仅 MyISAM）": "Repair table (MyISAM only)",
+  "REPAIR 仅对 MyISAM 提供有限检查；可能锁表，也不能保证恢复损坏数据。InnoDB 不支持此命令。":
+    "REPAIR only provides limited checks for MyISAM; it may lock the table and cannot guarantee the recovery of damaged data. InnoDB does not support this command.",
+  数据库基础表: "Database basic table",
+  仅支持基础表: "Only basic tables are supported",
+  "InnoDB 不支持 REPAIR；不会发送修复语句":
+    "InnoDB does not support REPAIR; repair statements will not be sent",
+  当前存储引擎不在支持范围:
+    "The current storage engine is not within the support range",
+  此数据库暂无基础表: "This database currently has no basic table",
+  已选: "Selected",
+  " / 25 · 结构指纹 ": " / 25 · Structural fingerprint ",
+  下一页: "Next page",
+  生成维护预览: "Generate maintenance preview",
+  "当前所选表不全支持此操作；InnoDB 的 REPAIR 会被禁用，服务端也会在预览时重新校验引擎。":
+    "Not all currently selected tables support this operation; InnoDB's REPAIR will be disabled, and the server will also recheck the engine during preview.",
+  "正在固定表定义、版本和影响预览…":
+    "Fixing table definitions, versions and impact previews...",
+  表维护预览: "Table maintenance preview",
+  优化预览: "Optimize preview",
+  "MyISAM 修复预览": "MyISAM repair preview",
+  目标: "Target",
+  预估表数据和索引: "Estimate table data and index",
+  估算未知: "Estimate unknown",
+  版本钉住: "Version pinning",
+  "锁影响：": "Lock impact: ",
+  "优化可能重建表并暂用接近当前表大小的空间；估算值不保证可回收空间，执行前确认磁盘余量。":
+    "Optimization may rebuild the table and temporarily use space close to the current table size; the estimated value does not guarantee recyclable space, and the disk margin must be confirmed before execution.",
+  "复制影响：": "Copy impact: ",
+  当前身份没有执行表维护任务的权限:
+    "The current identity does not have the authority to perform table maintenance tasks",
+  "执行需要 managed_database_table_maintenance 的 databases:admin 授权。":
+    "Execution requires databases:admin authorization of managed_database_table_maintenance.",
+  "我已查看上述表、锁、空间和复制影响，并确认执行此固定预览。":
+    "I have reviewed the above table, lock, space, and replication impacts and confirmed that this fixed preview is performed.",
+  "预览已过期；刷新清单并创建新预览后才能执行。":
+    "The preview has expired; it cannot be executed until the manifest is refreshed and a new preview is created.",
+  "服务没有返回可确认的任务回执，结果未知。先检查预览状态；不会自动重试。若选择重放，只会使用相同请求键以读取同一任务回执。":
+    "The service did not return a confirmable task receipt, and the result is unknown. Check preview status first; will not automatically retry. If you choose to replay, the same request key will only be used to read the same task receipt.",
+  检查此预览结果: "Check this preview result",
+  用相同请求键重放: "Playback with same request key",
+  "此预览已提交为一次性任务；不会再次提交。请检查任务和逐表结果。":
+    "This preview has been submitted as a one-time task; it will not be submitted again. Please check the tasks and table-by-table results.",
+  "正在提交…": "Submitting...",
+  提交维护任务: "Submit maintenance task",
+  检查已有预览结果: "Check existing preview results",
+  当前身份没有维护结果读取权限:
+    "Current identity does not have maintenance result reading authority",
+  "检查需要 managed_database_table_maintenance_inspect 的 databases:read 授权。":
+    "Inspection requires databases:read authorization of managed_database_table_maintenance_inspect.",
+  "预览 ID": "Preview ID",
+  "正在检查…": "Checking...",
+  读取受保护结果: "Reading protected results",
+  优化: "Optimization",
+  修复: "Repair",
+  预览: "Preview",
+  " · 任务 {0}": " ·Task {0}",
+  "移除参数 {0}": "Remove parameter {0}",
+  "添加 argv 参数": "Add argv parameter",
+  "环境变量 JSON": "Environment variable JSON",
+  "可选；最多 16 项。密钥字段通过受保护通道提交，任务记录只保存服务端引用。":
+    "Optional; up to 16 items. The key field is submitted through a protected channel, and the task record only saves the server reference.",
+  工作目录: "Working directory",
+  "可选；容器内的规范绝对路径。":
+    "Optional; canonical absolute path within the container.",
+  标准输入: "Standard input",
+  "可选；最多 16 KiB。适合传入不应出现在命令参数中的内容。":
+    "Optional; up to 16 KiB. Suitable for passing content that should not appear in the command parameters.",
+  超时秒数: "Timeout seconds",
+  "输出上限（字节）": "Output upper limit (bytes)",
+  确认提交一次性命令: "Confirm submission of one-time command",
+  "目标：": "Goal: ",
+  "执行后若连接中断，先检查任务列表再决定是否发起一次新的命令。":
+    "If the connection is interrupted after execution, first check the task list and then decide whether to initiate a new command.",
+  确认并提交命令: "Confirm and submit the command",
+  返回修改参数: "Return to modify parameters",
+  "提交状态尚未确认，请先在任务列表核对是否已有本次命令。":
+    "The submission status has not yet been confirmed. Please check whether this command already exists in the task list.",
+  "我已核对任务列表，确认可以发起一次新的执行。":
+    "I have checked the task list and confirmed that a new execution can be initiated.",
+  "退出码 ": "Exit code ",
+  标准输出: "Standard output",
+  标准错误: "Standard error",
+  "命令没有返回文本输出。": "The command returned no text output.",
+  执行状态尚未确认: "Execution status has not yet been confirmed",
+  "任务结束时容器引擎仍报告 ":
+    "When the task ends, the container engine still reports ",
+  "。输出不代表命令已经完成。":
+    ". The output does not mean the command has completed.",
+  "当前账户没有读取受管执行状态的权限；请检查任务与容器状态。":
+    "The current account does not have permission to read the managed execution status; please check the task and container status.",
+  "正在核对…": "Checking...",
+  " · 尚无已记录任务": " · There are no recorded tasks yet",
+  " · 完成于 {0}": " · Completed on {0}",
+  "已完成 ": "Completed ",
+  " · 失败 ": " ·Failure ",
+  " · 结果未知 ": " ·The result is unknown ",
+  '环境变量需要JSON字符串对象，例如 {"MODE":"safe"}。':
+    'Environment variables require JSON string objects, such as {"MODE":"safe"}.',
+  "环境变量JSON格式无效。": "The environment variable JSON format is invalid.",
+  "命令参数无效。": "The command parameter is invalid.",
+  "服务未返回任务编号，提交状态无法确认。请先检查任务列表；页面不会自动重试此命令。":
+    "The service did not return the task number, and the submission status could not be confirmed. Please check the task list first; the page will not automatically retry this command.",
+  "连接或服务响应中断，命令可能已进入后台。请先检查任务列表；页面不会自动重试此命令。":
+    "The connection or service response is interrupted, and the command may have entered the background. Please check the task list first; the page will not automatically retry this command.",
+  "命令提交失败。": "Command submission failed.",
+  "执行状态与本次记录的引擎执行编号不一致。":
+    "The execution status is inconsistent with the engine execution number recorded this time.",
+  "无法读取执行状态。": "Unable to read execution status.",
+  "Docker 一次性容器命令": "Docker one-time container command",
+  一次性容器命令: "Disposable container command",
+  "argv · 非交互执行": "argv · Non-interactive execution",
+  "每一行作为独立参数直接传入，不附加 shell 或交互式 TTY；若 argv[0] 指向 shell，shell 本身仍会按传入参数运行。参数会保留在任务记录中，不要把密码放入 argv。连接中断后不会自动重试。":
+    "Each line is passed in directly as an independent parameter, without a shell or interactive TTY attached; if argv[0] points to the shell, the shell itself will still run according to the passed in parameters. The parameters will be kept in the task record, do not put the password in argv. There is no automatic retry after the connection is interrupted.",
+  当前账户没有受管容器命令执行权限:
+    "The current account does not have managed container command execution permissions",
+  容器当前未处于运行状态: "The container is not currently running",
+  "仅运行中的受管容器支持一次性命令执行。":
+    "Only running managed containers support one-time command execution.",
+  "可执行程序 · argv[0]": "Executable program · argv[0]",
+  "参数 {0}": "Parameter {0}",
+  核对这次执行状态: "Check this execution status",
+  "引擎状态：": "Engine status: ",
+  " · 实际退出码 {0}": " · Actual exit code {0}",
+  准备一次新的执行: "Prepare for a new execution",
+  检查参数并继续: "Check parameters and continue",
+  "归档文件大小必须在 1 字节至 4 GiB 之间。":
+    "Archive file size must be between 1 Byte and 4 GiB.",
+  "服务未返回任务编号，导出状态无法确认。请先核对任务列表；页面不会自动重试。":
+    "The service did not return the task number and the export status could not be confirmed. Please check the task list first; the page will not automatically retry.",
+  "提交导出任务失败。": "Failed to submit export task.",
+  "任务完成，但返回的归档证明与当前精确镜像不匹配。请检查任务结果。":
+    "The task is completed, but the returned archive proves that it does not match the current accurate image. Please check the task results.",
+  "此浏览器不支持流式保存；为避免占满内存，备用下载方式限制为 512 MiB。请使用支持文件保存权限的浏览器。":
+    "This browser does not support streaming saving; to avoid filling up memory, the backup download method is limited to 512 MiB. Please use a browser that supports file saving permissions.",
+  "服务返回的下载块与偏移、长度或摘要不匹配；下载已停止。":
+    "The download chunk returned by the service does not match the offset, length, or digest; the download has stopped.",
+  "下载块 SHA-256 校验失败；下载已停止。":
+    "Download block SHA-256 verification failed; download has stopped.",
+  "完整归档 SHA-256 校验失败；未保存下载文件。":
+    "Complete archive SHA-256 verification failed; download file not saved.",
+  "下载归档失败。": "Failed to download archive.",
+  "清单绑定的精确镜像与当前目标不一致。":
+    "The exact image of the manifest binding is inconsistent with the current target.",
+  "清单不是已完成导出的归档证明。":
+    "The manifest is not an archived proof that the export has been completed.",
+  "无法读取归档清单。": "Unable to read archive list.",
+  "当前账户没有读取上传偏移的权限。":
+    "The current account does not have permission to read the upload offset.",
+  "上传状态与本地证明清单不匹配；请确认归档编号和源文件。":
+    "The upload status does not match the local certification list; please confirm the archive number and source file.",
+  "无法读取上传状态。": "Unable to read upload status.",
+  "当前账户没有上传归档块的权限。":
+    "The current account does not have the authority to upload archive blocks.",
+  "上传块回执与提交的偏移不匹配。":
+    "The upload block receipt does not match the submitted offset.",
+  "服务端上传偏移尚未通过同一块的幂等回执核对；为避免跳过或覆盖数据，上传已停止。":
+    "The server upload offset has not yet passed the idempotent receipt check of the same block; to avoid skipping or overwriting data, the upload has been stopped.",
+  "上传块未得到可核对的提交回执。":
+    "The upload block did not receive a verifiable submission receipt.",
+  "归档文件大小与服务端证明不匹配。":
+    "The archive file size does not match the server certificate.",
+  "本地归档 SHA-256 与服务端证明不匹配；尚未上传。":
+    "The local archive SHA-256 does not match the server certificate; it has not been uploaded yet.",
+  "请输入需要续传的受管归档编号。":
+    "Please enter the managed archive number that needs to be resumed.",
+  "当前账户没有创建此精确镜像上传归档的权限。":
+    "The current account does not have the authority to create this precise image upload archive.",
+  "服务未返回可核对的上传归档编号。请先查看审计记录，页面不会自动重建上传。":
+    "The service did not return a verifiable upload archive number. Please check the audit records first. The page will not be automatically rebuilt and uploaded.",
+  "上传归档失败。": "Failed to upload archive.",
+  "服务未返回任务编号，导入状态无法确认。请先核对任务列表；页面不会自动重试。":
+    "The service did not return the task number and the import status could not be confirmed. Please check the task list first; the page will not automatically retry.",
+  "提交镜像加载任务失败。": "Failed to submit the image loading task.",
+  "任务完成，但加载回执与当前精确镜像不匹配。请检查任务结果。":
+    "The task is completed, but the loading receipt does not match the current accurate image. Please check the task results.",
+  "Docker 镜像归档保存与加载": "Docker image archive saving and loading",
+  镜像归档保存与加载: "Mirror archive saving and loading",
+  "精确摘要 · 受管证明": "Accurate Summary · Proof of Administration",
+  "归档清单中的证明由面板生成并绑定此精确镜像。加载必须使用配套 .tar 和 .json 清单；任意 tar、其他摘要或其他 API 主机的证明都不会被接受。":
+    "The proof in the archive manifest is generated by the panel and bound to this exact image. Loading must use companion .tar and .json manifests; any tar, other digest, or proof of other API hosts will not be accepted.",
+  导出镜像归档: "Export image archive",
+  导出并保存: "Export and save",
+  当前账户没有此精确镜像的归档导出权限:
+    "The current account does not have the archive export permission for this precise image.",
+  "服务端任务会生成受管归档；完成后分段读取并逐块、整包核对 SHA-256。":
+    "The server-side task will generate a managed archive; after completion, it will be read in segments and checked block by block and the entire package to check SHA-256.",
+  "导出提交状态无法确认。先检查任务列表，再决定是否开始另一项导出。":
+    "The export submission status cannot be confirmed. Check the task list before deciding whether to start another export.",
+  "我已检查任务列表，确认可以新建一次导出任务。":
+    "I have checked the task list and confirmed that I can create a new export task.",
+  确认后重新提交导出: "Resubmit export after confirmation",
+  导出任务处理中: "Export task processing",
+  新建一次导出任务: "Create a new export task",
+  提交镜像导出任务: "Submit image export task",
+  已验证归档: "Verified archive",
+  " · 受管归档编号 ": " · Managed archive number ",
+  "正在读取 {0} / {1}": "Reading {0}/{1}",
+  "校验并下载 .tar 与 .json 清单": "Verify and download .tar and .json lists",
+  当前账户没有读取此受管归档的权限:
+    "The current account does not have permission to read this managed archive",
+  "单独下载证明清单 JSON": "Download the certificate list JSON separately",
+  "请把 .tar 与 .json 清单一起交给接收实例；清单包含受管证明，不要编辑其内容。":
+    "Please hand the .tar to the receiving instance along with the .json manifest; the manifest contains a managed certificate, do not edit its contents.",
+  上传并加载镜像归档: "Upload and load image archive",
+  上传并加载: "Upload and load",
+  当前账户没有创建此精确镜像上传归档的权限:
+    "The current account does not have the authority to create this precise image upload archive.",
+  当前账户没有上传归档块的权限:
+    "The current account does not have the authority to upload archive blocks",
+  "当前账户没有读取上传偏移的权限；安全续传不可用":
+    "The current account does not have permission to read the upload offset; safe resume is not available",
+  "Docker save 归档文件（.tar）": "Docker save archive file (.tar)",
+  "配套受管证明清单（.json）": "Supporting managed certificate list (.json)",
+  "源实例 ": "Source instance ",
+  "开始前会先逐块计算本地完整 SHA-256；只有与清单完全一致才会上传。":
+    "The local complete SHA-256 will be calculated block by block before starting; it will only be uploaded if it is completely consistent with the list.",
+  "创建上传归档的提交状态无法确认。先查看审计记录，并核对是否已经创建归档。":
+    "The submission status of creating an uploaded archive cannot be confirmed. First check the audit records and verify whether the archive has been created.",
+  "我已核对审计记录，确认可以再创建一个受管上传归档。":
+    "I have checked the audit records and confirmed that I can create another managed upload archive.",
+  "正在校验或上传 {0} / {1}": "Verifying or uploading {0}/{1}",
+  校验文件并开始新上传: "Verify file and start new upload",
+  "正在续传…": "Resuming...",
+  核对状态并续传: "Check status and resume transmission",
+  只读取服务端偏移: "Only read server offset",
+  "受管上传归档编号（续传时使用）":
+    "Managed upload archive number (used when resuming upload)",
+  "本地校验或分段传输：": "Local verification or segmented transmission: ",
+  上传归档已完整接收: "The uploaded archive has been completely received",
+  上传可从已提交位置续传: "Upload can be resumed from the submitted location",
+  当前账户没有加载此精确镜像的管理权限:
+    "The current account does not have the administrative authority to load this precise image.",
+  "我确认将这个已校验归档加载到当前 Docker 实例的目标镜像摘要。":
+    "I confirm loading this verified archive into the target image digest for the current Docker instance.",
+  "加载提交状态无法确认。先检查任务列表，再决定是否提交新的加载任务。":
+    "The loading submission status cannot be confirmed. Check the task list before deciding whether to submit a new load task.",
+  "我已检查任务列表，确认可以再次提交加载任务。":
+    "I have checked the task list and confirmed that the loading task can be submitted again.",
+  "正在提交加载任务…": "Submitting loading task...",
+  加载任务处理中: "Loading task processing",
+  确认后重新提交加载: "Resubmit loading after confirmation",
+  "提交 Docker 加载任务": "Submit Docker loading task",
+  归档已在目标实例中加载: "The archive has been loaded in the target instance",
+  镜像已从受管归档加载: "Image loaded from managed archive",
+  "来源标记为面板受管归档；Docker 本身未报告 RepoDigest。":
+    "Source marked as Panel Managed Archive; RepoDigest is not reported by Docker itself.",
+  "Docker 引擎已确认目标摘要。":
+    "The Docker engine has confirmed the target digest.",
+  Docker镜像与私仓凭据: "Docker image and private warehouse credentials",
+  精确摘要镜像: "Accurate summary image",
+  当前没有镜像读取权限或接口不兼容:
+    "Currently there is no image read permission or the interface is incompatible",
+  " · 由受管归档恢复": " · Recovery from managed archives",
+  读取镜像详情: "Read image details",
+  删除此摘要镜像: "Delete this summary image",
+  收起归档管理: "Put away archive management",
+  保存或导入镜像归档: "Save or import image archive",
+  "确认删除 ": "Confirm deletion ",
+  "？服务端仅执行非强制删除，使用中的镜像会被拒绝。":
+    "? The server only performs non-forced deletion, and images in use will be rejected.",
+  确认删除镜像: "Confirm deletion of image",
+  取消: "Cancel",
+  私仓凭据: "Private warehouse credentials",
+  "密码只用于加密保存，不会回显。拉取任务只提交凭据编号和版本。":
+    "The password is only used for encrypted storage and will not be echoed. Pull tasks only submit the credential number and version.",
+  " · 版本 ": " · Version ",
+  新建凭据: "Create new credentials",
+  "凭据编号（读取已有凭据）": "Credential number (read existing credentials)",
+  读取凭据元数据: "Read credential metadata",
+  "已读取 ": "Read ",
+  密码已配置: "Password has been configured",
+  密码未配置: "Password is not configured",
+  凭据名称: "Credential name",
+  "私仓地址（host 或 host:port）":
+    "Private warehouse address (host or host:port)",
+  用户名: "Username",
+  新密码: "New password",
+  加密保存新凭据: "Encrypt and save new credentials",
+  按读取版本轮换凭据: "Rotate credentials by read version",
+  删除凭据: "Delete credentials",
+  "确认删除凭据 {0}（版本 {1}）？":
+    "Confirm deletion of credentials {0} (version {1})?",
+  拉取精确摘要镜像: "Pull accurate summary image",
+  "镜像 repo@sha256:…": "Mirror repo@sha256:…",
+  "使用已读取凭据 {0} · 版本 {1}": "Using read credentials {0} · Version {1}",
+  匿名拉取: "Anonymous pull",
+  改为匿名拉取: "Change to anonymous pull",
+  提交拉取任务: "Submit pull task",
+  "Docker终端输出响应无效，请重新读取状态。":
+    "The Docker terminal output response is invalid, please read the status again.",
+  "服务重启后，之前缓冲的终端输出不可恢复；当前新输出仍可读取。":
+    "After the service is restarted, the previously buffered terminal output cannot be restored; the current new output can still be read.",
+  "部分输出已超出服务端回放范围；后续输出继续同步。":
+    "Part of the output has exceeded the server playback range; subsequent output continues to be synchronized.",
+  "待确认输入达到本地内存上限，已暂停键盘输入。请先确认或放弃保留的输入。":
+    "The input to be confirmed reaches the upper limit of local memory, and keyboard input has been suspended. Please confirm or discard reserved entries first.",
+  "浏览器传输当前未连接；输入暂存在本页内存中，发送前请确认会话状态。":
+    "The browser transmission is currently not connected; the input is temporarily stored in the memory of this page, please confirm the session status before sending.",
+  "Docker终端传输返回了无法读取的消息。":
+    "Docker terminal transmission returned an unreadable message.",
+  "Docker终端传输消息格式无效。":
+    "The Docker terminal transmission message format is invalid.",
+  "终端输入确认与待发送帧不匹配；已暂停，不会自动重发。":
+    "The terminal input confirmation does not match the frame to be sent; it has been paused and will not be automatically retransmitted.",
+  "Docker终端传输报告错误。": "Docker terminal transmission report error.",
+  "Docker终端浏览器传输发生错误；会话可能仍在服务端运行。":
+    "An error occurred in Docker terminal browser transmission; the session may still be running on the server.",
+  "传输在输入确认前断开。请检查状态后，用相同帧编号明确重试或放弃。":
+    "Transmission disconnected before input confirmation. Please check the status and explicitly retry with the same frame number or give up.",
+  "容器当前未运行；启动容器后再打开交互终端。":
+    "The container is not currently running; open the interactive terminal after starting the container.",
+  "Docker终端打开响应无效；请检查服务端会话状态后再重试。":
+    "Docker terminal opening response is invalid; please check the server session status and try again.",
+  "初始输出读取失败：{0}": "Initial output read failed: {0}",
+  "会话与当前实例/容器不匹配，或状态响应无效。":
+    "The session does not match the current instance/container, or the status response is invalid.",
+  "Docker终端状态响应无效。": "Docker terminal status response is invalid.",
+  "关闭请求已返回，但Engine状态响应无效；请重新读取状态。":
+    "The shutdown request has been returned, but the Engine status response is invalid; please read the status again.",
+  "终端流已关闭；Engine中的shell进程仍在运行。":
+    "The terminal stream has been closed; the shell process in the Engine is still running.",
+  "终端流已关闭；Engine状态已重新读取。":
+    "The terminal stream has been closed; the Engine status has been re-read.",
+  "{0} 未自动重试；请先读取会话状态。":
+    "{0} did not retry automatically; please read the session status first.",
+  交互式Docker终端: "Interactive Docker terminal",
+  "交互式 Docker 终端": "Interactive Docker terminal",
+  "当前账户或后端未提供完整的 Docker 终端能力":
+    "The current account or backend does not provide complete Docker terminal capabilities",
+  "缺少经过校验的能力：{0}。": "Missing verified capabilities: {0}.",
+  容器名称不符合受管逻辑名称格式:
+    "Container name does not conform to managed logical name format",
+  固定启动受管容器内的: "Fixed startup within a managed container",
+  "。输入通过浏览器 WebSocket 传输并使用会话帧编号去重；终端内容只保存在当前页面内存中。":
+    ". Input is transmitted via browser WebSockets and deduplicated using session frame numbers; terminal content is only saved in the current page's memory.",
+  Docker容器终端输出: "Docker container terminal output",
+  打开交互终端: "Open interactive terminal",
+  "容器必须处于运行状态。": "The container must be in a running state.",
+  会话: "Conversation",
+  浏览器已连接: "Browser is connected",
+  浏览器未连接: "Browser is not connected",
+  " · 主机执行流 ": " · Host execution flow ",
+  已启动: "Started",
+  等待启动: "Waiting to start",
+  " · 服务端已附着": " · Server is attached",
+  " · 服务端未附着": " · Server is not attached",
+  "当前会话已退出。新建会话会清空此页内保留的旧终端输出。":
+    "The current session has exited. Creating a new session will clear the old terminal output retained on this page.",
+  打开新终端会话: "Open a new terminal session",
+  重读缓冲输出: "Reread buffered output",
+  重新连接浏览器终端: "Reconnect browser terminal",
+  读取Engine状态: "Read Engine status",
+  关闭终端流: "Close terminal stream",
+  " 个终端输入帧尚未确认。关闭流前请重试同一帧或明确放弃；确认前不要重复执行相同命令。":
+    " terminal input frames have not yet been confirmed. Please retry the same frame or give up explicitly before closing the stream; do not execute the same command repeatedly before confirming.",
+  用相同帧编号重试: "Retry with same frame number",
+  重试保留输入: "Retry retaining input",
+  放弃未确认输入: "Abandon unconfirmed input",
+  接回已有会话: "Retrieve existing conversation",
+  "粘贴先前显示的受管会话编号。服务端会按原始会话所有者和容器资源重新核验权限。":
+    "Paste the managed session number shown previously. The server will re-verify permissions based on the original session owner and container resources.",
+  Docker终端会话编号: "Docker terminal session number",
+  读取状态并接入: "Read status and access",
+  "文件草稿已保留，请先保存或放弃草稿再切换文件。":
+    "The draft of the file has been reserved. Please save or discard the draft before switching files.",
+  "文件草稿已保留，请先保存或放弃草稿再切换目录。":
+    "The file draft has been retained. Please save or discard the draft before switching directories.",
+  "该资源目录当前不可访问，请检查目录是否仍存在及访问权限。":
+    "This resource directory is currently inaccessible. Please check whether the directory still exists and the access permissions.",
+  "符号链接与特殊文件不能直接编辑，请使用受控文件操作。":
+    "Symbolic links and special files cannot be edited directly, please use controlled file operations.",
+  文件管理: "File management",
+  新建文件: "Create new file",
+  新建目录: "Create new directory",
+  上传文件: "Upload file",
+  文件资源服务暂不可用: "File resource service is temporarily unavailable",
+  资源目录: "Resource directory",
+  文件根目录: "File root directory",
+  " · 只读": " ·Read only",
+  按文件名筛选: "Filter by file name",
+  当前目录文件名: "Current directory file name",
+  筛选文件: "Filter files",
+  回收站: "Recycle Bin",
+  文件路径: "File path",
+  选择目录: "Select directory",
+  "文件草稿已保留。": "The document draft has been retained.",
+  继续编辑文件草稿: "Continue editing document draft",
+  "正在读取目录…": "Reading directory...",
+  大小: "Size",
+  "权限 / 所有者": "Permissions/Owner",
+  修改时间: "Modification time",
+  目录: "Table of contents",
+  符号链接: "Symbolic link",
+  文件: "Files",
+  "下载 {0}": "Download {0}",
+  "操作 {0}": "Operation {0}",
+  目录为空: "Directory is empty",
+  "创建文件、目录或上传文件。": "Create files, directories or upload files.",
+  "文件操作 · {0}": "File operations · {0}",
+  文件回收站: "File Recycle Bin",
+  "恢复 {0}": "Restore {0}",
+  永久删除: "Permanent deletion",
+  "确认永久删除 {0}": "Confirm permanent deletion of {0}",
+  回收站为空: "Recycle bin is empty",
+  其他文件与归档操作: "Other file and archiving operations",
+  正在保存: "Saving",
+  "服务没有返回已验证文件摘要，草稿已保留。":
+    "The service did not return the verified document summary and the draft has been retained.",
+  已保存: "Saved",
+  "保存失败，草稿已保留": "Saving failed, draft has been retained",
+  "操作状态待核对，草稿已保留":
+    "The operation status needs to be checked, and the draft has been retained.",
+  "编辑文件 · {0}": "Edit file · {0}",
+  编码: "Encoding",
+  文件编码: "File encoding",
+  按所选编码重新读取: "Reread by selected code",
+  下载原文件: "Download original file",
+  文件修改历史: "File modification history",
+  重试保存文件: "Retry saving file",
+  重新读取文件: "Re-read the file",
+  "上次保存的状态尚未确认。请核对关联任务、审计与磁盘内容；当前草稿暂停写入，避免重复执行。":
+    "The last saved status has not yet been confirmed. Please check the associated tasks, audits and disk contents; writing of the current draft is suspended to avoid repeated execution.",
+  文件版本冲突: "File version conflict",
+  "文件已有新版本，草稿不会被覆盖。":
+    "There is a new version of the file and the draft will not be overwritten.",
+  查看最新文件: "View the latest files",
+  采用最新基线并手动合并: "Adopt the latest baseline and merge manually",
+  请手动合并后保存: "Please merge manually and save",
+  "正在读取文件…": "Reading file...",
+  大小读取中: "Reading size",
+  "文件超过在线编辑上限，仅显示预览。请下载后编辑并上传，不能保存截断内容。":
+    "The file exceeds the upper limit of online editing, and only the preview is displayed. Please edit and upload after downloading. Truncated content cannot be saved.",
+  文件历史版本: "File history version",
+  历史版本: "Historical version",
+  关闭文件历史: "Close file history",
+  采用此历史内容: "Adopt this historical content",
+  "历史内容已载入草稿，请保存为新版本":
+    "The historical content has been loaded into the draft, please save it as a new version",
+  文件草稿未保存: "Document draft not saved",
+  已读取: "Read",
+  放弃文件草稿: "Abandon document draft",
+  保存文件: "Save file",
+  完成文件编辑: "Complete file editing",
+  "草稿尚未保存。请保存或明确放弃后完成。":
+    "The draft has not been saved. Please save or explicitly discard when finished.",
+  "请选择文件并填写目标路径。":
+    "Please select the file and fill in the target path.",
+  已校验并保存: "Verified and saved",
+  "上传暂停，可续传": "Upload is paused and can be resumed",
+  选择本地文件: "Select local file",
+  本地上传文件: "Local upload file",
+  上传目标路径: "Upload target path",
+  覆盖同路径已有文件: "Overwrite existing files with the same path",
+  "· 分段传输与SHA-256验证":
+    "· Segmented transmission and SHA-256 verification",
+  文件上传进度: "File upload progress",
+  继续上传: "Continue to upload",
+  开始上传: "Start uploading",
+  暂停上传: "Pause upload",
+  此旧版状态无法安全自动恢复:
+    "This old version state cannot be safely restored automatically.",
+  "账号包含未知或自定义的旧访问规则；本面板不会改写它们。":
+    "The account contains unknown or custom old access rules; this panel will not overwrite them.",
+  "当前恢复状态：": "Current recovery status: ",
+  "。只提供后端检查返回的恢复命令。":
+    ". Only restore commands returned by backend checks are provided.",
+  "账号不处于旧版暂停恢复状态。此卡片不会提交其他 FTP 账号操作。":
+    "The account is not in the old version suspension and recovery state. This card will not submit other FTP account operations.",
+  账号状态响应无效: "Account status response is invalid",
+  "未启用恢复操作；请刷新服务状态或检查读取权限。":
+    "Recovery operations are not enabled; please refresh the service status or check read permissions.",
+  提交操作失败: "Submit operation failed",
+  "网站路径必须以 / 开头，且不能包含配置控制字符。":
+    "The website path must start with / and cannot contain configuration control characters.",
+  绑定网站路由失败: "Failed to bind website routing",
+  "所选网站没有该应用的受管反代规则。":
+    "The selected website does not have managed inversion rules for this application.",
+  解除网站路由失败: "Failed to remove website routing",
+  读取应用日志失败: "Failed to read application log",
+  导入应用源码失败: "Failed to import application source code",
+  "当前身份没有应用服务管理权限。":
+    "The current identity does not have application service management rights.",
+  "Node.js / Go 应用服务": "Node.js/Go Application Services",
+  "应用使用独立系统用户和 systemd 服务。Node.js 服务收到 HOST=127.0.0.1、HOSTNAME=127.0.0.1 与 PORT；项目启动脚本需使用这些环境变量监听回环地址。先在软件目录安装 Git、Node.js 或 Go 运行环境。":
+    "The application uses independent system users and systemd services. The Node.js service receives HOST=127.0.0.1, HOSTNAME=127.0.0.1 and PORT; the project startup script needs to use these environment variables to listen for the loopback address. First install Git, Node.js or Go running environment in the software directory.",
+  刷新: "Refresh",
+  创建应用服务: "Create application service",
+  从模板创建: "Create from template",
+  "应用编号（小写字母开头）":
+    "Application number (begins with lowercase letter)",
+  应用名称: "Application name",
+  运行时: "Runtime",
+  取消此上传: "Cancel this upload",
+  "失败或断线时保留所选文件与上传会话；重新打开此窗口可续传。服务器仍会核对最终大小、摘要与目标版本。":
+    "When failed or disconnected, the selected file and upload session will be retained; reopen this window to resume the upload. The server still checks the final size, digest, and target version.",
+  "确认使用同一账号修复记录，继续恢复 {0}？当前旧版数据不能证明此前暂停已完全生效。恢复后，若仍需要 IP 访问限制，请重新配置；旧版操作覆盖的自定义拒绝规则无法自动还原。":
+    "Confirm to use the same account to repair the record, continue to restore {0}? The current legacy data does not prove that the previous suspension was fully effective. After recovery, if IP access restrictions are still required, please reconfigure them; custom deny rules overwritten by older operations cannot be automatically restored.",
+  "确认恢复 {0}？当前旧版数据不能证明此前暂停已完全生效。恢复会清除可精确识别的旧版生成错误记录并重新生成账号数据库。旧版操作覆盖的自定义 IP 拒绝规则无法自动还原；如仍需要访问限制，请在恢复后重新配置。":
+    "Confirm to restore {0}? The current legacy data does not prove that the previous suspension was fully effective. Restoration clears out precisely identifiable old build error records and regenerates the account database. Custom IP denial rules overwritten by older operations cannot be automatically restored; if you still need access restrictions, please reconfigure them after restoration.",
+  "FTP 账号状态恢复": "FTP account status recovery",
+  "按账号检查受保护的暂停记录与允许的恢复操作。":
+    "Check protected pause records and allowed resume operations by account.",
+  重新检查: "Recheck",
+  "正在检查账号状态…": "Checking account status...",
+  账号: "Account number",
+  状态: "Status",
+  修订: "Revision",
+  "这是旧版恢复状态；当前记录不能证明此前暂停已完全禁止登录。恢复只会清除可精确识别的旧版生成错误记录并重建 Pure-FTP 账号数据库，密码校验值和其他字段保持原样。旧版暂停可能已覆盖原有自定义 IP 拒绝规则，系统无法还原该规则；如仍需要访问限制，请在恢复后重新配置。":
+    "This is the old version recovery state; the current record cannot prove that the previous suspension has completely prohibited login. Restoration will only clear the accurately identifiable legacy build error records and rebuild the Pure-FTP account database, leaving password checksums and other fields intact. The old version suspension may have overwritten the original custom IP denial rule, and the system cannot restore the rule; if access restrictions are still required, please reconfigure after restoration.",
+  "确认恢复旧版 FTP 账号": "Confirm to restore the old version of FTP account",
+  "当前没有恢复权限。": "There is currently no recovery authority.",
+  "上次恢复留下了受保护的事务记录。重试会使用同一账号修订继续该操作，不会另行修改其他账号字段。旧版操作覆盖的自定义 IP 拒绝规则无法自动还原；如仍需要访问限制，请在恢复后重新配置。":
+    "The last recovery left protected transaction records. Retrying will continue the operation using the same account revision and will not modify other account fields. Custom IP denial rules overwritten by older operations cannot be automatically restored; if you still need access restrictions, please reconfigure them after restoration.",
+  继续已记录的恢复: "Continue Recorded Recovery",
+  创建应用模板: "Create application template",
+  已创建应用: "Application created",
+  "正在读取应用服务…": "Reading application service...",
+  "导入项目归档（tar.gz，根目录需含":
+    "Import project archive (tar.gz, the root directory must contain",
+  导入源码: "Import source code",
+  "{0} Git 源码导入": "{0} Git source code import",
+  "先在软件目录安装 Git/OpenSSH，再导入公开 HTTPS 或 SSH 仓库；根目录需含":
+    "First install Git/OpenSSH in the software directory, and then import the public HTTPS or SSH warehouse; the root directory needs to contain",
+  "。私有仓库凭据暂不支持；SSH 使用 ssh://git@host/owner/repo.git 格式，并填写服务器 SHA256 主机指纹。":
+    ". Private warehouse credentials are not supported yet; SSH uses the ssh://git@host/owner/repo.git format and fills in the server SHA256 host fingerprint.",
+  "Git 仓库 HTTPS / SSH 地址": "Git warehouse HTTPS/SSH address",
+  "分支（留空使用 main）": "Branch (leave blank to use main)",
+  "SSH 主机 SHA256 指纹（HTTPS 留空）":
+    "SSH host SHA256 fingerprint (HTTPS left blank)",
+  "从 Git 导入源码": "Import source code from Git",
+  "构建 / 更新": "Build/Update",
+  "部署（构建并启动）": "Deployment (build and launch)",
+  启动: "Start",
+  重启: "Restart",
+  回退上一版本: "Roll back to the previous version",
+  查看日志: "View log",
+  停用并保留文件: "Deactivate and retain files",
+  "{0} 永久删除确认": "{0} Permanent deletion confirmation",
+  "上次永久清理未完成。再次输入确认文本可以继续清理。":
+    "The last permanent cleanup was not completed. Enter the confirmation text again to continue cleaning.",
+  "永久删除会清除该应用的源码、数据和隔离账户，且无法撤销。请先单独停用并保留应用。":
+    "Permanent deletion will clear the source code, data and isolated accounts of the application and cannot be revoked. Please deactivate and keep the app individually first.",
+  "输入 DELETE {0} 以永久删除": "Enter DELETE {0} to permanently delete",
+  永久删除应用和数据: "Permanently delete applications and data",
+  网站: "Websites",
+  选择网站: "Select website",
+  代理路径: "Agent path",
+  绑定反向代理: "Bind reverse proxy",
+  解除反向代理: "Release reverse proxy",
+  "还没有应用。创建模板前，请先安装对应运行时。":
+    "There is no application yet. Before creating a template, please install the corresponding runtime.",
+  "任务失败，请检查任务日志。": "The task failed, please check the task log.",
+  " · 应用日志": " · Application log",
+  暂无日志: "No log yet",
+  启动健康检查: "Start health check",
+  "默认检查 /，HTTP 2xx/3xx 通过；5xx 会等待重试，超时后报告启动失败。":
+    "Default check /, HTTP 2xx/3xx passes; 5xx will wait for retry, and report startup failure after timeout.",
+  检查路径: "Check path",
+  "预期状态码（逗号分隔，留空为 2xx/3xx）":
+    "Expected status codes (comma separated, leave blank for 2xx/3xx)",
+  "启动等待时间（1–300 秒）": "Start waiting time (1-300 seconds)",
+  保存健康检查: "Save health check",
+  "软件计划返回的数据不完整，请在软件页面查看安装状态。":
+    "The data returned by the software plan is incomplete. Please check the installation status on the software page.",
+  提交安装计划失败: "Failed to submit installation plan",
+  "Web 服务已安装，正在安装 PHP-FPM…":
+    "Web service has been installed, PHP-FPM is being installed...",
+  "{0} 已安装，正在安装 {1}…": "{0} is installed, installing {1}…",
+  "所选数据库安装任务已完成。":
+    "The selected database installation task has been completed.",
+  "任务已完成，正在确认安装状态…":
+    "The task has been completed and the installation status is being confirmed...",
+  "安装任务未成功，请检查任务日志后重试。":
+    "The installation task was unsuccessful, please check the task log and try again.",
+  网站运行环境尚未设置: "Your web stack is not set up yet",
+  继续设置: "Continue setup",
+  "准备好创建第一个网站了吗？": "Ready for your first website?",
+  可选设置: "Optional setup",
+  "推荐 Nginx + PHP，适合常见网站；需要 Lua 扩展时可选 OpenResty。也可以稍后到软件页面设置。":
+    "Nginx + PHP is recommended, suitable for common websites; OpenResty is optional when Lua extension is required. You can also go to the software page to set it later.",
+  "当前身份没有软件安装权限，请使用具有软件管理权限的管理员账户完成首次设置。":
+    "The current identity does not have software installation permissions. Please use an administrator account with software management permissions to complete the first setup.",
+  "安装 Nginx + PHP（推荐）": "Install Nginx + PHP (recommended)",
+  "安装 OpenResty + PHP": "Install OpenResty + PHP",
+  稍后设置: "Set up later",
+  "更换运行栈前需要了解什么？":
+    "What do you need to know before replacing the running stack?",
+  "安装后不能直接切换。更换时需要先删除当前栈的网站配置（网站文件默认保留），卸载当前栈，再安装另一套。":
+    "It cannot be switched directly after installation. When replacing, you need to first delete the website configuration of the current stack (website files are retained by default), uninstall the current stack, and then install another set.",
+  网站运行栈状态不可用: "Website execution stack status is unavailable",
+  "。请先确认主机特权执行器可连接，再刷新软件状态。":
+    ". Please confirm that the host privilege executor can be connected before refreshing the software status.",
+  重新读取: "Reread",
+  "{0} 安装任务": "{0} Installation tasks",
+  网站运行栈安装任务: "Website execution stack installation task",
+  " 网站栈": " Website stack",
+  已选择: "Selected",
+  "Web 服务已安装。继续安装受管 PHP-FPM 后即可创建 PHP 网站。":
+    "Web service has been installed. Proceed with the managed PHP-FPM installation to create a PHP website.",
+  "安装 PHP-FPM": "Install PHP-FPM",
+  可选数据库: "Optional database",
+  按需安装: "Install on demand",
+  "可以跳过数据库安装，也可以同时选择 MySQL 和 PostgreSQL。未选择的数据库不会安装，之后仍可在软件页面添加。":
+    "You can skip database installation, or you can choose MySQL and PostgreSQL at the same time. Unselected databases will not be installed and can still be added later on the software page.",
+  "独立安装和管理，不影响网站运行栈选择":
+    "Independent installation and management, does not affect website operation stack selection",
+  "当前身份没有软件安装权限，请使用具有软件管理权限的管理员账户完成数据库安装。":
+    "The current identity does not have software installation permissions. Please use an administrator account with software management permissions to complete the database installation.",
+  安装所选数据库: "Install selected database",
+  暂不安装: "Not installed yet",
+  软件实例资源: "Software instance resources",
+  实例数据库: "Instance database",
+  容器资源: "Container resources",
+  守护程序: "Daemon",
+  服务账户: "Service account",
+  查询后新建或重建数据库: "Create or rebuild database after query",
+  创建容器: "Create container",
+  拉取镜像: "Pull image",
+  创建网络: "Create network",
+  创建数据卷: "Create data volume",
+  添加守护程序: "Add daemon",
+  添加服务账户: "Add service account",
+  数据库实例工具: "Database instance tool",
+  Docker资源类型: "Docker resource type",
+  容器: "Container",
+  镜像: "Mirror",
+  网络: "Network",
+  数据卷: "Data volume",
+  缺少数据库管理记录读取权限:
+    "Lack of database management record read permission",
+  "安全创建流程需要先读取指定名称的权威记录。":
+    "The security creation process needs to first read the authoritative record of the specified name.",
+  当前没有此资源的读取权限:
+    "There is currently no read permission for this resource",
+  未提供名称: "No name provided",
+  只读: "Read only",
+  读写: "Reading and writing",
+  数据库详情缺少状态或有效版本: "Database details lack status or valid version",
+  "请重新读取资源；记录状态和精确版本确认后才能进行管理操作。":
+    "Please re-read the resource; management operations can only be performed after confirming the record status and accurate version.",
+  "文 / A": "Text/A",
+  "语言 / Language": "语言 / Language",
+  中文: "中文",
+  数据库记录状态: "Database record status",
+  "保留版本 ": "Reserved version ",
+  "此数据库已删除，不能修改账户或读取、创建及恢复备份。重建前会重新读取权威管理记录。":
+    "This database has been deleted and cannot modify accounts or read, create and restore backups. Authoritative management records are re-read before rebuilding.",
+  查询后按此版本重建: "Rebuild according to this version after query",
+  当前没有安全重建所需的权限:
+    "There are currently no permissions required for secure reconstruction",
+  "需要读取数据库管理记录和创建数据库的权限。":
+    "Requires permissions to read database management records and create databases.",
+  数据库记录当前不可操作: "Database record is currently inoperable",
+  "当前状态为 {0}；仅 active 记录可管理账户和备份。":
+    "Current status is {0}; only active records can manage accounts and backups.",
+  数据库资源管理: "Database resource management",
+  数据库账户: "Database account",
+  账户权限: "Account permissions",
+  "。网页和MCP检查同一资源；账户权限与客户端获授的动作范围分别生效。":
+    ". The web page and MCP check the same resource; the account permissions and the action range granted to the client take effect separately.",
+  数据库资源分类: "Database resource classification",
+  权限与账户: "Permissions and accounts",
+  备份: "Backup",
+  导入: "Import",
+  诊断与复制: "Diagnosis and Replication",
+  实际数据库备份: "Actual database backup",
+  创建数据库备份: "Create database backup",
+  当前没有数据库备份读取权限:
+    "Currently there is no database backup read permission",
+  "正在读取实际备份…": "Reading actual backup...",
+  暂无数据库备份: "No database backup yet",
+  "备份任务完成、产物完整校验后才会列出。":
+    "Only after the backup task is completed and the product is completely verified will it be listed.",
+  下载已验证数据库备份: "Download verified database backup",
+  "[图片：": "[Picture: ",
+  "请填写便签标题。": "Please fill in the note title.",
+  "标题不能超过 80 个字符。": "Title cannot exceed 80 characters.",
+  "正文不能超过 10,000 个字符。": "Text cannot exceed 10,000 characters.",
+  "便签请求过大，请缩短内容。":
+    "The note request is too large, please shorten the content.",
+  "内容已有新版本。草稿已保留，请查看最新版本并合并。":
+    "There is a new version of the content. The draft has been retained, please check the latest version and merge it.",
+  "保存失败，请重试。": "Saving failed, please try again.",
+  保存失败: "Save failed",
+  已恢复为新版本: "Restored to new version",
+  便签详情: "Note details",
+  新建便签: "Create new note",
+  共享信息: "Shared information",
+  关闭便签: "Close note",
+  重试保存: "Retry saving",
+  版本冲突: "Version conflict",
+  "内容已有新版本 · v": "The content has a new version·v",
+  查看最新内容与我的草稿: "View the latest content and my drafts",
+  最新内容: "Latest content",
+  我的草稿: "My draft",
+  以最新版本为基础合并: "Merge based on the latest version",
+  "已切换版本，请手动合并后完成":
+    "The version has been switched, please merge it manually to complete",
+  保存为新便签: "Save as new note",
+  "切换版本会保留你的草稿。请先核对并合并，再保存。":
+    "Switching versions will preserve your drafts. Please check and merge before saving.",
+  标题: "Title",
+  正文: "Text",
+  继续编辑: "Continue editing",
+  "Markdown 预览": "Markdown preview",
+  "记录待办、配置说明或交接信息…":
+    "Record to-do, configuration instructions or handover information...",
+  关联资源: "Associated resources",
+  "默认当前主机 host:local；填写已授权资源 ID。":
+    "The default current host is host:local; fill in the authorized resource ID.",
+  置顶便签: "Pinned note",
+  "关联资源 · ": "Associated resources · ",
+  " · 已归档": " · Archived",
+  修改历史: "Modification history",
+  关闭历史: "Close history",
+  "恢复版本 {0}": "Recovery version {0}",
+  "暂无历史版本。": "There is currently no historical version.",
+  版本: "Version",
+  与当前版本比较: "Compare with current version",
+  历史正文: "Historical text",
+  当前正文: "Current text",
+  "永久删除此便签及其历史？此操作无法撤销。":
+    "Permanently delete this note and its history? This action cannot be undone.",
+  确认永久删除: "Confirm permanent deletion",
+  取消删除: "Cancel deletion",
+  草稿未保存: "Draft not saved",
+  填写后创建: "Create after filling in",
+  放弃当前草稿: "Abandon current draft",
+  取消归档: "Cancel archive",
+  归档: "Archive",
+  完成: "Complete",
+  创建便签: "Create notes",
+  编辑: "Edit",
+  草稿已保留: "The draft has been retained",
+  方式: "Mode",
+  时区: "Time zone",
+  目标动作: "Target action",
+  下次执行: "Next execution",
+  上次执行: "Last execution",
+  最近错误: "Recent errors",
+  最近结果: "Recent results",
+  关联任务: "Associated tasks",
+  服务单元: "Service unit",
+  运行状态: "Operating status",
+  子状态: "Sub-state",
+  所有权: "Ownership",
+  启用: "enable",
+  计划任务: "Planned tasks",
+  通知渠道: "Notification channel",
+  主机服务: "Host service",
+  内存: "Memory",
+  磁盘: "Disk",
+  指标历史: "Indicator history",
+  最近24小时: "Last 24 hours",
+  "实际主机CPU、内存与磁盘使用百分比历史":
+    "Actual host CPU, memory and disk usage percentage history",
+  "个实际样本 · 采样间隔": "actual samples · sampling interval",
+  秒: "seconds",
+  "正在读取监控历史…": "Reading monitoring history...",
+  暂无历史样本: "No historical sample yet",
+  "采样器会保存真实主机数据；没有采样的时段不会补造数据。":
+    "The sampler will save the real host data; the data will not be reconstructed during periods without sampling.",
+  新增通知渠道: "New notification channel",
+  创建计划任务: "Create scheduled tasks",
+  自动化分类: "Automatic classification",
+  "仅列出受信任主机策略中明确管理的服务。":
+    "Only list services that are explicitly managed in the Trusted Hosts policy.",
+  "创建后由网页与MCP共同管理。":
+    "After creation, it is jointly managed by the web page and MCP.",
+  当前没有可用的计划任务或通知能力:
+    "There are currently no scheduled tasks or notification capabilities available",
+  "修订 ": "Revision ",
+  服务与系统变更计划: "Service and System Change Plan",
+  自动化操作与执行历史: "Automated operation and execution history",
+  最近执行: "Recently executed",
+  "失败通知：": "Failure notification: ",
+  已提交: "Submitted",
+  发送失败: "Sending failed",
+  发送中或待检查: "Sending or waiting to be checked",
+  查看关联任务: "View associated tasks",
+  面板与访问设置: "Panel and access settings",
+  面板访问设置分类: "Panel access setting classification",
+  名称与页脚: "Name and footer",
+  入口与访问: "Entrance and access",
+  浏览器入口密码: "Browser entrance password",
+  应用授权: "Application authorization",
+  临时入口: "Temporary entrance",
+  快捷链接: "Quick link",
+  "名称与页脚按服务器版本保存，网页和MCP读取同一配置。":
+    "The name and footer are saved according to the server version, and the web page and MCP read the same configuration.",
+  "浏览器入口密码通过浏览器认证对话框验证，之后仍需登录面板账户。启用或修改凭据需要确认当前面板密码与两步验证码。":
+    "The browser entrance password is verified through the browser authentication dialog box, and you still need to log in to the panel account afterwards. Enabling or modifying credentials requires confirmation of the current panel password and two-step verification code.",
+  "访问策略更改需要确认密码与两步验证码。入口链接使用 #login_entry=名称，入口仅在浏览器内存中保留。":
+    "Access policy changes require confirmation of password and two-step verification code. Entry links use the #login_entry= name, and entries are retained only in browser memory.",
+  当前没有此设置的读写权限:
+    "There is currently no read and write permission for this setting",
+  创建应用授权: "Create application authorization",
+  创建临时登录入口: "Create temporary login entrance",
+  添加快捷链接: "Add quick link",
+  读取临时入口登录记录: "Read temporary entrance login record",
+  当前没有列表读取权限: "Currently there is no list read permission",
+  "到期 ": "Expiration ",
+  已撤销: "Canceled",
+  已使用: "Used",
+  等待使用: "Waiting for use",
+  "打开链接 ↗": "Open link ↗",
+  暂无可见记录: "No visible record yet",
+  月白: "Moon",
+  "清晰 · 浅色": "Clear · Light",
+  深空: "Space",
+  "沉静 · 深色": "Calm · Dark",
+  雾紫: "Violet",
+  "柔和 · 浅色": "Soft · Light",
+  松绿: "Pine",
+  "自然 · 深色": "Natural · Dark",
+  暖砂: "Sand",
+  "温暖 · 浅色": "Warm · Light",
+  概览: "Overview",
+  软件: "Software",
+  更多: "More",
+  监控: "Monitoring",
+  主机指标与状态: "Host indicator and status",
+  终端: "Terminal",
+  受控主机操作: "Controlled host operation",
+  自动执行与任务进度: "Automatic execution and task progress",
+  安全与账户: "Security and Account",
+  "密码、两步验证与会话": "Passwords, Two-Step Verification and Sessions",
+  外观: "Appearance",
+  五套配色与主题预览: "Five palettes and theme previews",
+  "MCP 接入": "MCP access",
+  客户端身份与授权范围: "Client identity and authorization scope",
+  操作记录: "Operation record",
+  "网页与 MCP 共用审计": "Web page and MCP share audit",
+  排队中: "Queuing up",
+  执行中: "Running",
+  执行成功: "Succeeded",
+  执行失败: "Failed",
+  验证中: "Verifying",
+  验证成功: "Verification successful",
+  待执行: "To be executed",
+  未提供数据: "No data provided",
+  "Folio · 折纸面板": "Folio · Server Panel",
+  读取失败: "Reading failed",
+  跳至内容: "Skip to content",
+  "{0} 概览": "{0} Overview",
+  当前主机: "Current host",
+  数据读取失败: "Data reading failed",
+  在线: "Online",
+  连接中: "Connecting",
+  实时通道断开: "Real-time channel disconnection",
+  全局搜索: "Global search",
+  最近任务: "Recent tasks",
+  账户设置: "Account settings",
+  共享便签: "Shared notes",
+  主机概览: "Host overview",
+  "状态、任务与共享信息，在一处查看。":
+    "View status, tasks and shared information in one place.",
+  "网站、域名与证书管理。": "Website, domain name and certificate management.",
+  "软件、数据库与容器管理。": "Software, database and container management.",
+  "文件与配置管理。": "File and configuration management.",
+  "主机管理、接入与个人设置。":
+    "Host management, access and personal settings.",
+  刷新数据: "Refresh data",
+  "便签草稿已保留。": "The draft note has been retained.",
+  继续编辑草稿: "Continue editing draft",
+  "请先保存或放弃当前便签草稿，再打开其他便签。":
+    "Please save or abandon the current note draft before opening other notes.",
+  知道了: "Got it",
+  "实时更新已断开，保留最近快照。每 15 秒尝试读取，恢复后自动同步。":
+    "Real-time update has been disconnected and the latest snapshot is retained. Attempts to read every 15 seconds and automatically synchronizes after recovery.",
+  全部便签: "All notes",
+  本页: "This page",
+  条: "Article",
+  查看未归档: "View unarchived",
+  查看归档: "View archive",
+  返回概览: "Return to overview",
+  "正在读取共享便签…": "Reading shared notes...",
+  这一页没有便签: "There are no notes on this page",
+  暂无归档便签: "No archive notes yet",
+  还没有共享便签: "No notes have been shared yet",
+  "记录待办或交接信息，人和已授权的 AI 都可编辑。":
+    "Record to-do or handover information, which can be edited by both humans and authorized AI.",
+  便签分页: "Note paging",
+  "页 · 每页 20 条": "Page·20 items per page",
+  上一页便签: "Previous page note",
+  下一页便签: "Next page note",
+  主机总览: "Host overview",
+  快照过期: "Snapshot expires",
+  主机用量: "Host usage",
+  "正在读取…": "Reading...",
+  主机信息未提供: "Host information is not provided",
+  "{0} 个逻辑核心": "{0} logical cores",
+  "主机 CPU 总用量": "Total host CPU usage",
+  "共 {0}": "Total {0}",
+  "已运行 ": "Run ",
+  更新于: "Updated on",
+  查看全部: "View all",
+  留下一条共享信息: "Leave a shared note",
+  创建第一条便签: "Create first note",
+  暂无任务: "No tasks yet",
+  "安装、备份和升级的进度将显示在这里。":
+    "The progress of installation, backup and upgrade will be displayed here.",
+  待处理事件: "Events to review",
+  "任务状态暂时无法读取。": "The task status cannot be read temporarily.",
+  任务: "Task",
+  "打开任务查看失败原因。": "Open the task to view the cause of failure.",
+  当前没有待处理任务异常: "There is currently no pending task exception",
+  "这里只显示实际任务错误与提醒。":
+    "Only actual task errors and reminders are displayed here.",
+  常用入口: "Common entrance",
+  网站管理: "Website management",
+  "网站、域名与证书": "Website, domain name and certificate",
+  软件管理: "Software management",
+  "服务、数据库与容器": "Services, databases and containers",
+  浏览文件与配置: "Browse files and configurations",
+  退出登录: "Log out",
+  返回更多: "Return more",
+  其他已授权的安全与凭据操作:
+    "Other authorized security and credential operations",
+  失败: "Failure",
+  已记录: "Recorded",
+  暂无操作记录: "No operation record yet",
+  主导航: "Main navigation",
+  任务列表: "Task list",
+  任务详情: "Task details",
+  关闭任务: "Close task",
+  "任务 ID · ": "Task ID · ",
+  返回任务列表: "Return to task list",
+  搜索页面与资源: "Search pages and resources",
+  关闭搜索: "Close search",
+  搜索: "Search",
+  "页面、便签、软件与操作…": "Pages, notes, software and operations...",
+  页面: "Page",
+  便签: "Notes",
+  动作: "Action",
+  "搜索用于导航。选择动作后，在操作页面填写参数并执行。":
+    "Search is used for navigation. After selecting the action, fill in the parameters on the operation page and execute it.",
+  暂无正文: "No text yet",
+  任务进度: "Task progress",
+  "验证码图像格式无效。": "The verification code image format is invalid.",
+  初始化面板: "Initialization panel",
+  欢迎回来: "Welcome back",
+  "创建管理员账户，开始管理你的主机。":
+    "Create an administrator account and start managing your host.",
+  "登录后查看状态、任务与共享信息。":
+    "After logging in, view status, tasks and shared information.",
+  重新连接: "Reconnect",
+  "正在连接面板服务…": "Connecting to panel service...",
+  密码: "Password",
+  两步验证码: "Two-step verification code",
+  "已启用两步验证时填写。": "Fill in when two-step verification is enabled.",
+  初始化令牌: "Initialization token",
+  "从服务器数据目录的 bootstrap-token 文件读取；不会通过网页公开。":
+    "Read from the bootstrap-token file in the server data directory; will not be exposed through the web page.",
+  登录入口: "Login portal",
+  "使用管理员提供的入口链接，或填写入口名称。":
+    "Use the portal link provided by the administrator, or fill in the portal name.",
+  登录图形验证码: "Login graphic verification code",
+  刷新图形验证码: "Refresh graphic verification code",
+  图形验证码: "Graphic verification code",
+  "面板正在维护，暂不能建立新的登录会话。":
+    "The panel is under maintenance and new login sessions cannot be established for the time being.",
+  登录: "Login",
+  "一个面板 · 网页与 MCP 共用授权":
+    "One panel·Web page and MCP share authorization",
+  "信息清晰，操作可追溯。":
+    "The information is clear and the operations are traceable.",
+  "扩展计划响应与当前 PHP 实例或版本不匹配，未启用安装操作。":
+    "The extension plan response does not match the current PHP instance or version and the installation operation is not enabled.",
+  "计划已过期或 PHP 版本已变化。请重新读取并生成计划。":
+    "The plan has expired or the PHP version has changed. Please reread and generate the plan.",
+  "确认安装 {0}？计划包含 {1} 个精确软件包版本和 {2} 个受影响 PHP 配置。":
+    "Confirm installation of {0}? Plan contains {1} exact package versions and {2} affected PHP configurations.",
+  "确认在当前 PHP 实例停用 {0}？此操作会保留主机软件包，不会从系统卸载它。":
+    "Are you sure you want to disable {0} in the current PHP instance? This action preserves the host package and does not uninstall it from the system.",
+  "PHP扩展恢复检查结果与当前实例不匹配。":
+    "The PHP extension recovery check result does not match the current instance.",
+  "当前检查没有可继续的精确事务，或主机软件包权限已不可用。请重新检查状态。":
+    "There is no precise transaction to continue with the current check, or the host package permissions are no longer available. Please recheck the status.",
+  安装: "Install",
+  停用: "Deactivate",
+  "确认继续原来的 PHP 扩展{0}计划：{1}（计划 {2}，修订 {3}）？后端会重新核对这条受保护事务和当前权限；不会生成新计划或自动重试。":
+    "Confirm to continue the original PHP extension {0} plan: {1} (plan {2}, revision {3})? The backend will recheck this protected transaction and current permissions; no new plans will be generated or automatically retried.",
+  "{0} 未自动重试；若提交结果不确定，请使用同一请求编号检查或继续。":
+    "{0} did not automatically retry; if the submission result is uncertain, please use the same request number to check or continue.",
+  "受信任 PHP 扩展包": "Trusted PHP extension package",
+  "先读取精确发行版软件包计划；仅支持后端列出的 ABI 与签名仓库候选。":
+    "Read the exact release package plan first; only support ABI and signature repository candidates listed in the backend.",
+  扩展包计划能力或模块清单尚不可用:
+    "Expansion pack planning capabilities or module list are not yet available",
+  "未推测运行时支持范围；请等待管理服务公布真实计划能力。":
+    "The runtime support range is not speculated; please wait for the management service to announce the actual planned capabilities.",
+  "没有当前 PHP 版本号": "No current PHP version number",
+  "先读取该实例的扩展状态和配置修订，再生成包计划。":
+    "First read the extension status and configuration revision of the instance, and then generate the package plan.",
+  "停用此实例扩展（保留软件包）":
+    "Disable this instance extension (preserve package)",
+  扩展模块: "Extension module",
+  生成软件包计划: "Generate software package plan",
+  "受信任 PHP 扩展包计划": "Trusted PHP Extension Pack Project",
+  平台: "Platform",
+  计划有效期至: "The plan is valid until",
+  "软件包已安装；计划会按下方固定版本处理。":
+    "The software package has been installed; the plan will be processed according to the fixed version below.",
+  "软件包尚未确认安装。":
+    "The software package has not been confirmed for installation.",
+  "该扩展已在此 PHP 实例启用。":
+    "This extension is enabled on this PHP instance.",
+  "该扩展当前未启用。": "This extension is not currently enabled.",
+  "此操作只停用当前 PHP 实例中的扩展配置；系统软件包会保留，不会从主机移除。":
+    "This operation only deactivates the extension configuration in the current PHP instance; system packages will be retained and will not be removed from the host.",
+  精确软件包候选: "Accurate software package candidates",
+  "计划没有新增或移除软件包。":
+    "There is no plan to add or remove software packages.",
+  受影响配置: "Affected configuration",
+  " · 扩展": " · Extension",
+  未启用: "Not enabled",
+  " · 包引用": " · Package reference",
+  存在: "Existence",
+  计划变更: "Plan changes",
+  "计划引用 ": "Plan reference ",
+  当前实例资源: "Current instance resources",
+  "；卸载不会移除依赖包。":
+    "; Uninstalling will not remove dependent packages.",
+  使用同一请求编号重试: "Try again using the same request number",
+  确认停用当前实例扩展: "Confirm to deactivate current instance extension",
+  确认执行安装计划: "Confirm execution of installation plan",
+  "检查中断的 PHP 扩展事务": "Check for interrupted PHP extension transactions",
+  "只读检查仅需当前 PHP 实例管理权限。继续操作还需要主机软件包权限，并且会使用后端保存的原计划和修订。":
+    "Read-only inspection requires only administrative privileges for the current PHP instance. Proceeding also requires host package permissions and uses the original plan and revisions saved by the backend.",
+  检查受保护事务: "Check protected transactions",
+  "没有待恢复的 PHP 扩展事务。":
+    "There are no PHP extension transactions to resume.",
+  "找到受保护的待处理计划：": "Find protected pending plans: ",
+  "；阶段 ": "; stage ",
+  "；原计划修订 ": "; Original plan revision ",
+  " 开始于 ": " Start with ",
+  后端未开放继续此事务: "The backend is not open to continue this transaction",
+  "请先检查 PHP 配置和扩展状态；界面不会重新生成或重放不同计划。":
+    "Please check PHP configuration and extension status first; the interface will not regenerate or replay different plans.",
+  当前账号没有主机软件包授权:
+    "The current account does not have host software package authorization",
+  "你仍可只读检查事务；继续原计划需要 host:packages 权限，且后端会在任务执行时再次核验。":
+    "You can still read-only check the transaction; continuing with the original plan requires host:packages permission, and the backend will verify it again when the task is executed.",
+  原计划继续能力暂不可用:
+    "The ability to continue the original plan is temporarily unavailable",
+  "未找到符合当前任务契约的扩展应用能力；不会构造替代请求。":
+    "No extended application capability that meets the current task contract was found; a replacement request will not be constructed.",
+  使用同一请求编号继续: "Continue using the same request number",
+  确认继续原计划: "Confirm to continue original plan",
+  "{0} 天": "{0} days",
+  "{0} 小时": "{0} hours",
+  "PHP日志响应无效，请重新读取。":
+    "The PHP log response is invalid, please read again.",
+  "会话清理预览无效，请重新读取状态后预览。":
+    "Session cleanup preview is invalid, please re-read the status and preview.",
+  "确认清理 {0} 个超过 {1} 的PHP会话文件（约 {2}）？任务只会删除预览中匹配的受管文件。":
+    "Confirm to clean up {0} PHP session files exceeding {1} (about {2})? The task will only delete managed files that match the preview.",
+  "清理任务未返回任务编号；请检查任务状态，系统不会自动重试。":
+    "The cleanup task did not return the task number; please check the task status, the system will not automatically retry.",
+  "{0} 未自动重试；请重新读取状态并重新预览后再确认。":
+    "{0} did not automatically retry; please re-read the status and re-preview before confirming.",
+  PHP日志与会话维护: "PHP log and session maintenance",
+  PHP错误日志: "PHP error log",
+  当前没有PHP错误日志读取权限:
+    "Currently there is no PHP error log reading permission",
+  "只读取受管 FPM error log，最多显示末尾 100 行。":
+    "Only read the managed FPM error log, displaying up to the last 100 lines.",
+  "正在读取日志…": "Reading log...",
+  读取PHP错误日志: "Read PHP error log",
+  "日志内容已按行数或大小截断。":
+    "Log content has been truncated by line number or size.",
+  "当前尚无PHP错误日志内容。": "There is currently no PHP error log content.",
+  "FPM 慢日志": "FPM slow log",
+  "当前后端或账户未提供受管 FPM 慢日志读取能力":
+    "The current backend or account does not provide managed FPM slow log reading capabilities",
+  "慢日志由受管 FPM 池设置控制，只读取末尾最多 100 行；文件路径不会传入请求或显示。":
+    "Slow logs are controlled by managed FPM pool settings and only read up to 100 lines at the end; file paths are not passed on to requests or displayed.",
+  "正在读取慢日志…": "Reading slow log...",
+  读取FPM慢日志: "Read FPM slow log",
+  "当前运行参数未启用慢日志。可在 PHP 运行参数配置中开启 slowlog_enabled 并提交受管应用变更。":
+    "The current operating parameters do not enable slow logs. You can turn on slowlog_enabled in the PHP run parameters configuration and submit managed application changes.",
+  "慢日志内容已按行数或大小截断。":
+    "Slow log content has been truncated by line number or size.",
+  "慢日志已配置，当前还没有生成日志文件。":
+    "The slow log has been configured, and no log file has been generated yet.",
+  "当前慢日志为空。": "The current slow log is empty.",
+  PHP会话统计: "PHP session statistics",
+  刷新统计: "Refresh statistics",
+  当前没有PHP会话统计权限:
+    "Currently there is no PHP session statistics authority",
+  "会话统计响应无效，请重新读取状态":
+    "Session statistics response is invalid, please read the status again",
+  "正在读取会话统计…": "Reading session statistics...",
+  受管会话目录: "Managed Session Directory",
+  尚无受管会话目录: "No managed session directory yet",
+  " · 共 ": " · Total ",
+  " 个 · 超过 ": " more than ",
+  个: "items",
+  " · 最早约 {0}": " · earliest about {0}",
+  "服务允许预览，但当前账户没有预览权限":
+    "The service allows preview, but the current account does not have preview permissions",
+  预览过期会话清理: "Preview expired session cleanup",
+  "当前账户没有会话清理任务权限。":
+    "The current account does not have session cleanup task permissions.",
+  会话清理预览: "Session cleanup preview",
+  "清理预览 · 版本 ": "Clean preview · version ",
+  " 个文件，约 ": " files, about ",
+  "；筛选时间为超过 ": "; Screening time is more than ",
+  预览于: "Preview at",
+  " 生成，有效至 ": " Generate, valid to ",
+  "。只会处理预览中仍匹配的受管文件。":
+    ". Only managed files that still match in the preview will be processed.",
+  "预览已过期，请重新读取并预览。":
+    "The preview has expired, please read and preview again.",
+  "会话版本已变化，此预览已过期，请重新预览。":
+    "The session version has changed and this preview has expired. Please preview again.",
+  "当前账户没有提交清理任务的权限。":
+    "The current account does not have the authority to submit cleaning tasks.",
+  "确认清理 {0} 个会话文件": "Confirm cleaning of {0} session files",
+  取消预览: "Cancel preview",
+  "清理任务正在运行；完成前不会重复提交。":
+    "The cleanup task is running; it will not be submitted again before completion.",
+  PHP运行环境: "PHP operating environment",
+  PHP管理分类: "PHP management classification",
+  运行参数: "Operating parameters",
+  当前没有扩展读取权限: "There is currently no extended read permission",
+  "载入状态来自该运行环境。启用前会检查模块文件与实际载入结果；内置模块不能通过开关卸载。":
+    "The loading status comes from the running environment. The module file and actual loading result will be checked before activation; built-in modules cannot be uninstalled through switches.",
+  已载入: "Loaded",
+  未载入: "Not loaded",
+  "正在读取实际扩展…": "Reading actual extension...",
+  "运行参数尚未读取，或没有配置权限":
+    "The operating parameters have not been read, or there is no configuration permission",
+  "操作失败。请重新读取当前状态。":
+    "Operation failed. Please read the current status again.",
+  "PostgreSQL 访问规则与慢查询": "PostgreSQL access rules and slow query",
+  "仅管理当前记录的数据库与角色；变更按配置和所有权版本提交。":
+    "Only the database and roles of the current record are managed; changes are submitted by configuration and ownership version.",
+  PostgreSQL访问规则: "PostgreSQL access rules",
+  数据库访问规则: "Database access rules",
+  "只允许 loopback 客户端 CIDR。远程访问因未配置 TLS 而不可用。":
+    "Only loopback client CIDR is allowed. Remote access is not available because TLS is not configured.",
+  "当前没有 PostgreSQL 访问规则读取权限":
+    "There is currently no PostgreSQL access rule read permission",
+  "正在读取受管理的访问规则…": "Reading managed access rules...",
+  角色: "Role",
+  当前数据库的受管理角色: "Managed roles of current database",
+  "· 本地管理员规则受到保护。": "· Local administrator rules are protected.",
+  阻止此规则: "Block this rule",
+  "确认阻止 {0} 对此数据库角色的访问？该变更会保留为精确拒绝规则。":
+    "Are you sure you want to block {0} from accessing this database role? The change remains as a precise deny rule.",
+  "当前没有额外的 loopback 访问规则。":
+    "There are currently no additional loopback access rules.",
+  "访问配置有未完成的恢复记录。先检查当前摘要，再明确选择应用待处理变更或恢复上一版本。":
+    "The access configuration has outstanding recovery records. Check the current summary before explicitly choosing to apply pending changes or revert to the previous version.",
+  应用待处理变更: "Apply pending changes",
+  恢复上一版本: "Restore previous version",
+  "确认应用待处理的访问规则配置？":
+    "Confirm application pending access rule configuration?",
+  "确认恢复到上一版本的访问规则配置？":
+    "Confirm to restore to the access rule configuration of the previous version?",
+  "IPv4 使用规范网络地址（127.0.0.0/8 至 /32）；IPv6 仅支持 ::1/128。":
+    "IPv4 uses standard network addresses (127.0.0.0/8 to /32); IPv6 only supports ::1/128.",
+  "添加 SCRAM 访问规则": "Add SCRAM access rules",
+  "确认允许 {0} 使用 SCRAM-SHA-256 访问 {1}？":
+    "Confirm that {0} is allowed to access {1} using SCRAM-SHA-256?",
+  当前没有访问规则变更权限:
+    "Currently there is no access rule change authority",
+  访问规则响应无效: "Access rule response is invalid",
+  "字段或版本与当前数据库不匹配，未启用变更操作。":
+    "The field or version does not match the current database and the change operation is not enabled.",
+  PostgreSQL慢查询日志: "PostgreSQL slow query log",
+  慢查询日志: "Slow query log",
+  "只调整慢查询阈值；结果是固定日志路径中的有界最新窗口。":
+    "Only the slow query threshold is adjusted; the result is a bounded latest window in a fixed log path.",
+  "当前没有 PostgreSQL 慢查询状态读取权限":
+    "There is currently no PostgreSQL slow query status read permission",
+  "正在读取实际运行设置…": "Reading actual running settings...",
+  慢查询记录: "Slow query record",
+  已关闭: "Closed",
+  触发阈值: "Trigger threshold",
+  实际重载状态: "Actual overload status",
+  已应用: "Applied",
+  未应用: "Not applied",
+  "慢查询配置需要显式恢复。":
+    "Slow query configuration requires explicit recovery.",
+  应用待处理配置: "Application pending configuration",
+  "确认应用待处理的慢查询配置？":
+    "Confirm application pending slow query configuration?",
+  "确认恢复上一版本的慢查询配置？":
+    "Confirm to restore the slow query configuration of the previous version?",
+  "配置已写入但运行状态尚未匹配；请刷新状态后再调整。":
+    "The configuration has been written but the running status has not yet matched; please refresh the status before adjusting.",
+  "当前配置不受安全管理，未提供覆盖或恢复操作。":
+    "The current configuration is not subject to security management and no overwrite or recovery operations are provided.",
+  "慢查询阈值（毫秒）": "Slow query threshold (milliseconds)",
+  "输入整数，范围 1–600000 毫秒。":
+    "Enter an integer in the range 1–600000 milliseconds.",
+  更新阈值: "Update threshold",
+  启用慢查询日志: "Enable slow query log",
+  "确认启用慢查询日志，阈值为 {0} 毫秒？":
+    "Confirm to enable slow query log, threshold is {0} milliseconds?",
+  关闭慢查询日志: "Close slow query log",
+  "确认关闭此数据库的慢查询日志？":
+    "Confirm to close the slow query log of this database?",
+  当前没有慢查询配置权限:
+    "There is currently no slow query configuration authority",
+  最近的慢查询: "Latest slow query",
+  刷新日志: "Refresh log",
+  "慢查询中的字符串与数字字面量、SQL 注释已遮蔽；标识符仍可能包含敏感文字。":
+    "Strings and numeric literals and SQL comments in slow queries have been obscured; identifiers may still contain sensitive text.",
+  "受管理的日志尚未生成或当前不可读取。":
+    "The managed log has not been generated or is currently unreadable.",
+  "当前窗口没有慢查询记录。":
+    "There is no slow query record in the current window.",
+  慢查询日志响应无效: "Slow query log response is invalid",
+  "未显示字段不完整或不属于当前数据库的内容。":
+    "Contents whose fields are incomplete or do not belong to the current database are not displayed.",
+  "列表已截断；这里只显示最近的有界结果。":
+    "The list is truncated; only the most recent bounded results are shown here.",
+  慢查询状态响应无效: "Slow query status response is invalid",
+  "未显示字段或版本与当前数据库不匹配，未启用变更操作。":
+    "The field is not displayed or the version does not match the current database, and the change operation is not enabled.",
+  "已提交，等待结果": "Submitted, waiting for result",
+  已跳过: "Skipped",
+  结果读取权限已失效: "As a result, the read permission has expired",
+  创建中: "Under creation",
+  删除中: "Deleting",
+  更新中: "Updating",
+  运行中: "In operation",
+  已停止: "Stopped",
+  待构建: "To be constructed",
+  已构建: "Constructed",
+  "已停用，文件保留": "Deactivated, file retained",
+  清理中: "Cleaning up",
+  配置中: "In configuration",
+  初始化数据: "Initialization data",
+  复制异常: "Copy exception",
+  移除中: "Removing",
+  已移除: "Removed",
+  需要恢复: "Need to restore",
+  未安装: "Not installed",
+  健康: "Health",
+  异常: "Abnormal",
+  不可用: "Not available",
+  暂不支持: "Not supported yet",
+  安装中: "Installing",
+  升级中: "Upgrading",
+  待处理: "To be processed",
+  状态未知: "Status unknown",
+  尚未验证: "Not yet verified",
+  执行中断: "Execution interruption",
+  面板管理: "Panel management",
+  已接管: "Taken over",
+  暂停待完成: "Pause to be completed",
+  已暂停: "Suspended",
+  恢复待完成: "Recovery to be completed",
+  状态冲突: "Status conflict",
+  旧版需恢复: "The old version needs to be restored",
+  旧版恢复待继续: "Old version recovery to be continued",
+  无法安全恢复: "Unable to safely restore",
+  等待重载验证: "Waiting for reload verification",
+  配置已应用: "Configuration has been applied",
+  尚未配置: "Not configured yet",
+  未受管理: "Unmanaged",
+  已恢复: "Restored",
+  预览待执行: "Preview to be executed",
+  预览已过期: "Preview has expired",
+  部分完成: "Partially completed",
+  已完成: "Completed",
+  结果待核实: "The result needs to be verified",
+  未执行: "Not executed",
+  校验中: "Under verification",
+  状态未提供: "Status not provided",
+  "当前服务未提供此能力，或当前账户没有访问权限。":
+    "The current service does not provide this capability, or the current account does not have access rights.",
+  页: "page",
+  " · 共 {0} 条": " · Total {0} items",
+  " · 本页 {0} 条": " · {0} items on this page",
+  上一页资源: "Previous page resources",
+  下一页资源: "Next page resources",
+  关闭资源详情: "Close resource details",
+  此分类暂无已授权的操作:
+    "There is currently no authorized operation in this category",
+  外观与配色: "Appearance and color matching",
+  当前浏览器偏好: "Current browser preference",
+  "选择后立即应用。配色只改变个人外观，不改变业务状态语义。":
+    "Apply immediately after selection. Color matching only changes the personal appearance and does not change the business status semantics.",
+  主题配色: "Theme color matching",
+  "{0}主题": "{0} theme",
+  原生协议: "Native protocol",
+  "已授权的 AI 客户端可通过 MCP 查询信息和管理资源。面板不运行模型；所有操作使用相同权限、便签版本与审计记录。":
+    "Authorized AI clients can query information and manage resources through MCP. The panel does not run models; all operations use the same permissions, note versions, and audit records.",
+  远程连接: "Remote connection",
+  你的面板地址: "Your panel address",
+  "使用支持 Streamable HTTP 的客户端，通过 OAuth 授权或访问令牌连接。":
+    "Connect via OAuth authorization or access token using a client that supports Streamable HTTP.",
+  本地连接: "Local connection",
+  "本地客户端连接受保护的面板服务。具体启动参数参见发行包文档。":
+    "The local client connects to the protected panel service. For specific startup parameters, see the release package documentation.",
+  "MCP 服务可用代表接入能力，不能据此判断有 AI 客户端在线。":
+    "The available MCP service represents the access capability, and it cannot be judged that there is an AI client online based on this.",
+  查看操作记录: "View operation record",
+  客户端访问令牌: "Client access token",
+  "仅授权所需范围。令牌只在创建时显示一次，撤销后立即失效。":
+    "Authorize only the required scope. The token is only displayed once when created and becomes invalid immediately upon revocation.",
+  客户端名称: "Client name",
+  "例如 Claude / 运维自动化":
+    "For example Claude/operation and maintenance automation",
+  授权范围: "Authorization scope",
+  资源范围: "Resource scope",
+  "逗号分隔的资源 ID。使用 * 会授权所有资源，请按实际需要设置。":
+    "Comma separated resource IDs. Using * will authorize all resources, please set according to actual needs.",
+  创建访问令牌: "Create access token",
+  新访问令牌: "New access token",
+  请立即保存令牌: "Please save the token immediately",
+  访问令牌: "Access token",
+  复制令牌: "Copy token",
+  "无法自动复制，请手动选择复制。":
+    "Unable to copy automatically, please select copy manually.",
+  "已保存，隐藏令牌": "Saved, hidden token",
+  资源: "Resources",
+  " · 最近访问": " · Recent visits",
+  "撤销 {0}": "Cancel {0}",
+  "暂无客户端令牌。": "There is no client token yet.",
+  账户与安全: "Account and security",
+  "当前账户 · ": "Current account · ",
+  "密码已更新，请重新登录。":
+    "The password has been updated, please log in again.",
+  当前密码: "Current password",
+  "使用至少 12 个字符的独立密码。":
+    "Use a unique password of at least 12 characters.",
+  "两步验证码（更新密码）": "Two-step verification code (update password)",
+  更新密码: "Update password",
+  两步验证: "Two-step verification",
+  "登录和敏感账户操作按同一验证规则执行。":
+    "Login and sensitive account operations are performed according to the same verification rules.",
+  "当前密码（两步验证）": "Current password (two-step verification)",
+  开始设置两步验证: "Start setting up two-step verification",
+  "将以下密钥添加到认证器，随后输入验证码完成启用。":
+    "Add the following key to the authenticator, and then enter the verification code to complete activation.",
+  认证器密钥: "Authenticator key",
+  复制认证器链接: "Copy authenticator link",
+  认证器验证码: "Authenticator verification code",
+  启用两步验证: "Enable two-step verification",
+  "两步验证已启用。": "Two-step verification is enabled.",
+  关闭两步验证: "Turn off two-step verification",
+  "当前密码（关闭验证）": "Current password (turn off verification)",
+  当前两步验证码: "Current two-step verification code",
+  "两步验证已关闭。": "Two-step verification is turned off.",
+  管理分类: "Management classification",
+  网站分类: "Website classification",
+  重新读取分类: "Reread classification",
+  "网站分类按当前账户可读范围列出。创建和修改使用服务器提供的参数结构及当前版本；删除失败时分类会保留。":
+    "Website categories are listed according to the readable range of the current account. Creation and modification use the parameter structure and current version provided by the server; the classification will be retained if deletion fails.",
+  新建分类: "New classification",
+  刷新分类: "Refresh classification",
+  "正在读取分类…": "Reading classification...",
+  分类: "Classification",
+  "编辑 {0}": "Edit {0}",
+  "删除 {0}": "Delete {0}",
+  "暂无可见分类。": "There is currently no visible classification.",
+  分类编辑: "Classification editing",
+  修改分类: "Modify classification",
+  "标识：": "Identification: ",
+  " · 提交版本：": " · Submit version: ",
+  分类名称: "Classification name",
+  "当前版本已变化，草稿仍保留。":
+    "The current version has changed and the draft remains.",
+  载入最新版本并保留名称: "Load the latest version and keep the name",
+  换一个新标识: "Change a new logo",
+  创建分类: "Create classification",
+  保存分类: "Save classification",
+  取消编辑: "Cancel editing",
+  确认删除分类: "Confirm deletion classification",
+  "确认删除“": 'Confirm deletion "',
+  删除会以版本: "Deletion will be based on version",
+  "提交。若网站仍在使用此分类，服务器会拒绝删除；失败时分类不会从列表消失。":
+    "Submit. If the website is still using this category, the server will refuse to delete it; the category will not disappear from the list if it fails.",
+  "分类版本已变化，尚未再次删除。":
+    "The classification version has changed and has not been deleted again.",
+  核对最新版本并重新确认: "Check the latest version and reconfirm",
+  "目标分类当前不可见；请重新读取分类列表后再操作。":
+    "The target category is currently invisible; please re-read the category list before operating.",
+  默认网站切换: "Default website switching",
+  默认网站: "Default website",
+  收起默认网站设置: "Close default website settings",
+  设置默认网站: "Set default website",
+  当前没有默认网站读取权限:
+    "Currently there is no default website read permission",
+  "正在读取当前默认网站与版本…":
+    "Reading the current default website and version...",
+  将设为默认的网站: "Set as default website",
+  原默认网站: "Original default website",
+  当前网站已是默认网站: "The current website is already the default website",
+  此实例未设置默认网站: "This instance does not set a default website",
+  "涉及的网站有手工配置。请在配置中明确恢复面板管理后再切换默认网站。":
+    "The websites involved have manual configuration. Please explicitly restore panel management in the configuration before switching the default website.",
+  确认切换默认网站: "Confirm to switch default website",
+  "将接收该网站服务实例中未匹配域名的请求。":
+    "Requests for unmatched domain names in the website service instance will be received.",
+  "{0} 将取消默认身份，网站内容保留。":
+    "{0} will cancel the default identity and retain the website content.",
+  "两份网站版本都会检查；配置验证和实际生效后任务才完成。":
+    "Both website versions will be checked; the task is completed only after configuration verification and actual effectiveness.",
+  设为默认网站: "Set as default website",
+  取消默认网站切换: "Cancel default website switching",
+  重新读取默认网站版本: "Reread default website version",
+  "上次操作状态尚未确认，请核对任务和实际默认网站；此请求暂停写入。":
+    "The last operation status has not been confirmed, please check the task and the actual default website; this request suspends writing.",
+  "下载被服务器拒绝：请检查网站备份与站点文件读取权限。":
+    "The download was rejected by the server: Please check the website backup and site file read permissions.",
+  "网站备份下载准备失败。": "Website backup download preparation failed.",
+  网站备份: "Website backup",
+  创建网站备份: "Create website backup",
+  当前没有备份读取权限: "Currently there is no backup read permission",
+  包含TLS配置: "Contains TLS configuration",
+  不含TLS配置: "Without TLS configuration",
+  暂无网站备份: "No website backup yet",
+  "备份任务完成并校验实际产物后，这里会显示备份。":
+    "After the backup task is completed and the actual product is verified, the backup will be displayed here.",
+  选定备份: "Select backup",
+  "。恢复会使用当前网站版本检查，并验证备份产物。":
+    ". Restoration will use the current website version check and verify the backup product.",
+  下载已验证网站备份: "Download verified website backup",
+  "正在验证备份并准备下载…": "Verifying backup and preparing to download...",
+  保留的网站内容: "Reserved website content",
+  "这里是删除网站后仍保留的内容，保留内容不代表网站正在提供服务。":
+    "Here is the content that remains after the website is deleted. The retained content does not mean that the website is providing services.",
+  当前没有保留内容读取权限: "Content read permission is currently not reserved",
+  "保留于 ": "Remain in ",
+  已删除网站: "Website deleted",
+  暂无保留的网站内容: "There is currently no reserved website content",
+  查看保留文件: "View retained files",
+  "此计划属于另一网站，不能应用；请为当前网站重新规划。":
+    "This plan belongs to another website and cannot be applied; please re-plan for the current website.",
+  "网站标识或版本与计划不一致；请重新读取网站并规划。":
+    "The website logo or version is inconsistent with the plan; please read the website again and plan.",
+  "迁移计划已过期；请重新规划后再应用。":
+    "The migration plan has expired; please re-plan before applying.",
+  "迁移计划内容无法验证；请重新规划。":
+    "The content of the migration plan cannot be verified; please plan again.",
+  "此网站使用手工配置。若确认放弃手工配置并重新生成，请勾选相应选项后重新规划。":
+    "This website uses manual configuration. If you confirm to abandon manual configuration and regenerate, please check the corresponding option and plan again.",
+  "迁移计划已过期，请重新规划。":
+    "The migration plan has expired, please plan again.",
+  "网站版本已变化，请重新读取网站并重新规划。":
+    "The website version has changed, please re-read the website and re-plan.",
+  网站版本: "Website version",
+  运行位置: "Operating position",
+  未配置域名: "Domain name is not configured",
+  PHP实例: "PHP example",
+  未绑定: "Not bound",
+  配置模式: "Configuration mode",
+  手工配置: "Manual configuration",
+  托管配置: "Hosting Configuration",
+  计划有效至: "Plan is valid until",
+  规划时网站版本: "Website version during planning",
+  放弃手工配置并重新生成: "Abandon manual configuration and regenerate",
+  "此网站使用手工配置。勾选后迁移会转为托管配置，原配置会留存备份；不勾选则不能规划迁移。":
+    "This website uses manual configuration. If checked, the migration will be converted to a managed configuration, and backups of the original configuration will be retained; if not checked, migration cannot be planned.",
+  "仅当网站使用手工配置时才可勾选；勾选后原配置会留存备份。":
+    "It can be checked only when the website uses manual configuration; after checking, the original configuration will be saved as a backup.",
+  "迁移会将此网站的运行配置切换到另一个 Web 实例。":
+    "Migration switches the running configuration of this website to another web instance.",
+  "网站内容、域名、PHP绑定和TLS证书会随站点配置保留；应用前会检查目标实例并验证运行结果。迁移不会自动执行，必须在核对计划后再次确认。":
+    "Website content, domain name, PHP binding and TLS certificate will be retained with the site configuration; the target instance will be checked and the running results will be verified before application. Migration will not be performed automatically and must be reconfirmed after checking the plan.",
+  "无法读取当前网站版本，暂不能规划或应用迁移。":
+    "The current website version cannot be read, and migration cannot be planned or applied at the moment.",
+  重新读取网站: "Reread website",
+  "正在读取当前网站版本…": "Reading the current website version...",
+  规划迁移: "Planning migration",
+  "先选择目标 Web 实例并生成只读计划；此步骤不会修改网站。":
+    "First select the target Web instance and generate a read-only plan; this step will not modify the website.",
+  "当前账户没有读取软件实例列表的权限，无法选择迁移目标。":
+    "The current account does not have permission to read the software instance list and cannot select a migration target.",
+  "正在读取可用 Web 实例…": "Reading available web instances...",
+  "无法读取 Web 实例列表，暂不能规划迁移。":
+    "Unable to read the Web instance list, and migration cannot be planned yet.",
+  重新读取实例: "Reread instance",
+  "当前没有可选的其他 OpenResty 实例。":
+    "There are currently no other OpenResty instances available.",
+  "服务器返回的迁移计划无法验证，请重新规划。":
+    "The migration plan returned by the server cannot be verified, please plan again.",
+  重新规划: "Re-planning",
+  核对迁移计划: "Check migration plan",
+  "计划号 ": "Plan number ",
+  "此计划会放弃手工配置并重新生成托管配置；原手工配置会留存备份。":
+    "This plan will abandon the manual configuration and regenerate the managed configuration; the original manual configuration will retain a backup.",
+  "此网站使用手工配置。必须重新规划并明确选择放弃手工配置后，才能迁移。":
+    "This website uses manual configuration. You must re-plan and explicitly choose to abandon manual configuration before migrating.",
+  "迁移任务已提交；请在下方查看任务状态。请勿重复提交。":
+    "The migration task has been submitted; please check the task status below. Please do not resubmit.",
+  "当前账户没有读取迁移计划的权限，无法验证计划；不能应用。":
+    "The current account does not have permission to read the migration plan and cannot verify the plan; it cannot be applied.",
+  "正在从服务器核对受保护的迁移计划…":
+    "Checking protected migration plan from server...",
+  "无法确认此迁移计划（可能已过期）。请重新规划后再试。":
+    "Unable to confirm this migration plan (may have expired). Please reschedule and try again.",
+  "正在核对计划内容…": "Checking plan content...",
+  "服务器计划与当前核对内容不一致；请重新规划。":
+    "The server plan is inconsistent with the current verification content; please plan again.",
+  "当前网站版本尚未成功读取，不能应用此计划。":
+    "The current website version has not been successfully read and this plan cannot be applied.",
+  "当前账户没有应用网站迁移的权限。":
+    "The current account does not have the authority to apply website migration.",
+  确认计划并继续: "Confirm plan and continue",
+  "请确认要应用以上计划。下一步仍会要求再次确认提交。":
+    "Please confirm to apply the above plan. The next step will still require confirmation of submission again.",
+  返回计划核对: "Return to plan verification",
+  "当前计划不可应用，请重新规划。":
+    "The current plan cannot be applied, please plan again.",
+  "网站慢日志响应未匹配当前网站版本或PHP实例。":
+    "The slow log response of the website does not match the current website version or PHP instance.",
+  "网站会话清理预览无效，请重新读取统计后预览。":
+    "The website session cleaning preview is invalid, please re-read the statistics and preview.",
+  "{0} 未自动重试；同一预览请求重试会复用请求编号。":
+    "{0} is not automatically retried; retrying the same preview request will reuse the request number.",
+  "确认清理网站 {0} 中超过 {1} 的 {2} 个受管 PHP 会话文件（约 {3}）？任务只处理此次预览捕获的文件，不显示会话编号或磁盘路径。":
+    "Confirm cleanup of {2} managed PHP session files (approximately {3}) exceeding {1} in website {0}? The task only processes the files captured by this preview and does not display the session number or disk path.",
+  "清理任务未返回任务编号；请先检查任务状态，不会自动重试。":
+    "The cleanup task did not return the task number; please check the task status first, and it will not be automatically retried.",
+  "{0} 未自动重试；如需重试，仅会复用本次预览和请求编号。":
+    "{0} did not automatically retry; if retry is required, only this preview and request number will be reused.",
+  网站PHP慢日志与会话维护: "Website PHP slow log and session maintenance",
+  "此网站 PHP 池慢日志": "This website PHP pool slow log",
+  "此网站没有绑定受管 PHP 实例":
+    "This website is not bound to a managed PHP instance",
+  "分配受管 PHP 运行环境后，才能读取独立的网站慢日志。":
+    "Independent website slow logs can be read only after a managed PHP runtime environment is allocated.",
+  当前账户或后端未提供网站慢日志读取能力:
+    "The current account or backend does not provide website slow log reading capabilities",
+  "只读取当前网站 PHP 池的受管慢日志，最多 100 行；路径由服务端从网站日志目录解析。":
+    "Only read the managed slow log of the current website PHP pool, up to 100 lines; the path is parsed by the server from the website log directory.",
+  读取网站慢日志: "Read website slow log",
+  "此网站的慢日志未启用。可在 PHP 选项中打开 `slowlog_enabled` 并设置阈值。":
+    "The slow log of this website is not enabled. You can turn on `slowlog_enabled` in PHP options and set the threshold.",
+  "慢日志已配置，当前尚未生成日志文件。":
+    "The slow log has been configured and the log file has not yet been generated.",
+  "网站 PHP 会话": "Website PHP session",
+  当前账户没有网站会话统计权限:
+    "The current account does not have website session statistics authority",
+  "网站会话统计版本与当前站点不匹配，请重新读取状态":
+    "The website session statistics version does not match the current site, please read the status again",
+  "正在读取网站会话统计…": "Reading website session statistics...",
+  受管网站会话目录: "Managed website session directory",
+  "仅统计并清理此网站的文件会话；其他临时文件、会话编号和路径不会返回。":
+    "Only count and clean up the file sessions of this website; other temporary files, session numbers and paths will not be returned.",
+  "服务允许生成预览，但当前账户没有预览权限":
+    "The service allows generating previews, but the current account does not have preview permissions",
+  重新生成清理预览: "Regenerate clean preview",
+  "当前账户没有网站会话清理任务权限。":
+    "The current account does not have website session cleaning task permissions.",
+  网站会话清理预览: "Website session cleaning preview",
+  "清理预览 · 网站版本 ": "Clean preview · website version ",
+  "将清理 ": "Will clean up ",
+  " 个超过 ": " more than ",
+  " 的文件，约 ": " The document, about ",
+  "预览于 ": "Preview at ",
+  "。只处理预览捕获且仍匹配的受管会话文件。":
+    ". Only process preview captured and still matching managed session files.",
+  "预览已过期，请重新读取统计并预览。":
+    "The preview has expired, please re-read the statistics and preview.",
+  "网站或PHP绑定版本已变化，此预览不能提交。":
+    "The website or PHP binding version has changed, and this preview cannot be submitted.",
+  "网站会话清理任务正在运行；完成前不会重复提交。":
+    "The website session cleanup task is running; it will not be submitted again before completion.",
+  总览: "Overview",
+  代理与重定向: "Proxy and redirection",
+  日志: "Log",
+  配置: "Configuration",
+  迁移: "Migration",
+  "静态内容，不绑定PHP": "Static content, not bound to PHP",
+  设置: "Setting",
+  "修改网站{0}": "Modify website {0}",
+  保留内容: "Reserved content",
+  网站资源类型: "Website resource type",
+  网站资源: "Website resources",
+  筛选网站: "Screening website",
+  名称或域名: "Name or domain name",
+  网站分类筛选: "Website classification screening",
+  全部分类: "All categories",
+  "空值表示全部分类。": "A null value represents all categories.",
+  创建网站: "Create website",
+  网站资源服务暂不可用: "Website resource service is temporarily unavailable",
+  重试网站列表: "Retry website list",
+  "正在读取网站…": "Loading website...",
+  "分类列表读取失败，网站列表已清除分类筛选条件。":
+    "The classification list reading failed, and the website list has cleared the classification filtering conditions.",
+  重试分类列表: "Retry classification list",
+  "网站 / 域名": "Website/domain name",
+  运行环境: "Operating environment",
+  更新: "Update",
+  "已配置 ·": "Configured·",
+  未配置: "Not configured",
+  暂无网站: "No website yet",
+  "先安装受支持的网站服务，再创建域名与站点。":
+    "Install a supported website service first, and then create a domain name and site.",
+  "网站 · {0}": "Website · {0}",
+  网站详情分类: "Website details classification",
+  "此网站使用手工配置。": "This website uses manual configuration.",
+  "修改域名、PHP或路由前，确认是否放弃手工配置并重新生成。原配置不会因切换详情分类而修改。":
+    "Before modifying domain name, PHP or routing, confirm whether to abandon manual configuration and regenerate it. The original configuration will not be modified by switching the detail category.",
+  站点目录: "Site Directory",
+  已配置: "Already configured",
+  "到期 {0}": "Expiration {0}",
+  "当前分类不在可见分类列表中。若要清除已删除或不可见的旧绑定，请在“网站分类”中选择“未分类”；其他配置字段仍会按本表单提交。":
+    'The current category is not in the visible category list. To clear old bindings that have been deleted or invisible, select "Unclassified" in "Site Classification"; other configuration fields will still be submitted as per this form.',
+  其他已授权的网站操作: "Other authorized website operations",
+  继续完成已验证的安装: "Continue to Complete Verified Installation",
+  停止服务并保留数据: "Stop service and retain data",
+  没有恢复记录: "No recovery record",
+  安装收据已存在: "Installation receipt already exists",
+  安装恢复中: "Installation and recovery in progress",
+  仅可检查: "Only available for inspection",
+  归属状态冲突: "Belonging status conflict",
+  已停止并保留: "Stopped and reserved",
+  恢复完成: "Recovery completed",
+  "安装在服务归属验证前中断，当前仅可检查。请保留现场，由管理员核对后处理；无法自动恢复。":
+    "The installation was interrupted before service ownership verification, and currently only inspection is possible. Please keep the scene and let the administrator check and handle it; automatic recovery is not possible.",
+  "没有受保护的安装记录，因此当前没有可执行的恢复操作。":
+    "There is no protected installation record, so there is currently no recovery operation to perform.",
+  "已有受保护的软件收据；当前没有未完成安装恢复操作。":
+    "There is already a protected software receipt; there are currently no outstanding installation recovery operations.",
+  "受保护的日志证明这是本次安装；可用操作仅限已验证的检查点。":
+    "Protected logs prove this is the installation; available actions are limited to verified checkpoints.",
+  "受保护的日志与当前收据无法证明安全恢复状态。":
+    "Protected logs and current receipts cannot prove a safe recovery state.",
+  "日志存在，但当前归属证明不允许执行恢复操作。":
+    "The log exists, but the current ownership certificate does not allow recovery operations.",
+  "安装收据已经写入；继续操作只会完成日志检查点。":
+    "The installation receipt has been written; continuing will only complete the log checkpoint.",
+  "已验证的服务已停止并禁用；软件包、数据、配置和运行时均已保留。":
+    "The verified service has been stopped and disabled; packages, data, configuration, and runtime have been preserved.",
+  "安装收据已经写入。": "The installation receipt has been written.",
+  "恢复日志已完成，但当前没有软件收据；不能自动恢复。":
+    "Recovery log has been completed, but there is currently no software receipt; automatic recovery is not possible.",
+  "软件恢复请求失败。": "Software recovery request failed.",
+  "当前身份没有符合要求的软件恢复检查能力。":
+    "The current identity does not have the software recovery check capability that meets the requirements.",
+  "请输入有效的软件实例 ID（小写字母、数字、下划线或连字符）。":
+    "Please enter a valid software instance ID (lowercase letters, numbers, underscores, or hyphens).",
+  "恢复状态响应不完整或与请求 ID 不匹配，请重新检查。":
+    "The recovery status response is incomplete or does not match the request ID, please check again.",
+  安装恢复检查: "Installation recovery check",
+  "输入或确认失败安装的实例 ID，再检查受保护的恢复记录。":
+    "Enter or confirm the instance ID of the failed installation and then check the protected recovery record.",
+  "当前身份没有可用的软件恢复检查权限或接口格式不兼容。":
+    "There is no software recovery check authority available for the current identity or the interface format is incompatible.",
+  "软件实例 ID": "Software instance ID",
+  "例如 mariadb-default": "For example mariadb-default",
+  重新检查恢复状态: "Recheck recovery status",
+  检查恢复状态: "Check recovery status",
+  "实例 ID 来自：": "Instance ID comes from: ",
+  "。确认后点击检查。": ". After confirmation, click Check.",
+  "当前显示的是旧检查结果；执行恢复前请重新检查。":
+    "What is currently displayed is the old check result; please check again before performing recovery.",
+  安装恢复状态: "Installation recovery status",
+  检查点: "Checkpoint",
+  无受保护检查点: "No protected checkpoints",
+  日志版本: "Log version",
+  安装收据: "Installation receipt",
+  不存在: "Does not exist",
+  "当前身份没有对应的恢复任务权限，或服务端能力格式不兼容。":
+    "The current identity does not have the corresponding recovery task authority, or the server capability format is incompatible.",
+  "恢复任务仍在执行；任务结束后请重新检查状态。":
+    "The recovery task is still being executed; please recheck the status after the task is completed.",
+  数据库管理: "Database management",
+  网站服务: "Website services",
+  存储: "Storage",
+  安全: "Safety",
+  邮件: "Email",
+  软件目录: "Software directory",
+  应用服务: "Application services",
+  实例: "Example",
+  备份恢复: "Backup recovery",
+  版本与来源: "Version and source",
+  失败的软件计划: "Failed Software Initiatives",
+  软件资源类型: "Software resource type",
+  当前没有可用的软件管理能力:
+    "There is currently no software management capability available",
+  软件与插件: "Software & plugins",
+  搜索软件: "Search software",
+  名称或功能: "Name or function",
+  软件分类: "Software classification",
+  全部: "All",
+  已安装: "Installed",
+  其他: "Others",
+  "安装状态读取失败：": "Installation status reading failed: ",
+  "当前未配置软件管理主机特权执行器，无法读取真实安装状态或执行安装变更。":
+    "The software management host privilege executor is currently not configured, and the real installation status cannot be read or installation changes can be performed.",
+  软件目录服务暂不可用: "Software directory service is temporarily unavailable",
+  "正在读取软件目录…": "Reading software directory...",
+  状态无法读取: "Status cannot be read",
+  主机特权执行器未配置: "Host privilege executor is not configured",
+  "{0} 个可见实例": "{0} visible instances",
+  暂无可见实例: "No visible examples yet",
+  "软件 · {0}": "Software · {0}",
+  软件详情分类: "Software details classification",
+  暂无可见安装实例: "There is currently no visible installation instance",
+  "核心面板不会预装此软件。可在下方生成安装计划。":
+    "The core panel will not be pre-installed with this software. An installation plan can be generated below.",
+  集成版本: "Integrated version",
+  " · 平台": " · Platform",
+  " · 默认": " ·Default",
+  "当前实例 · ": "Current Example· ",
+  此管理页面只监听主机本机回环地址:
+    "This management page only monitors the host's local loopback address",
+  "。需要从域名访问时，请在“网站”页面添加反向代理到该地址；不要把管理端口直接开放到公网。":
+    '. When you need to access from a domain name, please add a reverse proxy to the address on the "Website" page; do not open the management port directly to the public network.',
+  "安装 / 升级 / 卸载 / 回滚计划":
+    "Installation/Upgrade/Uninstallation/Rollback Plan",
+  未完成的软件安装任务: "Unfinished software installation tasks",
+  未完成任务的实例: "Examples of unfinished tasks",
+  "已填入安装恢复检查。": "The installation recovery check has been filled in.",
+  前往恢复检查: "Go to recovery check",
+  软件变更计划: "Software change plan",
+  变更计划: "Change plan",
+  "核对产物校验、依赖、目录与服务变更。确认后进入真实任务执行与健康验证。":
+    "Check product verification, dependencies, directory and service changes. After confirmation, enter the actual task execution and health verification.",
+  "将此失败计划的实例 ID 填入恢复检查":
+    "Fill in the recovery check with the instance ID of this failed plan",
+  确认应用软件计划: "Apply changes",
+  "当前计划未提供可应用的版本标识或权限。":
+    "The current plan does not provide applicable version identification or permissions.",
+  其他已授权的软件操作: "Other authorized software operations",
+  影响行数: "Number of rows affected",
+  数据库查询结果: "Database query results",
+  " · 本次返回 ": " · Return this time ",
+  行: "OK",
+  "结果达到服务器行数上限，后续数据未读取。请收窄查询条件或明确分页。":
+    "The result reaches the upper limit of the number of server rows, and subsequent data is not read. Please narrow the query conditions or clear the paging.",
+  "结果中有整数无法确认精度，不能作为原值使用。请检查服务端是否支持精确整数协议。":
+    "There are integers in the result whose accuracy cannot be confirmed and cannot be used as original values. Please check whether the server supports the exact integer protocol.",
+  SQL数据表: "SQL data table",
+  Base64原值: "Base64 original value",
+  "查询没有返回行。": "The query returned no rows.",
+  查看类型与原值: "View type and original value",
+  "守护程序日志响应无效，请重新读取。":
+    "The daemon log response is invalid, please read again.",
+  "清理预览未同时包含标准输出和标准错误，请重新读取。":
+    "The clean preview does not contain both standard output and standard error, please read again.",
+  "守护程序配置版本已变化，请重新读取任务并预览两路日志。":
+    "The daemon configuration version has changed. Please re-read the task and preview the two-way logs.",
+  无文件: "No file",
+  "确认清空已注册任务“{0}”的 stdout 和 stderr 两路日志？预览状态：stdout {1} 字节，stderr {2} 字节。":
+    'Confirm to clear the stdout and stderr logs of the registered task "{0}"? Preview status: stdout {1} bytes, stderr {2} bytes.',
+  "{0} 未自动重试；请重新读取任务并预览两路日志后再确认。":
+    "{0} did not automatically retry; please re-read the task and preview both logs before confirming.",
+  守护程序日志: "Daemon log",
+  已注册任务日志: "Registered task log",
+  刷新任务列表: "Refresh task list",
+  当前没有守护程序任务读取权限:
+    "There is currently no daemon task read permission",
+  "任务列表响应无效，请重新读取":
+    "The task list response is invalid, please read again",
+  "正在读取已注册任务…": "Reading registered tasks...",
+  暂无已注册守护程序任务: "There is currently no registered daemon task",
+  当前没有任务日志读取权限: "Currently there is no task log reading permission",
+  "系统变更请求失败。": "System change request failed.",
+  "浏览器无法保存计划恢复记录，系统变更操作已停用。":
+    "The browser cannot save the planned recovery record and the system change operation has been disabled.",
+  "恢复记录保存失败；为避免丢失执行状态，系统变更操作已停用。":
+    "Recovery record saving failed; to avoid losing execution status, the system change operation has been disabled.",
+  "当前账号未提供可用的系统变更计划读取能力。":
+    "The current account does not provide available system change plan reading capabilities.",
+  "服务返回的计划记录无法验证；请保留当前状态后重试读取。":
+    "The plan record returned by the service cannot be verified; please keep the current status and try reading again.",
+  "当前账号无法读取该执行任务；计划状态仍待核对。":
+    "The current account cannot read the execution task; the plan status still needs to be checked.",
+  "任务已结束，但计划读取失败；操作仍待核对。":
+    "The task has ended, but the plan read failed; the operation still needs to be verified.",
+  "当前账号无法读取任务状态；操作保持待核对。":
+    "The current account cannot read the task status; the operation remains to be verified.",
+  "计划返回内容不完整；请刷新并核对服务端状态，不会继续执行。":
+    "The planned return content is incomplete; please refresh and check the server status, execution will not continue.",
+  "计划已生成，但恢复记录未能保存；请勿继续操作。":
+    "The plan has been generated, but the recovery record cannot be saved; please do not continue.",
+  "当前能力描述不包含所需计划参数，操作已停止。":
+    "The current capability description does not contain the required planning parameters and the operation has been stopped.",
+  "服务未返回可核对的任务编号；计划保留为待核对状态，请勿重复创建新计划。":
+    "The service did not return a verifiable task number; the plan remains to be verified, please do not repeatedly create new plans.",
+  "任务已提交，但任务恢复记录保存失败；当前状态待核对。":
+    "The task has been submitted, but the task recovery record failed to be saved; the current status needs to be checked.",
+  "任务已提交，但当前账号缺少 tasks_get 能力；状态待核对。":
+    "The task has been submitted, but the current account lacks the tasks_get capability; the status needs to be checked.",
+  "操作已返回，但计划状态仍未确认；请保留记录并重新读取。":
+    "The operation has returned, but the plan status has not yet been confirmed; please keep the record and read it again.",
+  系统变更工作流未开放: "System change workflow is not open",
+  "当前身份没有可用的系统变更计划能力。":
+    "There is no system change planning capability available for the current identity.",
+  系统变更计划: "System change plan",
+  "先由服务器预检并生成计划；应用、连接确认和回滚都需要单独操作。":
+    "First, the server pre-checks and generates a plan; application, connection confirmation and rollback all require separate operations.",
+  "当前身份无法读取上次计划或任务，恢复记录已清除，系统变更继续停用。请先确认身份与能力后重新载入页面。":
+    "The current identity cannot read the last plan or task, the recovery record has been cleared, and the system change continues to be disabled. Please confirm your identity and abilities before reloading the page.",
+  "正在读取本地计划恢复记录…": "Reading local plan recovery record...",
+  "当前能力集没有可用的 `system_change_get`；无法验证计划状态，所有变更操作保持停用。":
+    "There is no `system_change_get` available for the current capability set; plan status cannot be verified and all change operations remain disabled.",
+  "当前身份没有可用的 `system_change_plan` 写入能力，不能创建计划。":
+    "The current identity has no `system_change_plan` write capability available and cannot create a plan.",
+  重新读取计划: "Reread plan",
+  当前系统变更计划: "Current system change plan",
+  计划状态: "Plan status",
+  "创建于 ": "Created in ",
+  "计划有效至 ": "Plan is valid until ",
+  "连接确认截止 ": "Connection confirmation deadline ",
+  "计划基线已变化或已过期。请重新生成计划；不会沿用旧计划应用变更。":
+    "The planned baseline has changed or expired. Please regenerate the plan; changes will not be applied to the old plan.",
+  "当前显示内容不是已确认的最新状态，读取成功前不能确认或继续变更。":
+    "The current displayed content is not the latest confirmed status, and cannot be confirmed or continued to be changed before the reading is successful.",
+  "上次“": 'Last time "',
+  "”的响应尚未核实。先重新读取计划；若状态仍允许，可使用同一请求标识显式重试。":
+    '"The response has not yet been verified. Reread the plan first; if the status still allows, you can explicitly retry with the same request ID.',
+  按原请求继续核对: "Continue checking according to original request",
+  "后台任务仍是计划的执行依据。任务读取或计划回读失败时，后续操作会保持停用。":
+    "Background tasks are still the execution basis of the plan. When a task read or scheduled readback fails, subsequent operations remain disabled.",
+  重新读取任务状态: "Reread task status",
+  重新读取计划状态: "Re-read plan status",
+  确认系统变更: "Confirm system changes",
+  继续核对原请求: "Continue to check the original request",
+  "确认{0}": "Confirm {0}",
+  "服务器会再次核对计划基线并执行变更。":
+    "The server will check the plan baseline again and execute the changes.",
+  "服务器会验证连接敏感配置；只有验证成功后计划才会确认为已应用。":
+    "The server will verify the connection-sensitive configuration; only after successful verification will the plan be confirmed as applied.",
+  "服务器会校验当前快照后恢复计划记录的原状态。":
+    "The server will verify the current snapshot and restore the original state of the plan record.",
+  按原请求继续: "Continue according to original request",
+  "正在读取系统变更计划…": "Reading system change plan...",
+  创建系统变更计划: "Create system change plan",
+  "当前计划已结束，可以准备新的计划。":
+    "The current plan has ended and a new plan can be prepared.",
+  无法读取计划: "Unable to read plan",
+  "需要同时具备 system_change_plan 与 system_change_get 的实际能力描述。":
+    "It is necessary to have actual capability descriptions of both system_change_plan and system_change_get.",
+  "计划等待连接确认，但当前能力集没有可用的 `system_change_confirm`；请由具备该能力的同一身份完成核验。":
+    "The plan is to wait for connection confirmation, but there is no `system_change_confirm` available in the current capability set; please complete verification by the same identity with this capability.",
+  "当前身份没有 `tasks_get` 能力，无法核实异步应用或回滚任务；这些操作保持停用。":
+    "The current identity does not have `tasks_get` capabilities and cannot verify asynchronous applications or rollback tasks; these operations remain disabled.",
+  "浏览器恢复记录不可用；系统变更提交已停用。":
+    "Browser recovery record is unavailable; system change submission has been disabled.",
+  "正在读取后台任务…": "Reading background tasks...",
+  "正在核对计划状态…": "Checking plan status...",
+  任务阶段: "Mission phase",
+  最终结果: "Result",
+  "当前无法确认执行结果，请恢复读取权限后检查任务。":
+    "The execution result cannot be confirmed at present. Please restore the read permission and check the task.",
+  "状态读取暂时失败，正在重新读取；请勿重复提交操作。":
+    "The status reading has temporarily failed and is being read again; please do not repeat the submission operation.",
+  "任务已完成。请核对下方结果及目标资源状态。":
+    "Task completed. Review the result and the target resource below.",
+  "任务未成功完成。请先查看原因和日志，核对目标资源后再决定是否重试。":
+    "The task was not completed successfully. Please check the reason and logs first, check the target resources, and then decide whether to try again.",
+  "正在验证执行结果，请稍候。":
+    "The execution results are being verified, please wait.",
+  "任务已在服务器上提交。离开此页面不会取消任务，可在最近任务中继续查看。":
+    "The server has accepted this task. You can leave this page and follow it in Recent tasks.",
+  "任务已提交，但当前身份无法读取任务状态；执行结果未知。不会自动重试。":
+    "The task has been submitted, but the current identity cannot read the task status; the execution result is unknown. Will not automatically retry.",
+  手动重新读取任务状态: "Manually re-read task status",
+  请求取消此任务: "Request to cancel this task",
+  读取任务日志: "Read task log",
+  查看执行结果: "View execution result",
+  任务日志: "Task log",
+  "终端输入发送失败，已暂停后续输入：{0}":
+    "Terminal input transmission failed, subsequent input has been suspended: {0}",
+  "待发送输入过多，已暂停。请核对终端后重试保留的输入。":
+    "There are too many inputs to be sent and it has been paused. Please check your terminal and try again with reserved input.",
+  "部分终端输出已超过回放范围；当前输出已继续同步。":
+    "Part of the terminal output has exceeded the playback range; the current output has continued to be synchronized.",
+  "\r\n[进程已退出，代码 {0}]": " [Process exited with code {0}]",
+  "终端续租失败：{0}": "Terminal lease renewal failed: {0}",
+  "仍有未确认的输入，请核对重试或明确放弃输入后切换会话。":
+    "There is still unconfirmed input, please check and try again or switch sessions after explicitly giving up input.",
+  "\r\n[会话已关闭]": " [Session closed]",
+  "部分输出已超出回放范围，当前输出继续同步。":
+    "Part of the output has exceeded the playback range, and the current output continues to be synchronized.",
+  "真实PTY / 校验主机密钥的SSH": "Real PTY/SSH to verify host key",
+  终端服务暂不可用: "Terminal service is temporarily unavailable",
+  "只有受信任的主机策略提供目标后，才允许连接。":
+    "Connections are only allowed if the target is provided by the trusted host policy.",
+  连接目标: "Connection target",
+  终端连接目标: "Terminal connection target",
+  连接终端: "Connect terminal",
+  关闭终端会话: "Close terminal session",
+  接入已有会话: "Access existing session",
+  "填写已知会话标识。读取、输入与续租仍按该会话的实际目标权限核验。":
+    "Fill in the known session identifier. Read, input, and renewal are still checked against the actual target permissions of the session.",
+  已有会话标识: "Existing session identifier",
+  接入已有终端会话: "Access existing terminal session",
+  "后续键盘输入已暂停。重试会复用原帧请求标识，避免重复输入。":
+    "Subsequent keyboard input has been suspended. Retrying will reuse the original frame request identifier to avoid repeated input.",
+  重试保留的终端输入: "Retry reserved terminal input",
+  放弃保留的终端输入: "Abandon reserved terminal input",
+  " · 到期 ": " ·Expiration ",
+  连接已失效: "The connection has expired",
+  已退出: "Exited",
+  已连接: "Connected",
+  终端输出: "Terminal output",
+  快捷命令: "Quick command",
+  "输入 {0}": "Enter {0}",
+  "快捷命令只输入终端；请核对内容后按Enter执行。":
+    "The shortcut command is only entered into the terminal; please check the content and press Enter to execute.",
+  "SSH目标、快捷命令与会话操作":
+    "SSH target, shortcut command and session operation",
+  "连接中断，请检查面板服务后重试。":
+    "The connection is interrupted, please check the panel service and try again.",
+  "服务返回了无法读取的响应。": "The service returned an unreadable response.",
+  "请求失败 ({0})": "Request failed ({0})",
+  "连接中断，请保留文件或草稿后重试。":
+    "The connection was interrupted, please keep the file or draft and try again.",
+  传输失败: "Transmission failed",
+  人: "Human",
+  客户端: "Client",
+  来源未提供: "Source unavailable",
+  "{0} 天 {1} 小时": "{0} days {1} hours",
+  "{0} 小时 {1} 分钟": "{0} hours {1} minutes",
+  "没有可复制的内容。": "There is no content to copy.",
+  "浏览器未允许自动复制，请手动选择复制。":
+    "The browser does not allow automatic copying, please select copying manually.",
+  "Binlog 清理预览已过期，请重新读取并预览。":
+    "Binlog cleaning preview has expired, please read and preview again.",
+  "预览中没有可清理的日志文件。":
+    "There are no cleanable log files in the preview.",
+  "服务返回的数据库管理记录无效，请重新查询。":
+    "The database management record returned by the service is invalid, please query again.",
+  "MongoDB 暂不支持重建已删除数据库。":
+    "MongoDB does not currently support rebuilding deleted databases.",
+  "只能按该数据库当前的已删除记录版本重建。":
+    "It can only be rebuilt according to the current deleted record version of the database.",
+  "发现同名数据库或账户不属于当前面板，服务已拒绝创建（{0}）：{1}":
+    "It was found that the database or account with the same name does not belong to the current panel, and the service has refused to create ({0}): {1}",
+  "归档清单不是有效的 JSON。": "Archive manifest is not valid JSON.",
+  "归档清单字段或服务端证明无效。":
+    "The archive list field or server certificate is invalid.",
+  "当前容器不是有效的面板受管容器。":
+    "The current container is not a valid panel managed container.",
+  "请填写 1 到 16 个参数项，每项最多 4096 字节，总计最多 16 KiB。":
+    "Please fill in 1 to 16 parameter items, each item can be up to 4096 bytes, and the total can be up to 16 KiB.",
+  "环境变量最多 16 项；键名和每项大小必须符合服务端限制。":
+    "The maximum number of environment variables is 16 items; the key name and the size of each item must comply with server restrictions.",
+  "工作目录必须是最长 256 字节的规范绝对路径。":
+    "The working directory must be a canonical absolute path of up to 256 bytes.",
+  "标准输入最多 16 KiB，且不能包含 NUL 字符。":
+    "Standard input is up to 16 KiB and cannot contain NUL characters.",
+  "执行超时必须在 1 到 120 秒之间。":
+    "The execution timeout must be between 1 and 120 seconds.",
+  "输出限制必须在 1 到 65536 字节之间。":
+    "The output limit must be between 1 and 65536 bytes.",
+  "凭据元数据无效，请重新读取。":
+    "The credential metadata is invalid, please read again.",
+  "请输入完整 repo@sha256 摘要镜像。":
+    "Please enter the complete repo@sha256 summary image.",
+  "终端输入帧无效，请重新连接后重试。":
+    "The terminal input frame is invalid, please reconnect and try again.",
+  "单个终端输入帧不能超过 16 KiB。":
+    "A single terminal input frame cannot exceed 16 KiB.",
+  已创建: "Created",
+  正在启动: "Starting up",
+  Engine进程仍在运行: "Engine process is still running",
+  Engine进程已退出: "Engine process has exited",
+  Engine状态未知: "Engine status unknown",
+  "远程名称不是单一路径片段。":
+    "The remote name is not a single path fragment.",
+  "FTP 删除预览已过期，请重新读取并预览。":
+    "FTP deletion preview has expired, please read and preview again.",
+  "FTP 删除目标与预览不一致，请重新读取。":
+    "The FTP deletion target is inconsistent with the preview, please read again.",
+  上次任务未结束时: "When the last task has not ended",
+  错过计划执行时: "When the plan execution is missed",
+  允许延迟的秒数: "Number of seconds allowed for delay",
+  "失败通知渠道标识（可选）":
+    "Failure notification channel identification (optional)",
+  预期HTTP状态码: "Expected HTTP status code",
+  资源标识: "Resource identification",
+  相对路径: "Relative path",
+  内容: "Content",
+  Git仓库地址: "Git warehouse address",
+  Git分支: "Git branch",
+  SSH主机SHA256指纹: "SSH host SHA256 fingerprint",
+  永久删除确认文本: "Permanently delete confirmation text",
+  私有仓库用户名: "Private warehouse user name",
+  私有仓库密码: "Private warehouse password",
+  导入文件标识: "Import file identification",
+  导入记录版本: "Import record version",
+  导入文件大小: "Import file size",
+  导入文件摘要: "Import file summary",
+  已上传位置: "Uploaded location",
+  导入数据段: "Import data segment",
+  完成分段上传: "Complete multipart upload",
+  "原文件SHA-256": "Original file SHA-256",
+  基线版本: "Baseline version",
+  覆盖已有目标: "Cover existing target",
+  包含子目录: "Contains subdirectories",
+  文件字节数: "Number of file bytes",
+  "SHA-256摘要": "SHA-256 summary",
+  每页数量: "Quantity per page",
+  起始位置: "Starting position",
+  排序字段: "Sorting field",
+  排序方向: "Sorting direction",
+  搜索内容: "Search content",
+  日志行数: "Number of log lines",
+  模式或权限: "Mode or authority",
+  用户UID: "User UID",
+  用户组GID: "User group GID",
+  文件列表: "File list",
+  归档格式: "Archive format",
+  目标资源目录: "Target resource directory",
+  目标相对路径: "Target relative path",
+  下载地址: "Download address",
+  说明: "Description",
+  域名列表: "Domain name list",
+  网站标识: "Website identification",
+  网站名称: "Website name",
+  网站服务实例: "Website service example",
+  源Web实例: "Source Web instance",
+  目标Web实例: "Target Web instance",
+  启用TLS: "Enable TLS",
+  TLS证书标识: "TLS certificate identification",
+  TLS证书版本: "TLS certificate version",
+  网站运行目录: "Website running directory",
+  作为默认网站: "As default website",
+  原默认网站标识: "Original default website identification",
+  启用IPv6: "Enable IPv6",
+  默认首页: "Default home page",
+  到期时间: "Expiration time",
+  伪静态规则: "Pseudo-static rules",
+  记录访问日志: "Record access log",
+  访问限制: "Access restrictions",
+  访问保护: "Access protection",
+  PHP设置: "PHP settings",
+  目录与域名绑定: "Directory and domain name binding",
+  反向代理: "Reverse proxy",
+  重定向: "Redirect",
+  最大连接数: "Maximum number of connections",
+  每秒流量上限: "Upper limit of traffic per second",
+  每秒请求上限: "Upper limit of requests per second",
+  禁止访问路径: "Forbidden access path",
+  启用防盗链: "Enable anti-hotlinking",
+  允许来源: "Allowed sources",
+  限制PHP可访问目录: "Limit PHP accessible directories",
+  设置项: "Setting items",
+  "脚本内存上限（MiB）": "Script memory upper limit (MiB)",
+  最大工作进程数: "Maximum number of working processes",
+  "执行时间上限（秒）": "Upper limit of execution time (seconds)",
+  "上传文件上限（MiB）": "Upload file upper limit (MiB)",
+  "请求体上限（MiB）": "Request body upper limit (MiB)",
+  输入变量数量上限: "The upper limit of the number of input variables",
+  禁用函数列表: "Disabled function list",
+  显示运行错误: "Display run error",
+  会话存储方式: "Session storage method",
+  "启用 FPM 慢日志": "Enable FPM slow log",
+  "慢请求阈值（秒）": "Slow request threshold (seconds)",
+  上游服务地址: "Upstream service address",
+  保留原Host头: "Keep original Host header",
+  缓存秒数: "Cache seconds",
+  支持WebSocket: "Support WebSocket",
+  请求头: "Request header",
+  跳转地址: "Jump address",
+  保留原始URI: "Keep original URI",
+  配置内容: "Configuration content",
+  证书标识: "Certificate identification",
+  PEM证书链: "PEM certificate chain",
+  PEM私钥: "PEM private key",
+  备份标识: "Backup identification",
+  保留数据: "Retain data",
+  软件标识: "Software identification",
+  软件实例: "Software example",
+  变更类型: "Change type",
+  计划标识: "Plan identification",
+  本次请求标识: "This request identification",
+  命令: "Command",
+  连接目标标识: "Connection target identification",
+  终端行数: "Number of terminal lines",
+  终端列数: "Terminal column number",
+  显示名称: "Display name",
+  主机地址: "Host address",
+  端口: "Port",
+  认证方式: "Authentication method",
+  凭据引用: "Credential Reference",
+  SSH主机密钥: "SSH host key",
+  "执行间隔（秒）": "Execution interval (seconds)",
+  执行时间: "Execution time",
+  Cron表达式: "Cron expression",
+  动作参数: "Action parameters",
+  通知渠道标识: "Notification channel identification",
+  通知标题: "Notification title",
+  SMTP设置: "SMTP settings",
+  凭据内容: "Credential content",
+  Telegram会话ID: "Telegram session ID",
+  TLS方式: "TLS mode",
+  发件人: "Sender",
+  收件人列表: "Recipient list",
+  开始时间: "Start time",
+  结束时间: "End time",
+  删除早于此时间的记录: "Delete records earlier than this time",
+  服务标识: "Service identification",
+  系统变更: "System changes",
+  服务操作: "Service operation",
+  SSH设置: "SSH settings",
+  "维护检查结果与此数据库或预览不匹配。":
+    "Maintenance check results do not match this database or preview.",
+  检查维护结果失败: "Failed to check maintenance results",
+  "选择的表不符合当前操作限制；请仅选择清单中的基础表，每次最多 25 张。":
+    "The selected table does not meet the current operating restrictions; please select only underlying tables in the list, up to a limit of 25 at a time.",
+  "服务端预览缺少匹配的表、版本、哈希或影响说明；没有提交维护任务。":
+    "Server-side preview is missing matching table, version, hash, or impact description; no maintenance task was submitted.",
+  创建表维护预览失败: "Creating table maintenance preview failed",
+  "预览已过期或尚未确认维护影响；请读取新清单并生成新预览。":
+    "The preview has expired or the maintenance impact has not yet been confirmed; please read the new manifest and generate a new preview.",
+  "服务未确认任务回执；结果未知。":
+    "The service did not acknowledge the task receipt; the result is unknown.",
+  数据库表维护: "Database table maintenance",
+  "表优化与修复 ·": "Table optimization and repair ·",
+  当前引擎暂不支持: "The current engine does not support it yet",
+  "表维护仅支持托管 MySQL / MariaDB":
+    "Table maintenance only supports hosted MySQL/MariaDB",
+  "PostgreSQL、MongoDB 及其他数据库引擎没有此操作能力。":
+    "PostgreSQL, MongoDB, and other database engines do not have this capability.",
+  表维护清单与预览: "Table maintenance checklist and preview",
+  "仅处理本面板拥有的数据库基础表；一次选择不超过 25 张。清单读取使用数据库读取授权，预览和执行分别需要数据库管理授权。":
+    "Only the database base tables owned by this panel are processed; no more than 25 tables can be selected at one time. List reading uses database read authorization, and preview and execution require database management authorization respectively.",
+  没有读取表清单的权限或服务未公布此能力:
+    "There is no permission to read the table list or the service does not advertise this capability",
+  "需要 managed_database_tables_list 的 databases:read 授权。":
+    "Requires databases:read authorization for managed_database_tables_list.",
+  重新读取第一页: "Reread the first page",
+  读取表清单: "Read table list",
+  第: "No.",
+  " 页 · ": " Page · ",
+  " 张表 · 修订 ": " Table ·Revision ",
+  "每次读取最多返回末尾 64 KiB，不接受日志路径输入。":
+    "Each read returns up to the last 64 KiB, no log path input is accepted.",
+  传输数据: "Transmission data",
+  电子邮箱: "Email",
+  服务地址: "Service address",
+  凭据标识: "Credential identification",
+  "指定凭据版本（高级）": "Specify Credential Version (Advanced)",
+  服务引擎: "Service engine",
+  验证TLS连接: "Verify TLS connection",
+  缓存键前缀: "Cache key prefix",
+  查询参数: "Query parameters",
+  缓存键列表: "Cache key list",
+  扫描游标: "Scan cursor",
+  哈希字段: "Hash field",
+  集合成员: "Set members",
+  结束位置: "End position",
+  列表操作端: "List operation terminal",
+  扩展名称: "Extension name",
+  配置项: "Configuration items",
+  预检目标摘要: "Preflight target summary",
+  只读权限: "Read-only permission",
+  SSH私钥: "SSH private key",
+  私钥口令: "Private key password",
+  提供商凭据JSON: "Provider Credentials JSON",
+  域名验证方式: "Domain name verification method",
+  提供商标识: "Provider identification",
+  立即续期: "Renew immediately",
+  DNS验证别名: "DNS verification alias",
+  面板名称: "Panel name",
+  入口密码用户名: "Entry password username",
+  入口密码: "Entrance password",
+  入口不匹配时的状态: "The state when the entrance does not match",
+  确认放弃手工配置并重新生成:
+    "Confirm to abandon manual configuration and regenerate",
+  页脚文字: "Footer text",
+  登录入口名称: "Login portal name",
+  启用图形验证码: "Enable graphic verification code",
+  启用API访问: "Enable API access",
+  启用维护模式: "Enable maintenance mode",
+  允许访问的网络范围: "Network range allowed to access",
+  登录会话有效秒数: "Login session valid seconds",
+  "内存上限（MiB）": "Memory upper limit (MiB)",
+  "CPU上限（核）": "CPU upper limit (core)",
+  环境变量JSON: "Environment variable JSON",
+  主机端口: "Host port",
+  日志尾部行数: "Log tail line number",
+  受信任程序配置: "Trusted program configuration",
+  允许的调用: "Allowed calls",
+  禁止的调用: "Forbidden calls",
+  目标历史版本: "Target historical version",
+  Binlog配置版本: "Binlog configuration version",
+  数据库实例版本: "Database instance version",
+  保留起点日志: "Keep starting point log",
+  一次性清理预览标识: "One-time cleaning of preview logo",
+  "预览清单SHA-256": "Preview list SHA-256",
+  确认清理的日志文件: "Confirm the cleaned log file",
+  确认副本历史风险: "Confirm copy history risk",
+  受管归档标识: "Managed archive identification",
+  受管归档证明: "Proof of managed archiving",
+  程序参数列表: "Program parameter list",
+  命令环境变量: "Command environment variables",
+  容器工作目录: "Container working directory",
+  标准输入内容: "Standard input content",
+  引擎执行标识: "Engine execution identification",
+  软件实例标识: "Software instance identification",
+  备份文件名: "Backup file name",
+  传输方向: "Transmission direction",
+  目标目录: "Target directory",
+  可访问的文件目录: "Accessible file directory",
+  支持的归档格式: "Supported archive formats",
+  读取目录: "Read directory",
+  读取文件: "Read file",
+  查看文件末尾: "View the end of the file",
+  搜索文件: "Search files",
+  计算目录大小: "Calculate directory size",
+  保存文件内容: "Save file content",
+  复制文件或目录: "Copy files or directories",
+  移动或重命名: "Move or rename",
+  修改权限与所有者: "Modify authority and owner",
+  移入回收站: "Move to recycle bin",
+  查看回收站: "View recycle bin",
+  恢复文件: "Restore files",
+  永久删除回收文件: "Permanently delete recovered files",
+  创建压缩包: "Create compressed package",
+  解压文件: "Unzip file",
+  从网址下载文件: "Download file from website",
+  开始文件上传: "Start file upload",
+  查看上传状态: "View upload status",
+  取消文件上传: "Cancel file upload",
+  核对并保存上传文件: "Check and save uploaded files",
+  网站列表: "Website list",
+  网站详情: "Website details",
+  规划网站迁移: "Planning website migration",
+  读取网站迁移计划: "Read website migration plan",
+  应用网站迁移: "Application website migration",
+  读取默认网站与版本: "Read default website and version",
+  切换默认网站: "Switch default website",
+  修改网站设置: "Modify website settings",
+  删除网站: "Delete website",
+  已删除网站的保留内容: "Retained content of deleted website",
+  永久删除网站保留内容: "Permanently delete website retained content",
+  网站日志: "Website log",
+  读取网站配置: "Read website configuration",
+  验证并应用网站配置: "Verify and apply website configuration",
+  网站备份列表: "Website backup list",
+  恢复网站备份: "Restore website backup",
+  删除网站备份: "Delete website backup",
+  伪静态规则模板: "Pseudo-static rule template",
+  绑定TLS证书: "Bind TLS certificate",
+  PHP命令行版本: "PHP command line version",
+  切换PHP命令行版本: "Switch PHP command line version",
+  网站分类列表: "Website classification list",
+  保存网站分类: "Save website classification",
+  删除网站分类: "Delete website classification",
+  证书列表: "Certificate list",
+  证书详情: "Certificate details",
+  导入TLS证书: "Import TLS certificate",
+  删除证书: "Delete certificate",
+  导出证书与私钥: "Export certificate and private key",
+  申请或续期ACME证书: "Apply for or renew ACME certificate",
+  已安装软件实例: "Installed software instance",
+  软件实例详情: "Software instance details",
+  生成软件变更计划: "Generate software change plan",
+  应用软件变更计划: "Apply changes",
+  管理软件服务: "Management software services",
+  连接目标详情: "Connection target details",
+  添加SSH连接目标: "Add SSH connection target",
+  修改SSH连接目标: "Modify SSH connection target",
+  删除SSH连接目标: "Delete SSH connection target",
+  快捷命令列表: "Shortcut command list",
+  保存快捷命令: "Save shortcut command",
+  删除快捷命令: "Delete shortcut command",
+  读取终端输出: "Read terminal output",
+  发送终端输入: "Send terminal input",
+  守护程序日志流: "Daemon log stream",
+  "读取 {0} 末尾日志": "Read {0} end log",
+  "读取 ": "read ",
+  " 字节": " byte",
+  " · 内容已截断": " · Content has been truncated",
+  "此日志流当前没有内容。": "This log stream currently has no content.",
+  清空任务日志: "Clear task log",
+  "预览和确认操作都会同时覆盖该任务的 stdout 与 stderr 两路日志。":
+    "The preview and confirmation operations will both overwrite the stdout and stderr logs of the task.",
+  当前没有双流清理预览权限:
+    "Currently there is no dual-stream cleanup preview permission",
+  预览清空两路日志: "Preview and clear two-way logs",
+  双流日志清理预览: "Dual-stream log cleaning preview",
+  "清空范围：stdout 和 stderr": "Clear range: stdout and stderr",
+  "{0} 字节": "{0} bytes",
+  "预览版本 ": "preview version ",
+  "。提交会要求两路文件身份和版本都与预览相符。":
+    ". Submission will require that both file identities and versions match the preview.",
+  "任务配置版本已变化，请重新读取并预览。":
+    "The task configuration version has changed, please re-read and preview.",
+  "任务进程运行时可能继续产生新日志。":
+    "New logs may continue to be generated while the task process is running.",
+  "当前账户没有清空任务权限。":
+    "The current account does not have permission to clear tasks.",
+  "确认清空 stdout 和 stderr": "Confirm clearing stdout and stderr",
+  "双流清理任务正在运行；完成前不会重复提交。":
+    "The dual-stream cleanup task is running; it will not be resubmitted before completion.",
+  应用计划: "Apply plan",
+  确认配置正常: "Confirm that the configuration is normal",
+  回滚变更: "Rollback changes",
+  待应用: "To be applied",
+  应用中: "In application",
+  等待连接确认: "Wait for connection confirmation",
+  已回滚: "Rolled back",
+  需要恢复处置: "Need to restore disposal",
+  调整终端尺寸: "Adjust terminal size",
+  延长会话租约: "Extend session lease",
+  受管理的服务: "Managed Services",
+  服务详情: "Service details",
+  生成系统变更计划: "Generate system change plan",
+  查看系统变更计划: "View system change plan",
+  应用系统变更计划: "Application system change plan",
+  确认连接配置正常: "Confirm that the connection configuration is normal",
+  回滚系统变更: "Rollback system changes",
+  监控历史: "Monitoring history",
+  清理监控历史: "Clean up monitoring history",
+  计划任务列表: "Planned task list",
+  修改计划任务: "Modify planned tasks",
+  删除计划任务: "Delete scheduled tasks",
+  立即执行计划任务: "Execute scheduled tasks immediately",
+  计划任务执行记录: "Planned task execution record",
+  通知渠道列表: "Notification channel list",
+  保存通知渠道: "Save notification channel",
+  删除通知渠道: "Delete notification channel",
+  发送通知: "Send notification",
+  通知发送记录: "Notification sending record",
+  凭据列表: "Credential list",
+  保存受保护的凭据: "Saving protected credentials",
+  取消任务: "Cancel task",
+  数据库连接列表: "Database connection list",
+  验证并保存数据库连接: "Verify and save database connection",
+  数据库连接详情: "Database connection details",
+  删除数据库连接: "Delete database connection",
+  验证数据库连接: "Verify database connection",
+  表与集合列表: "Table and collection list",
+  运行单库查询: "Run single database query",
+  运行实例管理员查询: "Run instance administrator query",
+  查找MongoDB文档: "Find MongoDB documents",
+  插入MongoDB文档: "Insert MongoDB document",
+  更新MongoDB文档: "Update MongoDB document",
+  删除MongoDB文档: "Delete MongoDB document",
+  缓存空间列表: "Cache space list",
+  验证并保存缓存空间: "Verify and save cache space",
+  验证缓存连接: "Verify cache connection",
+  读取缓存集群状态: "Read cache cluster status",
+  读取缓存集群节点: "Read cache cluster node",
+  读取缓存键: "Read cache key",
+  写入缓存键: "Write cache key",
+  删除选定缓存键: "Delete selected cache key",
+  分批扫描缓存键: "Scan cache keys in batches",
+  缓存键类型与有效期: "Cache key type and validity period",
+  读取哈希字段: "Read hash field",
+  写入哈希字段: "Write hash field",
+  删除哈希字段: "Delete hash field",
+  读取列表片段: "Read list fragment",
+  向列表添加成员: "Add members to list",
+  移出列表成员: "Remove list members",
+  读取集合成员: "Read set members",
+  向集合添加成员: "Add members to the collection",
+  移除集合成员: "Remove set members",
+  PHP运行状态: "PHP running status",
+  PHP扩展列表: "PHP extension list",
+  PHP配置: "PHP configuration",
+  修改PHP配置: "Modify PHP configuration",
+  PHP守护状态: "PHP guardian status",
+  修改PHP守护设置: "Modify PHP guardian settings",
+  启用或停用PHP扩展: "Enable or disable PHP extensions",
+  检查受信任PHP扩展包计划: "Check the Trusted PHP Extension Pack Plan",
+  应用受信任PHP扩展包计划: "Apply Trusted PHP Extension Pack Plan",
+  预检批量文件变更: "Preflight batch file changes",
+  应用批量文件变更: "Apply batch file changes",
+  回收站设置: "Recycle bin settings",
+  启用或关闭回收站: "Enable or close the recycle bin",
+  清空回收站: "Empty the Recycle Bin",
+  续期ACME证书: "Renew ACME certificate",
+  读取DNS验证订单: "Read DNS verification order",
+  确认DNS记录并签发证书: "Confirm DNS records and issue certificates",
+  取消DNS验证订单: "Cancel DNS verification order",
+  DNS提供商与可用性: "DNS Provider and Availability",
+  DNS凭据列表: "DNS Credential List",
+  保存DNS凭据: "Save DNS credentials",
+  删除DNS凭据: "Delete DNS credentials",
+  读取面板与访问设置: "Read panel and access settings",
+  保存面板名称与页脚: "Save panel name and footer",
+  保存入口与访问策略: "Save entrance and access policy",
+  保存浏览器入口密码: "Save browser entrance password",
+  修改账户用户名: "Modify account username",
+  快捷链接列表: "Quick link list",
+  保存快捷链接: "Save shortcut link",
+  删除快捷链接: "Delete shortcut link",
+  应用授权列表: "Application authorization list",
+  启用或停用应用授权: "Enable or disable application authorization",
+  更换应用密钥: "Replace application key",
+  删除应用授权: "Delete application authorization",
+  托管应用列表: "Hosted application list",
+  创建托管应用: "Create hosted application",
+  导入应用源码归档: "Import application source code archive",
+  "从 Git 导入应用源码": "Import application source code from Git",
+  "构建 / 更新托管应用": "Build/Update Hosted Applications",
+  构建并部署托管应用: "Build and deploy hosted applications",
+  控制托管应用服务: "Controlling Hosted Application Services",
+  读取托管应用日志: "Reading Hosted Application Logs",
+  停用并保留托管应用: "Deactivate and retain hosted applications",
+  永久删除托管应用和数据: "Permanent deletion of hosted applications and data",
+  临时入口列表: "Temporary entry list",
+  临时入口登录记录: "Temporary entrance login record",
+  撤销临时入口及会话: "Cancel temporary entry and session",
+  连接授权Root终端: "Connect authorized Root terminal",
+  发现可共享的终端会话: "Discovery of shareable terminal sessions",
+  实例中的数据库: "Database in example",
+  读取数据库管理记录: "Read database management record",
+  创建数据库与账户: "Create database and account",
+  删除数据库与账户: "Delete database and account",
+  刷新数据库账户连接: "Refresh database account connection",
+  更换数据库账户密码: "Change database account password",
+  修改数据库账户权限: "Modify database account permissions",
+  备份数据库: "Backup database",
+  数据库备份列表: "Database backup list",
+  删除数据库备份: "Delete database backup",
+  分段读取数据库备份: "Read database backup in sections",
+  外部导入文件: "External import file",
+  上传外部数据文件: "Upload external data files",
+  准备分段导入上传: "Prepare to import and upload in sections",
+  上传导入数据段: "Upload imported data segment",
+  导入到空数据库: "Import into empty database",
+  检查中断的导入: "Check for interrupted import",
+  删除外部导入文件: "Delete external import file",
+  恢复数据库备份: "Restore database backup",
+  数据库运行诊断: "Database operation diagnosis",
+  数据库复制状态: "Database replication status",
+  检查数据库复制能力: "Check database replication capability",
+  受管理复制对列表: "Managed replication pair list",
+  读取受管理复制状态: "Reading managed replication status",
+  预览数据库复制: "Preview database copy",
+  配置受管理数据库复制: "Configuring Managed Database Replication",
+  启动受管理数据库复制: "Start managed database replication",
+  停止受管理数据库复制: "Stop managed database replication",
+  移除受管理数据库复制: "Remove managed database replication",
+  恢复受管理数据库复制: "Resume managed database replication",
+  PostgreSQL访问规则列表: "PostgreSQL access rule list",
+  添加PostgreSQL访问规则: "Add PostgreSQL access rules",
+  阻止PostgreSQL访问规则: "Block PostgreSQL access rules",
+  恢复PostgreSQL访问规则配置: "Restore PostgreSQL access rule configuration",
+  PostgreSQL慢查询状态: "PostgreSQL slow query status",
+  设置PostgreSQL慢查询日志: "Set PostgreSQL slow query log",
+  读取PostgreSQL慢查询日志: "Read PostgreSQL slow query log",
+  恢复PostgreSQL慢查询配置: "Restore PostgreSQL slow query configuration",
+  Docker运行状态: "Docker running status",
+  容器列表: "Container list",
+  镜像列表: "Mirror list",
+  容器网络列表: "Container network list",
+  数据卷列表: "Data volume list",
+  拉取指定摘要的镜像: "Pull the image of the specified summary",
+  创建有资源上限的容器: "Create a container with resource upper limit",
+  容器详情: "Container details",
+  容器日志: "Container log",
+  运行一次性容器命令: "Run one-time container command",
+  读取命令执行状态: "Read command execution status",
+  导出镜像受管归档: "Export image managed archive",
+  读取镜像归档分块: "Read image archive block",
+  开始镜像归档上传: "Start mirror archive upload",
+  上传镜像归档分块: "Upload image archive chunks",
+  读取镜像归档上传状态: "Read image archive upload status",
+  加载受管镜像归档: "Loading a managed image archive",
+  连接容器交互终端: "Connect container interactive terminal",
+  读取容器终端输出: "Read container terminal output",
+  发送容器终端输入: "Send container terminal input",
+  调整容器终端尺寸: "Adjust container terminal size",
+  断开容器终端会话: "Disconnect container terminal session",
+  读取容器终端状态: "Read container terminal status",
+  读取Binlog状态: "Read Binlog status",
+  读取Binlog文件列表: "Read Binlog file list",
+  启用或停用Binlog配置: "Enable or disable Binlog configuration",
+  恢复Binlog配置操作: "Restore Binlog configuration operation",
+  预览Binlog清理范围: "Preview Binlog cleaning range",
+  清理已预览的Binlog文件: "Clean up the previewed Binlog files",
+  读取FTP备份目的地: "Read FTP backup destination",
+  登记或更新FTP目的地: "Register or update FTP destination",
+  读取FTP远程目录: "Read FTP remote directory",
+  新建FTP远程目录: "Create new FTP remote directory",
+  预览FTP远程删除: "Preview FTP remote deletion",
+  删除已预览的FTP项目: "Delete the previewed FTP project",
+  传输备份文件: "Transfer backup files",
+  启动容器: "Start container",
+  停止容器: "Stop container",
+  重启容器: "Restart container",
+  删除容器: "Delete container",
+  创建容器网络: "Create container network",
+  删除容器网络: "Delete container network",
+  删除数据卷: "Delete data volume",
+  FTP账户列表: "FTP account list",
+  FTP服务状态: "FTP service status",
+  创建FTP账户: "Create FTP account",
+  修改FTP账户: "Modify FTP account",
+  删除FTP账户: "Delete FTP account",
+  暂停FTP账户登录: "Suspend FTP account login",
+  恢复FTP账户登录: "Restore FTP account login",
+  检查FTP账户状态: "Check FTP account status",
+  恢复旧版FTP账号状态: "Restore old version FTP account status",
+  同步账户列表: "Synchronize account list",
+  同步服务状态: "Synchronization service status",
+  创建同步账户: "Create synchronization account",
+  修改同步账户: "Modify synchronization account",
+  删除同步账户: "Delete synchronization account",
+  进程守护配置列表: "Process daemon configuration list",
+  受守护的进程状态: "Guarded process status",
+  修改守护程序: "Modify daemon",
+  删除守护程序: "Delete daemon",
+  启动守护程序: "Start daemon",
+  停止守护程序: "Stop daemon",
+  重启守护程序: "Restart daemon",
+  跳过本次: "Skip this time",
+  允许重叠执行: "Allow overlapped execution",
+  补跑一次: "Make up one run",
+  配置启动健康检查: "Configuration startup health check",
+  升级: "Upgrade",
+  卸载: "Uninstall",
+  回滚: "Roll back",
+  修改配置: "Modify configuration",
+  重新加载: "Reload",
+  检查: "Check",
+  固定间隔: "Fixed interval",
+  指定时间一次: "Specify time once",
+  升序: "Ascending order",
+  降序: "Descending order",
+  隐式TLS: "Implicit TLS",
+  服务状态: "Service status",
+  SSH配置: "SSH configuration",
+  防火墙规则: "Firewall rules",
+  时间同步: "Time synchronization",
+  电源: "Power supply",
+  面板监听与TLS: "Panel monitoring and TLS",
+  重启主机: "Restart host",
+  关闭主机: "Shut down the host",
+  允许: "Allow",
+  丢弃: "Discard",
+  拒绝: "Reject",
+  禁止: "Prohibited",
+  仅密钥: "Key only",
+  实例管理员: "Instance administrator",
+  单库权限: "Single database authority",
+  查询结果: "Query results",
+  执行变更: "Execute changes",
+  列表左端: "List left end",
+  列表右端: "List right end",
+  网站目录HTTP验证: "Website directory HTTP verification",
+  手动HTTP验证文件: "Manual HTTP verification file",
+  手动添加DNS记录: "Manually add DNS records",
+  DNS提供商自动验证: "DNS provider automatic verification",
+  复制: "Copy",
+  移动: "Move",
+  删除: "Delete",
+  修改权限: "Modify authority",
+  手动导入: "Manual import",
+  ACME签发: "ACME issuance",
+  密码认证: "Password authentication",
+  私钥认证: "Private key authentication",
+  留空: "Leave blank",
+  "只读（旧r）": "Read only (old r)",
+  "数据读写（旧rw）": "Data reading and writing (old rw)",
+  "完整库权限（旧all）": "Complete library permissions (old all)",
+  "400 · 请求无效": "400·Invalid request",
+  "401 · 需要认证": "401·Authentication required",
+  "403 · 禁止访问": "403 · Access prohibited",
+  "404 · 入口不存在": "404 · Entrance does not exist",
+  "408 · 请求超时": "408·Request timeout",
+  "416 · 请求范围无效": "416·The request range is invalid",
+  "清理预览不可用或已过期，请重新读取状态并预览。":
+    "The clean preview is unavailable or has expired, please re-read the status and preview.",
+  "扫描游标需要完整的无符号十进制字符串；不能使用已舍入的数字。":
+    "Scanning the cursor requires a complete unsigned decimal string; rounded numbers cannot be used.",
+  "{0}需要符合其联合类型。": "{0} needs to conform to its union type.",
+  "{0}需要固定值。": "{0} requires a fixed value.",
+  "{0}需要选择有效选项。": "{0} Need to select valid options.",
+  "{0}需要JSON对象。": "{0} requires JSON object.",
+  "{0}字段数量超出允许范围。":
+    "The number of {0} fields exceeds the allowed range.",
+  "请填写{0}.{1}。": "Please fill in {0}.{1}.",
+  "{0}.{1}不是有效字段。": "{0}.{1} is not a valid field.",
+  "{0}需要数组。": "{0} requires array.",
+  "{0}项数超出允许范围。": "The number of {0} items exceeds the allowed range.",
+  "{0}需要数字。": "{0} requires numbers.",
+  整数: "Integer",
+  数字: "Number",
+  "{0}需要{1}。": "{0} requires {1}.",
+  "{0}超出允许范围。": "{0} is outside the allowed range.",
+  "{0}需要开关值。": "{0} requires switch value.",
+  "续传文件与原上传不一致。请取消原上传后重新开始。":
+    "The re-uploaded file is inconsistent with the original upload. Please cancel the original upload and start again.",
+  传输文件: "Transfer files",
+  核对文件并提交: "Check documents and submit",
+  "服务没有返回上传任务标识。":
+    "The service did not return the upload task identification.",
+  "上传产物尚未通过最终校验。":
+    "The uploaded product has not passed the final verification.",
+  文件已验证并保存: "File verified and saved",
+  "{0}需要文本。": "{0} requires text.",
+  "{0}长度超出允许范围。": "{0}The length exceeds the allowed range.",
+  "{0}格式不正确。": "{0} format is incorrect.",
+  "{0}需要空值。": "{0} requires null value.",
+  "服务返回的网站备份信息无效，请刷新后重试。":
+    "The website backup information returned by the service is invalid, please refresh and try again.",
+  未分类: "Uncategorized",
+  "无法生成有效的网站分类标识。":
+    "Unable to generate a valid website classification identifier.",
+  "当前账户没有可用的网站分类写入能力。":
+    "The current account does not have the ability to write website categories.",
+  "该分类仍被网站使用。请先调整这些网站的分类，再删除；服务器信息：":
+    "This classification is still used by websites. Please adjust the classification of these websites before deleting them; Server information: ",
+  "分类版本已变化，草稿已保留并重新读取。核对最新版本后再保存；服务器信息：":
+    "The classification version has changed and the draft has been retained and re-read. Check the latest version before saving; server information: ",
+  "当前账户无权完成此分类操作，草稿已保留并重新读取分类列表。":
+    "The current account does not have the authority to complete this classification operation, the draft has been retained and the classification list has been re-read.",
+  "分类操作与当前状态冲突，草稿已保留并重新读取；服务器信息：":
+    "The classification operation conflicts with the current status, the draft has been retained and re-read; server information: ",
+  "网站会话预览已过期或版本已变化，请重新读取并预览。":
+    "The website session preview has expired or the version has changed, please read and preview again.",
+  整数精度未能确认: "Integer accuracy cannot be confirmed",
+  精确整数: "Exact integer",
+  整数超出协议范围: "Integer exceeds protocol range",
+  整数格式未能确认: "Integer format failed to confirm",
+  "{0} 字节 · 二进制": "{0} bytes · binary",
+  "大整数参数请使用十进制字符串，或包含encoding:integer与字符串value的对象；当前数字可能已舍入。":
+    "Please use decimal strings for large integer parameters, or objects containing encoding: integer and string value; the current number may have been rounded.",
+  "清理预览未同时覆盖标准输出和标准错误。":
+    "Clean preview does not cover both standard output and standard error.",
+  "任务{0}": "Task {0}",
+  操作已取消: "Operation canceled",
+  校验本地文件: "Verify local files",
+  端口列表: "port list",
+  允许密码认证: "Allow password authentication",
+  Root登录策略: "Root login policy",
+  允许登录的用户: "Users allowed to log in",
+  防火墙配置: "Firewall configuration",
+  默认策略: "Default policy",
+  规则列表: "Rule list",
+  协议: "protocol",
+  来源地址: "Source address",
+  网络时间同步: "Network time synchronization",
+  电源操作: "Power operation",
+  延迟秒数: "Delay seconds",
+  面板设置: "Panel settings",
+  监听地址: "listening address",
+  公开访问地址: "Publicly accessible address",
+  允许访问的来源: "Sources allowed to access",
+  仅HTTPS会话: "HTTPS sessions only",
+  TLS证书文件: "TLS certificate file",
+  TLS私钥文件: "TLS private key file",
+  权限列表: "Permission list",
+  有效秒数: "Valid seconds",
+  SQL语句: "SQL statement",
+  表: "surface",
+  键: "key",
+  值: "value",
+  容器标识: "Container ID",
+  镜像引用: "Mirror reference",
+  配置文档: "Configuration document",
+  用途: "use",
+  键空间: "key space",
+  数据库编号: "database number",
+  匹配规则: "Matching rules",
+  参数列表: "Parameter list",
+  最大字节数: "Maximum number of bytes",
+  读取起点: "Reading starting point",
+  "轻量级，占有内存少，并发能力强":
+    "Lightweight, occupying less memory, and strong concurrency capability",
+  "标准 Nginx 网站服务，可与受管 PHP-FPM 配合使用":
+    "Standard Nginx website service for use with managed PHP-FPM",
+  "系统 Git 客户端，用于受管 Node.js、Next.js 与 Go 应用的仓库导入":
+    "System Git client, used for warehouse import of managed Node.js, Next.js and Go applications",
+  "来自 Node.js 官方发布页的固定校验 Node.js 与 npm 运行环境，用于受管 Node.js 与 Next.js 应用":
+    "Fixed verification Node.js and npm runtime environment from Node.js official release page for managed Node.js and Next.js applications",
+  "签名仓库提供的 Go 编译器，用于构建受管 Go 应用":
+    "The Go compiler provided by the signature repository for building managed Go applications",
+  PHP是世界上最好的编程语言:
+    "PHP is the best programming language in the world",
+  "PHP是世界上最好的编程语言(极速安装)":
+    "PHP is the best programming language in the world (extremely fast installation)",
+  PHP守护: "PHP guardian",
+  "监控PHP-FPM运行状态，防止大批量出现502错误!":
+    "Monitor PHP-FPM operating status to prevent 502 errors from occurring in large quantities!",
+  "官方 phpMyAdmin 发布版，使用固定校验和、受管 PHP 服务与本机数据库连接":
+    "Official phpMyAdmin distribution, using fixed checksums, managed PHP services to connect to native databases",
+  "一种关系数据库管理系统!": "A relational database management system!",
+  "一种关系数据库管理系统(极速安装)":
+    "A kind of relational database management system (extremely fast installation)",
+  功能强大的开源数据库: "Powerful open source database",
+  "一个高性能的NOSQL数据库【社区版】":
+    "A high-performance NOSQL database [community version]",
+  "官方 pgAdmin Server 核心版，使用签名仓库、独立服务和首次安装管理员账号":
+    "Official pgAdmin Server core version, using signature warehouse, independent service and first installation administrator account",
+  数据管理: "Data management",
+  "数据简单管理(memcached,redis,mongodb)":
+    "Simple management of data (memcached, redis, mongodb)",
+  一个高性能的KV数据库: "A high-performance KV database",
+  一个高性能键值数据存储系统:
+    "A high-performance key-value data storage system",
+  是一个高性能的分布式内存对象缓存系统:
+    "Is a high-performance distributed memory object cache system",
+  Docker是一个开源的应用容器引擎:
+    "Docker is an open source application container engine",
+  一款免费FTP服务器软件: "A free FTP server software",
+  rsyncd同步助手: "rsyncd synchronization assistant",
+  FTP存储空间: "FTP storage space",
+  将网站或数据库打包备份到FTP存储空间:
+    "Packing and backing up website or database to FTP storage space",
+  ACME泛域名SSL: "ACME pan-domain name SSL",
+  "ACME泛域名SSL申请/管理": "ACME pan-domain SSL application/management",
+  一个Python开发的通用的进程管理程序:
+    "A general process management program developed by Python",
+  SSH终端: "SSH terminal",
+  "完整功能的SSH客户端，仅用于连接本服务器":
+    "Full-featured SSH client, only used to connect to this server",
+  创建: "Create",
+  保存: "Save",
+  确认: "Confirm",
+  重试: "Retry",
+  软件包: "Packages",
+  涉及资源: "Affected resources",
+  默认版本: "Default version",
+  首次设置网站运行栈: "Set up your web stack",
+};

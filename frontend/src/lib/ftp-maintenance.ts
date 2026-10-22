@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 import { phase2Capability } from "./database-binlog";
 
@@ -145,7 +146,9 @@ export function ftpDirectory(
     if (
       !row(entry) ||
       !pathComponent(entry.name) ||
-      !["file", "directory", "link", "unsupported"].includes(String(entry.kind)) ||
+      !["file", "directory", "link", "unsupported"].includes(
+        String(entry.kind),
+      ) ||
       !nonnegativeInteger(entry.size) ||
       !timestamp(entry.modified) ||
       seen.has(entry.name)
@@ -159,17 +162,14 @@ export function ftpDirectory(
       modified: visibleTimestamp(entry.modified),
     });
   }
-  if (
-    value.id !== id ||
-    value.path !== path ||
-    value.revision !== revision
-  )
+  if (value.id !== id || value.path !== path || value.revision !== revision)
     return undefined;
   return { id, path, revision, items };
 }
 
 export function ftpChildPath(path: string, name: string) {
-  if (!pathComponent(name)) throw new Error("远程名称不是单一路径片段。");
+  if (!pathComponent(name))
+    throw new Error(translate("远程名称不是单一路径片段。"));
   return path ? `${path}/${name}` : name;
 }
 
@@ -219,9 +219,9 @@ export function ftpDeleteInput(
   now = Date.now(),
 ) {
   if (!id || Date.parse(preview.expires_at) <= now)
-    throw new Error("FTP 删除预览已过期，请重新读取并预览。");
+    throw new Error(translate("FTP 删除预览已过期，请重新读取并预览。"));
   if (ftpChildPath(path, name) !== preview.candidate.path)
-    throw new Error("FTP 删除目标与预览不一致，请重新读取。");
+    throw new Error(translate("FTP 删除目标与预览不一致，请重新读取。"));
   return {
     id,
     path,

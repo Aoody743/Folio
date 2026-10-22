@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -100,7 +101,11 @@ export function TerminalView({
           }
           paused.current = true;
           setInputPaused(true);
-          setError(`终端输入发送失败，已暂停后续输入：${(e as Error).message}`);
+          setError(
+            translate("终端输入发送失败，已暂停后续输入：{0}", [
+              (e as Error).message,
+            ]),
+          );
         }
       }
     } finally {
@@ -114,7 +119,9 @@ export function TerminalView({
       if (inputQueue.current.length >= 4 || bytes.length > 64 * 1024) {
         paused.current = true;
         setInputPaused(true);
-        setError("待发送输入过多，已暂停。请核对终端后重试保留的输入。");
+        setError(
+          translate("待发送输入过多，已暂停。请核对终端后重试保留的输入。"),
+        );
         return;
       }
       for (let i = 0; i < bytes.length; i += 16 * 1024)
@@ -213,11 +220,13 @@ export function TerminalView({
             : previous,
         );
         if (update.truncated)
-          setReadError("部分终端输出已超过回放范围；当前输出已继续同步。");
+          setReadError(
+            translate("部分终端输出已超过回放范围；当前输出已继续同步。"),
+          );
         if (update.exited) {
           setExited(true);
           terminal.current?.writeln(
-            `\r\n[进程已退出，代码 ${update.exit_code}]`,
+            translate("\r\n[进程已退出，代码 {0}]", [update.exit_code]),
           );
           return;
         }
@@ -275,7 +284,8 @@ export function TerminalView({
           );
         key = undefined;
       } catch (e) {
-        if (!disposed) setError(`终端续租失败：${(e as Error).message}`);
+        if (!disposed)
+          setError(translate("终端续租失败：{0}", [(e as Error).message]));
       } finally {
         renewing = false;
       }
@@ -292,7 +302,9 @@ export function TerminalView({
   }, [session?.id, exited, active, has("terminal_renew")]);
   const connect = async () => {
     if (inputQueue.current.length) {
-      setError("仍有未确认的输入，请核对重试或明确放弃输入后切换会话。");
+      setError(
+        translate("仍有未确认的输入，请核对重试或明确放弃输入后切换会话。"),
+      );
       return;
     }
     setBusy(true);
@@ -347,7 +359,7 @@ export function TerminalView({
       setSession(undefined);
       setExited(true);
       setConnectionLost(false);
-      terminal.current?.writeln("\r\n[会话已关闭]");
+      terminal.current?.writeln(translate("\r\n[会话已关闭]"));
       onExecuted();
     } catch (e) {
       setError((e as Error).message);
@@ -358,7 +370,9 @@ export function TerminalView({
   const attach = async () => {
     if (!existingID) return;
     if (inputQueue.current.length && session?.id !== existingID) {
-      setError("仍有未确认的输入，请核对重试或明确放弃输入后切换会话。");
+      setError(
+        translate("仍有未确认的输入，请核对重试或明确放弃输入后切换会话。"),
+      );
       return;
     }
     setBusy(true);
@@ -386,7 +400,9 @@ export function TerminalView({
       setExited(next.exited);
       setConnectionLost(false);
       setReadError(
-        next.truncated ? "部分输出已超出回放范围，当前输出继续同步。" : "",
+        next.truncated
+          ? translate("部分输出已超出回放范围，当前输出继续同步。")
+          : "",
       );
       terminal.current?.focus();
     } catch (e) {
@@ -399,24 +415,24 @@ export function TerminalView({
     <div className="stack">
       <Card className="panel-card">
         <div className="card-heading">
-          <h2>终端</h2>
+          <h2>{translate("终端")}</h2>
           <span className="status-chip neutral">
-            真实PTY / 校验主机密钥的SSH
+            {translate("真实PTY / 校验主机密钥的SSH")}
           </span>
         </div>
         {!has("terminal_open") ? (
           <Unavailable
-            title="终端服务暂不可用"
+            title={translate("终端服务暂不可用")}
             icon="terminal"
-            detail="只有受信任的主机策略提供目标后，才允许连接。"
+            detail={translate("只有受信任的主机策略提供目标后，才允许连接。")}
           />
         ) : (
           <>
             <div className="terminal-toolbar">
               <label className="native-field">
-                连接目标
+                {translate("连接目标")}
                 <select
-                  aria-label="终端连接目标"
+                  aria-label={translate("终端连接目标")}
                   value={target}
                   onChange={(e) => setTarget(e.target.value)}
                   disabled={!!session && !exited}
@@ -432,7 +448,7 @@ export function TerminalView({
                 </select>
               </label>
               <Button
-                label="连接终端"
+                label={translate("连接终端")}
                 variant="primary"
                 isDisabled={!target || (!!session && !exited)}
                 isLoading={busy}
@@ -440,7 +456,7 @@ export function TerminalView({
               />
               {session && !exited && (
                 <Button
-                  label="关闭终端会话"
+                  label={translate("关闭终端会话")}
                   onClick={() => void disconnect()}
                   isLoading={busy}
                 />
@@ -448,18 +464,20 @@ export function TerminalView({
             </div>
             {has("terminal_read") && (
               <details className="terminal-attach">
-                <summary>接入已有会话</summary>
+                <summary>{translate("接入已有会话")}</summary>
                 <p className="muted">
-                  填写已知会话标识。读取、输入与续租仍按该会话的实际目标权限核验。
+                  {translate(
+                    "填写已知会话标识。读取、输入与续租仍按该会话的实际目标权限核验。",
+                  )}
                 </p>
                 <div className="button-row">
                   <TextInput
-                    label="已有会话标识"
+                    label={translate("已有会话标识")}
                     value={existingID}
                     onChange={setExistingID}
                   />
                   <Button
-                    label="接入已有终端会话"
+                    label={translate("接入已有终端会话")}
                     onClick={() => void attach()}
                     isLoading={busy}
                     isDisabled={!existingID || (!!session && !exited)}
@@ -478,10 +496,12 @@ export function TerminalView({
             {inputPaused && (
               <div className="notice warning">
                 <p>
-                  后续键盘输入已暂停。重试会复用原帧请求标识，避免重复输入。
+                  {translate(
+                    "后续键盘输入已暂停。重试会复用原帧请求标识，避免重复输入。",
+                  )}
                 </p>
                 <Button
-                  label="重试保留的终端输入"
+                  label={translate("重试保留的终端输入")}
                   isDisabled={exited}
                   onClick={() => {
                     paused.current = false;
@@ -491,7 +511,7 @@ export function TerminalView({
                   }}
                 />
                 <Button
-                  label="放弃保留的终端输入"
+                  label={translate("放弃保留的终端输入")}
                   variant="ghost"
                   onClick={() => {
                     inputQueue.current = [];
@@ -504,18 +524,25 @@ export function TerminalView({
             )}
             {session && (
               <p className="muted">
-                会话 {session.id} · 到期 {fullDate(session.expires_at)} ·{" "}
-                {connectionLost ? "连接已失效" : exited ? "已退出" : "已连接"}
+                {translate("会话")}
+                {session.id}
+                {translate(" · 到期 ")}
+                {fullDate(session.expires_at)}·{" "}
+                {connectionLost
+                  ? translate("连接已失效")
+                  : exited
+                    ? translate("已退出")
+                    : translate("已连接")}
               </p>
             )}
             <div
               ref={canvas}
               className="terminal-canvas"
-              aria-label="终端输出"
+              aria-label={translate("终端输出")}
             />
             {list(commands.data).length > 0 && (
               <details>
-                <summary>快捷命令</summary>
+                <summary>{translate("快捷命令")}</summary>
                 {list(commands.data).map((command) => (
                   <div className="command-row" key={command.id}>
                     <div>
@@ -523,7 +550,7 @@ export function TerminalView({
                       <pre>{command.command}</pre>
                     </div>
                     <Button
-                      label={`输入 ${command.title}`}
+                      label={translate("输入 {0}", [command.title])}
                       isDisabled={!session || exited || inputPaused}
                       onClick={() =>
                         sendBytes(new TextEncoder().encode(command.command))
@@ -532,7 +559,7 @@ export function TerminalView({
                   </div>
                 ))}
                 <p className="muted">
-                  快捷命令只输入终端；请核对内容后按Enter执行。
+                  {translate("快捷命令只输入终端；请核对内容后按Enter执行。")}
                 </p>
               </details>
             )}
@@ -540,7 +567,7 @@ export function TerminalView({
         )}
       </Card>
       <details className="advanced-actions">
-        <summary>SSH目标、快捷命令与会话操作</summary>
+        <summary>{translate("SSH目标、快捷命令与会话操作")}</summary>
         <ActionBrowser
           capabilities={capabilities}
           category="terminal"

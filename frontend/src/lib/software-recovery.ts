@@ -1,12 +1,8 @@
 import type { Capability } from "./api";
 
-export const softwareRecoveryCommands = [
-  "continue",
-  "stop_preserve",
-] as const;
+export const softwareRecoveryCommands = ["continue", "stop_preserve"] as const;
 
-export type SoftwareRecoveryCommand =
-  (typeof softwareRecoveryCommands)[number];
+export type SoftwareRecoveryCommand = (typeof softwareRecoveryCommands)[number];
 
 export type SoftwareRecoveryInspection = {
   id: string;

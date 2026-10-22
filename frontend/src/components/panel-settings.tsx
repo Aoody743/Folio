@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Card } from "@astryxdesign/core/Card";
 import { Button } from "@astryxdesign/core/Button";
@@ -53,22 +54,22 @@ export function PanelSettings({
   return (
     <Card className="panel-card">
       <div className="card-heading">
-        <h2>面板与访问设置</h2>
+        <h2>{translate("面板与访问设置")}</h2>
       </div>
       <div
         className="section-tabs"
         role="tablist"
-        aria-label="面板访问设置分类"
+        aria-label={translate("面板访问设置分类")}
       >
         {[
-          { id: "branding", label: "名称与页脚" },
-          { id: "policy", label: "入口与访问" },
+          { id: "branding", label: translate("名称与页脚") },
+          { id: "policy", label: translate("入口与访问") },
           ...(capabilities.some((c) => c.name === "settings_basic_auth_update")
-            ? [{ id: "gateway", label: "浏览器入口密码" }]
+            ? [{ id: "gateway", label: translate("浏览器入口密码") }]
             : []),
-          { id: "applications", label: "应用授权" },
-          { id: "temporary", label: "临时入口" },
-          { id: "bookmarks", label: "快捷链接" },
+          { id: "applications", label: translate("应用授权") },
+          { id: "temporary", label: translate("临时入口") },
+          { id: "bookmarks", label: translate("快捷链接") },
         ].map((item) => (
           <button
             role="tab"
@@ -92,10 +93,16 @@ export function PanelSettings({
           <>
             <p className="section-caption">
               {tab === "branding"
-                ? "名称与页脚按服务器版本保存，网页和MCP读取同一配置。"
+                ? translate(
+                    "名称与页脚按服务器版本保存，网页和MCP读取同一配置。",
+                  )
                 : tab === "gateway"
-                  ? "浏览器入口密码通过浏览器认证对话框验证，之后仍需登录面板账户。启用或修改凭据需要确认当前面板密码与两步验证码。"
-                  : "访问策略更改需要确认密码与两步验证码。入口链接使用 #login_entry=名称，入口仅在浏览器内存中保留。"}
+                  ? translate(
+                      "浏览器入口密码通过浏览器认证对话框验证，之后仍需登录面板账户。启用或修改凭据需要确认当前面板密码与两步验证码。",
+                    )
+                  : translate(
+                      "访问策略更改需要确认密码与两步验证码。入口链接使用 #login_entry=名称，入口仅在浏览器内存中保留。",
+                    )}
             </p>
             <ActionForm
               capability={action}
@@ -104,7 +111,7 @@ export function PanelSettings({
             />
           </>
         ) : (
-          <Unavailable title="当前没有此设置的读写权限" />
+          <Unavailable title={translate("当前没有此设置的读写权限")} />
         )
       ) : (
         <IdentityResources
@@ -184,10 +191,10 @@ function IdentityResources({
           <Button
             label={
               kind === "applications"
-                ? "创建应用授权"
+                ? translate("创建应用授权")
                 : kind === "temporary"
-                  ? "创建临时登录入口"
-                  : "添加快捷链接"
+                  ? translate("创建临时登录入口")
+                  : translate("添加快捷链接")
             }
             onClick={() => {
               setCreate(!create);
@@ -197,7 +204,7 @@ function IdentityResources({
         )}
         {has(prefix + "_logs") && (
           <Button
-            label="读取临时入口登录记录"
+            label={translate("读取临时入口登录记录")}
             onClick={() => {
               setOperation(prefix + "_logs");
               setCreate(false);
@@ -211,7 +218,7 @@ function IdentityResources({
         </div>
       )}
       {!has(prefix + "_list") ? (
-        <Unavailable title="当前没有列表读取权限" />
+        <Unavailable title={translate("当前没有列表读取权限")} />
       ) : (
         <>
           <div className="instance-list">
@@ -230,16 +237,19 @@ function IdentityResources({
                     <strong>{row.name}</strong>
                     <p>{row.description ?? row.scopes?.join(" · ") ?? ""}</p>
                     {row.expires_at && (
-                      <small>到期 {fullDate(row.expires_at)}</small>
+                      <small>
+                        {translate("到期 ")}
+                        {fullDate(row.expires_at)}
+                      </small>
                     )}
                   </div>
                   {row.revoked !== undefined ? (
                     <span>
                       {row.revoked
-                        ? "已撤销"
+                        ? translate("已撤销")
                         : row.consumed
-                          ? "已使用"
-                          : "等待使用"}
+                          ? translate("已使用")
+                          : translate("等待使用")}
                     </span>
                   ) : row.enabled !== undefined ? (
                     <State value={row.enabled ? "active" : "disabled"} />
@@ -252,14 +262,14 @@ function IdentityResources({
                     rel="noopener noreferrer"
                     className="text-link"
                   >
-                    打开链接 ↗
+                    {translate("打开链接 ↗")}
                   </a>
                 )}
               </div>
             ))}
           </div>
           {!rows.length && !records.loading && !records.error && (
-            <Unavailable title="暂无可见记录" />
+            <Unavailable title={translate("暂无可见记录")} />
           )}
           <Pager
             offset={offset}

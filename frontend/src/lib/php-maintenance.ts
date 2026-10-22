@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 
 export type PHPMaintenanceLog = {
@@ -39,8 +40,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const safeCount = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 const actions = (value: unknown, allowed: string[]) =>
-  Array.isArray(value) &&
-  value.every((item) => typeof item === "string")
+  Array.isArray(value) && value.every((item) => typeof item === "string")
     ? [...new Set(value.filter((item) => allowed.includes(item)))]
     : undefined;
 
@@ -205,7 +205,9 @@ export function phpWorkerCleanupInput(
     preview.candidate_count < 1 ||
     phpWorkerPreviewExpired(preview, now)
   )
-    throw new Error("清理预览不可用或已过期，请重新读取状态并预览。");
+    throw new Error(
+      translate("清理预览不可用或已过期，请重新读取状态并预览。"),
+    );
   return {
     id: preview.id,
     expected_revision: preview.revision,

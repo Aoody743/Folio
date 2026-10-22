@@ -1,6 +1,11 @@
+import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 
-export type SupervisorJob = { name: string; program_id?: string; state?: string };
+export type SupervisorJob = {
+  name: string;
+  program_id?: string;
+  state?: string;
+};
 export type SupervisorFileIdentity = {
   exists: boolean;
   size: string;
@@ -92,8 +97,8 @@ export function supervisorCapability(
               identityProperties[field].pattern === patterns[field],
           ) &&
           Array.isArray(required) &&
-          ["exists", "size", "mod_time_ns", "device", "inode"].every(
-            (field) => required.includes(field),
+          ["exists", "size", "mod_time_ns", "device", "inode"].every((field) =>
+            required.includes(field),
           )
         );
       });
@@ -102,10 +107,14 @@ export function supervisorCapability(
   });
 }
 
-export function supervisorJobs(value: unknown):
-  | { items: SupervisorJob[]; revision: number }
-  | undefined {
-  if (!isRecord(value) || !Array.isArray(value.items) || !safeRevision(value.revision))
+export function supervisorJobs(
+  value: unknown,
+): { items: SupervisorJob[]; revision: number } | undefined {
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.items) ||
+    !safeRevision(value.revision)
+  )
     return;
   const items: SupervisorJob[] = [];
   const seen = new Set<string>();
@@ -115,7 +124,9 @@ export function supervisorJobs(value: unknown):
     seen.add(raw.name);
     items.push({
       name: raw.name,
-      ...(typeof raw.program_id === "string" ? { program_id: raw.program_id } : {}),
+      ...(typeof raw.program_id === "string"
+        ? { program_id: raw.program_id }
+        : {}),
       ...(typeof raw.state === "string" ? { state: raw.state } : {}),
     });
   }
@@ -220,7 +231,7 @@ export function supervisorLogClearInput(
     !preview.clears_streams.includes("stdout") ||
     !preview.clears_streams.includes("stderr")
   )
-    throw new Error("清理预览未同时覆盖标准输出和标准错误。");
+    throw new Error(translate("清理预览未同时覆盖标准输出和标准错误。"));
   return {
     id: preview.id,
     name: preview.name,

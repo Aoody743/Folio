@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 export type ManagedDatabaseReceipt = {
   instance_id: string;
   database: string;
@@ -43,7 +44,7 @@ export function parseManagedDatabaseReceipt(
     !Number.isSafeInteger(value.revision) ||
     Number(value.revision) < 1
   ) {
-    throw new Error("服务返回的数据库管理记录无效，请重新查询。");
+    throw new Error(translate("服务返回的数据库管理记录无效，请重新查询。"));
   }
 
   return {
@@ -73,7 +74,7 @@ export function managedDatabaseCreatePreset(
   if (!receipt)
     return { instance_id: instanceID, database, expected_revision: 0 };
   if (receipt.engine === "mongodb" && receipt.state === "deleted")
-    throw new Error("MongoDB 暂不支持重建已删除数据库。");
+    throw new Error(translate("MongoDB 暂不支持重建已删除数据库。"));
   if (
     receipt.instance_id !== instanceID ||
     receipt.database !== database ||
@@ -81,7 +82,7 @@ export function managedDatabaseCreatePreset(
     !Number.isSafeInteger(receipt.revision) ||
     receipt.revision < 1
   ) {
-    throw new Error("只能按该数据库当前的已删除记录版本重建。");
+    throw new Error(translate("只能按该数据库当前的已删除记录版本重建。"));
   }
   return {
     instance_id: instanceID,
@@ -98,6 +99,9 @@ export function managedDatabaseCreateErrorMessage(
   message: string,
 ): string | undefined {
   if (status === 409 && code === "ownership_conflict")
-    return `发现同名数据库或账户不属于当前面板，服务已拒绝创建（${code}）：${message}`;
+    return translate(
+      "发现同名数据库或账户不属于当前面板，服务已拒绝创建（{0}）：{1}",
+      [code, message],
+    );
   return undefined;
 }

@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 
 export type SitePHPSlowlog = {
@@ -71,10 +72,14 @@ export function sitePHPCapability(
     const schemaRequired = schema?.required;
     return (
       isRecord(properties) &&
-      allowedFields.every((field) => Object.prototype.hasOwnProperty.call(properties, field)) &&
+      allowedFields.every((field) =>
+        Object.prototype.hasOwnProperty.call(properties, field),
+      ) &&
       Array.isArray(schemaRequired) &&
       required.every((field) => schemaRequired.includes(field)) &&
-      schemaRequired.every((field) => typeof field === "string" && allowedFields.includes(field))
+      schemaRequired.every(
+        (field) => typeof field === "string" && allowedFields.includes(field),
+      )
     );
   });
 }
@@ -133,7 +138,8 @@ export function sitePHPSessionStats(
     value.older_than_seconds < 3600 ||
     value.older_than_seconds > 31536000 ||
     (!value.generated && value.total_sessions > 0) ||
-    (value.oldest_age_seconds !== undefined && !safeCount(value.oldest_age_seconds)) ||
+    (value.oldest_age_seconds !== undefined &&
+      !safeCount(value.oldest_age_seconds)) ||
     !allowActions
   )
     return;
@@ -214,7 +220,9 @@ export function sitePHPSessionCleanupInput(
     preview.candidate_count < 1 ||
     sitePHPSessionPreviewExpired(preview, now)
   )
-    throw new Error("网站会话预览已过期或版本已变化，请重新读取并预览。");
+    throw new Error(
+      translate("网站会话预览已过期或版本已变化，请重新读取并预览。"),
+    );
   return {
     id: preview.site_id,
     expected_revision: preview.site_revision,

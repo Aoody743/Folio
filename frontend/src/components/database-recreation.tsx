@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -61,10 +62,12 @@ export function DatabaseRecreation({
       } else {
         setError(
           cause instanceof APIError && cause.code === "forbidden"
-            ? "当前账号无权读取该名称的数据库管理记录，安全创建流程已停止。"
+            ? translate(
+                "当前账号无权读取该名称的数据库管理记录，安全创建流程已停止。",
+              )
             : cause instanceof Error
               ? cause.message
-              : "读取数据库管理记录失败。",
+              : translate("读取数据库管理记录失败。"),
         );
       }
     } finally {
@@ -82,13 +85,18 @@ export function DatabaseRecreation({
     const preset = managedDatabaseCreatePreset(instanceID, database, receipt);
     const revision = Number(preset.expected_revision);
     return (
-      <section className="stack" aria-label="确认数据库创建">
+      <section className="stack" aria-label={translate("确认数据库创建")}>
         <div className="notice warning">
           <strong>
-            {receipt ? "按已删除记录版本重建" : "创建无管理记录的新名称"}
+            {receipt
+              ? translate("按已删除记录版本重建")
+              : translate("创建无管理记录的新名称")}
           </strong>
           <p>
-            数据库 {database} · 提交版本 {revision}
+            {translate("数据库")}
+            {database}
+            {translate(" · 提交版本 ")}
+            {revision}
           </p>
         </div>
         <ActionForm
@@ -116,26 +124,29 @@ export function DatabaseRecreation({
 
   if (mode === "done")
     return (
-      <section className="stack" aria-label="数据库创建完成">
+      <section className="stack" aria-label={translate("数据库创建完成")}>
         <p className="notice success" role="status">
-          数据库创建已完成，实例资源列表已重新读取。
+          {translate("数据库创建已完成，实例资源列表已重新读取。")}
         </p>
-        <Button label="返回数据库资源" onClick={onBack} />
+        <Button label={translate("返回数据库资源")} onClick={onBack} />
       </section>
     );
 
   return (
-    <section className="stack" aria-label="查询数据库管理记录">
-      <Button label="返回数据库资源" variant="ghost" onClick={onBack} />
+    <section className="stack" aria-label={translate("查询数据库管理记录")}>
+      <Button
+        label={translate("返回数据库资源")}
+        variant="ghost"
+        onClick={onBack}
+      />
       <p className="muted">
-        先查询该名称的权威管理记录，再按当前删除版本重建或按新名称创建。
+        {translate(
+          "先查询该名称的权威管理记录，再按当前删除版本重建或按新名称创建。",
+        )}
       </p>
-      <form
-        className="form-stack"
-        onSubmit={(event) => void inspect(event)}
-      >
+      <form className="form-stack" onSubmit={(event) => void inspect(event)}>
         <TextInput
-          label="数据库名称"
+          label={translate("数据库名称")}
           value={database}
           onChange={(value) => {
             setDatabase(value);
@@ -147,7 +158,7 @@ export function DatabaseRecreation({
         />
         <Button
           type="submit"
-          label="读取管理记录"
+          label={translate("读取管理记录")}
           variant="primary"
           isLoading={busy}
           isDisabled={busy}
@@ -155,7 +166,7 @@ export function DatabaseRecreation({
       </form>
       {busy && (
         <p className="muted" role="status">
-          正在读取权威管理记录…
+          {translate("正在读取权威管理记录…")}
         </p>
       )}
       {error && (
@@ -166,10 +177,12 @@ export function DatabaseRecreation({
       {lookup.kind === "fresh" && (
         <div className="stack">
           <div className="notice warning">
-            当前没有该名称的面板管理记录。若数据库服务中已有同名外部数据库或账户，服务会拒绝创建。
+            {translate(
+              "当前没有该名称的面板管理记录。若数据库服务中已有同名外部数据库或账户，服务会拒绝创建。",
+            )}
           </div>
           <Button
-            label="确认按新名称创建"
+            label={translate("确认按新名称创建")}
             variant="primary"
             onClick={() => setMode("create")}
           />
@@ -179,41 +192,50 @@ export function DatabaseRecreation({
         <div className="stack">
           <div className="detail-grid">
             <div>
-              <small>管理记录</small>
+              <small>{translate("管理记录")}</small>
               <strong>{lookup.value.database}</strong>
               <span>{lookup.value.username}</span>
             </div>
             <div>
-              <small>引擎与权限</small>
+              <small>{translate("引擎与权限")}</small>
               <strong>{lookup.value.engine}</strong>
               <span>{choiceLabel(lookup.value.permission, "permission")}</span>
             </div>
             <div>
-              <small>记录状态</small>
+              <small>{translate("记录状态")}</small>
               {lookup.value.state === "deleted" ? (
-                <span className="status-chip warning">已删除</span>
+                <span className="status-chip warning">
+                  {translate("已删除")}
+                </span>
               ) : (
                 <State value={lookup.value.state} />
               )}
-              <span className="muted">版本 {lookup.value.revision}</span>
+              <span className="muted">
+                {translate("版本 ")}
+                {lookup.value.revision}
+              </span>
             </div>
           </div>
           {lookup.value.state === "deleted" &&
           lookup.value.engine === "mongodb" ? (
             <Unavailable
-              title="MongoDB 暂不支持重建已删除数据库"
-              detail="服务目前无法为 MongoDB tombstone 提供原子所有权保护，因此不会提交重建操作。"
+              title={translate("MongoDB 暂不支持重建已删除数据库")}
+              detail={translate(
+                "服务目前无法为 MongoDB tombstone 提供原子所有权保护，因此不会提交重建操作。",
+              )}
             />
           ) : lookup.value.state === "deleted" ? (
             <Button
-              label={`确认按版本 ${lookup.value.revision} 重建`}
+              label={translate("确认按版本 {0} 重建", [lookup.value.revision])}
               variant="primary"
               onClick={() => setMode("create")}
             />
           ) : (
             <Unavailable
-              title="当前记录不是已删除状态"
-              detail="只有权威记录明确为已删除时，才能选择按该版本重建。"
+              title={translate("当前记录不是已删除状态")}
+              detail={translate(
+                "只有权威记录明确为已删除时，才能选择按该版本重建。",
+              )}
             />
           )}
         </div>

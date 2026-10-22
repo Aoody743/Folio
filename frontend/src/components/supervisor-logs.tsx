@@ -1,12 +1,8 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
-import {
-  action,
-  apiErrorMessage,
-  Capability,
-  intentKey,
-} from "@/lib/api";
+import { action, apiErrorMessage, Capability, intentKey } from "@/lib/api";
 import {
   supervisorCapability,
   supervisorJobs,
@@ -84,7 +80,11 @@ export function SupervisorLogs({
   const selectedJob = inventory?.items.find((job) => job.name === selected);
 
   useEffect(() => {
-    if (selected && inventory && !inventory.items.some((job) => job.name === selected)) {
+    if (
+      selected &&
+      inventory &&
+      !inventory.items.some((job) => job.name === selected)
+    ) {
       setSelected("");
       setLog(undefined);
       setPreview(undefined);
@@ -115,7 +115,8 @@ export function SupervisorLogs({
         stream,
       });
       const parsed = supervisorLogRead(value, id, selectedJob.name, stream);
-      if (!parsed) throw new Error("守护程序日志响应无效，请重新读取。");
+      if (!parsed)
+        throw new Error(translate("守护程序日志响应无效，请重新读取。"));
       setLog(parsed);
     } catch (e) {
       setError(apiErrorMessage(e));
@@ -134,7 +135,10 @@ export function SupervisorLogs({
         name: selectedJob.name,
       });
       const parsed = supervisorLogClearPreview(value, id, selectedJob.name);
-      if (!parsed) throw new Error("清理预览未同时包含标准输出和标准错误，请重新读取。");
+      if (!parsed)
+        throw new Error(
+          translate("清理预览未同时包含标准输出和标准错误，请重新读取。"),
+        );
       setPreview(parsed);
     } catch (e) {
       setError(apiErrorMessage(e));
@@ -144,18 +148,33 @@ export function SupervisorLogs({
     }
   };
   const clearLogs = async () => {
-    if (!preview || !selectedJob || preview.id !== id || preview.name !== selectedJob.name) return;
+    if (
+      !preview ||
+      !selectedJob ||
+      preview.id !== id ||
+      preview.name !== selectedJob.name
+    )
+      return;
     const stale = inventory && inventory.revision !== preview.revision;
     if (stale) {
-      setError("守护程序配置版本已变化，请重新读取任务并预览两路日志。");
+      setError(
+        translate("守护程序配置版本已变化，请重新读取任务并预览两路日志。"),
+      );
       setPreview(undefined);
       refresh();
       return;
     }
-    const stdoutSize = preview.stdout.exists ? preview.stdout.size : "无文件";
-    const stderrSize = preview.stderr.exists ? preview.stderr.size : "无文件";
+    const stdoutSize = preview.stdout.exists
+      ? preview.stdout.size
+      : translate("无文件");
+    const stderrSize = preview.stderr.exists
+      ? preview.stderr.size
+      : translate("无文件");
     const confirmed = window.confirm(
-      `确认清空已注册任务“${selectedJob.name}”的 stdout 和 stderr 两路日志？预览状态：stdout ${stdoutSize} 字节，stderr ${stderrSize} 字节。`,
+      translate(
+        "确认清空已注册任务“{0}”的 stdout 和 stderr 两路日志？预览状态：stdout {1} 字节，stderr {2} 字节。",
+        [selectedJob.name, stdoutSize, stderrSize],
+      ),
     );
     if (!confirmed) return;
 
@@ -171,12 +190,20 @@ export function SupervisorLogs({
         { idempotencyKey: intentKey() },
       );
       if (!taskID(value))
-        throw new Error("清理任务未返回任务编号；请检查任务状态，系统不会自动重试。");
+        throw new Error(
+          translate(
+            "清理任务未返回任务编号；请检查任务状态，系统不会自动重试。",
+          ),
+        );
       setTask(value);
       setTaskPending(true);
       refresh();
     } catch (e) {
-      setError(`${apiErrorMessage(e)} 未自动重试；请重新读取任务并预览两路日志后再确认。`);
+      setError(
+        translate("{0} 未自动重试；请重新读取任务并预览两路日志后再确认。", [
+          apiErrorMessage(e),
+        ]),
+      );
       refresh();
     } finally {
       setBusy(false);
@@ -202,12 +229,12 @@ export function SupervisorLogs({
     !taskPending;
 
   return (
-    <section className="stack" aria-label="守护程序日志">
+    <section className="stack" aria-label={translate("守护程序日志")}>
       <div className="card-heading">
-        <h3>已注册任务日志</h3>
+        <h3>{translate("已注册任务日志")}</h3>
         {jobsCapability && (
           <Button
-            label="刷新任务列表"
+            label={translate("刷新任务列表")}
             variant="ghost"
             isDisabled={jobsResource.loading || busy}
             onClick={() => void jobsResource.reload()}
@@ -215,16 +242,18 @@ export function SupervisorLogs({
         )}
       </div>
       {jobsResource.error && (
-        <div className="notice danger" role="alert">{jobsResource.error}</div>
+        <div className="notice danger" role="alert">
+          {jobsResource.error}
+        </div>
       )}
       {!jobsCapability ? (
-        <Unavailable title="当前没有守护程序任务读取权限" />
+        <Unavailable title={translate("当前没有守护程序任务读取权限")} />
       ) : jobsResource.data !== undefined && !inventory ? (
-        <Unavailable title="任务列表响应无效，请重新读取" />
+        <Unavailable title={translate("任务列表响应无效，请重新读取")} />
       ) : !inventory ? (
-        <p role="status">正在读取已注册任务…</p>
+        <p role="status">{translate("正在读取已注册任务…")}</p>
       ) : !inventory.items.length ? (
-        <Unavailable title="暂无已注册守护程序任务" />
+        <Unavailable title={translate("暂无已注册守护程序任务")} />
       ) : (
         <div className="instance-list">
           {inventory.items.map((job) => (
@@ -237,25 +266,35 @@ export function SupervisorLogs({
             >
               <div>
                 <strong>{job.program_id || job.name}</strong>
-                <p>{job.name}{job.state ? ` · ${job.state}` : ""}</p>
+                <p>
+                  {job.name}
+                  {job.state ? ` · ${job.state}` : ""}
+                </p>
               </div>
             </button>
           ))}
         </div>
       )}
-
       {selectedJob && (
         <div className="stack">
           <div className="card-heading">
             <h3>{selectedJob.name}</h3>
-            {selectedJob.state && <span className="muted">{selectedJob.state}</span>}
+            {selectedJob.state && (
+              <span className="muted">{selectedJob.state}</span>
+            )}
           </div>
           {!logCapability ? (
-            <Unavailable title="当前没有任务日志读取权限" />
+            <Unavailable title={translate("当前没有任务日志读取权限")} />
           ) : (
             <>
-              <p className="muted">每次读取最多返回末尾 64 KiB，不接受日志路径输入。</p>
-              <div className="section-tabs" role="tablist" aria-label="守护程序日志流">
+              <p className="muted">
+                {translate("每次读取最多返回末尾 64 KiB，不接受日志路径输入。")}
+              </p>
+              <div
+                className="section-tabs"
+                role="tablist"
+                aria-label={translate("守护程序日志流")}
+              >
                 {(["stdout", "stderr"] as const).map((item) => (
                   <button
                     key={item}
@@ -272,63 +311,102 @@ export function SupervisorLogs({
                 ))}
               </div>
               <Button
-                label={`读取 ${stream} 末尾日志`}
+                label={translate("读取 {0} 末尾日志", [stream])}
                 isDisabled={!canReadLog}
                 onClick={() => void readLog()}
               />
-              {log && log.id === id && log.name === selectedJob.name && log.stream === stream && (
-                log.file_identity.exists && log.text ? (
+              {log &&
+                log.id === id &&
+                log.name === selectedJob.name &&
+                log.stream === stream &&
+                (log.file_identity.exists && log.text ? (
                   <>
-                    <p className="muted">读取 {log.bytes} 字节{log.truncated ? " · 内容已截断" : ""}</p>
+                    <p className="muted">
+                      {translate("读取 ")}
+                      {log.bytes}
+                      {translate(" 字节")}
+                      {log.truncated ? translate(" · 内容已截断") : ""}
+                    </p>
                     <pre className="json-result">{log.text}</pre>
                   </>
                 ) : (
-                  <p className="muted">此日志流当前没有内容。</p>
-                )
-              )}
+                  <p className="muted">{translate("此日志流当前没有内容。")}</p>
+                ))}
             </>
           )}
-
-          <h3>清空任务日志</h3>
-          <p className="muted">预览和确认操作都会同时覆盖该任务的 stdout 与 stderr 两路日志。</p>
+          <h3>{translate("清空任务日志")}</h3>
+          <p className="muted">
+            {translate(
+              "预览和确认操作都会同时覆盖该任务的 stdout 与 stderr 两路日志。",
+            )}
+          </p>
           {!previewCapability ? (
-            <Unavailable title="当前没有双流清理预览权限" />
+            <Unavailable title={translate("当前没有双流清理预览权限")} />
           ) : (
             <Button
-              label="预览清空两路日志"
+              label={translate("预览清空两路日志")}
               isDisabled={!canPreview}
               onClick={() => void makePreview()}
             />
           )}
-          {preview && preview.id === id && preview.name === selectedJob.name && (
-            <div className="stack notice warning" aria-label="双流日志清理预览">
-              <strong>清空范围：stdout 和 stderr</strong>
-              <p>
-                stdout：{preview.stdout.exists ? `${preview.stdout.size} 字节` : "无文件"} · stderr：{preview.stderr.exists ? `${preview.stderr.size} 字节` : "无文件"}
-              </p>
-              <p className="muted">预览版本 {preview.revision}。提交会要求两路文件身份和版本都与预览相符。</p>
-              {previewStale && <p role="alert">任务配置版本已变化，请重新读取并预览。</p>}
-          <p className="muted">任务进程运行时可能继续产生新日志。</p>
-              {!clearCapability && <p className="muted">当前账户没有清空任务权限。</p>}
-              {clearCapability && (
+          {preview &&
+            preview.id === id &&
+            preview.name === selectedJob.name && (
+              <div
+                className="stack notice warning"
+                aria-label={translate("双流日志清理预览")}
+              >
+                <strong>{translate("清空范围：stdout 和 stderr")}</strong>
+                <p>
+                  stdout：
+                  {preview.stdout.exists
+                    ? translate("{0} 字节", [preview.stdout.size])
+                    : translate("无文件")}
+                  · stderr：
+                  {preview.stderr.exists
+                    ? translate("{0} 字节", [preview.stderr.size])
+                    : translate("无文件")}
+                </p>
+                <p className="muted">
+                  {translate("预览版本 ")}
+                  {preview.revision}
+                  {translate("。提交会要求两路文件身份和版本都与预览相符。")}
+                </p>
+                {previewStale && (
+                  <p role="alert">
+                    {translate("任务配置版本已变化，请重新读取并预览。")}
+                  </p>
+                )}
+                <p className="muted">
+                  {translate("任务进程运行时可能继续产生新日志。")}
+                </p>
+                {!clearCapability && (
+                  <p className="muted">
+                    {translate("当前账户没有清空任务权限。")}
+                  </p>
+                )}
+                {clearCapability && (
+                  <Button
+                    label={translate("确认清空 stdout 和 stderr")}
+                    isDisabled={!canClear}
+                    onClick={() => void clearLogs()}
+                  />
+                )}
                 <Button
-                  label="确认清空 stdout 和 stderr"
-                  isDisabled={!canClear}
-                  onClick={() => void clearLogs()}
+                  label={translate("取消预览")}
+                  variant="ghost"
+                  isDisabled={busy}
+                  onClick={() => setPreview(undefined)}
                 />
-              )}
-              <Button
-                label="取消预览"
-                variant="ghost"
-                isDisabled={busy}
-                onClick={() => setPreview(undefined)}
-              />
-            </div>
-          )}
+              </div>
+            )}
         </div>
       )}
-
-      {error && <div className="notice danger" role="alert">{error}</div>}
+      {error && (
+        <div className="notice danger" role="alert">
+          {error}
+        </div>
+      )}
       {task !== undefined && (
         <TaskResult
           key={JSON.stringify(task)}
@@ -340,7 +418,11 @@ export function SupervisorLogs({
           }}
         />
       )}
-      {taskPending && <p role="status">双流清理任务正在运行；完成前不会重复提交。</p>}
+      {taskPending && (
+        <p role="status">
+          {translate("双流清理任务正在运行；完成前不会重复提交。")}
+        </p>
+      )}
     </section>
   );
 }

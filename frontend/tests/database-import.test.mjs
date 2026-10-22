@@ -1,3 +1,4 @@
+import { i18nURL } from "./i18n-loader.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -6,7 +7,7 @@ import ts from "typescript";
 const compiled = ts.transpileModule(
   readFileSync(new URL("../src/lib/database-import.ts", import.meta.url), "utf8"),
   { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } },
-).outputText;
+).outputText.replace(/([\"\'])(?:@\/lib\/|\.\/)i18n\1/g, JSON.stringify(i18nURL));
 const { verifiedDatabaseImport } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const target = { instance: "mariadb-owned", database: "example", revision: 3 };
 const uploaded = {

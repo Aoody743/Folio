@@ -100,9 +100,7 @@ type RecordValue = Record<string, unknown>;
 const isRecord = (value: unknown): value is RecordValue =>
   !!value && typeof value === "object" && !Array.isArray(value);
 const safeInteger = (value: unknown, minimum = 0): value is number =>
-  typeof value === "number" &&
-  Number.isSafeInteger(value) &&
-  value >= minimum;
+  typeof value === "number" && Number.isSafeInteger(value) && value >= minimum;
 const idPattern = /^[a-z][a-z0-9_-]{0,127}$/;
 const pairPattern = /^[a-f0-9]{32}$/;
 const digestPattern = /^[a-f0-9]{64}$/;
@@ -154,7 +152,9 @@ const allowedPhases = new Set([
   "settled",
 ]);
 
-export function replicationEngine(value: unknown): ReplicationEngine | undefined {
+export function replicationEngine(
+  value: unknown,
+): ReplicationEngine | undefined {
   if (value === "mysql" || value === "mysql-community") return "mysql";
   if (value === "mariadb") return "mariadb";
   return undefined;
@@ -164,9 +164,15 @@ function objectSchema(capability: Capability) {
   const schema = capability.input_schema;
   if (!isRecord(schema) || !isRecord(schema.properties)) return;
   const required = schema.required;
-  if (!Array.isArray(required) || !required.every((field) => typeof field === "string"))
+  if (
+    !Array.isArray(required) ||
+    !required.every((field) => typeof field === "string")
+  )
     return;
-  return { properties: schema.properties, required: new Set(required as string[]) };
+  return {
+    properties: schema.properties,
+    required: new Set(required as string[]),
+  };
 }
 
 export function databaseReplicationCapability(
@@ -184,15 +190,15 @@ export function databaseReplicationCapability(
       required.every((field) => {
         const property = schema.properties[field];
         if (!isRecord(property) || !schema.required.has(field)) return false;
-        const expectedType =
-          field.startsWith("confirm_")
-            ? "boolean"
-            : field.startsWith("expected_") && field.endsWith("_revision")
-              ? "integer"
-              : "string";
+        const expectedType = field.startsWith("confirm_")
+          ? "boolean"
+          : field.startsWith("expected_") && field.endsWith("_revision")
+            ? "integer"
+            : "string";
         if (property.type !== expectedType) return false;
         if (expectedType === "integer" && property.minimum !== 1) return false;
-        if (field.startsWith("confirm_") && property.const !== true) return false;
+        if (field.startsWith("confirm_") && property.const !== true)
+          return false;
         if (field === "recovery_choice") {
           const choices = property.enum;
           if (
@@ -261,7 +267,11 @@ export function replicationInstanceCandidates(
   currentID: string,
   engine: ReplicationEngine,
 ): Array<{ id: string; plugin_id: string }> {
-  if (!isRecord(value) || !Array.isArray(value.items) || value.items.length > 1000)
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.items) ||
+    value.items.length > 1000
+  )
     return [];
   const seen = new Set<string>();
   const result: Array<{ id: string; plugin_id: string }> = [];
@@ -327,7 +337,8 @@ export function parseDatabaseReplicationCapability(
   )
     return undefined;
   const engine = replicationEngine(value.engine);
-  if (!engine || (expectedEngine && engine !== expectedEngine)) return undefined;
+  if (!engine || (expectedEngine && engine !== expectedEngine))
+    return undefined;
   const actions = Array.isArray(value.actions)
     ? value.actions.filter(
         (item): item is "preview" | "configure" =>
@@ -335,9 +346,15 @@ export function parseDatabaseReplicationCapability(
       )
     : [];
   if (new Set(actions).size !== actions.length) return undefined;
-  if (value.supported && !(actions.includes("preview") && actions.includes("configure")))
+  if (
+    value.supported &&
+    !(actions.includes("preview") && actions.includes("configure"))
+  )
     return undefined;
-  if (value.reason !== undefined && (typeof value.reason !== "string" || value.reason.length > 500))
+  if (
+    value.reason !== undefined &&
+    (typeof value.reason !== "string" || value.reason.length > 500)
+  )
     return undefined;
   return {
     source_instance_id: sourceID,
@@ -379,7 +396,8 @@ export function parseDatabaseReplicationPairs(
       typeof entry.target_instance_id !== "string" ||
       !idPattern.test(entry.target_instance_id) ||
       entry.source_instance_id === entry.target_instance_id ||
-      (entry.source_instance_id !== instanceID && entry.target_instance_id !== instanceID) ||
+      (entry.source_instance_id !== instanceID &&
+        entry.target_instance_id !== instanceID) ||
       typeof entry.database !== "string" ||
       !databasePattern.test(entry.database)
     )
@@ -531,13 +549,17 @@ export function parseDatabaseReplicationStatus(
     typeof value.sql_thread_running !== "boolean" ||
     typeof value.recovery_required !== "boolean" ||
     (value.operation !== undefined &&
-      !["configure", "start", "stop", "remove", "recover"].includes(String(value.operation))) ||
+      !["configure", "start", "stop", "remove", "recover"].includes(
+        String(value.operation),
+      )) ||
     (value.allowed_recovery_choices !== undefined &&
       (!Array.isArray(value.allowed_recovery_choices) ||
         value.allowed_recovery_choices.some(
-          (choice) => choice !== "apply_pending" && choice !== "restore_previous",
+          (choice) =>
+            choice !== "apply_pending" && choice !== "restore_previous",
         ) ||
-        new Set(value.allowed_recovery_choices).size !== value.allowed_recovery_choices.length))
+        new Set(value.allowed_recovery_choices).size !==
+          value.allowed_recovery_choices.length))
   )
     return undefined;
   if (
@@ -547,7 +569,8 @@ export function parseDatabaseReplicationStatus(
     (value.source_log_position !== undefined &&
       !safeInteger(value.source_log_position, 1)) ||
     (value.seed_bytes !== undefined && !safeInteger(value.seed_bytes, 1)) ||
-    (value.seed_sha256 !== undefined && !digestPattern.test(String(value.seed_sha256))) ||
+    (value.seed_sha256 !== undefined &&
+      !digestPattern.test(String(value.seed_sha256))) ||
     (value.seconds_behind_source !== undefined &&
       !safeInteger(value.seconds_behind_source)) ||
     (value.error_class !== undefined &&
@@ -573,7 +596,9 @@ export function parseDatabaseReplicationStatus(
     ...(safeInteger(value.source_log_position, 1)
       ? { source_log_position: value.source_log_position }
       : {}),
-    ...(safeInteger(value.seed_bytes, 1) ? { seed_bytes: value.seed_bytes } : {}),
+    ...(safeInteger(value.seed_bytes, 1)
+      ? { seed_bytes: value.seed_bytes }
+      : {}),
     ...(typeof value.seed_sha256 === "string"
       ? { seed_sha256: value.seed_sha256 }
       : {}),
@@ -589,9 +614,13 @@ export function parseDatabaseReplicationStatus(
       ? { error_class: value.error_class }
       : {}),
     recovery_required: value.recovery_required,
-    ...(typeof value.operation === "string" ? { operation: value.operation } : {}),
+    ...(typeof value.operation === "string"
+      ? { operation: value.operation }
+      : {}),
     allowed_recovery_choices: Array.isArray(value.allowed_recovery_choices)
-      ? (value.allowed_recovery_choices as Array<"apply_pending" | "restore_previous">)
+      ? (value.allowed_recovery_choices as Array<
+          "apply_pending" | "restore_previous"
+        >)
       : [],
   };
 }
@@ -620,11 +649,22 @@ export function databaseReplicationLifecycleInput(
     status.state === "removed"
   )
     return undefined;
-  if (operation === "start" && status.state !== "stopped" && status.state !== "degraded")
+  if (
+    operation === "start" &&
+    status.state !== "stopped" &&
+    status.state !== "degraded"
+  )
     return undefined;
-  if (operation === "start" && !databaseReplicationTargetProtectionVerified(status))
+  if (
+    operation === "start" &&
+    !databaseReplicationTargetProtectionVerified(status)
+  )
     return undefined;
-  if (operation === "stop" && status.state !== "running" && status.state !== "degraded")
+  if (
+    operation === "stop" &&
+    status.state !== "running" &&
+    status.state !== "degraded"
+  )
     return undefined;
   if (
     operation === "remove" &&

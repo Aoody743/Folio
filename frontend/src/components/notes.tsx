@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -24,7 +25,12 @@ export function NoteBody({ content }: { content: string }) {
       density="compact"
       headingLevelStart={3}
       components={{
-        image: ({ alt }) => <span className="muted">[图片：{alt}]</span>,
+        image: ({ alt }) => (
+          <span className="muted">
+            {translate("[图片：")}
+            {alt}]
+          </span>
+        ),
         link: ({ href, children }) => (
           <a href={href} target="_blank" rel="noopener noreferrer">
             {children}
@@ -55,13 +61,13 @@ const same = (a: Draft, b: Draft) =>
   a.target_id === b.target_id;
 const validate = (d: Draft) =>
   !d.title.trim()
-    ? "请填写便签标题。"
+    ? translate("请填写便签标题。")
     : Array.from(d.title).length > 80
-      ? "标题不能超过 80 个字符。"
+      ? translate("标题不能超过 80 个字符。")
       : Array.from(d.content).length > 10000
-        ? "正文不能超过 10,000 个字符。"
+        ? translate("正文不能超过 10,000 个字符。")
         : new TextEncoder().encode(JSON.stringify(d)).length > 64000
-          ? "便签请求过大，请缩短内容。"
+          ? translate("便签请求过大，请缩短内容。")
           : "";
 
 export function NoteEditor({
@@ -135,7 +141,7 @@ export function NoteEditor({
       inFlight.current = true;
       setSaving(true);
       setError("");
-      setStatus("正在保存");
+      setStatus(translate("正在保存"));
       try {
         const b = baseRef.current;
         const intentBody = JSON.stringify({
@@ -164,7 +170,7 @@ export function NoteEditor({
         // The same mounted editor is reused on reopen; retaining this flag would
         // silently disable autosave for every subsequent edit of this note.
         setManualMerge(false);
-        setStatus("已保存");
+        setStatus(translate("已保存"));
         writeIntent.current = undefined;
         onSaved(next);
         return true;
@@ -178,9 +184,14 @@ export function NoteEditor({
               setLatest(await api<Note>(`/notes/${baseRef.current.id}`));
             } catch {}
           }
-          setError("内容已有新版本。草稿已保留，请查看最新版本并合并。");
-        } else setError(e instanceof Error ? e.message : "保存失败，请重试。");
-        setStatus("保存失败");
+          setError(
+            translate("内容已有新版本。草稿已保留，请查看最新版本并合并。"),
+          );
+        } else
+          setError(
+            e instanceof Error ? e.message : translate("保存失败，请重试。"),
+          );
+        setStatus(translate("保存失败"));
         return false;
       } finally {
         inFlight.current = false;
@@ -243,7 +254,7 @@ export function NoteEditor({
       setDraft(draftOf(next));
       setHistory(undefined);
       setSelected(undefined);
-      setStatus("已恢复为新版本");
+      setStatus(translate("已恢复为新版本"));
       onSaved();
     } catch (e) {
       setError((e as Error).message);
@@ -280,16 +291,16 @@ export function NoteEditor({
       width={640}
       maxHeight="90dvh"
       className="note-dialog"
-      aria-label={base ? "便签详情" : "新建便签"}
+      aria-label={base ? translate("便签详情") : translate("新建便签")}
       padding={6}
     >
       <div className="dialog-title">
         <div>
-          <span className="eyebrow">共享信息</span>
-          <h2>{base ? "便签详情" : "新建便签"}</h2>
+          <span className="eyebrow">{translate("共享信息")}</span>
+          <h2>{base ? translate("便签详情") : translate("新建便签")}</h2>
         </div>
         <Button
-          label="关闭便签"
+          label={translate("关闭便签")}
           icon={<Icon name="close" />}
           isIconOnly
           variant="ghost"
@@ -301,7 +312,7 @@ export function NoteEditor({
           {error}
           {!latest && (
             <Button
-              label="重试保存"
+              label={translate("重试保存")}
               variant="ghost"
               onClick={() => void save()}
             />
@@ -309,21 +320,24 @@ export function NoteEditor({
         </div>
       )}
       {latest && (
-        <section className="conflict-box" aria-label="版本冲突">
-          <strong>内容已有新版本 · v{latest.revision}</strong>
+        <section className="conflict-box" aria-label={translate("版本冲突")}>
+          <strong>
+            {translate("内容已有新版本 · v")}
+            {latest.revision}
+          </strong>
           <p>
-            {source(latest.updated_by)} · {fullDate(latest.updated_at)}
+            {source(latest.updated_by)}· {fullDate(latest.updated_at)}
           </p>
           <details>
-            <summary>查看最新内容与我的草稿</summary>
+            <summary>{translate("查看最新内容与我的草稿")}</summary>
             <div className="merge-compare">
               <div>
-                <h3>最新内容</h3>
+                <h3>{translate("最新内容")}</h3>
                 <h4>{latest.title}</h4>
                 <NoteBody content={latest.content} />
               </div>
               <div>
-                <h3>我的草稿</h3>
+                <h3>{translate("我的草稿")}</h3>
                 <h4>{draft.title}</h4>
                 <NoteBody content={draft.content} />
               </div>
@@ -331,29 +345,31 @@ export function NoteEditor({
           </details>
           <div className="button-row">
             <Button
-              label="以最新版本为基础合并"
+              label={translate("以最新版本为基础合并")}
               onClick={() => {
                 setBase(latest);
                 baseRef.current = latest;
                 setLatest(undefined);
                 setError("");
-                setStatus("已切换版本，请手动合并后完成");
+                setStatus(translate("已切换版本，请手动合并后完成"));
                 setManualMerge(true);
               }}
             />
             <Button
-              label="保存为新便签"
+              label={translate("保存为新便签")}
               onClick={() => void save(true)}
               isLoading={saving}
             />
           </div>
-          <small>切换版本会保留你的草稿。请先核对并合并，再保存。</small>
+          <small>
+            {translate("切换版本会保留你的草稿。请先核对并合并，再保存。")}
+          </small>
         </section>
       )}
       {editing && canWrite ? (
         <div className="form-stack">
           <TextInput
-            label="标题"
+            label={translate("标题")}
             value={draft.title}
             onChange={(title) => {
               setDraft((d) => ({ ...d, title }));
@@ -364,13 +380,13 @@ export function NoteEditor({
             htmlName="title"
           />
           <div className="split-label">
-            <span>正文</span>
+            <span>{translate("正文")}</span>
             <button
               type="button"
               onClick={() => setPreview(!preview)}
               className="text-button"
             >
-              {preview ? "继续编辑" : "Markdown 预览"}
+              {preview ? translate("继续编辑") : translate("Markdown 预览")}
             </button>
           </div>
           {preview ? (
@@ -379,7 +395,7 @@ export function NoteEditor({
             </div>
           ) : (
             <TextArea
-              label="正文"
+              label={translate("正文")}
               isLabelHidden
               value={draft.content}
               onChange={(content) => {
@@ -388,14 +404,16 @@ export function NoteEditor({
               }}
               rows={9}
               maxLength={10000}
-              placeholder="记录待办、配置说明或交接信息…"
+              placeholder={translate("记录待办、配置说明或交接信息…")}
             />
           )}
           <TextInput
-            label="关联资源"
+            label={translate("关联资源")}
             value={draft.target_id}
             onChange={(target_id) => setDraft((d) => ({ ...d, target_id }))}
-            description="默认当前主机 host:local；填写已授权资源 ID。"
+            description={translate(
+              "默认当前主机 host:local；填写已授权资源 ID。",
+            )}
           />
           <label className="check-label">
             <input
@@ -405,7 +423,7 @@ export function NoteEditor({
                 setDraft((d) => ({ ...d, pinned: e.target.checked }))
               }
             />
-            置顶便签
+            {translate("置顶便签")}
           </label>
         </div>
       ) : (
@@ -413,24 +431,27 @@ export function NoteEditor({
           <h3>{base?.title}</h3>
           <NoteBody content={base?.content ?? ""} />
           {base?.target_id && (
-            <p className="muted">关联资源 · {base.target_id}</p>
+            <p className="muted">
+              {translate("关联资源 · ")}
+              {base.target_id}
+            </p>
           )}
         </div>
       )}
       {base && (
         <p className="note-meta">
-          {source(base.updated_by)} ·{" "}
-          <time dateTime={base.updated_at}>{fullDate(base.updated_at)}</time> ·
-          v{base.revision}
-          {base.archived ? " · 已归档" : ""}
+          {source(base.updated_by)}·{" "}
+          <time dateTime={base.updated_at}>{fullDate(base.updated_at)}</time>· v
+          {base.revision}
+          {base.archived ? translate(" · 已归档") : ""}
         </p>
       )}
       {history && (
-        <section className="history" aria-label="修改历史">
+        <section className="history" aria-label={translate("修改历史")}>
           <div className="split-label">
-            <h3>修改历史</h3>
+            <h3>{translate("修改历史")}</h3>
             <Button
-              label="关闭历史"
+              label={translate("关闭历史")}
               variant="ghost"
               onClick={() => {
                 setHistory(undefined);
@@ -445,12 +466,12 @@ export function NoteEditor({
                   className="text-button"
                   onClick={() => setSelected(rev)}
                 >
-                  v{rev.revision} · {source(rev.updated_by)} ·{" "}
+                  v{rev.revision}· {source(rev.updated_by)}·{" "}
                   {fullDate(rev.updated_at)}
                 </button>
                 {canWrite && (
                   <Button
-                    label={`恢复版本 ${rev.revision}`}
+                    label={translate("恢复版本 {0}", [rev.revision])}
                     variant="ghost"
                     onClick={() => void restore(rev.revision)}
                   />
@@ -458,19 +479,20 @@ export function NoteEditor({
               </div>
             ))
           ) : (
-            <p className="muted">暂无历史版本。</p>
+            <p className="muted">{translate("暂无历史版本。")}</p>
           )}
           {selected && (
             <div className="preview">
               <strong>
-                版本 {selected.revision} · {selected.title}
+                {translate("版本")}
+                {selected.revision}· {selected.title}
               </strong>
               <NoteBody content={selected.content} />
               <details>
-                <summary>与当前版本比较</summary>
-                <p className="muted">历史正文</p>
+                <summary>{translate("与当前版本比较")}</summary>
+                <p className="muted">{translate("历史正文")}</p>
                 <pre>{selected.content}</pre>
-                <p className="muted">当前正文</p>
+                <p className="muted">{translate("当前正文")}</p>
                 <pre>{base?.content}</pre>
               </details>
             </div>
@@ -479,30 +501,34 @@ export function NoteEditor({
       )}
       {confirmDelete && (
         <div className="notice danger">
-          <p>永久删除此便签及其历史？此操作无法撤销。</p>
+          <p>{translate("永久删除此便签及其历史？此操作无法撤销。")}</p>
           <div className="button-row">
             <Button
-              label="确认永久删除"
+              label={translate("确认永久删除")}
               variant="destructive"
               isLoading={deleting}
               onClick={() => void remove()}
             />
-            <Button label="取消删除" onClick={() => setConfirmDelete(false)} />
+            <Button
+              label={translate("取消删除")}
+              onClick={() => setConfirmDelete(false)}
+            />
           </div>
         </div>
       )}
       <div className="dialog-footer">
         <span className="save-status" role="status">
           {saving
-            ? "正在保存"
+            ? translate("正在保存")
             : dirty
-              ? "草稿未保存"
-              : status || (base ? "已保存" : "填写后创建")}
+              ? translate("草稿未保存")
+              : status ||
+                (base ? translate("已保存") : translate("填写后创建"))}
         </span>
         <div className="button-row">
           {editing && dirty && (
             <Button
-              label="放弃当前草稿"
+              label={translate("放弃当前草稿")}
               variant="ghost"
               onClick={() => {
                 setDraft(draftOf(base));
@@ -515,7 +541,7 @@ export function NoteEditor({
           )}
           {base && (
             <Button
-              label="修改历史"
+              label={translate("修改历史")}
               icon={<Icon name="history" />}
               variant="ghost"
               onClick={() => void loadHistory()}
@@ -523,14 +549,14 @@ export function NoteEditor({
           )}
           {base && canWrite && !editing && (
             <Button
-              label={base.archived ? "取消归档" : "归档"}
+              label={base.archived ? translate("取消归档") : translate("归档")}
               variant="ghost"
               onClick={() => void archive()}
             />
           )}
           {base && canDelete && !editing && (
             <Button
-              label="永久删除"
+              label={translate("永久删除")}
               variant="ghost"
               onClick={() => setConfirmDelete(true)}
             />
@@ -538,7 +564,7 @@ export function NoteEditor({
           {canWrite &&
             (editing ? (
               <Button
-                label={base ? "完成" : "创建便签"}
+                label={base ? translate("完成") : translate("创建便签")}
                 variant="primary"
                 isLoading={saving}
                 isDisabled={!!latest}
@@ -546,14 +572,16 @@ export function NoteEditor({
               />
             ) : (
               <Button
-                label="编辑"
+                label={translate("编辑")}
                 variant="primary"
                 onClick={() => setEditing(true)}
               />
             ))}
         </div>
       </div>
-      {!open && dirty && <span className="sr-only">草稿已保留</span>}
+      {!open && dirty && (
+        <span className="sr-only">{translate("草稿已保留")}</span>
+      )}
     </Dialog>
   );
 }

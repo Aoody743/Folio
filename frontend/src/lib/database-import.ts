@@ -19,15 +19,24 @@ export function verifiedDatabaseImport(
   if (!value || typeof value !== "object") return;
   const row = value as Partial<DatabaseImport>;
   if (
-    typeof row.id !== "string" || !/^dbimport_[a-f0-9]{32}$/.test(row.id) ||
-    row.instance_id !== target.instance || row.database !== target.database ||
+    typeof row.id !== "string" ||
+    !/^dbimport_[a-f0-9]{32}$/.test(row.id) ||
+    row.instance_id !== target.instance ||
+    row.database !== target.database ||
     row.database_revision !== target.revision ||
-    !Number.isSafeInteger(row.revision) || (row.revision ?? 0) < 1 ||
-    !Number.isSafeInteger(row.bytes) || (row.bytes ?? 0) < 1 || (row.bytes ?? 0) > 4 * 1024 ** 3 ||
-    !Number.isSafeInteger(row.bytes_received) || row.bytes_received !== row.bytes ||
-    typeof row.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(row.sha256) ||
-    row.state !== "uploaded" || typeof row.engine !== "string" ||
+    !Number.isSafeInteger(row.revision) ||
+    (row.revision ?? 0) < 1 ||
+    !Number.isSafeInteger(row.bytes) ||
+    (row.bytes ?? 0) < 1 ||
+    (row.bytes ?? 0) > 4 * 1024 ** 3 ||
+    !Number.isSafeInteger(row.bytes_received) ||
+    row.bytes_received !== row.bytes ||
+    typeof row.sha256 !== "string" ||
+    !/^[a-f0-9]{64}$/.test(row.sha256) ||
+    row.state !== "uploaded" ||
+    typeof row.engine !== "string" ||
     typeof row.created_at !== "string"
-  ) return;
+  )
+    return;
   return row as DatabaseImport;
 }

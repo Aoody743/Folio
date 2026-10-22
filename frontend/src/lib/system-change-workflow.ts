@@ -92,7 +92,10 @@ export function writeSystemChangeRecovery(
   storage.setItem(key, JSON.stringify(stored));
 }
 
-export function canUseSystemChangeStorage(storage: KeyValueStorage, key: string) {
+export function canUseSystemChangeStorage(
+  storage: KeyValueStorage,
+  key: string,
+) {
   const probe = `${key}:probe`;
   try {
     storage.setItem(probe, "ready");
@@ -139,9 +142,7 @@ export function hasSystemChangeIDSchema(
   const id = properties?.id as Record<string, unknown> | undefined;
   const required = capability.input_schema?.required;
   return (
-    id?.type === "string" &&
-    Array.isArray(required) &&
-    required.includes("id")
+    id?.type === "string" && Array.isArray(required) && required.includes("id")
   );
 }
 
@@ -160,9 +161,7 @@ export function hasRequiredIDSchema(
   const id = properties?.id as Record<string, unknown> | undefined;
   const required = capability.input_schema?.required;
   return (
-    id?.type === "string" &&
-    Array.isArray(required) &&
-    required.includes("id")
+    id?.type === "string" && Array.isArray(required) && required.includes("id")
   );
 }
 
@@ -175,9 +174,7 @@ export function systemChangeIDInput(
     expectedName === "system_change_get"
       ? hasSystemChangeGetSchema(capability)
       : hasSystemChangeIDSchema(capability, expectedName);
-  return schemaReady && id
-    ? { id }
-    : undefined;
+  return schemaReady && id ? { id } : undefined;
 }
 
 export function parseSystemChangePlan(
@@ -241,7 +238,9 @@ export function systemChangeActionAllowed(
       if (plan.state !== "awaiting_confirmation" || !plan.confirmation_deadline)
         return false;
       const deadline = Date.parse(plan.confirmation_deadline);
-      return Number.isFinite(deadline) && deadline > (options.now ?? Date.now());
+      return (
+        Number.isFinite(deadline) && deadline > (options.now ?? Date.now())
+      );
     }
     case "system_change_rollback":
       return [

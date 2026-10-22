@@ -1,3 +1,4 @@
+import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 
 export type DatabaseBinlogStatus = {
@@ -87,12 +88,16 @@ export function phase2Capability(
       (task ? capability.task === true : capability.task !== true) &&
       (readOnly === undefined || capability.read_only === readOnly) &&
       !!properties &&
-      fields.every((field) => Object.prototype.hasOwnProperty.call(properties, field))
+      fields.every((field) =>
+        Object.prototype.hasOwnProperty.call(properties, field),
+      )
     );
   });
 }
 
-export function databaseBinlogStatus(value: unknown): DatabaseBinlogStatus | undefined {
+export function databaseBinlogStatus(
+  value: unknown,
+): DatabaseBinlogStatus | undefined {
   if (!row(value)) return undefined;
   const {
     enabled,
@@ -112,8 +117,11 @@ export function databaseBinlogStatus(value: unknown): DatabaseBinlogStatus | und
     typeof active_log !== "string" ||
     typeof server_id !== "string" ||
     !integer(expiration_seconds) ||
-    !(hash(config_revision) ||
-      (configuration_state === "configuration_unmanaged" && config_revision === "")) ||
+    !(
+      hash(config_revision) ||
+      (configuration_state === "configuration_unmanaged" &&
+        config_revision === "")
+    ) ||
     !integer(instance_revision) ||
     instance_revision < 1 ||
     typeof value.configuration_managed !== "boolean" ||
@@ -141,11 +149,14 @@ export function databaseBinlogStatus(value: unknown): DatabaseBinlogStatus | und
     ...(typeof value.configured_enabled === "boolean"
       ? { configured_enabled: value.configured_enabled }
       : {}),
-    configuration_state: configuration_state as DatabaseBinlogStatus["configuration_state"],
+    configuration_state:
+      configuration_state as DatabaseBinlogStatus["configuration_state"],
   };
 }
 
-export function databaseBinlogList(value: unknown): DatabaseBinlogList | undefined {
+export function databaseBinlogList(
+  value: unknown,
+): DatabaseBinlogList | undefined {
   if (!row(value) || !Array.isArray(value.items)) return undefined;
   const items: DatabaseBinlog[] = [];
   const seen = new Set<string>();
@@ -248,9 +259,9 @@ export function databaseBinlogPurgeInput(
   now = Date.now(),
 ) {
   if (!instanceID || Date.parse(preview.expires_at) <= now)
-    throw new Error("Binlog 清理预览已过期，请重新读取并预览。");
+    throw new Error(translate("Binlog 清理预览已过期，请重新读取并预览。"));
   if (!preview.binlogs_to_purge.length)
-    throw new Error("预览中没有可清理的日志文件。");
+    throw new Error(translate("预览中没有可清理的日志文件。"));
   return {
     instance_id: instanceID,
     preview_id: preview.preview_id,

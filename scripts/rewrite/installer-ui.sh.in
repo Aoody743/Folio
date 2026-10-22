@@ -1,0 +1,93 @@
+# BEGIN GENERATED INSTALLER UI
+# Kept identical in the core and bootstrap by sync-installer-ui.py.
+ui_language=${FOLIO_LANG:-${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}}
+ui_language_explicit=0
+[[ -z ${FOLIO_LANG:-} ]] || ui_language_explicit=1
+ui_assume_yes=0
+ui_args=("$@")
+for ((ui_index=0; ui_index<${#ui_args[@]}; ui_index++)); do
+  case "${ui_args[$ui_index]}" in
+    --lang)
+      (( ui_index + 1 < ${#ui_args[@]} )) || { printf 'Missing --lang value / 缺少语言参数\n' >&2; exit 2; }
+      ui_language_explicit=1
+      ui_index=$((ui_index + 1)); ui_language=${ui_args[$ui_index]} ;;
+    --yes|--non-interactive) ui_assume_yes=1 ;;
+    --no-color) export NO_COLOR=1 ;;
+  esac
+done
+case "$ui_language" in
+  zh|zh-CN|zh_CN|zh_CN.*|zh-CN.*|zh_TW*|zh-Hant*) ui_language=zh-CN ;;
+  en|en-*|en_*|C|C.*|POSIX) ui_language=en ;;
+  *)
+    if [[ " ${ui_args[*]} " == *' --lang '* || -n ${FOLIO_LANG:-} ]]; then
+      printf 'Use --lang zh-CN or --lang en / 请使用 --lang zh-CN 或 --lang en\n' >&2; exit 2
+    fi
+    ui_language=en ;;
+esac
+ui_started=$SECONDS
+ui_log=
+ui_log_reported=0
+ui_curl_progress=(--silent --show-error)
+if [[ -t 2 && ${TERM:-dumb} != dumb && -z ${NO_COLOR:-} ]]; then ui_curl_progress=(--progress-bar --show-error); fi
+# Only presentation messages enter this private log, never command arguments,
+# environment variables, policy contents, bootstrap tokens or passwords.
+ui_copy() {
+  local ui_key=$1
+  if [[ "$ui_language" == zh-CN ]]; then
+    case "$ui_key" in
+__TRANSLATIONS__
+    esac
+  fi
+  printf '%s' "$ui_key"
+}
+say() {
+  local ui_format
+  ui_format=$(ui_copy "$1"); shift
+  printf -- "$ui_format" "$@"
+  if [[ -n "$ui_log" ]]; then printf -- "$ui_format" "$@" >> "$ui_log" || true; fi
+}
+ui_phase() {
+  local ui_number=$1 ui_title=$2
+  if [[ ${FOLIO_BOOTSTRAP:-0} == 1 && "$ui_number" -lt 3 ]]; then return 0; fi
+  printf '\n[%s/6] ' "$ui_number"
+  say '%s (elapsed %ss)\n' "$(ui_copy "$ui_title")" "$((SECONDS-ui_started))"
+}
+ui_log_location() {
+  if [[ -n "$ui_log" && "$ui_log_reported" == 0 ]]; then
+    ui_log_reported=1
+    say 'Private installation summary: %s\n' "$ui_log"
+  fi
+  return 0
+}
+ui_confirm() {
+  # A curl | bash invocation reads answers from the controlling terminal,
+  # never from the script stream. CI and detached sessions never wait for input.
+  if (( !ui_assume_yes )) && [[ -t 1 && -t 2 && -r /dev/tty ]]; then
+    local ui_answer
+    while true; do
+      say 'Continue? [Y/n] '
+      if ! IFS= read -r ui_answer < /dev/tty; then
+        say 'No answer received. Nothing has been changed.\n'; exit 1
+      fi
+      case "$ui_answer" in
+        ''|y|Y|yes|YES|是) break ;;
+        n|N|no|NO|否) say 'Cancelled before making changes.\n'; exit 0 ;;
+        *) say 'Please answer Y or N.\n' ;;
+      esac
+    done
+  fi
+}
+ui_begin() {
+  if (( !ui_language_explicit && !ui_assume_yes )) && [[ -t 1 && -t 2 && -r /dev/tty ]]; then
+    local ui_choice
+    printf '语言 / Language: 1 中文 · 2 English [%s]: ' "$([[ "$ui_language" == zh-CN ]] && printf 1 || printf 2)"
+    IFS= read -r ui_choice < /dev/tty || exit 1
+    case "$ui_choice" in 1) ui_language=zh-CN ;; 2) ui_language=en ;; '') ;; *) printf 'Use 1 or 2 / 请输入 1 或 2\n' >&2; exit 2 ;; esac
+  fi
+  ui_log=$(mktemp "${TMPDIR:-/tmp}/folio-install-summary.XXXXXX")
+  chmod 0600 "$ui_log"
+  if [[ ${FOLIO_BOOTSTRAP:-0} != 1 ]]; then
+    say 'Hello, I am Folio. I will guide you through this installation.\n'
+  fi
+}
+# END GENERATED INSTALLER UI

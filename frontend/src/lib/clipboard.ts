@@ -1,5 +1,6 @@
+import { t as translate } from "./i18n";
 export async function copyText(value: string): Promise<void> {
-  if (!value) throw new Error("没有可复制的内容。");
+  if (!value) throw new Error(translate("没有可复制的内容。"));
   if (navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(value);
@@ -23,7 +24,7 @@ export async function copyText(value: string): Promise<void> {
   try {
     input.select();
     if (!document.execCommand("copy"))
-      throw new Error("浏览器未允许自动复制，请手动选择复制。");
+      throw new Error(translate("浏览器未允许自动复制，请手动选择复制。"));
   } finally {
     input.remove();
     previous?.focus({ preventScroll: true });

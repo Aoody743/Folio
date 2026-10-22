@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -122,13 +123,21 @@ export function Settings({
     return (
       <Card className="panel-card">
         <div className="card-heading">
-          <h2>外观与配色</h2>
-          <span className="status-chip neutral">当前浏览器偏好</span>
+          <h2>{translate("外观与配色")}</h2>
+          <span className="status-chip neutral">
+            {translate("当前浏览器偏好")}
+          </span>
         </div>
         <p className="muted">
-          选择后立即应用。配色只改变个人外观，不改变业务状态语义。
+          {translate(
+            "选择后立即应用。配色只改变个人外观，不改变业务状态语义。",
+          )}
         </p>
-        <div className="theme-grid" role="radiogroup" aria-label="主题配色">
+        <div
+          className="theme-grid"
+          role="radiogroup"
+          aria-label={translate("主题配色")}
+        >
           {palettes.map((p) => (
             <button
               key={p.id}
@@ -159,7 +168,7 @@ export function Settings({
                 }
               }}
               onClick={() => onPalette(p.id)}
-              aria-label={`${p.name}主题`}
+              aria-label={translate("{0}主题", [p.name])}
             >
               <div className="theme-preview">
                 <div className="preview-mini-card">
@@ -195,48 +204,58 @@ export function Settings({
       <div className="stack">
         <Card className="panel-card">
           <div className="card-heading">
-            <h2>MCP 接入</h2>
-            <span className="status-chip neutral">原生协议</span>
+            <h2>{translate("MCP 接入")}</h2>
+            <span className="status-chip neutral">{translate("原生协议")}</span>
           </div>
           <p>
-            已授权的 AI 客户端可通过 MCP
-            查询信息和管理资源。面板不运行模型；所有操作使用相同权限、便签版本与审计记录。
+            {translate(
+              "已授权的 AI 客户端可通过 MCP 查询信息和管理资源。面板不运行模型；所有操作使用相同权限、便签版本与审计记录。",
+            )}
           </p>
           <div className="connection-options">
             <div>
-              <h3>远程连接</h3>
+              <h3>{translate("远程连接")}</h3>
               <code>
                 {typeof location !== "undefined"
                   ? location.origin
-                  : "你的面板地址"}
+                  : translate("你的面板地址")}
                 /mcp
               </code>
               <p className="muted">
-                使用支持 Streamable HTTP 的客户端，通过 OAuth
-                授权或访问令牌连接。
+                {translate(
+                  "使用支持 Streamable HTTP 的客户端，通过 OAuth 授权或访问令牌连接。",
+                )}
               </p>
             </div>
             <div>
-              <h3>本地连接</h3>
-              <code>
-                folio mcp --stdio --endpoint http://127.0.0.1:9000
-              </code>
+              <h3>{translate("本地连接")}</h3>
+              <code>folio mcp --stdio --endpoint http://127.0.0.1:9000</code>
               <p className="muted">
-                本地客户端连接受保护的面板服务。具体启动参数参见发行包文档。
+                {translate(
+                  "本地客户端连接受保护的面板服务。具体启动参数参见发行包文档。",
+                )}
               </p>
             </div>
           </div>
           <p className="muted">
-            MCP 服务可用代表接入能力，不能据此判断有 AI 客户端在线。
+            {translate(
+              "MCP 服务可用代表接入能力，不能据此判断有 AI 客户端在线。",
+            )}
           </p>
           <div className="button-row">
-            <Button label="查看操作记录" variant="ghost" href="/?view=audit" />
+            <Button
+              label={translate("查看操作记录")}
+              variant="ghost"
+              href="/?view=audit"
+            />
           </div>
         </Card>
         <Card className="panel-card">
-          <h2>客户端访问令牌</h2>
+          <h2>{translate("客户端访问令牌")}</h2>
           <p className="muted">
-            仅授权所需范围。令牌只在创建时显示一次，撤销后立即失效。
+            {translate(
+              "仅授权所需范围。令牌只在创建时显示一次，撤销后立即失效。",
+            )}
           </p>
           {tokenError && (
             <div className="notice danger" role="alert">
@@ -251,14 +270,14 @@ export function Settings({
             }}
           >
             <TextInput
-              label="客户端名称"
+              label={translate("客户端名称")}
               value={tokenName}
               onChange={setTokenName}
               isRequired
-              placeholder="例如 Claude / 运维自动化"
+              placeholder={translate("例如 Claude / 运维自动化")}
             />
             <fieldset>
-              <legend>授权范围</legend>
+              <legend>{translate("授权范围")}</legend>
               <div className="scope-grid">
                 {capabilities
                   .map((c) => c.scope)
@@ -283,23 +302,28 @@ export function Settings({
               </div>
             </fieldset>
             <TextInput
-              label="资源范围"
+              label={translate("资源范围")}
               value={resources}
               onChange={setResources}
-              description="逗号分隔的资源 ID。使用 * 会授权所有资源，请按实际需要设置。"
+              description={translate(
+                "逗号分隔的资源 ID。使用 * 会授权所有资源，请按实际需要设置。",
+              )}
             />
             <Button
-              label="创建访问令牌"
+              label={translate("创建访问令牌")}
               variant="primary"
               isLoading={tokenBusy}
               type="submit"
             />
           </form>
           {newToken && (
-            <section className="notice warning" aria-label="新访问令牌">
-              <strong>请立即保存令牌</strong>
+            <section
+              className="notice warning"
+              aria-label={translate("新访问令牌")}
+            >
+              <strong>{translate("请立即保存令牌")}</strong>
               <TextInput
-                label="访问令牌"
+                label={translate("访问令牌")}
                 type="password"
                 value={newToken}
                 isReadOnly
@@ -307,15 +331,17 @@ export function Settings({
               />
               <div className="button-row">
                 <Button
-                  label="复制令牌"
+                  label={translate("复制令牌")}
                   onClick={() =>
                     void copyText(newToken).catch(() =>
-                      setTokenError("无法自动复制，请手动选择复制。"),
+                      setTokenError(
+                        translate("无法自动复制，请手动选择复制。"),
+                      ),
                     )
                   }
                 />
                 <Button
-                  label="已保存，隐藏令牌"
+                  label={translate("已保存，隐藏令牌")}
                   onClick={() => setNewToken("")}
                 />
               </div>
@@ -327,19 +353,20 @@ export function Settings({
                 <strong>{token.name}</strong>
                 <p>{token.scopes?.join(" · ")}</p>
                 <small>
-                  资源 {token.resources?.join(", ") || "未提供"} · 最近访问{" "}
-                  {fullDate(token.last_used_at)}
+                  {translate("资源")}
+                  {token.resources?.join(", ") || translate("未提供")}
+                  {translate(" · 最近访问")} {fullDate(token.last_used_at)}
                 </small>
               </div>
               <Button
-                label={`撤销 ${token.name}`}
+                label={translate("撤销 {0}", [token.name])}
                 variant="ghost"
                 onClick={() => void revoke(token.id)}
               />
             </div>
           ))}
           {!tokens.length && !tokenError && (
-            <p className="muted">暂无客户端令牌。</p>
+            <p className="muted">{translate("暂无客户端令牌。")}</p>
           )}
         </Card>
       </div>
@@ -347,8 +374,11 @@ export function Settings({
   return (
     <div className="stack">
       <Card className="panel-card">
-        <h2>账户与安全</h2>
-        <p className="muted">当前账户 · {session.user?.name}</p>
+        <h2>{translate("账户与安全")}</h2>
+        <p className="muted">
+          {translate("当前账户 · ")}
+          {session.user?.name}
+        </p>
         {error && (
           <div className="notice danger" role="alert">
             {error}
@@ -374,13 +404,13 @@ export function Settings({
               });
               setOldPassword("");
               setNewPassword("");
-              setMessage("密码已更新，请重新登录。");
+              setMessage(translate("密码已更新，请重新登录。"));
               await onSession();
             });
           }}
         >
           <TextInput
-            label="当前密码"
+            label={translate("当前密码")}
             type="password"
             value={oldPassword}
             onChange={setOldPassword}
@@ -388,23 +418,23 @@ export function Settings({
             autoComplete="current-password"
           />
           <TextInput
-            label="新密码"
+            label={translate("新密码")}
             type="password"
             value={newPassword}
             onChange={setNewPassword}
             isRequired
             autoComplete="new-password"
-            description="使用至少 12 个字符的独立密码。"
+            description={translate("使用至少 12 个字符的独立密码。")}
           />
           <TextInput
-            label="两步验证码（更新密码）"
+            label={translate("两步验证码（更新密码）")}
             value={otp}
             onChange={setOTP}
             autoComplete="one-time-code"
-            description="已启用两步验证时填写。"
+            description={translate("已启用两步验证时填写。")}
           />
           <Button
-            label="更新密码"
+            label={translate("更新密码")}
             variant="primary"
             type="submit"
             isLoading={securityBusy}
@@ -412,17 +442,19 @@ export function Settings({
         </form>
       </Card>
       <Card className="panel-card">
-        <h2>两步验证</h2>
-        <p className="muted">登录和敏感账户操作按同一验证规则执行。</p>
+        <h2>{translate("两步验证")}</h2>
+        <p className="muted">
+          {translate("登录和敏感账户操作按同一验证规则执行。")}
+        </p>
         <TextInput
-          label="当前密码（两步验证）"
+          label={translate("当前密码（两步验证）")}
           type="password"
           value={oldPassword}
           onChange={setOldPassword}
           autoComplete="current-password"
         />
         <Button
-          label="开始设置两步验证"
+          label={translate("开始设置两步验证")}
           onClick={() =>
             void securityAction(async () => {
               setEnrollment(
@@ -437,15 +469,17 @@ export function Settings({
         />
         {enrollment && (
           <div className="form-stack">
-            <p>将以下密钥添加到认证器，随后输入验证码完成启用。</p>
+            <p>
+              {translate("将以下密钥添加到认证器，随后输入验证码完成启用。")}
+            </p>
             <TextInput
-              label="认证器密钥"
+              label={translate("认证器密钥")}
               type="password"
               value={enrollment.secret ?? ""}
               isReadOnly
             />
             <Button
-              label="复制认证器链接"
+              label={translate("复制认证器链接")}
               onClick={() =>
                 void copyText(
                   enrollment.otpauth_url ?? enrollment.uri ?? "",
@@ -453,13 +487,13 @@ export function Settings({
               }
             />
             <TextInput
-              label="认证器验证码"
+              label={translate("认证器验证码")}
               value={otp}
               onChange={setOTP}
               autoComplete="one-time-code"
             />
             <Button
-              label="启用两步验证"
+              label={translate("启用两步验证")}
               variant="primary"
               onClick={() =>
                 void securityAction(async () => {
@@ -469,7 +503,7 @@ export function Settings({
                   });
                   setEnrollment(undefined);
                   setOTP("");
-                  setMessage("两步验证已启用。");
+                  setMessage(translate("两步验证已启用。"));
                 })
               }
               isLoading={securityBusy}
@@ -477,23 +511,23 @@ export function Settings({
           </div>
         )}
         <details>
-          <summary>关闭两步验证</summary>
+          <summary>{translate("关闭两步验证")}</summary>
           <div className="form-stack">
             <TextInput
-              label="当前密码（关闭验证）"
+              label={translate("当前密码（关闭验证）")}
               type="password"
               value={oldPassword}
               onChange={setOldPassword}
               autoComplete="current-password"
             />
             <TextInput
-              label="当前两步验证码"
+              label={translate("当前两步验证码")}
               value={otp}
               onChange={setOTP}
               autoComplete="one-time-code"
             />
             <Button
-              label="关闭两步验证"
+              label={translate("关闭两步验证")}
               onClick={() =>
                 void securityAction(async () => {
                   await api("/account/totp/disable", {
@@ -501,7 +535,7 @@ export function Settings({
                     body: { password: oldPassword, otp },
                   });
                   setOTP("");
-                  setMessage("两步验证已关闭。");
+                  setMessage(translate("两步验证已关闭。"));
                 })
               }
               isLoading={securityBusy}

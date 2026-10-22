@@ -1,4 +1,5 @@
 "use client";
+import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 const ManagedDatabaseResources = dynamic(
@@ -142,47 +143,54 @@ export function InstanceResources({
     onExecuted();
   };
   return (
-    <section className="stack" aria-label="软件实例资源">
+    <section className="stack" aria-label={translate("软件实例资源")}>
       <div className="card-heading">
         <h3>
           {kind === "database" && databaseSection === "binlog"
-            ? "Binlog 管理"
+            ? translate("Binlog 管理")
             : kind === "database"
-            ? "实例数据库"
-            : kind === "docker"
-              ? "容器资源"
-              : kind === "supervisor"
-                ? "守护程序"
-                : "服务账户"}
+              ? translate("实例数据库")
+              : kind === "docker"
+                ? translate("容器资源")
+                : kind === "supervisor"
+                  ? translate("守护程序")
+                  : translate("服务账户")}
         </h3>
-        {(!supportsBinlog || databaseSection === "databases") && create && !(kind === "docker" && collection === "images") && (kind !== "database" || databaseReceipt) && (
-          <Button
-            label={
-              kind === "database"
-                ? "查询后新建或重建数据库"
-                : kind === "docker"
-                  ? collection === "containers"
-                    ? "创建容器"
-                    : collection === "images"
-                      ? "拉取镜像"
-                      : collection === "networks"
-                        ? "创建网络"
-                        : "创建数据卷"
-                  : kind === "supervisor"
-                    ? "添加守护程序"
-                    : "添加服务账户"
-            }
-            onClick={() => {
-              setCreating(!creating);
-              setOperation(undefined);
-            }}
-          />
-        )}
+        {(!supportsBinlog || databaseSection === "databases") &&
+          create &&
+          !(kind === "docker" && collection === "images") &&
+          (kind !== "database" || databaseReceipt) && (
+            <Button
+              label={
+                kind === "database"
+                  ? translate("查询后新建或重建数据库")
+                  : kind === "docker"
+                    ? collection === "containers"
+                      ? translate("创建容器")
+                      : collection === "images"
+                        ? translate("拉取镜像")
+                        : collection === "networks"
+                          ? translate("创建网络")
+                          : translate("创建数据卷")
+                    : kind === "supervisor"
+                      ? translate("添加守护程序")
+                      : translate("添加服务账户")
+              }
+              onClick={() => {
+                setCreating(!creating);
+                setOperation(undefined);
+              }}
+            />
+          )}
       </div>
       {supportsBinlog && (
-        <div className="section-tabs" role="tablist" aria-label="数据库实例工具">
+        <div
+          className="section-tabs"
+          role="tablist"
+          aria-label={translate("数据库实例工具")}
+        >
           {[
-            { id: "databases", label: "数据库" },
+            { id: "databases", label: translate("数据库") },
             { id: "binlog", label: "Binlog" },
           ].map((tab) => (
             <button
@@ -205,13 +213,13 @@ export function InstanceResources({
         <div
           className="section-tabs"
           role="tablist"
-          aria-label="Docker资源类型"
+          aria-label={translate("Docker资源类型")}
         >
           {[
-            { id: "containers", label: "容器" },
-            { id: "images", label: "镜像" },
-            { id: "networks", label: "网络" },
-            { id: "volumes", label: "数据卷" },
+            { id: "containers", label: translate("容器") },
+            { id: "images", label: translate("镜像") },
+            { id: "networks", label: translate("网络") },
+            { id: "volumes", label: translate("数据卷") },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -239,197 +247,230 @@ export function InstanceResources({
           active={active}
         />
       ) : kind === "docker" && collection === "images" ? (
-        <DockerManagement key={instance.id} instanceID={instance.id} capabilities={capabilities} onExecuted={refresh} active={active}/>
-      ) : <>
-      {kind === "database" && databaseSection === "databases" && <DatabaseAdminCredentials key={instance.id} instanceID={instance.id} engine={instance.plugin_id} capabilities={capabilities} onExecuted={refresh} active={active} />}
-      {data.error && (
-        <div className="notice danger" role="alert">
-          {data.error}
-        </div>
-      )}
-      {kind === "database" && create && !databaseReceipt && (
-        <Unavailable
-          title="缺少数据库管理记录读取权限"
-          detail="安全创建流程需要先读取指定名称的权威记录。"
+        <DockerManagement
+          key={instance.id}
+          instanceID={instance.id}
+          capabilities={capabilities}
+          onExecuted={refresh}
+          active={active}
         />
-      )}
-      {!capabilities.some((c) => c.name === name) ? (
-        <Unavailable title="当前没有此资源的读取权限" />
       ) : (
         <>
-          <div className="instance-list">
-            {rows.slice(offset, offset + 20).map((row, index) => {
-              const target = targetName(row);
-              const id = rowID(row, offset + index);
-              const image = Array.isArray(row.RepoDigests)
-                ? row.RepoDigests.join(" · ")
-                : String(row.Image ?? row.Id ?? "");
-              return (
-                <button
-                  key={id || index}
-                  className="instance-row"
-                  disabled={
-                    kind === "docker" && (!target || collection === "images")
-                  }
-                  aria-pressed={selected === id}
-                  onClick={() => {
-                    setSelected(id);
-                    setOperation(undefined);
-                    setCreating(false);
-                  }}
-                >
-                  <div>
-                    <strong>
-                      {target ||
-                        image ||
-                        String(row.Name ?? row.ID ?? "未提供名称")}
-                    </strong>
-                    <p>
-                      {kind === "database"
-                        ? `${row.username ?? ""} · ${row.engine ?? ""} · ${choiceLabel(row.permission, "permission")}`
-                        : kind === "docker"
-                          ? String(row.Status ?? row.Driver ?? image)
-                          : kind === "supervisor"
-                            ? String(row.program_id ?? "")
-                            : row.read_only === true
-                              ? "只读"
-                              : "读写"}
-                    </p>
-                  </div>
-                  {typeof row.state === "string" ? (
-                    <State value={row.state} />
-                  ) : typeof row.State === "string" ? (
-                    <State value={row.State} />
-                  ) : typeof row.enabled === "boolean" ? (
-                    <State value={row.enabled ? "active" : "disabled"} />
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-          {!rows.length && !data.loading && !data.error && (
-            <Unavailable title="暂无可见资源" />
-          )}
-          <Pager
-            offset={offset}
-            limit={20}
-            total={rows.length}
-            count={Math.min(20, rows.length - offset)}
-            loading={data.loading}
-            onOffset={setOffset}
-          />
-        </>
-      )}
-      {creating && create && kind === "database" && databaseReceipt && (
-        <DatabaseRecreation
-          instanceID={instance.id}
-          receiptCapability={databaseReceipt}
-          createCapability={create}
-          onBack={() => setCreating(false)}
-          onExecuted={refresh}
-        />
-      )}
-      {creating && create && kind !== "database" && (
-        <ActionForm
-          key={create.name + instance.id}
-          capability={create}
-          preset={{
-            ...base,
-            ...(typeof data.data?.revision === "number"
-              ? { expected_revision: data.data.revision }
-              : {}),
-          }}
-          onBack={() => setCreating(false)}
-          onExecuted={refresh}
-        />
-      )}
-      {current &&
-        !creating &&
-        (kind === "database" ? (
-          typeof current.database === "string" &&
-          typeof current.username === "string" &&
-          typeof current.engine === "string" &&
-          typeof current.permission === "string" &&
-          typeof current.revision === "number" &&
-          Number.isSafeInteger(current.revision) &&
-          typeof current.state === "string" ? (
-            <ManagedDatabaseResources
-              key={instance.id + ":" + current.database}
+          {kind === "database" && databaseSection === "databases" && (
+            <DatabaseAdminCredentials
+              key={instance.id}
               instanceID={instance.id}
-              current={{
-                database: current.database,
-                username: current.username,
-                engine: current.engine,
-                permission: current.permission,
-                revision: current.revision,
-                state: current.state,
-              }}
-              capabilities={capabilities}
-              onExecuted={refresh}
-              active={active}
-            />
-          ) : (
-            <Unavailable
-              title="数据库详情缺少状态或有效版本"
-              detail="请重新读取资源；记录状态和精确版本确认后才能进行管理操作。"
-            />
-          )
-        ) : (
-          <>
-          {kind === "ftp" && targetName(current) && (
-            <FTPAccountRecovery
-              key={`ftp-account-state:${instance.id}:${targetName(current)}`}
-              id={instance.id}
-              name={targetName(current)}
+              engine={instance.plugin_id}
               capabilities={capabilities}
               onExecuted={refresh}
               active={active}
             />
           )}
-          <ResourceActions
-            capabilities={capabilities}
-            names={(name) =>
-              kind === "docker"
-                ? name !== "docker_container_exec" &&
-                  name !== "docker_container_exec_status" &&
-                  name.startsWith(
-                    `docker_${collection === "containers" ? "container" : collection === "networks" ? "network" : "volume"}_`,
-                  ) && !name.endsWith("_create")
-                : name.startsWith(kind + "_") &&
-                  !(kind === "ftp" && name.startsWith("ftp_account_state_")) &&
-                  !name.startsWith("supervisor_log_") &&
-                  !/_list|_status|_create/.test(name)
-            }
-            preset={preset}
-            selected={operation}
-            onSelect={setOperation}
-            onExecuted={refresh}
-          />
-          {kind === "docker" && collection === "containers" &&
-            targetName(current) && (
-              <>
-                <DockerExecManagement
-                  key={`${instance.id}:${targetName(current)}`}
+          {data.error && (
+            <div className="notice danger" role="alert">
+              {data.error}
+            </div>
+          )}
+          {kind === "database" && create && !databaseReceipt && (
+            <Unavailable
+              title={translate("缺少数据库管理记录读取权限")}
+              detail={translate("安全创建流程需要先读取指定名称的权威记录。")}
+            />
+          )}
+          {!capabilities.some((c) => c.name === name) ? (
+            <Unavailable title={translate("当前没有此资源的读取权限")} />
+          ) : (
+            <>
+              <div className="instance-list">
+                {rows.slice(offset, offset + 20).map((row, index) => {
+                  const target = targetName(row);
+                  const id = rowID(row, offset + index);
+                  const image = Array.isArray(row.RepoDigests)
+                    ? row.RepoDigests.join(" · ")
+                    : String(row.Image ?? row.Id ?? "");
+                  return (
+                    <button
+                      key={id || index}
+                      className="instance-row"
+                      disabled={
+                        kind === "docker" &&
+                        (!target || collection === "images")
+                      }
+                      aria-pressed={selected === id}
+                      onClick={() => {
+                        setSelected(id);
+                        setOperation(undefined);
+                        setCreating(false);
+                      }}
+                    >
+                      <div>
+                        <strong>
+                          {target ||
+                            image ||
+                            String(
+                              row.Name ?? row.ID ?? translate("未提供名称"),
+                            )}
+                        </strong>
+                        <p>
+                          {kind === "database"
+                            ? `${row.username ?? ""} · ${row.engine ?? ""} · ${choiceLabel(row.permission, "permission")}`
+                            : kind === "docker"
+                              ? String(row.Status ?? row.Driver ?? image)
+                              : kind === "supervisor"
+                                ? String(row.program_id ?? "")
+                                : row.read_only === true
+                                  ? translate("只读")
+                                  : translate("读写")}
+                        </p>
+                      </div>
+                      {typeof row.state === "string" ? (
+                        <State value={row.state} />
+                      ) : typeof row.State === "string" ? (
+                        <State value={row.State} />
+                      ) : typeof row.enabled === "boolean" ? (
+                        <State value={row.enabled ? "active" : "disabled"} />
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+              {!rows.length && !data.loading && !data.error && (
+                <Unavailable title={translate("暂无可见资源")} />
+              )}
+              <Pager
+                offset={offset}
+                limit={20}
+                total={rows.length}
+                count={Math.min(20, rows.length - offset)}
+                loading={data.loading}
+                onOffset={setOffset}
+              />
+            </>
+          )}
+          {creating && create && kind === "database" && databaseReceipt && (
+            <DatabaseRecreation
+              instanceID={instance.id}
+              receiptCapability={databaseReceipt}
+              createCapability={create}
+              onBack={() => setCreating(false)}
+              onExecuted={refresh}
+            />
+          )}
+          {creating && create && kind !== "database" && (
+            <ActionForm
+              key={create.name + instance.id}
+              capability={create}
+              preset={{
+                ...base,
+                ...(typeof data.data?.revision === "number"
+                  ? { expected_revision: data.data.revision }
+                  : {}),
+              }}
+              onBack={() => setCreating(false)}
+              onExecuted={refresh}
+            />
+          )}
+          {current &&
+            !creating &&
+            (kind === "database" ? (
+              typeof current.database === "string" &&
+              typeof current.username === "string" &&
+              typeof current.engine === "string" &&
+              typeof current.permission === "string" &&
+              typeof current.revision === "number" &&
+              Number.isSafeInteger(current.revision) &&
+              typeof current.state === "string" ? (
+                <ManagedDatabaseResources
+                  key={instance.id + ":" + current.database}
                   instanceID={instance.id}
-                  containerName={targetName(current)}
-                  running={String(current.State ?? "").toLowerCase() === "running"}
-                  capabilities={capabilities}
-                  onExecuted={refresh}
-                />
-                <DockerTerminalManagement
-                  key={`terminal:${instance.id}:${targetName(current)}`}
-                  instanceID={instance.id}
-                  containerName={targetName(current)}
-                  running={String(current.State ?? "").toLowerCase() === "running"}
+                  current={{
+                    database: current.database,
+                    username: current.username,
+                    engine: current.engine,
+                    permission: current.permission,
+                    revision: current.revision,
+                    state: current.state,
+                  }}
                   capabilities={capabilities}
                   onExecuted={refresh}
                   active={active}
                 />
+              ) : (
+                <Unavailable
+                  title={translate("数据库详情缺少状态或有效版本")}
+                  detail={translate(
+                    "请重新读取资源；记录状态和精确版本确认后才能进行管理操作。",
+                  )}
+                />
+              )
+            ) : (
+              <>
+                {kind === "ftp" && targetName(current) && (
+                  <FTPAccountRecovery
+                    key={`ftp-account-state:${instance.id}:${targetName(current)}`}
+                    id={instance.id}
+                    name={targetName(current)}
+                    capabilities={capabilities}
+                    onExecuted={refresh}
+                    active={active}
+                  />
+                )}
+                <ResourceActions
+                  capabilities={capabilities}
+                  names={(name) =>
+                    kind === "docker"
+                      ? name !== "docker_container_exec" &&
+                        name !== "docker_container_exec_status" &&
+                        name.startsWith(
+                          `docker_${collection === "containers" ? "container" : collection === "networks" ? "network" : "volume"}_`,
+                        ) &&
+                        !name.endsWith("_create")
+                      : name.startsWith(kind + "_") &&
+                        !(
+                          kind === "ftp" &&
+                          name.startsWith("ftp_account_state_")
+                        ) &&
+                        !name.startsWith("supervisor_log_") &&
+                        !/_list|_status|_create/.test(name)
+                  }
+                  preset={preset}
+                  selected={operation}
+                  onSelect={setOperation}
+                  onExecuted={refresh}
+                />
+                {kind === "docker" &&
+                  collection === "containers" &&
+                  targetName(current) && (
+                    <>
+                      <DockerExecManagement
+                        key={`${instance.id}:${targetName(current)}`}
+                        instanceID={instance.id}
+                        containerName={targetName(current)}
+                        running={
+                          String(current.State ?? "").toLowerCase() ===
+                          "running"
+                        }
+                        capabilities={capabilities}
+                        onExecuted={refresh}
+                      />
+                      <DockerTerminalManagement
+                        key={`terminal:${instance.id}:${targetName(current)}`}
+                        instanceID={instance.id}
+                        containerName={targetName(current)}
+                        running={
+                          String(current.State ?? "").toLowerCase() ===
+                          "running"
+                        }
+                        capabilities={capabilities}
+                        onExecuted={refresh}
+                        active={active}
+                      />
+                    </>
+                  )}
               </>
-            )}
-          </>
-        ))}
-      </>}
+            ))}
+        </>
+      )}
     </section>
   );
 }

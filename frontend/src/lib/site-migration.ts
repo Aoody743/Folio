@@ -48,27 +48,39 @@ export function parseSiteMigrationPlan(
       ? 0
       : plan.tls_certificate_revision;
   if (
-    typeof plan.id !== "string" || !/^m-[a-f0-9]{32}$/.test(plan.id) ||
-    typeof plan.site_id !== "string" || !validResourceID(plan.site_id) ||
-    typeof plan.site_name !== "string" || !plan.site_name ||
+    typeof plan.id !== "string" ||
+    !/^m-[a-f0-9]{32}$/.test(plan.id) ||
+    typeof plan.site_id !== "string" ||
+    !validResourceID(plan.site_id) ||
+    typeof plan.site_name !== "string" ||
+    !plan.site_name ||
     typeof plan.expected_revision !== "number" ||
-    !Number.isSafeInteger(plan.expected_revision) || plan.expected_revision < 1 ||
-    typeof plan.source_web_instance !== "string" || !validResourceID(plan.source_web_instance) ||
-    typeof plan.target_web_instance !== "string" || !validResourceID(plan.target_web_instance) ||
+    !Number.isSafeInteger(plan.expected_revision) ||
+    plan.expected_revision < 1 ||
+    typeof plan.source_web_instance !== "string" ||
+    !validResourceID(plan.source_web_instance) ||
+    typeof plan.target_web_instance !== "string" ||
+    !validResourceID(plan.target_web_instance) ||
     plan.source_web_instance === plan.target_web_instance ||
-    typeof phpInstance !== "string" || phpInstance !== "" && !validResourceID(phpInstance) ||
-    typeof tlsCertificateID !== "string" || tlsCertificateID !== "" && !validResourceID(tlsCertificateID) ||
+    typeof phpInstance !== "string" ||
+    (phpInstance !== "" && !validResourceID(phpInstance)) ||
+    typeof tlsCertificateID !== "string" ||
+    (tlsCertificateID !== "" && !validResourceID(tlsCertificateID)) ||
     typeof tlsCertificateRevision !== "number" ||
-    !Number.isSafeInteger(tlsCertificateRevision) || tlsCertificateRevision < 0 ||
-    !Array.isArray(plan.domains) || !plan.domains.every((domain) => typeof domain === "string") ||
+    !Number.isSafeInteger(tlsCertificateRevision) ||
+    tlsCertificateRevision < 0 ||
+    !Array.isArray(plan.domains) ||
+    !plan.domains.every((domain) => typeof domain === "string") ||
     typeof plan.default !== "boolean" ||
     typeof plan.tls_enabled !== "boolean" ||
-    (plan.configuration_mode !== "managed" && plan.configuration_mode !== "advanced") ||
+    (plan.configuration_mode !== "managed" &&
+      plan.configuration_mode !== "advanced") ||
     typeof plan.reset_advanced_config !== "boolean" ||
-    plan.tls_enabled && (!tlsCertificateID || tlsCertificateRevision < 1) ||
-    plan.configuration_mode === "advanced" && !plan.reset_advanced_config ||
-    plan.configuration_mode === "managed" && plan.reset_advanced_config ||
-    typeof plan.expires_at !== "string" || !Number.isFinite(Date.parse(plan.expires_at))
+    (plan.tls_enabled && (!tlsCertificateID || tlsCertificateRevision < 1)) ||
+    (plan.configuration_mode === "advanced" && !plan.reset_advanced_config) ||
+    (plan.configuration_mode === "managed" && plan.reset_advanced_config) ||
+    typeof plan.expires_at !== "string" ||
+    !Number.isFinite(Date.parse(plan.expires_at))
   )
     return undefined;
 
