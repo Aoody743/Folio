@@ -16,12 +16,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
-      POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/.cache/rewrite
+      POWERLINUX_BUILD_CACHE: ${{ runner.temp }}/folio-beta3-build-cache
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 1.0-beta3
+          ref: ${{ github.sha }}
+          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
@@ -36,9 +37,19 @@ jobs:
 
       - name: Verify source, UI and installer
         run: |
-          make rewrite-deps
+          # Acceptance harness corrections may advance without changing the
+          # frozen product. Reject any non-test product-source differences.
+          changed=$(git diff --name-only 1.0-beta3 "$GITHUB_SHA" -- cmd internal frontend go.mod go.sum third_party scripts)
+          unexpected=$(printf '%s\n' "$changed" | sed '/^$/d; /_test\.go$/d')
+          [[ -z "$unexpected" ]] || { printf '%s\n' "$unexpected"; exit 1; }
+          make rewrite-deps REWRITE_CACHE="$POWERLINUX_BUILD_CACHE"
           umask 077
-          make rewrite-test
+          make rewrite-test REWRITE_CACHE="$POWERLINUX_BUILD_CACHE"
+
+      - name: Restore the immutable product tag for packaging
+        uses: actions/checkout@v4
+        with:
+          ref: 1.0-beta3
 
       - name: Build and verify the tagged beta3 package
         run: |

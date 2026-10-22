@@ -51,8 +51,21 @@ func TestDatabaseWebToolsHaveTrustedSourcesAndManagedLoopbackServices(t *testing
 	if source.Kind != "signed_package" || len(source.Packages) != 1 || source.Packages[0] != "pgadmin4-server" || source.RepositoryKeySHA256 != "546cbd50f8cadcf0832dc0aef9959b1ccf0b7e9a5e99c1518784bcc46f455585" || pg.Service.DefaultPort != 19051 || pg.Service.Programs[0] != "python3" {
 		t.Fatalf("pgAdmin does not use its pinned vendor key and isolated server package: %+v", pg)
 	}
-	if source.Repository != "https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/"+map[string]string{"12": "bookworm", "13": "trixie"}[CurrentPlatform().Release] {
-		t.Fatalf("pgAdmin repository does not match the current Debian suite: %s", source.Repository)
+	// Validate both supported Debian feeds explicitly; the test runner itself
+	// may be Ubuntu and must not be mistaken for a Debian release number.
+	for release, suite := range map[string]string{"12": "bookworm", "13": "trixie"} {
+		candidate, err := BuiltinCatalog()
+		if err != nil {
+			t.Fatal(err)
+		}
+		candidate.useDatabaseWebToolSources(Platform{OS: "linux", Arch: "amd64", Distro: "debian", Release: release})
+		tool, err := candidate.Get("pgadmin")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if tool.Versions[0].Source.Repository != "https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/"+suite {
+			t.Fatalf("pgAdmin repository does not match Debian %s: %s", release, tool.Versions[0].Source.Repository)
+		}
 	}
 	for _, item := range []Manifest{pma, pg} {
 		if item.Verification.Status != "not_tested" {
