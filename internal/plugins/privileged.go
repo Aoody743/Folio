@@ -256,7 +256,7 @@ func NewPrivilegedExecutorWithOptions(config PrivilegedConfig, options Privilege
 		}
 		mode := os.FileMode(0700)
 		if dir == config.ApplicationsRootDir {
-			mode = 0755
+			mode = 0711
 		}
 		if err = realDirectory(dir); err != nil {
 			return nil, err
@@ -315,7 +315,9 @@ func NewPrivilegedExecutorWithOptions(config PrivilegedConfig, options Privilege
 		if err = os.Chown(config.RootDir, 0, int(e.gid)); err != nil {
 			return nil, err
 		}
-		if err = os.Chmod(config.RootDir, 0750); err != nil {
+		// Keep the shared software root non-listable but traversable so a
+		// per-app identity can reach the read-only Node.js runtime.
+		if err = os.Chmod(config.RootDir, 0711); err != nil {
 			return nil, err
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)

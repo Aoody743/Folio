@@ -1,6 +1,6 @@
 # phpMyAdmin/pgAdmin、ACME/DNS 与应用入口适配计划
 
-更新时间：2026-10-19。本计划只覆盖 phpMyAdmin、pgAdmin、ACME/DNS，以及托管应用的 Git、Node.js、Go 入口。它是后续适配与验收计划，不把现有未验收代码改记为完成，也不恢复 MongoDB、FTP 或其他暂缓插件的工作。
+更新时间：2026-10-20。本计划只覆盖 phpMyAdmin、pgAdmin、ACME/DNS，以及托管应用的 Git、Node.js、Go 入口。它是后续适配与验收计划，不把现有未验收代码改记为完成，也不恢复 MongoDB、FTP 或其他暂缓插件的工作。
 
 ## 执行状态
 
@@ -8,8 +8,8 @@
 
 ## 计划建立时的基线
 
-- 首轮真实系统验收目标沿用 Debian 13 amd64 与 Ubuntu 24.04 amd64。其他发行版和架构须有各自的原生证据，不能从 manifest 声明推定已支持。
-- `phpmyadmin`、`pgadmin` 已有软件目录条目，但生命周期能力未验收。phpMyAdmin 的签名仓库包尚未完成来源与功能验收，旧版本没有可用的可信来源；pgAdmin 还没有配置可信的软件来源。两者不得通过旧 `install.sh` 执行安装。
+- beta2 目标系统为 Ubuntu 24.04 amd64；Git、Node.js、Go 目录条目只在该系统/架构提供。其他发行版和架构须有各自的原生证据，不能从 manifest 声明推定已支持。
+- `phpmyadmin`、`pgadmin` 已有软件目录条目，但生命周期能力未验收。Ubuntu 24.04 的 Ubuntu 签名仓库提供 phpMyAdmin 包，但产品尚未接入受管 PHP-FPM/站点发布；pgAdmin 官方 apt 仓库有签名包，但产品尚未实现受控的第三方仓库密钥/源管理和运行时适配。两者不得通过旧 `install.sh` 执行安装。
 - ACME 已有订单、手工 HTTP 验证和 DNS 适配代码。Cloudflare/DNSPod 等 Lego 驱动及 DNSPod International、ISPConfig、Knot、Zilore、Online 原生驱动都需要按供应商逐项验收；代码可用不等于真实签发、清理和续期已通过。FreeDNS、Cyon、KingHost 等标记不可用的适配器继续保持不可选。
 - 托管应用当前位于“软件 → 应用”入口，支持 Next.js 和 Go 模板、归档导入、公开 HTTPS Git 导入及固定 SSH 主机指纹导入。它还没有通用 Node.js 项目类型；私有仓库认证未接入；Git、Node.js 和 Go 的软件目录声明均未完成目标系统生命周期验收。
 
@@ -36,12 +36,12 @@
 
 ### 第 1 批：闭合 Git、Node.js、Go 应用入口
 
-1. 在两种目标系统验证 Git/OpenSSH、Node.js/npm 和 Go 的签名包来源、版本、重复安装、状态与卸载行为；清单记录实际版本，不以 `distribution` 占位版本作为支持承诺。
+1. 在 Ubuntu 24.04 amd64 验证 Git/OpenSSH、Node.js/npm 和 Go 的可信来源、版本、重复安装、状态与卸载行为；清单记录实际版本，不以 `distribution` 占位版本作为支持承诺。
 2. 将用户入口明确为 Node.js 与 Go。Node.js 项目要求根目录 `package.json` 和 npm 锁文件，使用锁文件安装依赖并运行项目声明的 build/start script；Next.js 继续使用模板和健康检查。Go 项目校验 `go.mod`/`go.sum`，在受控网络和资源预算下构建，再启动生成的二进制。
 3. Git 导入保留公开 HTTPS 与 SSH 固定主机指纹校验；增加私有仓库时使用每应用、可撤销的部署凭据，不接受含口令/token 的仓库 URL。导入后记录仓库、分支/引用和精确 commit，日志不得包含凭据。
 4. clone、依赖安装和构建始终以应用专属非特权用户运行，限制时长、输出和并发；部署成功后才切换运行版本，失败保留上一个可用版本。重启后服务、站点反代、日志和状态仍可恢复。
 
-**验收：** 在每个目标 OS 上分别完成公开 HTTPS Git、固定主机指纹 SSH、归档、Node.js 和 Go 的创建/部署/更新/失败恢复/重启/删除；验证未知 SSH 指纹拒绝、错误 lockfile/go.sum、恶意仓库路径和权限越界均不会执行 root 操作。私有 Git 凭据未完成前，界面明确标注不支持。
+**验收：** 在 Ubuntu 24.04 amd64 完成公开 HTTPS Git、固定主机指纹 SSH、归档、Node.js 和 Go 的创建/部署/更新/失败恢复/重启/删除；验证未知 SSH 指纹拒绝、错误 lockfile/go.sum、恶意仓库路径和权限越界均不会执行 root 操作。私有 Git 凭据未完成前，界面明确标注不支持。
 
 ### 第 2 批：托管 phpMyAdmin 与 pgAdmin
 
@@ -63,7 +63,7 @@
 
 ### 第 4 批：联合回归与支持声明
 
-- 在 Debian 13 amd64、Ubuntu 24.04 amd64 的干净主机上，按固定版本包跑完三批验收；每项证据关联源码 commit、发行包哈希、OS、软件版本和结果。
+- 在 Ubuntu 24.04 amd64 干净主机上，按固定版本包跑完 beta2 已交付范围的验收；每项证据关联源码 commit、发行包哈希、OS、软件版本和结果。
 - 对应用与证书操作检查允许/拒绝/撤权、排队/运行/失败/取消、重启恢复、审计字段和日志脱敏。跨资源操作需验证并发锁和失败回滚。
 - 更新 catalog 状态、用户入口文案、安装/运维说明和已知限制；只有完成实测的 OS/架构、版本、DNS provider 和操作才标为可用。
 

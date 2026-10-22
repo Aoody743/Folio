@@ -49,19 +49,20 @@ provenance and host compatibility. User servers need no Node, Go or Python.
 
 ## Verified installation
 
-For the 1.0-beta1 Linux amd64 release, the release includes a one-command
-bootstrap installer. On a fresh systemd host, run:
+For the 1.0-beta2 Linux amd64 release, the release includes a one-command
+bootstrap installer. On a fresh Ubuntu 24.04 amd64 systemd host, run:
 
 ```sh
-curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta1/install-1.0-beta1.sh | sudo bash
+curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta2/install-1.0-beta2.sh | sudo bash
 ```
 
-The bootstrap downloads the beta1 archive and the release `SHA256SUMS.txt`,
-checks the package SHA-256, then passes that archive to the package installer.
-Review [`install-1.0-beta1.sh`](install-1.0-beta1.sh) and the release checksum
-file before running it. Optional installer flags such as `--prefix` can be
-passed after `bash -s --`; `--prefix` creates no system user or service. The
-one-command bootstrap targets Linux amd64.
+The bootstrap downloads the beta2 archive and release `SHA256SUMS.txt`, checks
+the package SHA-256, then passes that archive to the package installer. A fresh
+system install enables the reviewed software and website/certificate modules;
+upgrades preserve an existing Agent policy. Use `--no-managed-features` to skip
+the default module setup. `--prefix` creates no system user or service. The
+one-command bootstrap targets Linux amd64; the selected runtime catalog was
+accepted only on Ubuntu 24.04 amd64.
 
 Download and review `install.sh` from a trusted project revision. Obtain the
 artifact hash from a trusted release record before running the installer.

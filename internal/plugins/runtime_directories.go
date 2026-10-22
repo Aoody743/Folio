@@ -18,6 +18,11 @@ func (e *PrivilegedExecutor) prepareInstanceDirectories(paths Paths) error {
 	}
 	for _, dir := range []string{filepath.Dir(paths.Root), paths.Root, paths.ConfigDir, paths.BackupDir} {
 		mode := os.FileMode(0750)
+		if parts[0] == "nodejs" && (dir == filepath.Dir(paths.Root) || dir == paths.Root) {
+			// Per-app users may execute the reviewed, read-only Node.js runtime
+			// through this exact path; they still cannot list the software root.
+			mode = 0711
+		}
 		if dir == paths.BackupDir {
 			mode = 0700
 		}

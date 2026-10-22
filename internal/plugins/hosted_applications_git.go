@@ -202,11 +202,45 @@ func hostedGitEnvironment(home string, remote hostedAppGitRemote, knownHosts str
 		"GIT_ALLOW_PROTOCOL=https:ssh",
 		"GIT_LFS_SKIP_SMUDGE=1",
 	}
+	environment = append(environment, hostedAppOutboundNetworkEnvironment()...)
 	if remote.Scheme == "ssh" {
 		sshCommand := shellSingleQuote(sshProgram) + " -F /dev/null -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=" + shellSingleQuote(knownHosts) + " -o GlobalKnownHostsFile=/dev/null -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no -o IdentitiesOnly=yes -o ConnectTimeout=10"
 		environment = append(environment, "GIT_SSH_COMMAND="+sshCommand)
 	}
 	return environment
+}
+
+func hostedAppOutboundNetworkEnvironment() []string {
+	environment := make([]string, 0, 6)
+	for _, key := range []string{"HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"} {
+		value := strings.TrimSpace(os.Getenv(key))
+		if value != "" && validHostedGitProxyURL(value) {
+			environment = append(environment, key+"="+value)
+		}
+	}
+	if value := strings.TrimSpace(os.Getenv("SSL_CERT_FILE")); filepath.IsAbs(value) && value == filepath.Clean(value) && !strings.ContainsAny(value, "\x00\r\n") {
+		environment = append(environment, "SSL_CERT_FILE="+value)
+		environment = append(environment, "NODE_EXTRA_CA_CERTS="+value)
+	}
+	return environment
+}
+
+func validHostedGitProxyURL(value string) bool {
+	parsed, err := url.Parse(value)
+	if err != nil || parsed.Opaque != "" || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" || (parsed.Path != "" && parsed.Path != "/") {
+		return false
+	}
+	host := parsed.Hostname()
+	if host == "" || strings.ContainsAny(host, "\x00\r\n") {
+		return false
+	}
+	if port := parsed.Port(); port != "" {
+		value, err := strconv.Atoi(port)
+		if err != nil || value < 1 || value > 65535 {
+			return false
+		}
+	}
+	return true
 }
 
 func (e *PrivilegedExecutor) pinnedGitKnownHosts(ctx context.Context, remote hostedAppGitRemote, credential *syscall.Credential, path string) error {
@@ -288,6 +322,9 @@ func (e *PrivilegedExecutor) importHostedAppGit(ctx context.Context, input hoste
 	defer unlock()
 	receipt, err := e.hostedAppReceipt(input.ID)
 	if err != nil {
+		return empty, err
+	}
+	if err = ensureHostedAppRootTraversable(receipt); err != nil {
 		return empty, err
 	}
 	if receipt.Status == "retained" || receipt.Revision != input.ExpectedRevision {

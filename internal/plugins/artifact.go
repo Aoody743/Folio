@@ -26,6 +26,17 @@ const maxExtractedBytes = int64(4 << 30)
 const maxArtifactFiles = 100000
 
 func secureRuntimeTree(root string, gid uint32) error {
+	return secureRuntimeTreeWithAccess(root, gid, false)
+}
+
+// Node.js archives are immutable shared executables used by isolated
+// per-application users. Make their code readable and executable without
+// giving those users access to the Agent's service group.
+func secureApplicationRuntimeTree(root string, gid uint32) error {
+	return secureRuntimeTreeWithAccess(root, gid, true)
+}
+
+func secureRuntimeTreeWithAccess(root string, gid uint32, publicRead bool) error {
 	return filepath.WalkDir(root, func(name string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -34,12 +45,33 @@ func secureRuntimeTree(root string, gid uint32) error {
 		if err != nil {
 			return err
 		}
-		if info.Mode()&os.ModeSymlink != 0 || (!info.IsDir() && !info.Mode().IsRegular()) {
+		if info.Mode()&os.ModeSymlink != 0 {
+			resolved, resolveErr := filepath.EvalSymlinks(name)
+			if resolveErr != nil {
+				return failure("artifact_unsafe_entry", "Runtime archive contains a dangling or cyclic symbolic link", 412)
+			}
+			relative, relErr := filepath.Rel(root, resolved)
+			if relErr != nil || !filepath.IsLocal(relative) {
+				return failure("artifact_unsafe_entry", "Runtime archive symbolic link resolves outside its managed root", 412)
+			}
+			target, statErr := os.Stat(resolved)
+			if statErr != nil || !target.Mode().IsRegular() && !target.IsDir() {
+				return failure("artifact_unsafe_entry", "Runtime archive symbolic link target is not a regular file or directory", 412)
+			}
+			return nil
+		}
+		if !info.IsDir() && !info.Mode().IsRegular() {
 			return failure("artifact_unsafe_entry", "Runtime only permits regular files and directories", 412)
 		}
 		mode := os.FileMode(0640)
+		if publicRead {
+			mode = 0644
+		}
 		if info.IsDir() || info.Mode().Perm()&0111 != 0 {
 			mode = 0750
+			if publicRead {
+				mode = 0755
+			}
 		}
 		if err = os.Chmod(name, mode); err != nil {
 			return err
@@ -175,7 +207,9 @@ func extractArtifact(ctx context.Context, fileName, target string, source Source
 	defer root.Close()
 	var total int64
 	count := 0
-	write := func(name string, mode os.FileMode, size int64, reader io.Reader) error {
+	type safeLink struct{ name, target string }
+	links := []safeLink{}
+	write := func(name, linkTarget string, mode os.FileMode, size int64, reader io.Reader) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -191,8 +225,15 @@ func extractArtifact(ctx context.Context, fileName, target string, source Source
 		if clean == "" {
 			return nil
 		}
-		if mode&os.ModeSymlink != 0 || mode&os.ModeDevice != 0 || mode&os.ModeNamedPipe != 0 || mode&os.ModeSocket != 0 || mode&os.ModeSetuid != 0 || mode&os.ModeSetgid != 0 {
-			return failure("artifact_unsafe_entry", "Artifact contains a link, device or privileged-mode entry", 412)
+		if mode&os.ModeDevice != 0 || mode&os.ModeNamedPipe != 0 || mode&os.ModeSocket != 0 || mode&os.ModeSetuid != 0 || mode&os.ModeSetgid != 0 {
+			return failure("artifact_unsafe_entry", "Artifact contains a device or privileged-mode entry", 412)
+		}
+		if mode&os.ModeSymlink != 0 {
+			if size != 0 || len(links) >= 1024 || !safeRelativeLinkTarget(clean, linkTarget) {
+				return failure("artifact_unsafe_entry", "Artifact contains an unsafe or excessive symbolic link", 412)
+			}
+			links = append(links, safeLink{name: clean, target: linkTarget})
+			return nil
 		}
 		if mode.IsDir() {
 			return root.MkdirAll(clean, 0755)
@@ -218,6 +259,31 @@ func extractArtifact(ctx context.Context, fileName, target string, source Source
 		}
 		return err
 	}
+	finishLinks := func() error {
+		// Create links only after regular entries, so an archive cannot use one
+		// to redirect a later extraction write.
+		for _, link := range links {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if err := root.Symlink(link.target, link.name); err != nil {
+				return failure("artifact_unsafe_entry", "Artifact contains a duplicate or invalid symbolic link", 412)
+			}
+			resolved, err := filepath.EvalSymlinks(filepath.Join(target, link.name))
+			if err != nil {
+				return failure("artifact_unsafe_entry", "Artifact contains a dangling or cyclic symbolic link", 412)
+			}
+			relative, err := filepath.Rel(target, resolved)
+			if err != nil || !filepath.IsLocal(relative) {
+				return failure("artifact_unsafe_entry", "Artifact symbolic link resolves outside its staging root", 412)
+			}
+			info, err := os.Stat(resolved)
+			if err != nil || !info.Mode().IsRegular() && !info.IsDir() {
+				return failure("artifact_unsafe_entry", "Artifact symbolic link target is not a regular file or directory", 412)
+			}
+		}
+		return nil
+	}
 	if source.ArchiveFormat == "zip" {
 		archive, err := zip.OpenReader(fileName)
 		if err != nil {
@@ -229,13 +295,13 @@ func extractArtifact(ctx context.Context, fileName, target string, source Source
 			if err != nil {
 				return err
 			}
-			err = write(entry.Name, entry.Mode(), int64(entry.UncompressedSize64), reader)
+			err = write(entry.Name, "", entry.Mode(), int64(entry.UncompressedSize64), reader)
 			reader.Close()
 			if err != nil {
 				return err
 			}
 		}
-		return nil
+		return finishLinks()
 	}
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -263,18 +329,26 @@ func extractArtifact(ctx context.Context, fileName, target string, source Source
 	for {
 		entry, err := archive.Next()
 		if err == io.EOF {
-			return nil
+			return finishLinks()
 		}
 		if err != nil {
 			return err
 		}
-		if entry.Typeflag != tar.TypeReg && entry.Typeflag != tar.TypeRegA && entry.Typeflag != tar.TypeDir {
+		if entry.Typeflag != tar.TypeReg && entry.Typeflag != tar.TypeRegA && entry.Typeflag != tar.TypeDir && entry.Typeflag != tar.TypeSymlink {
 			return failure("artifact_unsafe_entry", "Artifact links and device entries are not accepted", 412)
 		}
-		if err = write(entry.Name, entry.FileInfo().Mode(), entry.Size, archive); err != nil {
+		if err = write(entry.Name, entry.Linkname, entry.FileInfo().Mode(), entry.Size, archive); err != nil {
 			return err
 		}
 	}
+}
+
+func safeRelativeLinkTarget(linkPath, rawTarget string) bool {
+	if rawTarget == "" || len(rawTarget) > 4096 || strings.ContainsAny(rawTarget, "\\\x00:") || strings.HasPrefix(rawTarget, "/") || filepath.IsAbs(rawTarget) {
+		return false
+	}
+	clean := path.Clean(path.Join(path.Dir(linkPath), rawTarget))
+	return clean != "." && clean != ".." && !strings.HasPrefix(clean, "../")
 }
 
 func archivePath(raw string, strip int) (string, error) {

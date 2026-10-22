@@ -32,6 +32,27 @@ func TestHostedAppIdentityAndPaths(t *testing.T) {
 	}
 }
 
+func TestHostedAppRootAllowsTraversalWithoutListing(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("application root metadata repair requires root")
+	}
+	root := t.TempDir()
+	if err := os.Chmod(root, 0700); err != nil {
+		t.Fatal(err)
+	}
+	receipt := hostedAppReceipt{HostedApplication: HostedApplication{ID: "qa-app"}, Root: root}
+	if err := ensureHostedAppRootTraversable(receipt); err != nil {
+		t.Fatal("protected application root was not made traversable", err)
+	}
+	info, err := os.Stat(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0711 {
+		t.Fatalf("application root must allow traversal without listing or writes: mode %04o", info.Mode().Perm())
+	}
+}
+
 func TestHostedAppGitSourceMetadataRetainsOnlyPinnedPublicIdentity(t *testing.T) {
 	commit := strings.Repeat("a", 40)
 	if !validHostedAppGitSourceMetadata("https://github.com/owner/repo.git", "release/v1", commit) {
@@ -47,6 +68,44 @@ func TestHostedAppGitSourceMetadataRetainsOnlyPinnedPublicIdentity(t *testing.T)
 	} {
 		if validHostedAppGitSourceMetadata(source.repository, source.branch, source.commit) {
 			t.Fatalf("unsafe Git source metadata was accepted: %+v", source)
+		}
+	}
+}
+
+func TestHostedGitEnvironmentUsesOnlyUnauthenticatedValidatedProxies(t *testing.T) {
+	t.Setenv("HTTPS_PROXY", "http://127.0.0.1:39813")
+	t.Setenv("https_proxy", "http://qa-user:proxy-secret@example.invalid:8080")
+	t.Setenv("HTTP_PROXY", "file:///etc/passwd")
+	t.Setenv("http_proxy", "http://proxy.example.invalid:8080/path")
+	t.Setenv("SSL_CERT_FILE", "/etc/ssl/certs/qa-bundle.pem")
+	remote, err := parseHostedAppGitRemote(hostedAppGitInput{ID: "demo", ExpectedRevision: 1, RepositoryURL: "https://github.com/owner/repo.git"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	environment := strings.Join(hostedGitEnvironment("/tmp/home", remote, "", ""), "\n")
+	if !strings.Contains(environment, "HTTPS_PROXY=http://127.0.0.1:39813") || !strings.Contains(environment, "SSL_CERT_FILE=/etc/ssl/certs/qa-bundle.pem") {
+		t.Fatal("validated proxy and certificate settings were not forwarded to Git")
+	}
+	for _, rejected := range []string{"proxy-secret", "qa-user", "HTTP_PROXY=file:", "http_proxy=http://proxy.example.invalid:8080/path"} {
+		if strings.Contains(environment, rejected) {
+			t.Fatalf("unsafe proxy setting reached Git: %q", rejected)
+		}
+	}
+}
+
+func TestHostedAppBuildEnvironmentUsesOnlyValidatedNetworkSettings(t *testing.T) {
+	t.Setenv("HTTPS_PROXY", "http://127.0.0.1:39813")
+	t.Setenv("https_proxy", "http://qa-user:proxy-secret@example.invalid:8080")
+	t.Setenv("HTTP_PROXY", "file:///etc/passwd")
+	t.Setenv("http_proxy", "http://proxy.example.invalid:8080/path")
+	t.Setenv("SSL_CERT_FILE", "/etc/ssl/certs/qa-bundle.pem")
+	environment := strings.Join(hostedAppOutboundNetworkEnvironment(), "\n")
+	if !strings.Contains(environment, "HTTPS_PROXY=http://127.0.0.1:39813") || !strings.Contains(environment, "SSL_CERT_FILE=/etc/ssl/certs/qa-bundle.pem") || !strings.Contains(environment, "NODE_EXTRA_CA_CERTS=/etc/ssl/certs/qa-bundle.pem") {
+		t.Fatal("validated proxy and certificate settings were not forwarded to managed builds")
+	}
+	for _, rejected := range []string{"proxy-secret", "qa-user", "HTTP_PROXY=file:", "http_proxy=http://proxy.example.invalid:8080/path"} {
+		if strings.Contains(environment, rejected) {
+			t.Fatalf("unsafe network setting reached managed build: %q", rejected)
 		}
 	}
 }
@@ -134,15 +193,23 @@ func TestHostedAppSystemdUnitUsesOwnedLoopbackService(t *testing.T) {
 func TestHostedNodeAppSystemdUnitRunsDeclaredScriptWithLoopbackEnvironment(t *testing.T) {
 	receipt := hostedAppReceipt{
 		HostedApplication: HostedApplication{ID: "demo", Runtime: "nodejs", Port: 43127, User: "plapp_1234567890abcdef"},
-		RuntimeProgram:    "/usr/bin/npm",
+		RuntimeProgram:    "/opt/folio/node/bin/node",
+		RuntimeNPMCLI:     "/opt/folio/node/lib/node_modules/npm/bin/npm-cli.js",
 		ProjectDir:        filepath.Join(string(filepath.Separator), "srv", "powerlinux-apps", "demo", "project"),
 		DataDir:           filepath.Join(string(filepath.Separator), "srv", "powerlinux-apps", "demo", "data"),
 	}
 	unit := string(hostedAppUnit(receipt))
-	for _, expected := range []string{`ExecStart="/usr/bin/npm" "run" "start"`, "Environment=HOST=127.0.0.1", "Environment=HOSTNAME=127.0.0.1", "Environment=PORT=43127", "User=plapp_1234567890abcdef"} {
+	for _, expected := range []string{`ExecStart="/opt/folio/node/bin/node" "/opt/folio/node/lib/node_modules/npm/bin/npm-cli.js" "run" "start"`, "Environment=HOST=127.0.0.1", "Environment=HOSTNAME=127.0.0.1", "Environment=PORT=43127", "User=plapp_1234567890abcdef"} {
 		if !strings.Contains(unit, expected) {
 			t.Fatalf("generated Node.js unit does not include %q: %s", expected, unit)
 		}
+	}
+	if !strings.Contains(unit, "WorkingDirectory="+receipt.ProjectDir+"\n") || strings.Contains(unit, "WorkingDirectory=\""+receipt.ProjectDir) {
+		t.Fatalf("systemd working directory must be an absolute unquoted path: %s", unit)
+	}
+	legacy := string(hostedAppLegacyQuotedWorkingDirectoryUnit(receipt))
+	if !strings.Contains(legacy, "WorkingDirectory=\""+receipt.ProjectDir+"\"\n") || !hostedAppUnitMatches(receipt, []byte(legacy)) {
+		t.Fatalf("known legacy systemd unit was not recognized for safe migration: %s", legacy)
 	}
 }
 

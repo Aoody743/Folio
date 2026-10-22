@@ -521,7 +521,12 @@ func (e *PrivilegedExecutor) apply(ctx context.Context, input ApplyInput) (insta
 					_ = os.RemoveAll(stage)
 					return instance, err
 				}
-				if err = secureRuntimeTree(stage, e.gid); err != nil {
+				if plan.PluginID == "nodejs" {
+					err = secureApplicationRuntimeTree(stage, e.gid)
+				} else {
+					err = secureRuntimeTree(stage, e.gid)
+				}
+				if err != nil {
 					_ = os.RemoveAll(stage)
 					return instance, err
 				}
@@ -1144,7 +1149,26 @@ func copyTree(ctx context.Context, source, destination string) error {
 			return err
 		}
 		if entry.Type()&os.ModeSymlink != 0 {
-			return failure("snapshot_unsafe_entry", "Managed snapshot does not follow symbolic links", 412)
+			linkTarget, linkErr := sourceRoot.Readlink(filepath.ToSlash(relative))
+			if linkErr != nil || !safeRelativeLinkTarget(filepath.ToSlash(relative), filepath.ToSlash(linkTarget)) {
+				return failure("snapshot_unsafe_entry", "Managed snapshot contains an unsafe symbolic link", 412)
+			}
+			resolved, resolveErr := filepath.EvalSymlinks(filepath.Join(source, relative))
+			if resolveErr != nil {
+				return failure("snapshot_unsafe_entry", "Managed snapshot contains a dangling or cyclic symbolic link", 412)
+			}
+			resolvedRelative, relErr := filepath.Rel(source, resolved)
+			if relErr != nil || !filepath.IsLocal(resolvedRelative) {
+				return failure("snapshot_unsafe_entry", "Managed snapshot symbolic link resolves outside its root", 412)
+			}
+			targetInfo, statErr := os.Stat(resolved)
+			if statErr != nil || !targetInfo.Mode().IsRegular() && !targetInfo.IsDir() {
+				return failure("snapshot_unsafe_entry", "Managed snapshot symbolic link target is not a regular file or directory", 412)
+			}
+			if err = destinationRoot.Symlink(linkTarget, filepath.ToSlash(relative)); err != nil {
+				return failure("snapshot_unsafe_entry", "Managed snapshot contains a duplicate or invalid symbolic link", 412)
+			}
+			return nil
 		}
 		info, err := entry.Info()
 		if err != nil {

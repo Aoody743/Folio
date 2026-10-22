@@ -66,3 +66,28 @@ func TestDatabaseWebToolsHaveTrustedSourcesAndManagedLoopbackServices(t *testing
 		t.Fatal("pgAdmin advertised an unsupported official-repository architecture")
 	}
 }
+
+func TestSelectedRuntimeCatalogIsVerifiedOnlyOnUbuntu2404AMD64(t *testing.T) {
+	catalog, err := BuiltinCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ubuntu := Platform{OS: "linux", Arch: "amd64", Distro: "ubuntu", Release: "24.04"}
+	for _, id := range []string{"git", "nodejs", "golang"} {
+		manifest, err := catalog.Get(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if manifest.Verification.Status != "verified" || !manifest.Supports(ubuntu) {
+			t.Errorf("%s lacks Ubuntu 24.04 amd64 verification: %+v", id, manifest.Verification)
+		}
+		for _, platform := range []Platform{
+			{OS: "linux", Arch: "amd64", Distro: "debian", Release: "13"},
+			{OS: "linux", Arch: "arm64", Distro: "ubuntu", Release: "24.04"},
+		} {
+			if manifest.Supports(platform) {
+				t.Errorf("%s unexpectedly supports unaccepted platform %+v", id, platform)
+			}
+		}
+	}
+}

@@ -18,9 +18,17 @@ func TestHostedNodeBuildUsesNpmLockAndSwitchesAfterSuccess(t *testing.T) {
 	if os.Geteuid() != 0 {
 		t.Skip("isolated application build requires root to set its child identity")
 	}
+	node, err := exec.LookPath("node")
+	if err != nil {
+		t.Skip("Node.js is not installed in this test environment")
+	}
 	npm, err := exec.LookPath("npm")
 	if err != nil {
 		t.Skip("npm is not installed in this test environment")
+	}
+	npmCLI, err := filepath.EvalSymlinks(npm)
+	if err != nil || filepath.Ext(npmCLI) != ".js" {
+		t.Skip("npm is not exposed as a JavaScript CLI in this test environment")
 	}
 	account, err := user.LookupId("65534")
 	if err != nil {
@@ -34,7 +42,11 @@ func TestHostedNodeBuildUsesNpmLockAndSwitchesAfterSuccess(t *testing.T) {
 	if err != nil || gid64 == 0 {
 		t.Fatal("nobody account has an invalid GID")
 	}
-	root := t.TempDir()
+	root, err := os.MkdirTemp("", "powerlinux-hostedapp-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(root) })
 	if err = os.Chmod(root, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -69,14 +81,14 @@ func TestHostedNodeBuildUsesNpmLockAndSwitchesAfterSuccess(t *testing.T) {
 	credential := &syscall.Credential{Uid: uint32(uid64), Gid: uint32(gid64), Groups: []uint32{uint32(gid64)}}
 	environment := []string{
 		"HOME=" + home,
-		"PATH=" + filepath.Dir(npm) + ":/usr/bin:/bin",
+		"PATH=" + filepath.Dir(node) + ":/usr/bin:/bin",
 		"PORT=43127",
 		"NODE_ENV=production",
 		"npm_config_offline=true",
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	if err = (&PrivilegedExecutor{}).buildNodeHostedApp(ctx, receipt, npm, credential, environment); err != nil {
+	if err = (&PrivilegedExecutor{}).buildNodeHostedApp(ctx, receipt, node, npmCLI, credential, environment); err != nil {
 		t.Fatalf("locked Node.js template build failed: %v", err)
 	}
 	if !hostedAppProjectBuilt(project, "nodejs") {

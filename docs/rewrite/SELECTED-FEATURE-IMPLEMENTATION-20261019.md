@@ -1,6 +1,6 @@
 # phpMyAdmin/pgAdmin、ACME/DNS 与应用入口执行记录
 
-更新时间：2026-10-19。本文记录范围计划的代码改动、本地验证和仍需目标主机/外部账号完成的验收；源码测试不代表生产支持承诺。
+更新时间：2026-10-20。本文记录范围计划的代码改动与验收边界。beta2 的系统目标按用户确认收敛为 Ubuntu 24.04 amd64。逐项目标系统证据见[验收记录](./SELECTED-FEATURE-ACCEPTANCE-20261019.md)；源码测试不代表生产支持承诺。
 
 ## 已完成的本地实现
 
@@ -54,9 +54,12 @@
 
 ## 尚未通过的目标环境验收
 
-当前执行容器报告 Debian 13.6，但 PID 1 是 tail、systemd 状态为 offline，Node/npm 来自 Codex 工具运行时而不是 /usr/bin/npm。这不足以证明 Debian 13 主机的可信软件安装、systemd 服务启动/重启、反向代理或卸载行为；本轮也没有 Ubuntu 24.04 干净主机、真实 DNS 供应商账号、测试 zone 或 ACME staging/production 域名。
+- beta2 的 Git、Node.js、Go 目录条目仅声明 Ubuntu 24.04 amd64；不声明 Debian、ARM 或其他发行版/架构支持。
+- Go 1.22.2 运行时及 Go 归档应用构建、非 root systemd 服务和 HTTP 验收已通过。公开 HTTPS Git 应用与固定 SSH 指纹应用均成功部署；错误 SSH pin 拒绝且不修改应用来源。私有 Git 认证仍未实现。
+- DNS 协议测试使用本地 API/CA fixture；真实 DNS 供应商账号、隔离 zone、公开 CA staging/production 签发和续期尚未执行。全部外部 provider 仍未验收。
+- phpMyAdmin/pgAdmin 因产品级来源集成和受管 Web 生命周期适配器缺失而不可安装；数据库 canary、HTTPS 反代和恢复测试未执行。beta2 保留这一门禁。
 
-因此以下内容保持“未验收”，不得标成 release-ready：
+## 源码、集成与目标主机验证
 
 - Debian 13 amd64 和 Ubuntu 24.04 amd64 上 Git/OpenSSH、Node.js/npm、Go 的签名包冷安装、升级、重复安装、状态和卸载。
 - Node.js/Next.js/Go 在目标主机上的归档和 Git 创建、构建、失败恢复、服务重启、站点反代及删除全链路。私有 Git 认证仍未实现。
