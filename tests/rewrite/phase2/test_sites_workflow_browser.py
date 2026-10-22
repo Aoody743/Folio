@@ -145,7 +145,7 @@ def cleanup_category(api: APIClient, category_id: str) -> None:
 
 def navigate_to_sites(page) -> None:
     page.get_by_role("navigation", name="主导航").get_by_role("button", name="网站", exact=True).click()
-    expect(page.get_by_role("heading", name="网站资源", exact=True)).to_be_visible()
+    expect(page.get_by_role("heading", name="网站", exact=True)).to_be_visible()
 
 
 def find_site_row(page, site_name: str) -> None:
@@ -154,6 +154,9 @@ def find_site_row(page, site_name: str) -> None:
 
 
 def set_category_filter(page, category_id: str) -> None:
+    options = page.locator(".list-options")
+    if not options.evaluate("node => node.open"):
+        options.locator("summary").first.click()
     select = page.get_by_role("combobox", name=re.compile(r"^网站分类筛选(?:\s|$)"))
     if category_id:
         expect(select.locator(f'option[value="{category_id}"]')).to_have_count(1)
@@ -162,7 +165,7 @@ def set_category_filter(page, category_id: str) -> None:
 
 def update_site_category_in_ui(page, api: APIClient, site_id: str, site_name: str, category_id: str) -> dict[str, Any]:
     page.get_by_role("button", name=site_name, exact=True).click()
-    drawer = page.get_by_role("dialog", name=f"网站 · {site_name}", exact=True)
+    drawer = page.get_by_role("region", name=f"网站 · {site_name}", exact=True)
     drawer.get_by_role("tab", name="配置", exact=True).click()
     category_select = drawer.get_by_role("combobox", name="网站分类", exact=True)
     if category_select.count() == 0:
@@ -197,8 +200,10 @@ def run_categories(page, api: APIClient, fixture: dict[str, Any], stage) -> dict
         stage("category create via actual website UI")
         navigate_to_sites(page)
         find_site_row(page, site_name)
+        if not page.locator(".list-options").evaluate("node => node.open"):
+            page.locator(".list-options > summary").click()
         page.get_by_role("button", name="管理分类", exact=True).click()
-        manager = page.get_by_role("dialog", name="网站分类", exact=True)
+        manager = page.get_by_role("region", name="网站分类", exact=True)
         manager.get_by_role("button", name="新建分类", exact=True).click()
         editor = manager.locator('section[aria-label="分类编辑"]')
         category_id = editor.locator("code").inner_text().strip()
@@ -245,19 +250,21 @@ def run_categories(page, api: APIClient, fixture: dict[str, Any], stage) -> dict
             raise AssertionError("UI rebase did not save the retained draft against the current revision")
 
         stage("category filter, assignment, and UI clearing")
-        manager.get_by_role("button", name="关闭资源详情", exact=True).click()
+        manager.get_by_role("button", name="返回列表", exact=True).click()
         set_category_filter(page, category_id)
         expect(page.get_by_role("button", name=site_name, exact=True)).to_have_count(0)
         set_category_filter(page, "")
         find_site_row(page, site_name)
         update_site_category_in_ui(page, api, site_id, site_name, category_id)
-        page.get_by_role("dialog", name=f"网站 · {site_name}", exact=True).get_by_role("button", name="关闭资源详情", exact=True).click()
+        page.get_by_role("region", name=f"网站 · {site_name}", exact=True).get_by_role("button", name="返回列表", exact=True).click()
         set_category_filter(page, category_id)
         expect(page.get_by_role("button", name=site_name, exact=True)).to_be_visible()
 
         stage("delete-in-use is reported and category remains")
+        if not page.locator(".list-options").evaluate("node => node.open"):
+            page.locator(".list-options > summary").click()
         page.get_by_role("button", name="管理分类", exact=True).click()
-        manager = page.get_by_role("dialog", name="网站分类", exact=True)
+        manager = page.get_by_role("region", name="网站分类", exact=True)
         manager.get_by_role("button", name=f"删除 {edited_name}", exact=True).click()
         with page.expect_response(
             lambda response: response.request.method == "POST"
@@ -273,11 +280,11 @@ def run_categories(page, api: APIClient, fixture: dict[str, Any], stage) -> dict
         expect(manager.get_by_role("alert")).to_contain_text("仍被网站使用")
         if not category_by_id(api, category_id):
             raise AssertionError("Rejected delete-in-use removed the category from the real API")
-        manager.get_by_role("button", name="关闭资源详情", exact=True).click()
+        manager.get_by_role("button", name="返回列表", exact=True).click()
 
         stage("clearing site category and successful category delete")
         page.get_by_role("button", name=site_name, exact=True).click()
-        drawer = page.get_by_role("dialog", name=f"网站 · {site_name}", exact=True)
+        drawer = page.get_by_role("region", name=f"网站 · {site_name}", exact=True)
         drawer.get_by_role("tab", name="配置", exact=True).click()
         drawer.get_by_role("combobox", name="网站分类", exact=True).select_option("")
         form = drawer.locator(".action-form")
@@ -285,19 +292,21 @@ def run_categories(page, api: APIClient, fixture: dict[str, Any], stage) -> dict
         form.get_by_role("button", name="确认执行", exact=True).click()
         expect(form.get_by_role("region", name="任务详情", exact=True).get_by_text("执行成功", exact=True)).to_be_visible(timeout=120_000)
         wait_for_site_category(api, site_id, "")
-        drawer.get_by_role("button", name="关闭资源详情", exact=True).click()
+        drawer.get_by_role("button", name="返回列表", exact=True).click()
         set_category_filter(page, category_id)
         expect(page.get_by_role("button", name=site_name, exact=True)).to_have_count(0)
         set_category_filter(page, "")
         find_site_row(page, site_name)
 
+        if not page.locator(".list-options").evaluate("node => node.open"):
+            page.locator(".list-options > summary").click()
         page.get_by_role("button", name="管理分类", exact=True).click()
-        manager = page.get_by_role("dialog", name="网站分类", exact=True)
+        manager = page.get_by_role("region", name="网站分类", exact=True)
         manager.get_by_role("button", name=f"删除 {edited_name}", exact=True).click()
         manager.locator('section[aria-label="确认删除分类"]').get_by_role("button", name="确认删除分类", exact=True).click()
         if category_by_id(api, category_id):
             raise AssertionError("Successful category delete did not remove the API record")
-        manager.get_by_role("button", name="关闭资源详情", exact=True).click()
+        manager.get_by_role("button", name="返回列表", exact=True).click()
         return {"category_ui": "created-edited-conflict-filter-clear-delete-in-use-delete-passed", "site_restored": True}
     finally:
         # Only restore the QA-selected site if it still carries this test's unique

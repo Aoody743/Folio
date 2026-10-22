@@ -8,6 +8,8 @@ import { api, Capability, fullDate, list, Session } from "@/lib/api";
 import { copyText } from "@/lib/clipboard";
 import { Palette, palettes } from "./panel";
 import { Icon } from "./icon";
+import { LanguageControl } from "./language-control";
+import { FontSettings } from "./font-settings";
 type APIToken = {
   id: string;
   name: string;
@@ -133,6 +135,11 @@ export function Settings({
             "选择后立即应用。配色只改变个人外观，不改变业务状态语义。",
           )}
         </p>
+        <div className="language-settings">
+          <h2>{translate("界面语言")}</h2>
+          <LanguageControl />
+        </div>
+        <FontSettings />
         <div
           className="theme-grid"
           role="radiogroup"

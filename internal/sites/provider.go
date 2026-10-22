@@ -162,7 +162,7 @@ func (p *Provider) Bindings() []core.Binding {
 		"directory_bindings": array(binding, 64), "proxies": array(proxy, 64), "redirects": array(redirect, 64),
 	}
 	bindings := []core.Binding{
-		p.binding("sites_list", "List actual websites with pagination and resource filtering", "sites:read", "site_list", true, false, object(map[string]any{"limit": number(1, 500), "offset": number(0, 1<<30), "query": text(256), "category_id": text(96)}), noResources),
+		p.binding("sites_list", "List actual websites with pagination and resource filtering", "sites:read", "site_list", true, false, object(map[string]any{"limit": number(1, 500), "offset": number(0, 1<<30), "query": text(256), "category_id": text(96), "status": choice("running", "stopped", "unknown")}), noResources),
 		p.binding("sites_get", "Read one actual website, configuration revision and runtime status", "sites:read", "site_get", true, false, object(map[string]any{"id": idField()}, "id"), siteResource),
 		p.binding("sites_create", "Create an isolated website, validate Web/PHP config and reload with rollback", "sites:write", "site_apply", false, true, object(fields, "id", "name", "domains", "web_instance"), p.applyResources),
 		p.binding("sites_update", "Update typed website settings using its expected revision", "sites:write", "site_apply", false, true, object(fields, "id", "expected_revision"), p.applyResources),
@@ -422,6 +422,7 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 		var in struct {
 			Limit, Offset int
 			Query         string
+			Status        string
 			CategoryID    string `json:"category_id"`
 		}
 		if err := strict(raw, &in); err != nil {
@@ -445,13 +446,28 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 			if in.Query != "" && !strings.Contains(strings.ToLower(site.Name+" "+strings.Join(site.Domains, " ")), strings.ToLower(in.Query)) {
 				continue
 			}
+			state := site.Status
+			if state != "running" && state != "stopped" {
+				state = "unknown"
+			}
+			if in.Status != "" && state != in.Status {
+				continue
+			}
 			filtered = append(filtered, site)
 		}
 		sort.Slice(filtered, func(i, j int) bool { return filtered[i].ID < filtered[j].ID })
+		counts := map[string]int{"running": 0, "stopped": 0, "unknown": 0}
+		for _, site := range filtered {
+			state := site.Status
+			if state != "running" && state != "stopped" {
+				state = "unknown"
+			}
+			counts[state]++
+		}
 		total := len(filtered)
 		start := min(in.Offset, total)
 		end := min(start+in.Limit, total)
-		return core.ActionResult{Data: map[string]any{"items": filtered[start:end], "total": total, "limit": in.Limit, "offset": in.Offset}}, nil
+		return core.ActionResult{Data: map[string]any{"items": filtered[start:end], "total": total, "limit": in.Limit, "offset": in.Offset, "status_counts": counts}}, nil
 	}
 	if name == "certificates_list" {
 		var all []Certificate

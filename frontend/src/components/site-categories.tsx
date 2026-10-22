@@ -1,4 +1,5 @@
 "use client";
+import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
 import { useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -241,7 +242,7 @@ export function SiteCategoriesManager({
           </p>
         )}
         {categories.length > 0 ? (
-          <div className="resource-table-wrap">
+          <ClientTable>
             <table className="resource-table">
               <thead>
                 <tr>
@@ -287,7 +288,7 @@ export function SiteCategoriesManager({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ClientTable>
         ) : (
           !loading &&
           !listError && <p className="muted">{translate("暂无可见分类。")}</p>

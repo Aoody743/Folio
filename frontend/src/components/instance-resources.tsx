@@ -31,7 +31,15 @@ import { ActionForm } from "./actions";
 import { DockerManagement } from "./docker-management";
 import { DatabaseAdminCredentials } from "./database-admin-credentials";
 import { DatabaseRecreation } from "./database-recreation";
-import { Pager, ResourceActions, State, Unavailable } from "./resource-ui";
+import {
+  Pager,
+  ResourceActions,
+  ResourceDrawer,
+  State,
+  Unavailable,
+} from "./resource-ui";
+import { usePageState } from "@/lib/navigation";
+import { usePageSize } from "@/lib/collection";
 type Row = Record<string, unknown>;
 type Inventory = { items: unknown; total?: number; revision?: number };
 const databases = new Set([
@@ -68,9 +76,17 @@ export function InstanceResources({
   const [collection, setCollection] = useState("containers");
   const [databaseSection, setDatabaseSection] = useState("databases");
   const [offset, setOffset] = useState(0);
-  const [selected, setSelected] = useState<string>();
+  const [resourceID, setResourceID] = usePageState(
+    "software",
+    "resource",
+    "",
+    true,
+  );
+  const selected = resourceID || undefined;
+  const setSelected = (value?: string) => setResourceID(value ?? "");
+  const { ref: listRef, limit } = usePageSize(76);
   const [operation, setOperation] = useState<string>();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = usePageState("software", "new", false, true);
   const name =
     kind === "database"
       ? "managed_databases_list"
@@ -281,8 +297,8 @@ export function InstanceResources({
             <Unavailable title={translate("当前没有此资源的读取权限")} />
           ) : (
             <>
-              <div className="instance-list">
-                {rows.slice(offset, offset + 20).map((row, index) => {
+              <div ref={listRef} className="instance-list">
+                {rows.slice(offset, offset + limit).map((row, index) => {
                   const target = targetName(row);
                   const id = rowID(row, offset + index);
                   const image = Array.isArray(row.RepoDigests)
@@ -339,22 +355,28 @@ export function InstanceResources({
               )}
               <Pager
                 offset={offset}
-                limit={20}
+                limit={limit}
                 total={rows.length}
-                count={Math.min(20, rows.length - offset)}
+                count={Math.max(0, Math.min(limit, rows.length - offset))}
                 loading={data.loading}
                 onOffset={setOffset}
               />
             </>
           )}
           {creating && create && kind === "database" && databaseReceipt && (
-            <DatabaseRecreation
-              instanceID={instance.id}
-              receiptCapability={databaseReceipt}
-              createCapability={create}
-              onBack={() => setCreating(false)}
-              onExecuted={refresh}
-            />
+            <ResourceDrawer
+              open={creating}
+              title={translate("创建数据库")}
+              onClose={() => setCreating(false)}
+            >
+              <DatabaseRecreation
+                instanceID={instance.id}
+                receiptCapability={databaseReceipt}
+                createCapability={create}
+                onBack={() => setCreating(false)}
+                onExecuted={refresh}
+              />
+            </ResourceDrawer>
           )}
           {creating && create && kind !== "database" && (
             <ActionForm
@@ -370,105 +392,111 @@ export function InstanceResources({
               onExecuted={refresh}
             />
           )}
-          {current &&
-            !creating &&
-            (kind === "database" ? (
-              typeof current.database === "string" &&
-              typeof current.username === "string" &&
-              typeof current.engine === "string" &&
-              typeof current.permission === "string" &&
-              typeof current.revision === "number" &&
-              Number.isSafeInteger(current.revision) &&
-              typeof current.state === "string" ? (
-                <ManagedDatabaseResources
-                  key={instance.id + ":" + current.database}
-                  instanceID={instance.id}
-                  current={{
-                    database: current.database,
-                    username: current.username,
-                    engine: current.engine,
-                    permission: current.permission,
-                    revision: current.revision,
-                    state: current.state,
-                  }}
-                  capabilities={capabilities}
-                  onExecuted={refresh}
-                  active={active}
-                />
-              ) : (
-                <Unavailable
-                  title={translate("数据库详情缺少状态或有效版本")}
-                  detail={translate(
-                    "请重新读取资源；记录状态和精确版本确认后才能进行管理操作。",
-                  )}
-                />
-              )
-            ) : (
-              <>
-                {kind === "ftp" && targetName(current) && (
-                  <FTPAccountRecovery
-                    key={`ftp-account-state:${instance.id}:${targetName(current)}`}
-                    id={instance.id}
-                    name={targetName(current)}
+          {current && !creating && (
+            <ResourceDrawer
+              open={!!current}
+              title={targetName(current) || translate("资源详情")}
+              onClose={() => setSelected(undefined)}
+            >
+              {kind === "database" ? (
+                typeof current.database === "string" &&
+                typeof current.username === "string" &&
+                typeof current.engine === "string" &&
+                typeof current.permission === "string" &&
+                typeof current.revision === "number" &&
+                Number.isSafeInteger(current.revision) &&
+                typeof current.state === "string" ? (
+                  <ManagedDatabaseResources
+                    key={instance.id + ":" + current.database}
+                    instanceID={instance.id}
+                    current={{
+                      database: current.database,
+                      username: current.username,
+                      engine: current.engine,
+                      permission: current.permission,
+                      revision: current.revision,
+                      state: current.state,
+                    }}
                     capabilities={capabilities}
                     onExecuted={refresh}
                     active={active}
                   />
-                )}
-                <ResourceActions
-                  capabilities={capabilities}
-                  names={(name) =>
-                    kind === "docker"
-                      ? name !== "docker_container_exec" &&
-                        name !== "docker_container_exec_status" &&
-                        name.startsWith(
-                          `docker_${collection === "containers" ? "container" : collection === "networks" ? "network" : "volume"}_`,
-                        ) &&
-                        !name.endsWith("_create")
-                      : name.startsWith(kind + "_") &&
-                        !(
-                          kind === "ftp" &&
-                          name.startsWith("ftp_account_state_")
-                        ) &&
-                        !name.startsWith("supervisor_log_") &&
-                        !/_list|_status|_create/.test(name)
-                  }
-                  preset={preset}
-                  selected={operation}
-                  onSelect={setOperation}
-                  onExecuted={refresh}
-                />
-                {kind === "docker" &&
-                  collection === "containers" &&
-                  targetName(current) && (
-                    <>
-                      <DockerExecManagement
-                        key={`${instance.id}:${targetName(current)}`}
-                        instanceID={instance.id}
-                        containerName={targetName(current)}
-                        running={
-                          String(current.State ?? "").toLowerCase() ===
-                          "running"
-                        }
-                        capabilities={capabilities}
-                        onExecuted={refresh}
-                      />
-                      <DockerTerminalManagement
-                        key={`terminal:${instance.id}:${targetName(current)}`}
-                        instanceID={instance.id}
-                        containerName={targetName(current)}
-                        running={
-                          String(current.State ?? "").toLowerCase() ===
-                          "running"
-                        }
-                        capabilities={capabilities}
-                        onExecuted={refresh}
-                        active={active}
-                      />
-                    </>
+                ) : (
+                  <Unavailable
+                    title={translate("数据库详情缺少状态或有效版本")}
+                    detail={translate(
+                      "请重新读取资源；记录状态和精确版本确认后才能进行管理操作。",
+                    )}
+                  />
+                )
+              ) : (
+                <>
+                  {kind === "ftp" && targetName(current) && (
+                    <FTPAccountRecovery
+                      key={`ftp-account-state:${instance.id}:${targetName(current)}`}
+                      id={instance.id}
+                      name={targetName(current)}
+                      capabilities={capabilities}
+                      onExecuted={refresh}
+                      active={active}
+                    />
                   )}
-              </>
-            ))}
+                  <ResourceActions
+                    capabilities={capabilities}
+                    names={(name) =>
+                      kind === "docker"
+                        ? name !== "docker_container_exec" &&
+                          name !== "docker_container_exec_status" &&
+                          name.startsWith(
+                            `docker_${collection === "containers" ? "container" : collection === "networks" ? "network" : "volume"}_`,
+                          ) &&
+                          !name.endsWith("_create")
+                        : name.startsWith(kind + "_") &&
+                          !(
+                            kind === "ftp" &&
+                            name.startsWith("ftp_account_state_")
+                          ) &&
+                          !name.startsWith("supervisor_log_") &&
+                          !/_list|_status|_create/.test(name)
+                    }
+                    preset={preset}
+                    selected={operation}
+                    onSelect={setOperation}
+                    onExecuted={refresh}
+                  />
+                  {kind === "docker" &&
+                    collection === "containers" &&
+                    targetName(current) && (
+                      <>
+                        <DockerExecManagement
+                          key={`${instance.id}:${targetName(current)}`}
+                          instanceID={instance.id}
+                          containerName={targetName(current)}
+                          running={
+                            String(current.State ?? "").toLowerCase() ===
+                            "running"
+                          }
+                          capabilities={capabilities}
+                          onExecuted={refresh}
+                        />
+                        <DockerTerminalManagement
+                          key={`terminal:${instance.id}:${targetName(current)}`}
+                          instanceID={instance.id}
+                          containerName={targetName(current)}
+                          running={
+                            String(current.State ?? "").toLowerCase() ===
+                            "running"
+                          }
+                          capabilities={capabilities}
+                          onExecuted={refresh}
+                          active={active}
+                        />
+                      </>
+                    )}
+                </>
+              )}
+            </ResourceDrawer>
+          )}
         </>
       )}
     </section>

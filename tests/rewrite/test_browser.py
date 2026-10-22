@@ -46,8 +46,8 @@ def main():
                 page.get_by_label(re.compile(r"^密码(?:\s|$)")).fill(password)
                 page.get_by_role("button", name="登录", exact=True).click()
                 expect(page.get_by_role("heading", name="主机概览", exact=True)).to_be_visible()
-                for name in ("主机总览", "共享便签", "最近任务", "待处理事件"):
-                    expect(page.get_by_role("heading", name=name, exact=True)).to_be_visible()
+                for name in ("主机", "网站", "应用"):
+                    expect(page.get_by_role("region", name=name, exact=True)).to_be_visible()
                 nav = page.get_by_role("navigation", name="主导航")
                 assert nav.get_by_role("button").count() == 5
                 for name in ("概览", "网站", "软件", "文件", "更多"):
@@ -61,7 +61,7 @@ def main():
                     page.screenshot(path=str(artifacts / f"overview-{width}.png"), full_page=True)
                 page.set_viewport_size({"width": 1440, "height": 1000})
                 nav.get_by_role("button", name="更多", exact=True).click()
-                page.get_by_role("button", name=re.compile("外观.*五套配色")).click()
+                page.get_by_role("button", name="语言与外观", exact=True).click()
                 for label, palette in (("月白", "moon"), ("深空", "space"), ("雾紫", "violet"), ("松绿", "pine"), ("暖砂", "sand")):
                     radio = page.get_by_role("radio", name=label + "主题")
                     radio.click()
@@ -71,7 +71,8 @@ def main():
                 page.reload(wait_until="domcontentloaded")
                 assert page.locator("html").get_attribute("data-palette") == "sand"
                 nav = page.get_by_role("navigation", name="主导航")
-                nav.get_by_role("button", name="概览", exact=True).click()
+                nav.get_by_role("button", name="更多", exact=True).click()
+                page.get_by_role("button", name="共享便签", exact=True).click()
                 page.get_by_role("button", name="新建便签", exact=True).click()
                 dialog = page.get_by_role("dialog", name="新建便签")
                 expect(dialog).to_be_visible()

@@ -50,6 +50,7 @@ type Backup = {
   created_at: string;
   state?: string;
 };
+import { usePageState } from "@/lib/navigation";
 export function ManagedDatabaseResources({
   instanceID,
   current,
@@ -63,7 +64,7 @@ export function ManagedDatabaseResources({
   onExecuted: () => void;
   active?: boolean;
 }) {
-  const [group, setGroup] = useState("accounts");
+  const [group, setGroup] = usePageState("software", "subgroup", "accounts");
   const [operation, setOperation] = useState<string>();
   const [selectedBackup, setSelectedBackup] = useState<string>();
   const [creatingBackup, setCreatingBackup] = useState(false);
@@ -188,13 +189,10 @@ export function ManagedDatabaseResources({
           </span>
         </div>
       </div>
-      <p className="muted">
-        {translate("授权资源")}
+      <details>
+        <summary>{translate("技术详情")}</summary>
         <code>{`db:${instanceID}:${current.database}`}</code>
-        {translate(
-          "。网页和MCP检查同一资源；账户权限与客户端获授的动作范围分别生效。",
-        )}
-      </p>
+      </details>
       <div
         className="section-tabs"
         role="tablist"

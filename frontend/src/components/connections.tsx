@@ -9,7 +9,14 @@ import { Page } from "@/lib/resources";
 import { useResource } from "@/lib/resource-hook";
 import { projectInput, Schema } from "@/lib/schema";
 import { ActionForm } from "./actions";
-import { ResourceActions, ResourceDrawer, Unavailable } from "./resource-ui";
+import {
+  ResourceActions,
+  ResourceDrawer,
+  Unavailable,
+  Pager,
+} from "./resource-ui";
+import { usePageState } from "@/lib/navigation";
+import { usePageSize, pageItems } from "@/lib/collection";
 type Connection = {
   id: string;
   name?: string;
@@ -36,9 +43,30 @@ export function ConnectionsView({
   onExecuted: () => void;
   active?: boolean;
 }) {
-  const [selected, setSelected] = useState<Connection>();
-  const [open, setOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [selectedID, setSelectedID] = usePageState("software", "id", "", true);
+  const [selectedLocal, setSelectedLocal] = useState<Connection>();
+  const selected =
+    selectedLocal?.id === selectedID
+      ? selectedLocal
+      : selectedID
+        ? ({ id: selectedID } as Connection)
+        : undefined;
+  const setSelected = (item: Connection) => {
+    setSelectedLocal(item);
+    setSelectedID(item.id);
+  };
+  const open = !!selectedID;
+  const setOpen = (value: boolean) => {
+    if (!value) setSelectedID("");
+  };
+  const [createOpen, setCreateOpen] = usePageState(
+    "software",
+    "create",
+    false,
+    true,
+  );
+  const [offset, setOffset] = usePageState("software", "offset", 0);
+  const { ref: listRef, limit } = usePageSize(76);
   const [group, setGroup] = useState("status");
   const [operation, setOperation] = useState<string>();
   const name =
@@ -53,6 +81,7 @@ export function ConnectionsView({
   const rows = list(resources.data).filter(
     (row) => kind !== "database" || row.engine !== "mongodb",
   );
+  const paged = pageItems(rows, offset, limit);
   const detail = useResource<Connection>(
     `${kind}_connection_get`,
     { id: selected?.id },
@@ -189,15 +218,7 @@ export function ConnectionsView({
           />
         )}
       </div>
-      <p className="section-caption">
-        {kind === "database"
-          ? translate(
-              "连接凭据由服务器保护；单库连接必须通过真实权限检查。实例管理员连接拥有独立授权范围。",
-            )
-          : translate(
-              "每个连接绑定明确的数据库与键前缀。网页和MCP使用同一缓存空间权限。",
-            )}
-      </p>
+
       {resources.error && (
         <div className="notice danger" role="alert">
           {resources.error}
@@ -207,7 +228,7 @@ export function ConnectionsView({
         <Unavailable title={translate("{0}服务暂不可用", [title])} />
       ) : (
         <>
-          <div className="resource-table-wrap">
+          <div ref={listRef} className="resource-table-wrap">
             <table className="resource-table">
               <thead>
                 <tr>
@@ -222,7 +243,7 @@ export function ConnectionsView({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
+                {paged.items.map((row) => (
                   <tr key={row.id}>
                     <td>
                       <button
@@ -236,7 +257,6 @@ export function ConnectionsView({
                       >
                         {row.name ?? row.id}
                       </button>
-                      <small>{row.id}</small>
                     </td>
                     <td>
                       {row.engine}
@@ -262,6 +282,14 @@ export function ConnectionsView({
               </tbody>
             </table>
           </div>
+          <Pager
+            offset={paged.offset}
+            limit={limit}
+            total={paged.total}
+            count={paged.items.length}
+            loading={resources.loading}
+            onOffset={setOffset}
+          />
           {!rows.length && !resources.loading && !resources.error && (
             <Unavailable
               title={translate("暂无{0}", [title])}

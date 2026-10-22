@@ -40,7 +40,7 @@ export function SQLResult({ result }: { result: unknown }) {
     Object.values(row).some((value) => sqlCell(value).kind === "unsafe"),
   );
   return (
-    <section className="stack" aria-label={translate("数据库查询结果")}>
+    <section className="stack sql-result" aria-label={translate("数据库查询结果")}>
       <p className="muted">
         {data.database}
         {translate(" · 本次返回 ")}

@@ -1,4 +1,5 @@
 "use client";
+import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
 import { useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -57,6 +58,7 @@ type Order = {
     body: string;
   }[];
 };
+import { usePageState } from "@/lib/navigation";
 export function CertificatesView({
   capabilities,
   onExecuted,
@@ -68,10 +70,27 @@ export function CertificatesView({
   active?: boolean;
   siteID?: string;
 }) {
-  const [page, setPage] = useState("certificates");
-  const [selected, setSelected] = useState<Certificate>();
-  const [credential, setCredential] = useState<DNSCredential>();
-  const [open, setOpen] = useState(false);
+  const [page, setPage] = usePageState("sites", "kind", "certificates", true);
+  const [resourceID, setResourceID] = usePageState(
+    "sites",
+    "resource",
+    "",
+    true,
+  );
+  const [selected, setSelectedLocal] = useState<Certificate>();
+  const setSelected = (value: Certificate) => {
+    setSelectedLocal(value);
+    setResourceID(value.id);
+  };
+  const [credential, setCredentialLocal] = useState<DNSCredential>();
+  const setCredential = (value: DNSCredential) => {
+    setCredentialLocal(value);
+    setResourceID(value.id);
+  };
+  const open = !!resourceID;
+  const setOpen = (value: boolean) => {
+    if (!value) setResourceID("");
+  };
   const [create, setCreate] = useState<string>();
   const [manualHTTPCreate, setManualHTTPCreate] = useState(false);
   const [operation, setOperation] = useState<string>();
@@ -133,9 +152,11 @@ export function CertificatesView({
     5000,
   );
   const current =
-    list(certificates.data).find((c) => c.id === selected?.id) ?? selected;
+    list(certificates.data).find((c) => c.id === resourceID) ??
+    (selected?.id === resourceID ? selected : undefined);
   const currentCredential =
-    list(credentials.data).find((c) => c.id === credential?.id) ?? credential;
+    list(credentials.data).find((c) => c.id === resourceID) ??
+    (credential?.id === resourceID ? credential : undefined);
   const httpOrder =
     order.data?.state === "pending_http"
       ? manualHTTPOrder(order.data, loadedID)
@@ -430,7 +451,7 @@ export function CertificatesView({
               <Unavailable title={translate("证书服务暂不可用")} />
             ) : (
               <>
-                <div className="resource-table-wrap">
+                <ClientTable>
                   <table className="resource-table">
                     <thead>
                       <tr>
@@ -463,7 +484,7 @@ export function CertificatesView({
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </ClientTable>
                 {!list(certificates.data).length &&
                   !certificates.loading &&
                   !certificates.error && (
@@ -678,7 +699,7 @@ export function CertificatesView({
                   />
                 )}
                 {!!order.data.records?.length && (
-                  <div className="resource-table-wrap">
+                  <ClientTable>
                     <table className="resource-table">
                       <thead>
                         <tr>
@@ -701,7 +722,7 @@ export function CertificatesView({
                         ))}
                       </tbody>
                     </table>
-                  </div>
+                  </ClientTable>
                 )}
                 <ResourceActions
                   capabilities={capabilities}

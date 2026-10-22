@@ -28,10 +28,13 @@ import { ActionBrowser, ActionForm } from "./actions";
 import { Icon } from "./icon";
 import {
   Pager,
+  ResourceError,
   ResourceActions,
   ResourceDrawer,
   Unavailable,
 } from "./resource-ui";
+import { addNavigationGuard, usePageState } from "@/lib/navigation";
+import { usePageSize } from "@/lib/collection";
 const CodeEditor = dynamic(() => import("./code-editor"), { ssr: false });
 const join = (path: string, name: string) =>
   path && path !== "." ? `${path}/${name}` : name;
@@ -69,21 +72,79 @@ export function FilesView({
   active?: boolean;
   rootRequest?: { root: string; sequence: number };
 }) {
-  const [root, setRoot] = useState("");
-  const [path, setPath] = useState("");
-  const [offset, setOffset] = useState(0);
+  const [root, setRoot] = usePageState("files", "root", "");
+  const [path, setPath] = usePageState("files", "path", "");
+  const [offset, setOffset] = usePageState("files", "offset", 0);
+  const { ref: listRef, limit } = usePageSize(72);
   const [query, setQuery] = useState("");
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<FileEntry>();
-  const [editorOpen, setEditorOpen] = useState(false);
+  const [search, setSearch] = usePageState("files", "q", "");
+  useEffect(() => {
+    setQuery(search);
+  }, [search]);
+  const [selectedPath, setSelectedPath] = usePageState(
+    "files",
+    "file",
+    "",
+    true,
+  );
+  const [selectedLocal, setSelectedLocal] = useState<FileEntry>();
+  const selected =
+    selectedLocal?.path === selectedPath
+      ? selectedLocal
+      : selectedPath
+        ? ({
+            name: selectedPath.split("/").at(-1) ?? selectedPath,
+            path: selectedPath,
+            type: "file",
+            size: 0,
+            modified_at: "",
+          } as FileEntry)
+        : undefined;
+  const setSelected = (value?: FileEntry) => {
+    setSelectedLocal(value);
+    setSelectedPath(value?.path ?? "");
+  };
+  const [view, setView] = usePageState("files", "view", "");
+  const editorOpen = !!selectedPath && view === "editor";
+  const setEditorOpen = (open: boolean) => setView(open ? "editor" : "");
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState("");
   const [operation, setOperation] = useState<string>();
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = usePageState(
+    "files",
+    "create",
+    false,
+    true,
+  );
   const [createName, setCreateName] = useState("fs_create");
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [trashOpen, setTrashOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = usePageState("files", "new", false, true);
+  const [trashOpen, setTrashOpen] = usePageState(
+    "files",
+    "filter",
+    false,
+    true,
+  );
   const [other, setOther] = useState<string>();
+  useEffect(() => {
+    if (!dirty) return;
+    const blocked = () => {
+      setError(fileDraftGuard);
+      setEditorOpen(true);
+    };
+    window.addEventListener("folio:navigation-blocked", blocked);
+    const stop = addNavigationGuard(
+      (next, current) =>
+        next.section !== "files" ||
+        current.section !== "files" ||
+        ["root", "path", "file"].every(
+          (key) => (next.params[key] ?? "") === (current.params[key] ?? ""),
+        ),
+    );
+    return () => {
+      stop();
+      window.removeEventListener("folio:navigation-blocked", blocked);
+    };
+  }, [dirty]);
   const appliedRootRequest = useRef<number>(undefined);
   const has = (name: string) => capabilities.some((c) => c.name === name);
   const roots = useResource<FileRoot[] | Page<FileRoot>>(
@@ -134,7 +195,7 @@ export function FilesView({
     {
       root,
       path,
-      limit: 50,
+      limit,
       offset,
       sort: "name",
       order: "asc",
@@ -196,25 +257,32 @@ export function FilesView({
         <div className="card-heading">
           <h2>{translate("文件管理")}</h2>
           <div className="button-row">
-            {has("fs_create") && !currentRoot?.read_only && (
-              <Button
-                label={translate("新建文件")}
-                icon={<Icon name="plus" />}
-                onClick={() => {
-                  setCreateName("fs_create");
-                  setCreateOpen(true);
-                }}
-              />
-            )}
-            {has("fs_mkdir") && !currentRoot?.read_only && (
-              <Button
-                label={translate("新建目录")}
-                onClick={() => {
-                  setCreateName("fs_mkdir");
-                  setCreateOpen(true);
-                }}
-              />
-            )}
+            {!currentRoot?.read_only &&
+              (has("fs_create") || has("fs_mkdir")) && (
+                <details className="named-menu">
+                  <summary>{translate("新建")}</summary>
+                  <div>
+                    {has("fs_create") && (
+                      <Button
+                        label={translate("新建文件")}
+                        onClick={() => {
+                          setCreateName("fs_create");
+                          setCreateOpen(true);
+                        }}
+                      />
+                    )}
+                    {has("fs_mkdir") && (
+                      <Button
+                        label={translate("新建目录")}
+                        onClick={() => {
+                          setCreateName("fs_mkdir");
+                          setCreateOpen(true);
+                        }}
+                      />
+                    )}
+                  </div>
+                </details>
+              )}
             {has("fs_upload_begin") && !currentRoot?.read_only && (
               <Button
                 label={translate("上传文件")}
@@ -310,9 +378,7 @@ export function FilesView({
                 ))}
             </nav>
             {[error, roots.error, listing.error].filter(Boolean).map((e, i) => (
-              <div className="notice danger" role="alert" key={i}>
-                {translate(e)}
-              </div>
+              <ResourceError error={translate(e)} key={i} retry={refresh} />
             ))}
             {dirty && !editorOpen && (
               <div className="notice warning">
@@ -324,12 +390,12 @@ export function FilesView({
                 />
               </div>
             )}
-            {listing.loading && (
+            {listing.loading && !listing.data && (
               <p className="muted" role="status">
                 {translate("正在读取目录…")}
               </p>
             )}
-            <div className="resource-table-wrap">
+            <div ref={listRef} className="resource-table-wrap">
               <table className="resource-table">
                 <thead>
                   <tr>
@@ -376,13 +442,15 @@ export function FilesView({
                         <div className="button-row">
                           {entry.type === "file" && (
                             <Button
-                              label={translate("下载 {0}", [entry.name])}
+                              label={translate("下载")}
+                              aria-label={translate("下载 {0}", [entry.name])}
                               href={downloadURL(root, entry.path)}
                               variant="ghost"
                             />
                           )}
                           <Button
-                            label={translate("操作 {0}", [entry.name])}
+                            label={translate("操作")}
+                            aria-label={translate("操作 {0}", [entry.name])}
                             variant="ghost"
                             onClick={() =>
                               guard(() => {
@@ -407,7 +475,7 @@ export function FilesView({
             )}
             <Pager
               offset={offset}
-              limit={50}
+              limit={limit}
               total={listing.data?.total}
               count={rows.length}
               loading={listing.loading}
@@ -530,17 +598,6 @@ export function FilesView({
             <Unavailable title={translate("回收站为空")} icon="files" />
           )}
       </ResourceDrawer>
-      <details className="advanced-actions">
-        <summary>{translate("其他文件与归档操作")}</summary>
-        <ActionBrowser
-          capabilities={capabilities}
-          category="files"
-          selected={other}
-          onSelect={setOther}
-          onExecuted={refresh}
-          preset={{ root, path }}
-        />
-      </details>
     </div>
   );
 }
@@ -814,11 +871,13 @@ function FileEditor({
       ) : base ? (
         <>
           <p className="muted">
-            {root}/ {entry.path}·{" "}
+            {root}/ {entry.path}
+            {" · "}
             {typeof base.size === "number"
               ? bytes(base.size)
               : translate("大小读取中")}
-            · SHA-256 {base.sha256.slice(0, 16)}…
+            {" · SHA-256 "}
+            {base.sha256.slice(0, 16)}…
           </p>
           {base.truncated && (
             <div className="notice warning">

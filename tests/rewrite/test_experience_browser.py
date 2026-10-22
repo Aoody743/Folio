@@ -40,16 +40,16 @@ def main():
             nav = page.get_by_role('navigation', name='Main navigation')
             for name in ['Overview', 'Websites', 'Software', 'Files', 'More']:
                 expect(nav.get_by_role('button', name=name, exact=True)).to_be_visible()
-            page.get_by_role('button', name='Set up later', exact=True).click()
-            expect(page.get_by_role('button', name='Continue setup', exact=True)).to_be_visible()
-            page.reload()
-            expect(page.get_by_role('button', name='Continue setup', exact=True)).to_be_visible()
+            for name in ['Host', 'Websites', 'Applications']:
+                expect(page.get_by_role('region', name=name, exact=True)).to_be_visible()
             for width in [1440, 768, 390, 320]:
                 page.set_viewport_size({'width': width, 'height': 900})
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), f'overflow: en {width}'
                 page.screenshot(path=str(artifacts / f'en-overview-{width}.png'), full_page=True)
             page.set_viewport_size({'width': 1440, 'height': 1000})
             # A language change must not reload the document or mutate form data.
+            nav.get_by_role('button', name='More', exact=True).click()
+            page.get_by_role('button', name='Shared notes', exact=True).click()
             page.get_by_role('button', name='Create new note', exact=True).click()
             dialog = page.get_by_role('dialog')
             dialog.get_by_label(re.compile('^Title')).fill('我的网站 · customer data')
@@ -57,20 +57,23 @@ def main():
             dialog.get_by_role('button', name='Create note', exact=True).click()
             expect(dialog).not_to_be_visible()
             page.evaluate('window.experienceSentinel = "same-document"')
+            nav.get_by_role('button', name='More', exact=True).click()
+            page.get_by_role('button', name='Language & appearance', exact=True).click()
             page.get_by_label('语言 / Language', exact=True).select_option('zh-CN')
             assert page.evaluate('window.experienceSentinel') == 'same-document'
-            expect(page.get_by_role('button', name='我的网站 · customer data', exact=False)).to_be_visible()
             page.get_by_label('语言 / Language', exact=True).select_option('en')
+            nav.get_by_role('button', name='More', exact=True).click()
+            page.get_by_role('button', name='Shared notes', exact=True).click()
             expect(page.get_by_role('button', name='我的网站 · customer data', exact=False)).to_be_visible()
             nav.get_by_role('button', name='Software', exact=True).click()
-            expect(page.get_by_role('heading', name='Software & plugins', exact=True)).to_be_visible()
+            expect(page.get_by_role('heading', name='Installed services', exact=True)).to_be_visible()
             # App copy must be English; user-supplied resource names are exempt.
             page.get_by_text('Reading software directory...', exact=True).wait_for(state='hidden')
             text = page.locator('#main').inner_text()
             assert not re.search('[\u3400-\u9fff]', text), text
             page.screenshot(path=str(artifacts / 'en-software.png'), full_page=True)
             nav.get_by_role('button', name='More', exact=True).click()
-            page.get_by_role('button', name=re.compile('Appearance.*Five')).click()
+            page.get_by_role('button', name='Language & appearance', exact=True).click()
             for name, palette in [('Moon','moon'),('Space','space'),('Violet','violet'),('Pine','pine'),('Sand','sand')]:
                 page.get_by_role('radio', name=name + ' theme', exact=True).click()
                 expect(page.locator('html')).to_have_attribute('data-palette', palette)
@@ -90,7 +93,7 @@ def main():
             browser.close()
         print(json.dumps({'real_api': True, 'real_chromium': True, 'browser_language': True,
                           'live_switch_preserves_input': True, 'preference_persisted': True,
-                          'user_content_unchanged': True, 'optional_setup': True,
+                          'user_content_unchanged': True, 'compact_status_overview': True,
                           'english_viewports': [1440, 768, 390, 320], 'artifacts': str(artifacts)}))
     finally:
         server.close()

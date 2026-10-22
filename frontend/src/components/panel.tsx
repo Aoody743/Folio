@@ -31,9 +31,7 @@ import {
   api,
   APIError,
   Audit,
-  bytes,
   Capability,
-  duration,
   fullDate,
   list,
   Note,
@@ -46,7 +44,17 @@ import {
 import { Icon, IconName } from "./icon";
 import { TaskResult } from "./task-result";
 import { actionLabel } from "@/lib/labels";
-import { HostingStackSetup } from "./hosting-stack-setup";
+import { Overview } from "./overview";
+import {
+  navigate,
+  resetNavigation,
+  parseRoute,
+  useRoute,
+  usePageState,
+  Section,
+} from "@/lib/navigation";
+import { ResourceDrawer, DetailScope } from "./resource-ui";
+import { initializeFont } from "@/lib/fonts";
 const NoteEditor = dynamic(() => import("./notes").then((m) => m.NoteEditor), {
   ssr: false,
 });
@@ -217,7 +225,7 @@ const moreNav: { id: string; icon: string; title: string; desc: string }[] = [
     id: "appearance",
     icon: "settings",
     get title() {
-      return translate("外观");
+      return translate("语言与外观");
     },
     get desc() {
       return translate("五套配色与主题预览");
@@ -280,28 +288,6 @@ const stateText: Record<string, string> = {
   },
 };
 export const taskState = (task: Task) => task.state ?? task.status ?? "unknown";
-function Metric({
-  label,
-  value,
-  ratio,
-  hint,
-}: {
-  label: string;
-  value: string;
-  ratio?: number | null;
-  hint?: string;
-}) {
-  return (
-    <div className="metric">
-      <div className="metric-label">{label}</div>
-      <div className="metric-value">{value}</div>
-      <div className="meter" aria-hidden="true">
-        <span style={{ width: `${Math.min(100, Math.max(0, ratio ?? 0))}%` }} />
-      </div>
-      <div className="metric-hint">{hint ?? translate("未提供数据")}</div>
-    </div>
-  );
-}
 function CardTitle({
   icon,
   title,
@@ -359,8 +345,20 @@ export function Panel() {
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [palette, setPalette] = useState<Palette>("moon");
-  const [section, setSection] = useState("overview");
-  const [morePage, setMorePage] = useState("menu");
+  const route = useRoute();
+  const section = route.section;
+  const setSection = (value: string) => navigate(value as Section);
+  const [morePage] = usePageState("more", "page", "menu");
+  const setMorePage = (page: string) => {
+    if (parseRoute(location.hash).section !== "more") return;
+    navigate("more", page === "menu" ? {} : { page });
+  };
+  useEffect(() => {
+    initializeFont();
+  }, []);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [section, morePage]);
   const [visited, setVisited] = useState<Record<string, boolean>>({});
   const [fileRequest, setFileRequest] = useState<{
     root: string;
@@ -376,7 +374,6 @@ export function Panel() {
   const [connection, setConnection] = useState<
     "connecting" | "online" | "offline"
   >("connecting");
-  const [lastLoaded, setLastLoaded] = useState<string>();
   const [noteOpen, setNoteOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note>();
   const [editorKey, setEditorKey] = useState(0);
@@ -384,13 +381,22 @@ export function Panel() {
   const [hasDraft, setHasDraft] = useState(false);
   const [draftWarning, setDraftWarning] = useState(false);
   const [notesAll, setNotesAll] = useState(false);
-  const [notesPage, setNotesPage] = useState(0);
-  const [archived, setArchived] = useState(false);
-  const [taskOpen, setTaskOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task>();
+  const [notesPage, setNotesPage] = usePageState("more", "offset", 0);
+  const [archived, setArchived] = usePageState("more", "filter", false);
+  const [taskPage, setTaskPage] = usePageState("more", "kind", "", true);
+  const [taskID, setTaskID] = usePageState("more", "id", "", true);
+  const taskOpen =
+    section === "more" && morePage === "activity" && taskPage === "task";
+  const selectedTask = taskID
+    ? (tasks.find((task) => task.id === taskID) ?? ({ id: taskID } as Task))
+    : undefined;
+  const setSelectedTask = (task?: Task) => setTaskID(task?.id ?? "");
+  const setTaskOpen = (value: boolean) => setTaskPage(value ? "task" : "");
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [selectedAction, setSelectedAction] = useState<string>();
+  const [actionPage, setActionPage] = usePageState("more", "view", "", true);
+  const selectedAction = actionPage || undefined;
+  const setSelectedAction = (name?: string) => setActionPage(name ?? "");
   const hasCapability = (name: string) =>
     caps.some((capability) => capability.name === name);
   const visibleNav = nav.filter(
@@ -398,7 +404,14 @@ export function Panel() {
       item.id === "overview" ||
       item.id === "more" ||
       (item.id === "sites" && hasCapability("sites_list")) ||
-      (item.id === "software" && hasCapability("plugins_catalog")) ||
+      (item.id === "software" &&
+        [
+          "plugins_catalog",
+          "plugins_list",
+          "hosted_apps_list",
+          "database_connections_list",
+          "cache_connections_list",
+        ].some(hasCapability)) ||
       (item.id === "files" && hasCapability("fs_roots")),
   );
   const visibleMoreNav = moreNav.filter((item) =>
@@ -467,8 +480,7 @@ export function Panel() {
       setSelectedAction(undefined);
       setFileRequest(undefined);
       if (previous !== undefined && previous !== "unauthenticated") {
-        setSection("overview");
-        setMorePage("menu");
+        resetNavigation();
       }
     }
     setSession(next);
@@ -484,6 +496,8 @@ export function Panel() {
       setAuthError((e as Error).message);
     }
   }, [receiveSession]);
+  const notesPageActive =
+    notesAll || (section === "more" && morePage === "notes");
   const refresh = useCallback(async () => {
     if (!session?.authenticated) return;
     const generation = ++refreshGeneration.current;
@@ -500,10 +514,10 @@ export function Panel() {
       api<SystemStatus>("/system/status"),
       Promise.all([
         api<Note[]>(
-          `/notes?limit=${notesAll ? 20 : 100}&offset=${notesAll ? notesPage * 20 : 0}`,
+          `/notes?limit=${notesPageActive ? 20 : 100}&offset=${notesPageActive ? notesPage * 20 : 0}`,
         ),
         api<Note[]>(
-          `/notes?archived=true&limit=${notesAll ? 20 : 100}&offset=${notesAll ? notesPage * 20 : 0}`,
+          `/notes?archived=true&limit=${notesPageActive ? 20 : 100}&offset=${notesPageActive ? notesPage * 20 : 0}`,
         ),
       ]).then(([active, archived]) => [...list(active), ...list(archived)]),
       api<Task[]>("/tasks?limit=50"),
@@ -547,13 +561,12 @@ export function Panel() {
       }
     });
     setErrors(nextErrors);
-    setLastLoaded(new Date().toISOString());
     setLoading(false);
   }, [
     session?.authenticated,
     loadSession,
     receiveSession,
-    notesAll,
+    notesPageActive,
     notesPage,
   ]);
   useEffect(() => {
@@ -727,7 +740,6 @@ export function Panel() {
       Number(taskState(b) === "running") - Number(taskState(a) === "running") ||
       b.created_at.localeCompare(a.created_at),
   );
-  const failedTasks = recentTasks.filter((t) => taskState(t) === "failed");
   const rootClass = `app palette-${palette}`;
   return (
     <InternationalizationProvider
@@ -738,7 +750,12 @@ export function Panel() {
         theme={neutralTheme}
         mode={palette === "space" || palette === "pine" ? "dark" : "light"}
       >
-        <div className={rootClass} key={sessionBoundary.current}>
+        <div
+          data-section={section}
+          data-page={morePage}
+          className={rootClass}
+          key={sessionBoundary.current}
+        >
           {!session?.authenticated ? (
             <Auth
               initialized={session?.initialized}
@@ -752,7 +769,14 @@ export function Panel() {
             />
           ) : (
             <>
-              <a className="skip-link" href="#main">
+              <a
+                className="skip-link"
+                href="#main"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById("main")?.focus();
+                }}
+              >
                 {translate("跳至内容")}
               </a>
               <header className="topbar">
@@ -792,20 +816,30 @@ export function Panel() {
                   </small>
                 </div>
                 <div className="top-actions">
-                  <LanguageControl />
                   <Button
-                    label={translate("全局搜索")}
-                    icon={<Icon name="search" />}
-                    isIconOnly
+                    label={translate("查看任务")}
+                    icon={
+                      <span className="activity-icon">
+                        <Icon name="tasks" />
+                        {recentTasks.filter((t) =>
+                          ["running", "failed", "pending"].includes(
+                            taskState(t),
+                          ),
+                        ).length > 0 && (
+                          <b className="activity-badge">
+                            {
+                              recentTasks.filter((t) =>
+                                ["running", "failed", "pending"].includes(
+                                  taskState(t),
+                                ),
+                              ).length
+                            }
+                          </b>
+                        )}
+                      </span>
+                    }
                     variant="ghost"
-                    onClick={() => setSearchOpen(true)}
-                  />
-                  <Button
-                    label={translate("最近任务")}
-                    icon={<Icon name="tasks" />}
-                    isIconOnly
-                    variant="ghost"
-                    onClick={() => setTaskOpen(true)}
+                    onClick={() => navigate("more", { page: "activity" })}
                   />
                   <button
                     className="user-badge"
@@ -820,30 +854,27 @@ export function Panel() {
                   </button>
                 </div>
               </header>
-              <main id="main" className="main">
+              <main id="main" tabIndex={-1} className="main">
                 <div className="page-heading">
                   <div>
-                    <span className="eyebrow">
-                      {section === "overview" ? "WORKSPACE" : "FOLIO"}
-                    </span>
                     <h1>
                       {section === "overview"
                         ? notesAll
                           ? translate("共享便签")
                           : translate("主机概览")
-                        : nav.find((n) => n.id === section)?.label}
+                        : section === "more" && morePage !== "menu"
+                          ? (visibleMoreNav.find((item) => item.id === morePage)
+                              ?.title ??
+                            (
+                              {
+                                activity: translate("任务与异常"),
+                                notes: translate("共享便签"),
+                                actions: translate("高级工具"),
+                              } as Record<string, string>
+                            )[morePage] ??
+                            translate("更多"))
+                          : nav.find((n) => n.id === section)?.label}
                     </h1>
-                    <p>
-                      {section === "overview"
-                        ? translate("状态、任务与共享信息，在一处查看。")
-                        : section === "sites"
-                          ? translate("网站、域名与证书管理。")
-                          : section === "software"
-                            ? translate("软件、数据库与容器管理。")
-                            : section === "files"
-                              ? translate("文件与配置管理。")
-                              : translate("主机管理、接入与个人设置。")}
-                    </p>
                   </div>
                   <div className="button-row">
                     <Button
@@ -851,16 +882,23 @@ export function Panel() {
                       icon={<Icon name="refresh" />}
                       variant="ghost"
                       isLoading={loading}
-                      onClick={() => void refresh()}
+                      onClick={() => {
+                        window.dispatchEvent(
+                          new Event("powerlinux:invalidate"),
+                        );
+                        void refresh();
+                      }}
                     />
-                    {section === "overview" && canWriteNotes && (
-                      <Button
-                        label={translate("新建便签")}
-                        icon={<Icon name="plus" />}
-                        variant="primary"
-                        onClick={() => openNote()}
-                      />
-                    )}
+                    {((section === "overview" && notesAll) ||
+                      (section === "more" && morePage === "notes")) &&
+                      canWriteNotes && (
+                        <Button
+                          label={translate("新建便签")}
+                          icon={<Icon name="plus" />}
+                          variant="primary"
+                          onClick={() => openNote()}
+                        />
+                      )}
                   </div>
                 </div>
                 {authError && (
@@ -895,11 +933,9 @@ export function Panel() {
                     )}
                   </div>
                 )}
-                {section === "overview" && !notesAll && (
-                  <HostingStackSetup capabilities={caps} />
-                )}
-                {section === "overview" &&
-                  (notesAll ? (
+                {(section === "overview" ||
+                  (section === "more" && morePage === "notes")) &&
+                  (notesAll || morePage === "notes" ? (
                     <Card className="panel-card">
                       <div className="card-heading">
                         <h2>
@@ -926,6 +962,7 @@ export function Panel() {
                             label={translate("返回概览")}
                             variant="ghost"
                             onClick={() => {
+                              setSection("overview");
                               setNotesAll(false);
                               setArchived(false);
                               setNotesPage(0);
@@ -995,346 +1032,56 @@ export function Panel() {
                       </div>
                     </Card>
                   ) : (
-                    <div className="overview-grid">
-                      <Card className="panel-card primary-card system-card">
-                        <CardTitle
-                          icon="overview"
-                          title={translate("主机总览")}
-                        >
-                          <span
-                            className={`status-chip ${errors.system ? "warning" : "neutral"}`}
-                          >
-                            {errors.system
-                              ? translate("快照过期")
-                              : translate("主机用量")}
-                          </span>
-                        </CardTitle>
-                        {errors.system && (
-                          <div className="notice danger" role="alert">
-                            {errors.system}
-                          </div>
-                        )}
-                        <div className="host-summary">
-                          <strong>
-                            {status?.hostname ??
-                              (loading
-                                ? translate("正在读取…")
-                                : translate("主机信息未提供"))}
-                          </strong>
-                          <span>
-                            {[status?.os, status?.architecture]
-                              .filter(Boolean)
-                              .join(" · ") || ""}
-                          </span>
-                        </div>
-                        <div className="metrics">
-                          <Metric
-                            label="CPU"
-                            value={
-                              status?.cpu_percent == null
-                                ? "—"
-                                : `${status.cpu_percent.toFixed(1)}%`
-                            }
-                            ratio={status?.cpu_percent}
-                            hint={
-                              status?.cpu_cores
-                                ? translate("{0} 个逻辑核心", [
-                                    status.cpu_cores,
-                                  ])
-                                : translate("主机 CPU 总用量")
-                            }
-                          />
-                          <Metric
-                            label={translate("内存")}
-                            value={bytes(status?.memory?.used_bytes)}
-                            ratio={
-                              status?.memory
-                                ? (status.memory.used_bytes /
-                                    status.memory.total_bytes) *
-                                  100
-                                : undefined
-                            }
-                            hint={
-                              status?.memory
-                                ? translate("共 {0}", [
-                                    bytes(status.memory.total_bytes),
-                                  ])
-                                : undefined
-                            }
-                          />
-                          <Metric
-                            label={translate("磁盘")}
-                            value={bytes(status?.disk?.used_bytes)}
-                            ratio={
-                              status?.disk
-                                ? (status.disk.used_bytes /
-                                    status.disk.total_bytes) *
-                                  100
-                                : undefined
-                            }
-                            hint={
-                              status?.disk
-                                ? translate("共 {0}", [
-                                    bytes(status.disk.total_bytes),
-                                  ])
-                                : undefined
-                            }
-                          />
-                        </div>
-                        <div className="card-foot">
-                          <span>
-                            {translate("已运行 ")}
-                            {duration(status?.uptime_seconds)}
-                          </span>
-                          <time
-                            title={fullDate(
-                              status?.updated_at ??
-                                status?.sampled_at ??
-                                lastLoaded,
-                            )}
-                          >
-                            {translate("更新于")}{" "}
-                            {fullDate(
-                              status?.updated_at ??
-                                status?.sampled_at ??
-                                lastLoaded,
-                            )}
-                          </time>
-                        </div>
-                      </Card>
-                      <Card
-                        className={`panel-card primary-card notes-card ${displayedNotes.length ? "" : "compact-empty"}`}
-                      >
-                        <CardTitle icon="note" title={translate("共享便签")}>
-                          <button
-                            className="text-button"
-                            onClick={() => {
-                              setNotes([]);
-                              setNotesPage(0);
-                              setNotesAll(true);
-                            }}
-                          >
-                            {translate("查看全部")}
-                            <Icon name="arrow" size={14} />
-                          </button>
-                        </CardTitle>
-                        {errors.notes ? (
-                          <div className="notice danger" role="alert">
-                            {errors.notes}
-                          </div>
-                        ) : displayedNotes.length ? (
-                          <div className="notes-preview">
-                            {displayedNotes.slice(0, 3).map((n) => (
-                              <NoteTile
-                                key={n.id}
-                                note={n}
-                                open={() => openNote(n)}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <Empty
-                            icon="note"
-                            title={translate("留下一条共享信息")}
-                            detail={translate(
-                              "记录待办或交接信息，人和已授权的 AI 都可编辑。",
-                            )}
-                          >
-                            {canWriteNotes && (
-                              <Button
-                                label={translate("创建第一条便签")}
-                                variant="ghost"
-                                icon={<Icon name="plus" />}
-                                onClick={() => openNote()}
-                              />
-                            )}
-                          </Empty>
-                        )}
-                      </Card>
-                      <Card
-                        className={`panel-card secondary-card ${recentTasks.length ? "" : "compact-empty"}`}
-                      >
-                        <CardTitle icon="tasks" title={translate("最近任务")}>
-                          <button
-                            className="text-button"
-                            onClick={() => setTaskOpen(true)}
-                          >
-                            {translate("查看全部")}
-                            <Icon name="arrow" size={14} />
-                          </button>
-                        </CardTitle>
-                        {errors.tasks ? (
-                          <div className="notice danger" role="alert">
-                            {errors.tasks}
-                          </div>
-                        ) : recentTasks.length ? (
-                          <div className="rows">
-                            {recentTasks.slice(0, 3).map((t) => (
-                              <TaskRow
-                                key={t.id}
-                                task={t}
-                                open={() => {
-                                  setSelectedTask(t);
-                                  setTaskOpen(true);
-                                }}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <Empty
-                            icon="tasks"
-                            title={translate("暂无任务")}
-                            detail={translate(
-                              "安装、备份和升级的进度将显示在这里。",
-                            )}
-                          />
-                        )}
-                      </Card>
-                      <Card
-                        className={`panel-card secondary-card ${failedTasks.length ? "" : "compact-empty"}`}
-                      >
-                        <CardTitle
-                          icon="events"
-                          title={translate("待处理事件")}
-                        >
-                          <span className="count">{failedTasks.length}</span>
-                        </CardTitle>
-                        {errors.tasks ? (
-                          <div className="notice warning">
-                            {translate("任务状态暂时无法读取。")}
-                          </div>
-                        ) : failedTasks.length ? (
-                          <div className="rows">
-                            {failedTasks.slice(0, 3).map((t) => (
-                              <button
-                                className="event-row"
-                                key={t.id}
-                                onClick={() => {
-                                  setSelectedTask(t);
-                                  setTaskOpen(true);
-                                }}
-                              >
-                                <span className="event-dot" />
-                                <div>
-                                  <strong>
-                                    {t.name ??
-                                      t.operation ??
-                                      t.action ??
-                                      translate("任务")}
-                                    {translate("执行失败")}
-                                  </strong>
-                                  <p>
-                                    {t.error ??
-                                      translate("打开任务查看失败原因。")}
-                                  </p>
-                                </div>
-                                <Icon name="arrow" size={16} />
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <Empty
-                            icon="check"
-                            title={translate("当前没有待处理任务异常")}
-                            detail={translate("这里只显示实际任务错误与提醒。")}
-                          />
-                        )}
-                      </Card>
-                      <Card className="panel-card secondary-card">
-                        <CardTitle
-                          icon="overview"
-                          title={translate("常用入口")}
-                        />
-                        <div className="rows">
-                          {[
-                            {
-                              id: "sites",
-                              icon: "sites",
-                              title: translate("网站管理"),
-                              detail: translate("网站、域名与证书"),
-                            },
-                            {
-                              id: "software",
-                              icon: "software",
-                              title: translate("软件管理"),
-                              detail: translate("服务、数据库与容器"),
-                            },
-                            {
-                              id: "files",
-                              icon: "files",
-                              title: translate("文件管理"),
-                              detail: translate("浏览文件与配置"),
-                            },
-                          ]
-                            .filter((item) =>
-                              visibleNav.some(
-                                (navItem) => navItem.id === item.id,
-                              ),
-                            )
-                            .map((item) => (
-                              <button
-                                className="event-row quick-link-row"
-                                key={item.id}
-                                onClick={() => {
-                                  setSection(item.id);
-                                  setSelectedAction(undefined);
-                                  setNotesAll(false);
-                                }}
-                              >
-                                <span className="heading-icon">
-                                  <Icon
-                                    name={item.icon as IconName}
-                                    size={16}
-                                  />
-                                </span>
-                                <div>
-                                  <strong>{item.title}</strong>
-                                  <p>{item.detail}</p>
-                                </div>
-                                <Icon name="arrow" size={16} />
-                              </button>
-                            ))}
-                        </div>
-                      </Card>
-                    </div>
+                    <Overview
+                      status={status}
+                      error={errors.system}
+                      connection={connection}
+                      capabilities={caps}
+                    />
                   ))}
                 {visited.sites && (
                   <div hidden={section !== "sites"}>
-                    <SitesView
-                      capabilities={caps}
-                      onExecuted={noteSaved}
-                      active={section === "sites"}
-                      onFiles={(root) => {
-                        setFileRequest((previous) => ({
-                          root,
-                          sequence: (previous?.sequence ?? 0) + 1,
-                        }));
-                        setSection("files");
-                        setVisited((previous) => ({
-                          ...previous,
-                          files: true,
-                        }));
-                      }}
-                    />
+                    <DetailScope.Provider value={section === "sites"}>
+                      <SitesView
+                        capabilities={caps}
+                        onExecuted={noteSaved}
+                        active={section === "sites"}
+                        onFiles={(root) => {
+                          setFileRequest((previous) => ({
+                            root,
+                            sequence: (previous?.sequence ?? 0) + 1,
+                          }));
+                          setSection("files");
+                          setVisited((previous) => ({
+                            ...previous,
+                            files: true,
+                          }));
+                        }}
+                      />
+                    </DetailScope.Provider>
                   </div>
                 )}
                 {visited.software && (
                   <div hidden={section !== "software"}>
-                    <SoftwareView
-                      capabilities={caps}
-                      onExecuted={noteSaved}
-                      active={section === "software"}
-                    />
+                    <DetailScope.Provider value={section === "software"}>
+                      <SoftwareView
+                        capabilities={caps}
+                        onExecuted={noteSaved}
+                        active={section === "software"}
+                      />
+                    </DetailScope.Provider>
                   </div>
                 )}
                 {visited.files && (
                   <div hidden={section !== "files"}>
-                    <FilesView
-                      capabilities={caps}
-                      onExecuted={noteSaved}
-                      active={section === "files"}
-                      rootRequest={fileRequest}
-                    />
+                    <DetailScope.Provider value={section === "files"}>
+                      <FilesView
+                        capabilities={caps}
+                        onExecuted={noteSaved}
+                        active={section === "files"}
+                        rootRequest={fileRequest}
+                      />
+                    </DetailScope.Provider>
                   </div>
                 )}
                 {visited.terminal && (
@@ -1356,25 +1103,78 @@ export function Panel() {
                       onExecuted={noteSaved}
                     />
                   )}
-                {section === "more" && (
+                {section === "more" && morePage !== "notes" && (
                   <>
                     {morePage === "menu" ? (
-                      <div className="more-grid">
-                        {visibleMoreNav.map((item) => (
-                          <button
-                            key={item.id}
-                            className="more-tile"
-                            onClick={() => setMorePage(item.id)}
-                          >
-                            <span className="heading-icon">
-                              <Icon name={item.icon as IconName} />
-                            </span>
-                            <div>
-                              <strong>{item.title}</strong>
-                              <p>{item.desc}</p>
+                      <div className="more-groups">
+                        {[
+                          {
+                            title: translate("运维"),
+                            ids: ["monitor", "terminal", "schedules"],
+                          },
+                          {
+                            title: translate("活动与记录"),
+                            ids: ["activity", "notes", "audit"],
+                          },
+                          {
+                            title: translate("设置与接入"),
+                            ids: [
+                              "security",
+                              "appearance",
+                              "mcp",
+                              "search",
+                              "actions",
+                            ],
+                          },
+                        ].map((group) => (
+                          <section key={group.title}>
+                            <h2>{group.title}</h2>
+                            <div className="more-grid">
+                              {[
+                                ...visibleMoreNav,
+                                {
+                                  id: "activity",
+                                  title: translate("任务与异常"),
+                                  desc: "",
+                                  icon: "tasks",
+                                },
+                                {
+                                  id: "notes",
+                                  title: translate("共享便签"),
+                                  desc: "",
+                                  icon: "note",
+                                },
+                                {
+                                  id: "search",
+                                  title: translate("全局搜索"),
+                                  desc: "",
+                                  icon: "search",
+                                },
+                                {
+                                  id: "actions",
+                                  title: translate("高级工具"),
+                                  desc: "",
+                                  icon: "settings",
+                                },
+                              ]
+                                .filter((item) => group.ids.includes(item.id))
+                                .map((item) => (
+                                  <button
+                                    key={item.id}
+                                    className="more-tile"
+                                    onClick={() =>
+                                      item.id === "search"
+                                        ? setSearchOpen(true)
+                                        : setMorePage(item.id)
+                                    }
+                                  >
+                                    <Icon name={item.icon as IconName} />
+                                    <strong>{item.title}</strong>
+                                    <Icon name="arrow" size={16} />
+                                  </button>
+                                ))}
                             </div>
-                            <Icon name="arrow" size={18} />
-                          </button>
+                          </section>
                         ))}
                         <Button
                           label={translate("退出登录")}
@@ -1425,6 +1225,37 @@ export function Panel() {
                               </details>
                             )}
                           </>
+                        ) : morePage === "activity" ? (
+                          <Card className="panel-card">
+                            <CardTitle
+                              icon="tasks"
+                              title={translate("任务与异常")}
+                            />
+                            {errors.tasks && (
+                              <div className="notice danger">
+                                {errors.tasks}
+                              </div>
+                            )}
+                            {recentTasks.length ? (
+                              <div className="rows">
+                                {recentTasks.map((t) => (
+                                  <TaskRow
+                                    key={t.id}
+                                    task={t}
+                                    open={() => {
+                                      setSelectedTask(t);
+                                      setTaskOpen(true);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <Empty
+                                icon="tasks"
+                                title={translate("暂无任务")}
+                              />
+                            )}
+                          </Card>
                         ) : morePage === "audit" ? (
                           <Card className="panel-card">
                             <CardTitle
@@ -1452,7 +1283,18 @@ export function Panel() {
                                         : translate("已记录")}
                                     </span>
                                     <div>
-                                      <strong>{entry.action}</strong>
+                                      <strong>
+                                        {actionLabel({
+                                          name: entry.action,
+                                          description: translate("操作"),
+                                        })}
+                                      </strong>
+                                      <details className="technical-details">
+                                        <summary>
+                                          {translate("技术详情")}
+                                        </summary>
+                                        <code>{entry.action}</code>
+                                      </details>
                                       <p>
                                         {source(entry.actor)}·{" "}
                                         {fullDate(entry.created_at)}
@@ -1500,12 +1342,16 @@ export function Panel() {
                     )}
                   </>
                 )}
-                {session.panel?.footer && (
-                  <footer className="panel-footer">
-                    {displayPanelName(session.panel.footer)}
-                  </footer>
-                )}
+                {session.panel?.footer &&
+                  !["Folio · 折纸面板", "Folio · Server Panel"].includes(
+                    session.panel.footer,
+                  ) && (
+                    <footer className="panel-footer">
+                      {displayPanelName(session.panel.footer)}
+                    </footer>
+                  )}
               </main>
+              <div id="detail-pages" />
               <nav className="bottom-nav" aria-label={translate("主导航")}>
                 {visibleNav.map((item) => (
                   <button
@@ -1542,30 +1388,16 @@ export function Panel() {
                   canDelete={canDeleteNotes}
                 />
               )}
-              <Dialog
-                isOpen={taskOpen}
-                onOpenChange={setTaskOpen}
-                width={720}
-                padding={6}
-                aria-label={translate("任务列表")}
+              <ResourceDrawer
+                open={taskOpen}
+                onClose={() => {
+                  setTaskOpen(false);
+                  setSelectedTask(undefined);
+                }}
+                title={
+                  selectedTask ? translate("任务详情") : translate("任务列表")
+                }
               >
-                <div className="dialog-title">
-                  <h2>
-                    {selectedTask
-                      ? translate("任务详情")
-                      : translate("最近任务")}
-                  </h2>
-                  <Button
-                    label={translate("关闭任务")}
-                    isIconOnly
-                    icon={<Icon name="close" />}
-                    variant="ghost"
-                    onClick={() => {
-                      setTaskOpen(false);
-                      setSelectedTask(undefined);
-                    }}
-                  />
-                </div>
                 {selectedTask ? (
                   <>
                     <TaskRow
@@ -1598,7 +1430,7 @@ export function Panel() {
                     )}
                   </div>
                 )}
-              </Dialog>
+              </ResourceDrawer>
               <Dialog
                 isOpen={searchOpen}
                 onOpenChange={setSearchOpen}
@@ -1676,9 +1508,7 @@ export function Panel() {
                       <button
                         key={c.name}
                         onClick={() => {
-                          setSelectedAction(c.name);
-                          setSection("more");
-                          setMorePage("actions");
+                          navigate("more", { page: "actions", view: c.name });
                           setSearchOpen(false);
                         }}
                       >
@@ -1736,7 +1566,11 @@ function TaskRow({ task, open }: { task: Task; open?: () => void }) {
       </span>
       <div className="task-info">
         <strong>
-          {task.name ?? task.operation ?? task.action ?? translate("任务")}
+          {task.name ??
+            actionLabel({
+              name: task.action ?? task.operation ?? "",
+              description: translate("任务"),
+            })}
         </strong>
         <p>
           {task.target ?? task.resource ?? source(task.actor)}·{" "}
@@ -1753,7 +1587,7 @@ function TaskRow({ task, open }: { task: Task; open?: () => void }) {
       <span
         className={`status-chip ${state === "failed" ? "danger" : state === "running" ? "accent" : "neutral"}`}
       >
-        {stateText[state] ?? state}
+        {stateText[state] ?? translate("状态未知")}
       </span>
     </>
   );
@@ -1844,7 +1678,6 @@ function Auth({
         <strong>{displayPanelName(panel?.panel_name)}</strong>
       </div>
       <Card className="auth-card panel-card">
-        <span className="eyebrow">YOUR LINUX WORKSPACE</span>
         <h1>
           {initialized === false
             ? translate("初始化面板")

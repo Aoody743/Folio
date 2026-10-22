@@ -41,12 +41,16 @@ import {
   supportsSiteCategoryFilter,
 } from "@/lib/site-categories";
 import { Icon } from "./icon";
+import { usePageState } from "@/lib/navigation";
+import { usePageSize } from "@/lib/collection";
+import { HostingStackSetup } from "./hosting-stack-setup";
 import { ActionForm, ActionBrowser, References } from "./actions";
 import { SiteCategoriesManager } from "./site-categories";
 import { SiteMigration } from "./site-migration";
 import { isDedicatedSiteMigrationAction } from "@/lib/site-migration";
 import {
   Pager,
+  ResourceError,
   ResourceActions,
   ResourceDrawer,
   State,
@@ -127,14 +131,38 @@ export function SitesView({
   active?: boolean;
   onFiles?: (root: string) => void;
 }) {
-  const [offset, setOffset] = useState(0);
-  const [resourcePage, setResourcePage] = useState("sites");
-  const [query, setQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [selected, setSelected] = useState<Site>();
-  const [open, setOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [group, setGroup] = useState("overview");
+  const [offset, setOffset] = usePageState("sites", "offset", 0);
+  const { ref: listRef, limit } = usePageSize(72);
+  const [resourcePage, setResourcePage] = usePageState(
+    "sites",
+    "page",
+    "sites",
+  );
+  const [query, setQuery] = usePageState("sites", "q", "");
+  const [statusFilter, setStatusFilter] = usePageState("sites", "status", "");
+  const [categoryFilter, setCategoryFilter] = usePageState(
+    "sites",
+    "category",
+    "",
+  );
+  const [selectedID, setSelectedID] = usePageState("sites", "id", "", true);
+  const [selectedLocal, setSelectedLocal] = useState<Site>();
+  const selected =
+    selectedLocal?.id === selectedID
+      ? selectedLocal
+      : selectedID
+        ? ({ id: selectedID, name: selectedID, domains: [] } as unknown as Site)
+        : undefined;
+  const setSelected = (site: Site) => {
+    setSelectedLocal(site);
+    setSelectedID(site.id);
+  };
+  const open = !!selectedID;
+  const setOpen = (value: boolean) => {
+    if (!value) setSelectedID("");
+  };
+  const [creating, setCreating] = usePageState("sites", "create", false, true);
+  const [group, setGroup] = usePageState("sites", "group", "overview");
   const [operation, setOperation] = useState<string>();
   const [other, setOther] = useState<string>();
   const siteListCapability = capabilities.find((c) => c.name === "sites_list");
@@ -159,12 +187,19 @@ export function SitesView({
     : list(categoryResources.data);
   const resources = useResource<Page<Site>>(
     "sites_list",
-    siteListInput(siteListCapability, {
-      limit: 20,
-      offset,
-      query,
-      categoryID: categoryFilterAvailable ? categoryFilter : "",
-    }),
+    {
+      ...siteListInput(siteListCapability, {
+        limit,
+        offset,
+        query,
+        categoryID: categoryFilterAvailable ? categoryFilter : "",
+      }),
+      ...(statusFilter &&
+      siteListCapability?.input_schema?.properties &&
+      Object.hasOwn(siteListCapability.input_schema.properties, "status")
+        ? { status: statusFilter }
+        : {}),
+    },
     available && active,
   );
   const detail = useResource<Site>(
@@ -313,6 +348,17 @@ export function SitesView({
       );
     return updateHasFields(tab.id) || hasGroupActions(tab.id);
   });
+  const configGroups = supportedGroups.filter((tab) =>
+    ["config", "domains", "tls", "php", "routing"].includes(tab.id),
+  );
+  const primaryGroups = [
+    ...supportedGroups.filter((tab) => tab.id === "overview"),
+    ...(configGroups.length
+      ? [{ id: "config", label: translate("配置") }]
+      : []),
+    ...supportedGroups.filter((tab) => tab.id === "logs"),
+    ...supportedGroups.filter((tab) => tab.id === "backup"),
+  ];
   const activeGroup = supportedGroups.some((tab) => tab.id === group)
     ? group
     : (supportedGroups[0]?.id ?? "overview");
@@ -402,27 +448,57 @@ export function SitesView({
         />
       ) : (
         <Card className="panel-card">
-          <div className="card-heading">
-            <h2>{translate("网站资源")}</h2>
-            <div className="button-row">
-              <TextInput
-                label={translate("筛选网站")}
-                isLabelHidden
-                value={query}
-                onChange={(value) => {
-                  setQuery(value);
-                  setOffset(0);
-                }}
-                placeholder={translate("名称或域名")}
-                startIcon={<Icon name="search" />}
+          <div className="list-controls site-toolbar">
+            <TextInput
+              label={translate("筛选网站")}
+              isLabelHidden
+              value={query}
+              onChange={(value) => {
+                setQuery(value);
+                setOffset(0);
+              }}
+              placeholder={translate("名称或域名")}
+              startIcon={<Icon name="search" />}
+            />
+            {create && (
+              <Button
+                label={translate("创建网站")}
+                variant="primary"
+                onClick={() => setCreating(true)}
               />
+            )}
+          </div>
+          <details className="list-options">
+            <summary>
+              {translate("筛选与分类")}
+              {statusFilter
+                ? ` · ${statusFilter === "running" ? translate("已启用") : statusFilter === "stopped" ? translate("已停用") : translate("状态未知")}`
+                : ""}
+            </summary>
+            <div className="list-controls">
+              <label className="native-field">
+                {translate("状态")}
+                <select
+                  aria-label={translate("网站状态筛选")}
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setOffset(0);
+                  }}
+                >
+                  <option value="">{translate("全部")}</option>
+                  <option value="running">{translate("已启用")}</option>
+                  <option value="stopped">{translate("已停用")}</option>
+                  <option value="unknown">{translate("状态未知")}</option>
+                </select>
+              </label>
               {categoryFilterAvailable && (
                 <label className="native-field">
                   {translate("网站分类筛选")}
                   <select
                     value={categoryFilter}
-                    onChange={(event) => {
-                      setCategoryFilter(event.target.value);
+                    onChange={(e) => {
+                      setCategoryFilter(e.target.value);
                       setOffset(0);
                     }}
                   >
@@ -433,7 +509,6 @@ export function SitesView({
                       </option>
                     ))}
                   </select>
-                  <small>{translate("空值表示全部分类。")}</small>
                 </label>
               )}
               <SiteCategoriesManager
@@ -444,16 +519,8 @@ export function SitesView({
                 onReload={categoryResources.reload}
                 onChanged={categoriesChanged}
               />
-              {create && (
-                <Button
-                  label={translate("创建网站")}
-                  variant="primary"
-                  icon={<Icon name="plus" />}
-                  onClick={() => setCreating(true)}
-                />
-              )}
             </div>
-          </div>
+          </details>
           {!available ? (
             <Unavailable
               title={translate("网站资源服务暂不可用")}
@@ -462,16 +529,13 @@ export function SitesView({
           ) : (
             <>
               {resources.error && (
-                <div className="notice danger" role="alert">
-                  {resources.error}
-                  <Button
-                    label={translate("重试网站列表")}
-                    variant="ghost"
-                    onClick={() => void resources.reload()}
-                  />
-                </div>
+                <ResourceError
+                  error={resources.error}
+                  state={resources.state}
+                  retry={() => void resources.reload()}
+                />
               )}
-              {resources.loading && (
+              {resources.loading && !resources.data && (
                 <p className="muted" role="status">
                   {translate("正在读取网站…")}
                 </p>
@@ -486,7 +550,7 @@ export function SitesView({
                   />
                 </div>
               )}
-              <div className="resource-table-wrap">
+              <div ref={listRef} className="resource-table-wrap">
                 <table className="resource-table">
                   <thead>
                     <tr>
@@ -498,55 +562,53 @@ export function SitesView({
                     </tr>
                   </thead>
                   <tbody>
-                    {rows
-                      .filter(
-                        (s) =>
-                          s.name.includes(query) ||
-                          s.domains?.some((d) => d.includes(query)),
-                      )
-                      .map((site) => (
-                        <tr key={site.id}>
-                          <td>
-                            <button
-                              className="resource-name"
-                              onClick={() => {
-                                setSelected(site);
-                                setGroup("overview");
-                                setOperation(undefined);
-                                setOpen(true);
-                              }}
-                            >
-                              {site.name}
-                            </button>
-                            {site.default && (
-                              <span className="status-chip neutral">
-                                {translate("默认网站")}
-                              </span>
-                            )}
-                            <small>
-                              {site.domains?.join(" · ") ||
-                                translate("未配置域名")}
-                            </small>
-                          </td>
-                          <td>
-                            <State value={site.status} />
-                          </td>
-                          <td>
-                            {site.php_version ? `PHP ${site.php_version}` : "—"}
-                          </td>
-                          <td>
-                            {site.tls?.enabled ? (
-                              <span title={fullDate(site.tls.expires_at)}>
-                                {translate("已配置 ·")}
-                                {fullDate(site.tls.expires_at)}
-                              </span>
-                            ) : (
-                              translate("未配置")
-                            )}
-                          </td>
-                          <td>{fullDate(site.updated_at)}</td>
-                        </tr>
-                      ))}
+                    {rows.map((site) => (
+                      <tr key={site.id}>
+                        <td>
+                          <button
+                            className="resource-name"
+                            onClick={() => {
+                              setSelected(site);
+                              setGroup("overview");
+                              setOperation(undefined);
+                              setOpen(true);
+                            }}
+                          >
+                            {site.name}
+                          </button>
+                          {site.default && (
+                            <span className="status-chip neutral">
+                              {translate("默认网站")}
+                            </span>
+                          )}
+                          <small>
+                            {site.domains?.join(" · ") ||
+                              translate("未配置域名")}
+                          </small>
+                        </td>
+                        <td>
+                          <State
+                            value={
+                              site.status === "running" ? "active" : site.status
+                            }
+                          />
+                        </td>
+                        <td>
+                          {site.php_version ? `PHP ${site.php_version}` : "—"}
+                        </td>
+                        <td>
+                          {site.tls?.enabled ? (
+                            <span title={fullDate(site.tls.expires_at)}>
+                              {translate("已配置 ·")}
+                              {fullDate(site.tls.expires_at)}
+                            </span>
+                          ) : (
+                            translate("未配置")
+                          )}
+                        </td>
+                        <td>{fullDate(site.updated_at)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -561,7 +623,7 @@ export function SitesView({
               )}
               <Pager
                 offset={offset}
-                limit={20}
+                limit={limit}
                 total={resources.data?.total}
                 count={rows.length}
                 loading={resources.loading}
@@ -571,6 +633,17 @@ export function SitesView({
           )}
         </Card>
       )}
+      {!rows.length &&
+        !resources.error &&
+        !resources.loading &&
+        !query &&
+        !statusFilter &&
+        activeResourcePage === "sites" && (
+          <details className="module-setup">
+            <summary>{translate("配置网站运行环境")}</summary>
+            <HostingStackSetup capabilities={capabilities} />
+          </details>
+        )}
       {creating && create && (
         <ResourceDrawer
           open={creating}
@@ -600,8 +673,11 @@ export function SitesView({
           title={translate("网站 · {0}", [current.name])}
           onClose={() => setOpen(false)}
         >
+          {detail.error && <div className="notice danger">{detail.error}</div>}
           <div className="resource-summary">
-            <State value={current.status} />
+            <State
+              value={current.status === "running" ? "active" : current.status}
+            />
             <span className="muted">{current.domains?.join(" · ")}</span>
           </div>
           <div
@@ -609,21 +685,55 @@ export function SitesView({
             role="tablist"
             aria-label={translate("网站详情分类")}
           >
-            {supportedGroups.map((tab) => (
+            {primaryGroups.map((tab) => (
               <button
                 role="tab"
-                aria-selected={activeGroup === tab.id}
+                aria-selected={
+                  tab.id === activeGroup ||
+                  (tab.id === "config" &&
+                    ["domains", "tls", "php", "routing"].includes(activeGroup))
+                }
                 key={tab.id}
                 onClick={() => {
-                  setGroup(tab.id);
+                  setGroup(
+                    tab.id === "config" &&
+                      !supportedGroups.some((group) => group.id === "config")
+                      ? configGroups[0].id
+                      : tab.id,
+                  );
                   setOperation(undefined);
                 }}
               >
-                {tab.label}
+                {tab.id === "overview" ? translate("概况") : tab.label}
               </button>
             ))}
           </div>
-          {detail.error && <div className="notice danger">{detail.error}</div>}
+          {["config", "domains", "tls", "php", "routing"].includes(
+            activeGroup,
+          ) && (
+            <label className="native-field">
+              {translate("配置分组")}
+              <select
+                value={activeGroup}
+                onChange={(e) => {
+                  setGroup(e.target.value);
+                  setOperation(undefined);
+                }}
+              >
+                {supportedGroups
+                  .filter((tab) =>
+                    ["config", "domains", "tls", "php", "routing"].includes(
+                      tab.id,
+                    ),
+                  )
+                  .map((tab) => (
+                    <option value={tab.id} key={tab.id}>
+                      {tab.label}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
           {current.configuration_mode === "advanced" &&
             activeGroup !== "migration" && (
               <div className="notice warning">
@@ -796,18 +906,6 @@ export function SitesView({
           )}
         </ResourceDrawer>
       )}
-      <details className="advanced-actions">
-        <summary>{translate("其他已授权的网站操作")}</summary>
-        <ActionBrowser
-          capabilities={capabilities.filter(
-            (capability) => !isDedicatedSiteMigrationAction(capability.name),
-          )}
-          category="sites"
-          selected={other}
-          onSelect={setOther}
-          onExecuted={refresh}
-        />
-      </details>
     </div>
   );
 }

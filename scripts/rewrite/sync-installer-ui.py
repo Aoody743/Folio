@@ -16,7 +16,7 @@ for source, translated in messages.items():
         raise SystemExit(f'Format placeholders differ: {source!r}')
 cases = '\n'.join(f'      {shlex.quote(key)}) ui_key={shlex.quote(value)} ;;' for key, value in sorted(messages.items()))
 ui = (root / 'installer-ui.sh.in').read_text().replace('__TRANSLATIONS__', cases).rstrip()
-for path in (root / 'install.sh', root / 'install-1.0-beta4.sh'):
+for path in (root / 'install.sh', root / 'install-1.0-beta4.sh', root / 'install-1.0-beta5.sh'):
     source = path.read_text()
     if '# BEGIN GENERATED INSTALLER UI' in source:
         updated = re.sub(r'# BEGIN GENERATED INSTALLER UI.*?# END GENERATED INSTALLER UI', lambda _: ui, source, flags=re.S)

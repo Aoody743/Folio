@@ -1,6 +1,6 @@
 "use client";
 import { t as translate } from "@/lib/i18n";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 const ConnectionsView = dynamic(
   () => import("./connections").then((m) => m.ConnectionsView),
@@ -84,6 +84,9 @@ const hasInstallableDefault = (item: CatalogItem) => {
     source.kind === "unavailable"
   );
 };
+import { usePageState } from "@/lib/navigation";
+import { pageItems, usePageSize } from "@/lib/collection";
+import { Pager } from "./resource-ui";
 export function SoftwareView({
   capabilities,
   onExecuted,
@@ -93,13 +96,24 @@ export function SoftwareView({
   onExecuted: () => void;
   active?: boolean;
 }) {
-  const [filter, setFilter] = useState("all");
-  const [resourcePage, setResourcePage] = useState("catalog");
-  const [query, setQuery] = useState("");
+  const [filter, setFilter] = usePageState("software", "filter", "all");
+  const [offset, setOffset] = usePageState("software", "offset", 0);
+  const { ref: listRef, limit } = usePageSize(76);
+  const [resourcePage, setResourcePage] = usePageState(
+    "software",
+    "page",
+    "installed",
+    true,
+  );
+  const [query, setQuery] = usePageState("software", "q", "");
+  const [selectedID, setSelectedID] = usePageState("software", "id", "", true);
   const [selected, setSelected] = useState<CatalogItem>();
   const [instance, setInstance] = useState<SoftwareInstance>();
-  const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState("instances");
+  const open = !!selectedID && ["installed", "catalog"].includes(resourcePage);
+  const setOpen = (value: boolean) => {
+    if (!value) setSelectedID("");
+  };
+  const [tab, setTab] = usePageState("software", "group", "instances");
   const [operation, setOperation] = useState<string>();
   const [other, setOther] = useState<string>();
   const [plan, setPlan] = useState<Record<string, unknown>>();
@@ -155,18 +169,21 @@ export function SoftwareView({
             : item.category === filter),
   );
   const softwareTabs = [
+    ...(capabilities.some((c) => c.name === "plugins_list")
+      ? [{ id: "installed", label: translate("已安装服务") }]
+      : []),
     ...(capabilities.some((capability) => capability.name === "plugins_catalog")
-      ? [{ id: "catalog", label: translate("软件目录") }]
+      ? [{ id: "catalog", label: translate("软件库") }]
       : []),
     ...(capabilities.some(
       (capability) => capability.name === "database_connections_list",
     )
-      ? [{ id: "database", label: translate("数据库连接") }]
+      ? [{ id: "database", label: translate("外部数据库") }]
       : []),
     ...(capabilities.some(
       (capability) => capability.name === "cache_connections_list",
     )
-      ? [{ id: "cache", label: translate("缓存空间") }]
+      ? [{ id: "cache", label: translate("缓存连接") }]
       : []),
     ...(capabilities.some(
       (capability) => capability.name === "hosted_apps_list",
@@ -177,6 +194,39 @@ export function SoftwareView({
   const activeResourcePage = softwareTabs.some((tab) => tab.id === resourcePage)
     ? resourcePage
     : softwareTabs[0]?.id;
+  useEffect(() => {
+    if (!selectedID || !catalog.data) return;
+    const target = instances.find((item) => item.id === selectedID);
+    const item = visibleItems.find(
+      (item) => item.id === (target?.plugin_id ?? selectedID),
+    );
+    if (item) {
+      setSelected(item);
+      setInstance(target ?? associated(item)[0]);
+    } else setSelected(undefined);
+  }, [selectedID, catalog.data, installed.data]);
+  const openSoftware = (item: CatalogItem, target?: SoftwareInstance) => {
+    setSelected(item);
+    setInstance(target ?? associated(item)[0]);
+    setTab(
+      target && hasInstanceResources(target.plugin_id)
+        ? "operations"
+        : "instances",
+    );
+    setOperation(undefined);
+    setPlan(undefined);
+    setSelectedID(target?.id ?? item.id);
+  };
+  const installedMatches = instances.filter(
+    (item) =>
+      isFirstReleaseCatalogPlugin(item.plugin_id) &&
+      item.status !== "uninstalled" &&
+      `${item.plugin_id} ${item.instance_id} ${item.installed_version}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
+  );
+  const installedPage = pageItems(installedMatches, offset, limit);
+  const catalogPage = pageItems(matchingItems, offset, limit);
   const planAction = capabilities.find((c) => c.name === "software_plan");
   const applyAction = capabilities.find((c) => c.name === "software_apply");
   const databaseTargetReferences = {
@@ -317,7 +367,11 @@ export function SoftwareView({
             role="tab"
             aria-selected={activeResourcePage === tab.id}
             key={tab.id}
-            onClick={() => setResourcePage(tab.id)}
+            onClick={() => {
+              setSelectedID("");
+              setOffset(0);
+              setResourcePage(tab.id);
+            }}
           >
             {tab.label}
           </button>
@@ -331,7 +385,96 @@ export function SoftwareView({
           onExecuted={onExecuted}
           active={active}
         />
-      ) : activeResourcePage !== "catalog" ? (
+      ) : activeResourcePage === "installed" ? (
+        <Card className="panel-card">
+          <div className="card-heading">
+            <h2>{translate("已安装服务")}</h2>
+            <div className="button-row">
+              <TextInput
+                label={translate("搜索软件")}
+                isLabelHidden
+                value={query}
+                onChange={(value) => {
+                  setQuery(value);
+                  setOffset(0);
+                }}
+                placeholder={translate("名称或功能")}
+              />
+              <Button
+                label={translate("安装软件")}
+                variant="primary"
+                onClick={() => {
+                  setOffset(0);
+                  setResourcePage("catalog");
+                }}
+              />
+            </div>
+          </div>
+          {installed.error ? (
+            <div className="notice danger">{installed.error}</div>
+          ) : installed.data?.availability === "agent_not_configured" ? (
+            <Unavailable
+              title={translate("主机特权执行器未配置")}
+              detail={translate("配置执行器后可读取安装状态和管理服务。")}
+            />
+          ) : installed.loading && !installed.data ? (
+            <p role="status">{translate("正在读取…")}</p>
+          ) : (
+            <>
+              <div ref={listRef} className="resource-table-wrap">
+                <table className="resource-table">
+                  <thead>
+                    <tr>
+                      <th>{translate("服务")}</th>
+                      <th>{translate("状态")}</th>
+                      <th>{translate("版本")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {installedPage.items.map((target) => (
+                      <tr key={target.id}>
+                        <td>
+                          <button
+                            className="resource-name"
+                            onClick={() => {
+                              const item = items.find(
+                                (item) => item.id === target.plugin_id,
+                              );
+                              if (item) openSoftware(item, target);
+                            }}
+                          >
+                            {items.find((item) => item.id === target.plugin_id)
+                              ?.name ?? target.plugin_id}
+                            <small>{target.instance_id}</small>
+                          </button>
+                        </td>
+                        <td>
+                          <State value={target.status} />
+                        </td>
+                        <td>{target.installed_version || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!installedMatches.length && (
+                <Unavailable
+                  title={translate("暂无已安装服务")}
+                  detail={translate("从软件库安装所需服务。")}
+                />
+              )}
+              <Pager
+                offset={installedPage.offset}
+                limit={limit}
+                total={installedPage.total}
+                count={installedPage.items.length}
+                loading={installed.loading}
+                onOffset={setOffset}
+              />
+            </>
+          )}
+        </Card>
+      ) : ["database", "cache"].includes(activeResourcePage ?? "") ? (
         <ConnectionsView
           key={activeResourcePage}
           kind={activeResourcePage as "database" | "cache"}
@@ -347,7 +490,10 @@ export function SoftwareView({
               label={translate("搜索软件")}
               isLabelHidden
               value={query}
-              onChange={setQuery}
+              onChange={(value) => {
+                setQuery(value);
+                setOffset(0);
+              }}
               placeholder={translate("名称或功能")}
               startIcon={<Icon name="search" />}
             />
@@ -396,7 +542,7 @@ export function SoftwareView({
           ) : catalog.loading && !catalog.data ? (
             <p role="status">{translate("正在读取软件目录…")}</p>
           ) : (
-            <div className="software-grid">
+            <div ref={listRef} className="software-grid software-list">
               {!matchingItems.length && (
                 <div className="empty software-empty" role="status">
                   <strong>{translate("没有匹配的软件")}</strong>
@@ -411,18 +557,11 @@ export function SoftwareView({
                   />
                 </div>
               )}
-              {matchingItems.map((item) => (
+              {catalogPage.items.map((item) => (
                 <button
                   className="software-card"
                   key={item.id}
-                  onClick={() => {
-                    setSelected(item);
-                    setInstance(associated(item)[0]);
-                    setTab("instances");
-                    setOperation(undefined);
-                    setPlan(undefined);
-                    setOpen(true);
-                  }}
+                  onClick={() => openSoftware(item)}
                 >
                   <div className="software-card-title">
                     <span className="heading-icon">
@@ -438,31 +577,31 @@ export function SoftwareView({
                   <p>{translate(item.description ?? "")}</p>
                   <div className="software-card-foot">
                     <span>
-                      {installed.error
-                        ? translate("状态无法读取")
-                        : installed.data?.availability ===
-                            "agent_not_configured"
-                          ? translate("主机特权执行器未配置")
-                          : associated(item).length
-                            ? translate("{0} 个可见实例", [
-                                associated(item).length,
-                              ])
-                            : translate("暂无可见实例")}
+                      {associated(item).length
+                        ? translate("{0} 个可见实例", [associated(item).length])
+                        : translate("可安装")}
                     </span>
-                    <State
-                      value={item.verification?.status}
-                      reason={item.verification?.reason}
-                    />
                   </div>
                 </button>
               ))}
             </div>
           )}
+          <Pager
+            offset={catalogPage.offset}
+            limit={limit}
+            total={catalogPage.total}
+            count={catalogPage.items.length}
+            loading={catalog.loading}
+            onOffset={setOffset}
+          />
         </Card>
       )}
       {activeResourcePage === "catalog" &&
         capabilities.some((c) => c.name === "software_recovery_inspect") && (
-          <SoftwareRecovery capabilities={capabilities} seed={recoverySeed} />
+          <details className="advanced-actions">
+            <summary>{translate("安装恢复工具")}</summary>
+            <SoftwareRecovery capabilities={capabilities} seed={recoverySeed} />
+          </details>
         )}
       {selected && (
         <ResourceDrawer
@@ -472,6 +611,7 @@ export function SoftwareView({
         >
           <div className="resource-summary">
             <span>{translate(selected.description ?? "")}</span>
+            <span>{translate("软件来源验证")}</span>
             <State
               value={selected.verification?.status}
               reason={selected.verification?.reason}
@@ -808,16 +948,6 @@ export function SoftwareView({
           )}
         </ResourceDrawer>
       )}
-      <details className="advanced-actions">
-        <summary>{translate("其他已授权的软件操作")}</summary>
-        <ActionBrowser
-          capabilities={capabilities}
-          category="software"
-          selected={other}
-          onSelect={setOther}
-          onExecuted={refresh}
-        />
-      </details>
     </div>
   );
 }

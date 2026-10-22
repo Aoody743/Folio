@@ -223,55 +223,89 @@ export function Field({
     const obj = (
       value && typeof value === "object" && !Array.isArray(value) ? value : {}
     ) as Record<string, unknown>;
+    const renderField = ([key, child]: [string, Schema]) => {
+      if (
+        ["id", "expected_revision"].includes(key) &&
+        readonlyFields?.includes(key)
+      )
+        return null;
+      const mandatory = schema.required?.includes(key) ?? false;
+      const present = Object.prototype.hasOwnProperty.call(obj, key);
+      const set = (v: unknown) =>
+        onChange(Object.assign(Object.create(null), obj, { [key]: v }));
+      return (
+        <div className="schema-field" key={key}>
+          {!mandatory && (
+            <label className="check-label optional-field">
+              <input
+                type="checkbox"
+                checked={present}
+                onChange={(e) => {
+                  if (e.target.checked) set(initialValue(child));
+                  else {
+                    const next = Object.assign(Object.create(null), obj);
+                    delete next[key];
+                    onChange(next);
+                  }
+                }}
+              />
+              {fieldLabel(key, child.title)}
+              {translate("· 可选")}
+            </label>
+          )}
+          {(present || mandatory) && (
+            <Field
+              schema={child}
+              value={obj[key] ?? initialValue(child)}
+              onChange={set}
+              label={fieldLabel(key, child.title)}
+              fieldKey={key}
+              required={mandatory}
+              readonlyFields={readonlyFields}
+              references={references}
+            />
+          )}
+        </div>
+      );
+    };
+    const entries = Object.entries(schema.properties);
+    const common = ([key]: [string, Schema]) =>
+      !!fieldKey ||
+      schema.required?.includes(key) ||
+      [
+        "name",
+        "domains",
+        "web_instance",
+        "php_instance",
+        "root",
+        "path",
+        "host",
+        "port",
+        "username",
+        "password",
+        "database",
+        "engine",
+        "version",
+        "instance_id",
+      ].includes(key) ||
+      Object.prototype.hasOwnProperty.call(obj, key);
     return (
       <fieldset className="nested-fields">
         <legend>{label}</legend>
         {schema.description && (
           <p className="muted">{translate(schema.description)}</p>
         )}
-        {Object.entries(schema.properties).map(([key, child]) => {
-          const mandatory = schema.required?.includes(key) ?? false;
-          const present = Object.prototype.hasOwnProperty.call(obj, key);
-          const set = (v: unknown) =>
-            onChange(Object.assign(Object.create(null), obj, { [key]: v }));
-          return (
-            <div className="schema-field" key={key}>
-              {!mandatory && (
-                <label className="check-label optional-field">
-                  <input
-                    type="checkbox"
-                    checked={present}
-                    onChange={(e) => {
-                      if (e.target.checked) set(initialValue(child));
-                      else {
-                        const next = Object.assign(Object.create(null), obj);
-                        delete next[key];
-                        onChange(next);
-                      }
-                    }}
-                  />
-                  {fieldLabel(key, child.title)}
-                  {translate("· 可选")}
-                </label>
-              )}
-              {(present || mandatory) && (
-                <Field
-                  schema={child}
-                  value={obj[key] ?? initialValue(child)}
-                  onChange={set}
-                  label={fieldLabel(key, child.title)}
-                  fieldKey={key}
-                  required={mandatory}
-                  readonlyFields={readonlyFields}
-                  references={references}
-                />
-              )}
-            </div>
-          );
-        })}
+        {entries.filter(common).map(renderField)}
+        {entries.some((entry) => !common(entry)) && (
+          <details className="optional-options">
+            <summary>{translate("可选设置")}</summary>
+            {entries.filter((entry) => !common(entry)).map(renderField)}
+          </details>
+        )}
       </fieldset>
     );
   }
+
   if (type === "array") {
     if (
       fieldKey === "parameters" &&
@@ -738,7 +772,10 @@ export function ActionForm({
       <div className="page-heading">
         <div>
           <h2>{actionLabel(capability)}</h2>
-          <p className="monospace muted">{capability.name}</p>
+          <details className="technical-details">
+            <summary>{translate("技术详情")}</summary>
+            <code>{capability.name}</code>
+          </details>
         </div>
         <span className="status-chip neutral">
           {capability.read_only
@@ -802,6 +839,7 @@ export function ActionForm({
             readonlyFields={Array.from(
               new Set([
                 ...lockedPresetFields,
+                ...(typeof preset.id === "string" ? ["id"] : []),
                 ...(typeof preset.expected_revision === "number"
                   ? ["expected_revision"]
                   : []),
@@ -947,7 +985,12 @@ export function ActionForm({
             ].includes(capability.name) ? (
             <SQLResult result={result} />
           ) : (
-            <pre className="json-result">{JSON.stringify(result, null, 2)}</pre>
+            <details>
+              <summary>{translate("查看详细结果")}</summary>
+              <pre className="json-result">
+                {JSON.stringify(result, null, 2)}
+              </pre>
+            </details>
           )}
         </section>
       )}

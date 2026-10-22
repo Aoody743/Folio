@@ -1,14 +1,23 @@
 "use client";
 import { t as translate } from "@/lib/i18n";
 import { Button } from "@astryxdesign/core/Button";
-import { Dialog } from "@astryxdesign/core/Dialog";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Capability } from "@/lib/api";
 import { actionLabel } from "@/lib/labels";
 import { Icon, IconName } from "./icon";
 import { ActionContext, ActionForm, References } from "./actions";
+import type { PageState } from "@/lib/navigation";
+export const DetailScope = createContext(true);
 export function State({ value, reason }: { value?: string; reason?: string }) {
   const labels: Record<string, string> = {
     active: translate("已启用"),
+    enabled: translate("已启用"),
+    inactive: translate("已停止"),
+    installed: translate("已安装"),
+    uninstalled: translate("未安装"),
+    not_verified: translate("尚未验证"),
+    verifying: translate("校验中"),
     submitted: translate("已提交，等待结果"),
     skipped: translate("已跳过"),
     observation_denied: translate("结果读取权限已失效"),
@@ -71,10 +80,12 @@ export function State({ value, reason }: { value?: string; reason?: string }) {
   };
   return (
     <span
-      title={reason}
+      title={reason ?? (value && !(value in labels) ? value : undefined)}
       className={`status-chip ${["failed", "unhealthy", "interrupted"].includes(value ?? "") ? "danger" : ["unavailable", "unsupported", "recovery_required", "outcome_unknown", "conflict"].includes(value ?? "") ? "warning" : ["healthy", "verified", "succeeded", "completed", "active"].includes(value ?? "") ? "success" : "neutral"}`}
     >
-      {value ? (labels[value] ?? value) : translate("状态未提供")}
+      {value
+        ? (labels[value] ?? translate("状态未知"))
+        : translate("状态未提供")}
     </span>
   );
 }
@@ -99,6 +110,38 @@ export function Unavailable({
     </div>
   );
 }
+export function ResourceError({
+  error,
+  retry,
+  state,
+}: {
+  error: string;
+  retry?: () => void;
+  state?: PageState;
+}) {
+  const unconfigured =
+    /privileged|agent_not_configured|特权执行器|executor.*configured/i.test(
+      error,
+    );
+  return (
+    <div className="notice danger" role="alert">
+      <div>
+        {state === "forbidden"
+          ? translate("无访问权限")
+          : unconfigured || state === "unconfigured"
+            ? translate("主机执行器未配置")
+            : translate("读取失败，请重试")}
+      </div>
+      <details>
+        <summary>{translate("技术详情")}</summary>
+        <pre>{error}</pre>
+      </details>
+      {retry && (
+        <Button label={translate("重试")} variant="ghost" onClick={retry} />
+      )}
+    </div>
+  );
+}
 export function Pager({
   offset,
   limit,
@@ -114,24 +157,23 @@ export function Pager({
   loading: boolean;
   onOffset: (offset: number) => void;
 }) {
+  if (offset === 0 && count === 0) return null;
   return (
     <div className="pagination">
       <span className="muted">
-        {translate("第")}
-        {Math.floor(offset / limit) + 1}
-        {translate("页")}
+        {translate("第 {0} 页", [Math.floor(offset / limit) + 1])}
         {total !== undefined
           ? translate(" · 共 {0} 条", [total])
           : translate(" · 本页 {0} 条", [count])}
       </span>
       <div className="button-row">
         <Button
-          label={translate("上一页资源")}
+          label={translate("上一页")}
           isDisabled={offset === 0 || loading}
           onClick={() => onOffset(Math.max(0, offset - limit))}
         />
         <Button
-          label={translate("下一页资源")}
+          label={translate("下一页")}
           isDisabled={
             loading ||
             (total === undefined ? count < limit : offset + limit >= total)
@@ -153,32 +195,43 @@ export function ResourceDrawer({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  return (
-    <Dialog
-      isOpen={open}
-      onOpenChange={(v) => {
-        if (!v) onClose();
-      }}
-      purpose="form"
-      width={800}
-      maxHeight="calc(100dvh - 40px)"
-      position={{ end: 20, top: 20 }}
-      padding={6}
-      className="resource-drawer"
+  const active = useContext(DetailScope);
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const back = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    setTarget(document.getElementById("detail-pages"));
+  }, []);
+  useEffect(() => {
+    if (!open || !active) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const timer = setTimeout(() => back.current?.focus(), 0);
+    return () => {
+      clearTimeout(timer);
+      previous?.focus?.();
+    };
+  }, [open, active]);
+  if (!target) return null;
+  return createPortal(
+    <section
+      hidden={!open || !active}
+      className="resource-page"
       aria-label={title}
     >
-      <div className="dialog-title">
-        <h2>{title}</h2>
-        <Button
-          label={translate("关闭资源详情")}
-          icon={<Icon name="close" />}
-          isIconOnly
-          variant="ghost"
+      <div className="resource-page-heading">
+        <button
+          ref={back}
+          className="text-button"
+          aria-label={translate("返回列表")}
           onClick={onClose}
-        />
+        >
+          <span aria-hidden="true">←</span>
+          {translate("返回")}
+        </button>
+        <h1>{title}</h1>
       </div>
-      {children}
-    </Dialog>
+      <div className="resource-page-content">{children}</div>
+    </section>,
+    target,
   );
 }
 export function ResourceActions({
@@ -226,7 +279,6 @@ export function ResourceActions({
           </span>
           <div>
             <strong>{actionLabel(c)}</strong>
-            <p>{c.name}</p>
           </div>
           <Icon name="arrow" size={16} />
         </button>

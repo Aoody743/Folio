@@ -1,6 +1,7 @@
 export type Page<T> = {
   items: T[];
   total?: number;
+  status_counts?: Record<string, number>;
   limit?: number;
   offset?: number;
 };

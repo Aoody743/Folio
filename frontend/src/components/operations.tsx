@@ -1,4 +1,5 @@
 "use client";
+import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -80,6 +81,7 @@ const cell = (key: string, value: unknown) =>
       : typeof value === "object"
         ? JSON.stringify(value)
         : String(value ?? "—");
+import { usePageState } from "@/lib/navigation";
 export function OperationsView({
   page,
   capabilities,
@@ -92,11 +94,16 @@ export function OperationsView({
   onExecuted: () => void;
 }) {
   const [tab, setTab] = useState(page === "monitor" ? "services" : "schedules");
-  const [selected, setSelected] = useState<RecordData>();
-  const [open, setOpen] = useState(false);
+  const [selectedID, setSelectedID] = usePageState("more", "id", "", true);
+  const selected = selectedID ? ({ id: selectedID } as RecordData) : undefined;
+  const setSelected = (value?: RecordData) => setSelectedID(value?.id ?? "");
+  const open = !!selectedID;
+  const setOpen = (value: boolean) => {
+    if (!value) setSelectedID("");
+  };
   const [operation, setOperation] = useState<string>();
   const [other, setOther] = useState<string>();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = usePageState("more", "create", false, true);
   const has = (name: string) => capabilities.some((c) => c.name === name);
   const scheduleTabs = [
     ...(has("schedules_list")
@@ -358,7 +365,7 @@ export function OperationsView({
             <Unavailable title={translate("{0}服务暂不可用", [title])} />
           ) : (
             <>
-              <div className="resource-table-wrap">
+              <ClientTable>
                 <table className="resource-table">
                   <thead>
                     <tr>
@@ -367,13 +374,7 @@ export function OperationsView({
                         ? ["unit", "active_state", "ownership"]
                         : activeTab === "notifications"
                           ? ["kind"]
-                          : [
-                              "mode",
-                              "action",
-                              "enabled",
-                              "next_run_at",
-                              "last_run_status",
-                            ]
+                          : ["enabled", "next_run_at", "last_run_status"]
                       ).map((k) => (
                         <th key={k}>{descriptions[k] ?? k}</th>
                       ))}
@@ -393,19 +394,12 @@ export function OperationsView({
                           >
                             {row.name ?? row.id}
                           </button>
-                          <small>{row.id}</small>
                         </td>
                         {(activeTab === "services"
                           ? ["unit", "active_state", "ownership"]
                           : activeTab === "notifications"
                             ? ["kind"]
-                            : [
-                                "mode",
-                                "action",
-                                "enabled",
-                                "next_run_at",
-                                "last_run_status",
-                              ]
+                            : ["enabled", "next_run_at", "last_run_status"]
                         ).map((k) => (
                           <td key={k}>
                             {k === "active_state" || k === "last_run_status" ? (
@@ -419,7 +413,7 @@ export function OperationsView({
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ClientTable>
               {!rows.length && !records.loading && !records.error && (
                 <Unavailable
                   title={translate("暂无{0}", [title])}
@@ -462,12 +456,12 @@ export function OperationsView({
                 </div>
               ))}
           </div>
-          <div className="resource-summary">
+          <details>
+            <summary>{translate("技术详情")}</summary>
             <code>
-              {translate("修订 ")}
-              {current.revision ?? translate("未提供")}
+              {current.id} · {current.revision ?? "—"}
             </code>
-          </div>
+          </details>
           {activeTab === "schedules" && has("schedules_history") && open && (
             <ScheduleHistory id={current.id} capabilities={capabilities} />
           )}

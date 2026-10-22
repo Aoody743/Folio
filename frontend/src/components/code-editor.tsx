@@ -1,6 +1,11 @@
 "use client";
-import { t as translate } from "@/lib/i18n";
-import { useEffect, useRef } from "react";
+import {
+  t as translate,
+  getLocale,
+  serverLocale,
+  subscribeLocale,
+} from "@/lib/i18n";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { EditorView, basicSetup } from "codemirror";
 import { Compartment, EditorState, Extension } from "@codemirror/state";
 import { json } from "@codemirror/lang-json";
@@ -37,6 +42,8 @@ export default function CodeEditor({
   filename: string;
   readOnly?: boolean;
 }) {
+  const locale = useSyncExternalStore(subscribeLocale, getLocale, serverLocale);
+  const accessibility = useRef(new Compartment());
   const root = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorView | undefined>(undefined);
   const listener = useRef(onChange);
@@ -55,11 +62,13 @@ export default function CodeEditor({
           EditorState.readOnly.of(readOnly),
           EditorView.editable.of(!readOnly),
         ]),
-        EditorView.contentAttributes.of({
-          "aria-label": translate("文件内容"),
-          role: "textbox",
-          "aria-multiline": "true",
-        }),
+        accessibility.current.of(
+          EditorView.contentAttributes.of({
+            "aria-label": translate("文件内容"),
+            role: "textbox",
+            "aria-multiline": "true",
+          }),
+        ),
         // Native contenteditable insertion builds thousands of line nodes
         // before CodeMirror can read the mutation, blocking Chromium. Apply
         // bulk plain-text input as one editor transaction instead.
@@ -148,6 +157,17 @@ export default function CodeEditor({
       editor.current = undefined;
     };
   }, [filename]);
+  useEffect(() => {
+    editor.current?.dispatch({
+      effects: accessibility.current.reconfigure(
+        EditorView.contentAttributes.of({
+          "aria-label": translate("文件内容"),
+          role: "textbox",
+          "aria-multiline": "true",
+        }),
+      ),
+    });
+  }, [locale]);
   useEffect(() => {
     const view = editor.current;
     if (view && view.state.doc.toString() !== value)
