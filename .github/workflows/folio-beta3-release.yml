@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
-      POWERLINUX_BUILD_CACHE: ${{ runner.temp }}/folio-beta3-build-cache
+      POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/../folio-beta3-build-cache
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
