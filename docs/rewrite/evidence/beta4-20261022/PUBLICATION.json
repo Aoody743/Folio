@@ -1,0 +1,19 @@
+{
+  "release": "https://github.com/Aoody743/Folio/releases/tag/1.0-beta4",
+  "is_draft": false,
+  "is_prerelease": true,
+  "workflow": "https://github.com/Aoody743/Folio/actions/runs/39760832299",
+  "workflow_conclusion": "success",
+  "public_download_sha256": {
+    "folio-1.0-beta4-linux-amd64.tar.gz": "c47c8d64ca4e7209f8c1f8f8a19a7bd72afc3167da83e6d11b245c90ede16d80",
+    "install-1.0-beta4.sh": "a20e3f23bba2da6fe4806f5d130d4ff324ff9e8940e43946872f4924e64c92a5",
+    "ACCEPTANCE.json": "d992ca3318cbe331694dc932998e645f7d0046282ffa298d7e59e60618b798c9",
+    "verification-logs.tar.gz": "50de6ab95e65bb8c6cb9cd8005cb26ae0bd6ad0f969313b3ed7d2b6ca135f385"
+  },
+  "public_bootstrap": {
+    "language": "en",
+    "mode": "private prefix",
+    "unattended": true,
+    "reported_version": "1.0-beta4"
+  }
+}
