@@ -60,7 +60,7 @@ def main():
             expect(page.locator('.status-overview')).to_be_visible()
             def goto(path):
                 page.evaluate('(hash) => { location.hash=hash; }',path)
-                page.wait_for_timeout(100)
+                expect(page.locator('.app')).to_have_attribute('data-section', path.lstrip('/').split('?')[0])
             combinations = 0
             for locale in (['en'] if os.environ.get('POWERLINUX_UI_SKIP_MATRIX') else ['zh-CN','en']):
                 for font in (['reading'] if os.environ.get('POWERLINUX_UI_SKIP_MATRIX') else ['modern','native','reading']):
@@ -145,7 +145,14 @@ def main():
             page.get_by_role('button',name='Back to list',exact=True).click()
             # Common forms remain reachable without nested dialogs or mutation.
             goto('/sites')
-            page.get_by_role('button',name='Create website',exact=True).click()
+            try:
+                page.get_by_role('button',name='Create website',exact=True).click()
+            except Exception:
+                page.screenshot(path=str(artifacts/'create-website-navigation-failed.png'),full_page=True)
+                state=page.evaluate('''() => ({hash:location.hash,lang:document.documentElement.lang,section:document.querySelector('.app')?.dataset.section,text:document.body.innerText,details:[...document.querySelectorAll('.resource-page')].map(e=>({hidden:e.hidden,title:e.getAttribute('aria-label')}))})''')
+                (artifacts/'create-website-navigation-failed.json').write_text(json.dumps(state,ensure_ascii=False,indent=2))
+                print('Create website navigation state',json.dumps(state,ensure_ascii=False),flush=True)
+                raise
             expect(page.get_by_role('region',name='Create website',exact=True)).to_be_visible()
             page.get_by_role('button',name='Back to list',exact=True).click()
             goto('/software')

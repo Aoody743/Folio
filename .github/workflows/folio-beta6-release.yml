@@ -27,6 +27,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           cp -a docs/rewrite/evidence/beta6-20261023 "$RUNNER_TEMP/beta6-acceptance"
+          cp -a tests/rewrite "$RUNNER_TEMP/beta6-browser-tests"
+          printf 'Acceptance harness commit: %s\n' "$GITHUB_SHA"
           expected=$(jq -er '.commit' "$RUNNER_TEMP/beta6-acceptance/ACCEPTANCE.json")
           [[ $(git rev-parse '1.0-beta6^{commit}') == "$expected" ]]
           ci_run=$(jq -er '.source_ci.run' "$RUNNER_TEMP/beta6-acceptance/ACCEPTANCE.json")
@@ -81,14 +83,14 @@ jobs:
           export POWERLINUX_CHROMIUM=$("$RUNNER_TEMP/browser-venv/bin/python" -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')
           export POWERLINUX_TEST_BINARY="$GITHUB_WORKSPACE/release-extracted/folio"
           export POWERLINUX_QA_ARTIFACTS="$RUNNER_TEMP/beta6-browser"
-          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_browser.py
-          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_beta3_browser.py
-          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_experience_browser.py
-          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/phase2/test_files_browser.py
-          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_information_browser.py
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta6-browser-tests/test_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta6-browser-tests/test_beta3_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta6-browser-tests/test_experience_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta6-browser-tests/phase2/test_files_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta6-browser-tests/test_information_browser.py"
           command -v google-chrome || command -v chromium
-          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_server_browser.py
-          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_browser_apps.py
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta6-browser-tests/test_server_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta6-browser-tests/test_browser_apps.py"
       - name: Prepare verified release assets
         run: |
           set -Eeuo pipefail
@@ -116,3 +118,12 @@ jobs:
             release-assets/verification-logs.tar.gz \
             --verify-tag --title 'Folio 1.0-beta6' \
             --notes-file .github/release-notes/1.0-beta6.md --prerelease
+
+      - name: Preserve failed browser acceptance diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beta6-browser-failure-${{ github.run_id }}
+          path: ${{ runner.temp }}/beta6-browser
+          if-no-files-found: ignore
+          retention-days: 7
