@@ -21,57 +21,57 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 
 安装向导和面板支持中英双语。面板可在登录页及“更多 → 语言与外观”切换语言并记住浏览器偏好；切换保留当前页面和输入，资源名称与用户内容保持原文。首页空状态、首次设置、软件变更摘要和任务结果也已完善。
 
-两种浏览器模式可在“软件 → 应用服务 → 浏览器应用”独立安装或卸载，默认均不安装。面板模式在服务器运行 Chromium；Firefox WASM 提供完整 Firefox 界面，通过面板的认证 Wisp 出口访问网页，需要 HTTPS 和支持 JSPI 的客户端。安装后可从“更多 → 运维”打开。完整功能和环境说明见[服务器浏览器](docs/rewrite/SERVER-BROWSER.md)。
+两种浏览器模式可在“软件 → 浏览器”独立安装或卸载，默认均不安装。面板模式在服务器运行 Chromium；Firefox WASM 提供完整 Firefox 界面，通过面板的认证 Wisp 出口访问网页，需要 HTTPS 和支持 JSPI 的客户端。安装后可从“更多 → 运维”打开。完整功能和环境说明见[服务器浏览器](docs/rewrite/SERVER-BROWSER.md)。
 
-## 当前界面截图
+## Folio v1.0 界面截图
 
-以下为 基于 Astryx 定制统一规范的 **main 开发版**：37 张桌面页面、14 张手机页面，以及 3 张真实浏览器模式截图，见[完整截图索引](docs/screenshots/ui-polish-current/README.md)。面板列表使用隔离展示数据；公开发行仍是 **1.0-beta7**，新界面尚未发行。已发行版本的[beta7 图库](docs/screenshots/panel-1.0-beta7/README.md)保留。
+以下 56 张截图来自 Folio v1.0 的统一界面：39 张桌面页面、14 张手机页面，以及 3 张浏览器模式页面。网站、服务、文件、便签与监控数据均为演示数据，不代表真实服务器状态。查看[全部页面截图与索引](docs/screenshots/folio-1.0/README.md)，或打开[交互式演示面板](https://folio-ui-demo-20261023.workspace-734782.chatgpt.site/)体验布局。
 
 ### 概览
 
-[![Folio 开发版主机概览](docs/screenshots/ui-polish-current/01-overview.png)](docs/screenshots/ui-polish-current/01-overview.png)
+[![Folio v1.0 主机概览与最近便签](docs/screenshots/folio-1.0/01-overview.png)](docs/screenshots/folio-1.0/01-overview.png)
 
 ### 网站
 
-[![Folio 开发版网站列表](docs/screenshots/ui-polish-current/02-sites.png)](docs/screenshots/ui-polish-current/02-sites.png)
+[![Folio v1.0 网站项目卡片](docs/screenshots/folio-1.0/02-sites.png)](docs/screenshots/folio-1.0/02-sites.png)
 
 ### 软件
 
-[![Folio 开发版软件库](docs/screenshots/ui-polish-current/09-software-library.png)](docs/screenshots/ui-polish-current/09-software-library.png)
+[![Folio v1.0 软件库](docs/screenshots/folio-1.0/09-software-library.png)](docs/screenshots/folio-1.0/09-software-library.png)
 
 ### 文件
 
-[![Folio 开发版文件管理](docs/screenshots/ui-polish-current/14-files.png)](docs/screenshots/ui-polish-current/14-files.png)
+[![Folio v1.0 文件管理](docs/screenshots/folio-1.0/14-files.png)](docs/screenshots/folio-1.0/14-files.png)
 
 ## 浏览器模式截图
 
-以下截图来自优化开发版的实际浏览器界面。管理页展示可选安装入口；面板浏览器打开 MDN 的 HTTP 指南；Firefox WASM 打开独立的 Open Atlas 演示网页。
+浏览器截图展示两个独立模式：面板浏览器通过服务器网络打开 MDN 的 HTTP 指南；Firefox WASM 打开本机托管的 Open Atlas 演示网页。
 
 ### 可选安装入口
 
-[![浏览器应用安装与管理](docs/screenshots/ui-polish-browsers/browser-modes-installed.png)](docs/screenshots/ui-polish-browsers/browser-modes-installed.png)
+[![浏览器应用安装与管理](docs/screenshots/folio-1.0/browser-modes-installed.png)](docs/screenshots/folio-1.0/browser-modes-installed.png)
 
 ### 面板浏览器：MDN HTTP 指南
 
-[![面板 Chromium 浏览器打开 MDN HTTP 指南](docs/screenshots/ui-polish-browsers/panel-browser-mdn.png)](docs/screenshots/ui-polish-browsers/panel-browser-mdn.png)
+[![面板 Chromium 浏览器打开 MDN HTTP 指南](docs/screenshots/folio-1.0/panel-browser-mdn.png)](docs/screenshots/folio-1.0/panel-browser-mdn.png)
 
 ### Firefox WASM：Open Atlas
 
-[![Firefox WASM 浏览器打开 Open Atlas 演示网页](docs/screenshots/ui-polish-browsers/firefox-wasm-atlas.png)](docs/screenshots/ui-polish-browsers/firefox-wasm-atlas.png)
+[![Firefox WASM 浏览器打开 Open Atlas 演示网页](docs/screenshots/folio-1.0/firefox-wasm-atlas.png)](docs/screenshots/folio-1.0/firefox-wasm-atlas.png)
 
 Firefox 截图中的 Open Atlas 是截图验收时在本机提供的演示网页，用于展示完整 Firefox 界面和 Wisp 浏览路径；它不是线上网站。
 
 ## 安装与首次登录
 
-当前发行版是 [Folio 1.0-beta7](https://github.com/Aoody743/Folio/releases/tag/1.0-beta7)，提供 Linux amd64、arm64 安装包，一键安装面向 amd64。ARM64 已交叉构建，本轮未扩展运行验收。在 Ubuntu 24.04 amd64、运行 systemd 的服务器上执行：
+当前稳定版是 [Folio v1.0](https://github.com/Aoody743/Folio/releases/tag/1.0.0)，提供 Linux amd64、arm64 安装包，一键安装面向 amd64。ARM64 为交叉构建，运行支持目标为 Ubuntu 24.04 amd64 + systemd。在服务器上执行：
 
 ```sh
-curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta7/install-1.0-beta7.sh | sudo bash -s -- --lang zh-CN
+curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0.0/install-1.0.0.sh | sudo bash -s -- --lang zh-CN
 ```
 
 英文安装使用 `--lang en`，无人值守增加 `--yes`；面板语言可在登录页及“更多 → 语言与外观”切换。
 
-安装脚本会下载发行包和 `SHA256SUMS.txt`，校验发行包后再运行包内安装器。可以先查看[一键安装脚本](scripts/rewrite/install-1.0-beta7.sh)及[发行校验清单](https://github.com/Aoody743/Folio/releases/download/1.0-beta7/SHA256SUMS.txt)。
+安装脚本会下载发行包和 `SHA256SUMS.txt`，校验发行包后再运行包内安装器。可以先查看[一键安装脚本](scripts/rewrite/install-1.0.0.sh)及[发行校验清单](https://github.com/Aoody743/Folio/releases/download/1.0.0/SHA256SUMS.txt)。
 
 安装完成后，服务由 systemd 管理，默认只监听服务器本机的 `127.0.0.1:9000`。在自己的电脑上建立 SSH 隧道：
 
@@ -87,7 +87,7 @@ ssh -L 9000:127.0.0.1:9000 your-user@your-server
 sudo systemctl status powerlinux.service
 sudo /opt/powerlinux/current/folio healthcheck \
   --server-config /etc/powerlinux/server.json \
-  --expected-version 1.0-beta7
+  --expected-version 1.0.0
 ```
 
 默认配置不向公网开放服务。如需通过其他入口访问，请先按[安装与运维手册](scripts/rewrite/README.md)配置并验证 HTTPS、监听地址和允许的来源。
@@ -118,10 +118,11 @@ make rewrite-dev
 
 ## 项目文档
 
-- [1.0-beta7 发布说明](.github/release-notes/1.0-beta7.md)
+- [Folio v1.0 发布说明](.github/release-notes/1.0.0.md)
+- [Folio v1.0 发布验收记录](https://github.com/Aoody743/Folio/releases/download/1.0.0/ACCEPTANCE.json)
 - [当前版本与验收范围](docs/rewrite/CURRENT-RELEASE.md)
 - [UI 优化实施记录](docs/rewrite/UI-POLISH-BATCHES.md)
-- [开发版完整截图索引](docs/screenshots/ui-polish-current/README.md)
+- [v1.0 全部页面截图索引](docs/screenshots/folio-1.0/README.md)
 - [beta7 面板与浏览器完整截图索引](docs/screenshots/panel-1.0-beta7/README.md)
 - [beta1 历史面板截图](docs/screenshots/panel-1.0-beta1/README.md)
 - [MCP 接入设计](docs/rewrite/AI-NATIVE-MCP.md)

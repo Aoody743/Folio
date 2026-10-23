@@ -396,13 +396,14 @@ export function FilesView({
                         {has("fs_batch") && has("fs_preflight") && !currentRoot?.read_only && entry.type!=="symlink" && <input type="checkbox" aria-label={translate("选择 {0}",[entry.name])} checked={checked.includes(entry.path)} onChange={e=>setChecked(old=>e.target.checked?[...old,entry.path]:old.filter(p=>p!==entry.path))}/>}
                         <button
                           className="resource-name"
+                          title={entry.name}
                           onClick={() => enter(entry)}
                         >
                           <Icon
                             name={entry.type === "directory" ? "files" : "note"}
                             size={17}
                           />
-                          {entry.name}
+                          <span className="file-entry-name">{entry.name}</span>
                         </button>
 
                       </td>

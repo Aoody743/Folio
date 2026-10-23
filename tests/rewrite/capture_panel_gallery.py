@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 from pathlib import Path
 import secrets
@@ -81,6 +82,12 @@ samples = [
 ]
 fixture_actions = {
     "sites_categories_list": {"items": [{"id": "production", "name": "Production"}, {"id": "staging", "name": "Staging"}], "total": 2},
+    "notes_list": [
+        {"id": "note-release", "title": "Release checklist", "content": "Confirm the maintenance window before publishing.\n\nBackup verified; service owner notified.", "pinned": True, "archived": False, "target_id": "host:local", "revision": 3, "created_at": "2026-10-21T10:00:00Z", "updated_at": "2026-10-22T10:00:00Z", "created_by": actor, "updated_by": actor},
+        {"id": "note-handoff", "title": "Operations handoff", "content": "Northstar Docs is served from /srv/www/docs.\n\nContact the platform team before changing DNS.", "pinned": False, "archived": False, "target_id": "site:site-docs", "revision": 2, "created_at": "2026-10-20T10:00:00Z", "updated_at": "2026-10-22T09:30:00Z", "created_by": actor, "updated_by": actor},
+        {"id": "note-maintenance", "title": "Maintenance window", "content": "Friday · 22:00–23:00 UTC\n\nNotify the team before restarting services.", "pinned": False, "archived": False, "target_id": "host:local", "revision": 1, "created_at": "2026-10-19T10:00:00Z", "updated_at": "2026-10-22T09:00:00Z", "created_by": actor, "updated_by": actor},
+    ],
+    "settings_panel_get": {"panel_name": "Folio · 折纸面板", "server_name": "folio-demo", "footer": "AI 时代的轻量化面板", "login_entry": "", "captcha_enabled": False, "api_enabled": True, "maintenance": False, "basic_auth_enabled": False, "unauthorized_status": 404, "revision": 2},
     "certificates_list": {"items": [
         {"id": "cert-northstar", "name": "northstar.example.com", "domains": ["northstar.example.com", "www.northstar.example.com"], "issuer": "Let's Encrypt", "status": "active", "expires_at": "2027-04-18T00:00:00Z", "revision": 2},
         {"id": "cert-docs", "name": "docs.northstar.example.com", "domains": ["docs.northstar.example.com"], "issuer": "Let's Encrypt", "status": "active", "expires_at": "2027-01-12T00:00:00Z", "revision": 1}], "total": 2},
@@ -129,6 +136,8 @@ def action_fixture(route):
         all_matching=page_result(sites,route.request); query=str(body.get("query", "")).lower(); matching=[site for site in sites if query in " ".join([site["name"],*site["domains"]]).lower() and (not body.get("category_id") or site.get("category_id")==body["category_id"])]; result["status_counts"]={status:sum(site["status"]==status for site in matching) for status in ("running","stopped")}; result["status_counts"]["unknown"]=sum(site["status"] not in ("running","stopped") for site in matching)
     elif action == "plugins_list":
         result = {"items": instances, "total": len(instances), "availability": "available"}
+    elif action in ("notes_list", "settings_panel_get"):
+        result = fixture_actions[action]
     elif action == "plugins_get":
         result = next(item for item in instances if item["id"] == body.get("id"))
     elif action == "database_connection_get":
@@ -258,11 +267,28 @@ def main():
             capture("34-cache-detail", "#/software?page=cache&id=cache-primary", "software")
             capture("35-software-detail", "#/software?page=installed&id=nginx-main&group=operations", "software")
             capture("36-application-detail", "#/software?page=applications&subgroup=hosted&id=billing-api&group=overview", "software")
+            capture("37-panel-settings", "#/more?page=panel", "more")
+            page.evaluate("(hash) => { location.hash = hash; window.scrollTo(0,0); }", "#/overview")
+            expect(page.locator(".overview-note")).to_have_count(3, timeout=10000)
+            page.locator(".overview-note").first.click()
+            expect(page.get_by_role("dialog", name="便签详情", exact=True)).to_be_visible()
+            page.wait_for_timeout(350)
+            page.screenshot(path=str(OUT / "38-overview-note-editor.png"), full_page=False)
+            page.get_by_role("button", name="关闭便签", exact=True).click()
+            expect(page.get_by_role("dialog", name="便签详情", exact=True)).to_have_count(0)
 
             for width, height in ((390, 844),):
                 page.set_viewport_size({"width": width, "height": height})
                 for slug, route, section in (("31-environment", "#/more?page=environment", "more"), ("32-monitor-alerts", "#/more?page=monitor&view=alerts", "more"), ("01-overview", "#/overview", "overview"), ("02-sites", "#/sites", "sites"), ("08-software-installed", "#/software?page=installed", "software"), ("14-files", "#/files?root=workspace", "files"), ("18-more-menu", "#/more", "more"), ("26-appearance", "#/more?page=appearance", "more"), ("03-site-detail", "#/sites?id=site-main&group=overview", "sites"), ("09-software-library", "#/software?page=catalog", "software"), ("13-browser-apps", "#/software?page=browsers", "software"), ("21-schedules", "#/more?page=schedules", "more"), ("25-security", "#/more?page=security", "more"), ("27-mcp", "#/more?page=mcp", "more")):
                     capture(f"mobile-{slug}", route, section)
+                    if slug == "14-files":
+                        for name in page.locator(".compact-file-table .file-entry-name").all():
+                            box = name.bounding_box()
+                            styles = name.evaluate("el => ({whiteSpace:getComputedStyle(el).whiteSpace, overflow:getComputedStyle(el).overflow, textOverflow:getComputedStyle(el).textOverflow})")
+                            assert box and box["height"] <= 22 and styles == {"whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis"}, (box, styles)
+            mobile_shots = sorted(OUT.glob("mobile-*.png"))
+            mobile_hashes = {hashlib.sha256(path.read_bytes()).hexdigest() for path in mobile_shots}
+            assert len(mobile_shots) == 14 and len(mobile_hashes) == 14, "mobile captures are missing or duplicate"
             assert not errors, errors
             browser.close()
     finally:

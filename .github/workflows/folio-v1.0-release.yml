@@ -1,0 +1,178 @@
+name: Publish Folio v1.0
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: folio-v1.0-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'Aoody743/Folio' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      POWERLINUX_BUILD_CACHE: ${{ runner.temp }}/folio-v1-build-cache
+      NEXT_TELEMETRY_DISABLED: '1'
+      GOFLAGS: '-p=1'
+      RELEASE_VERSION: '1.0.0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify the frozen stable tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$RELEASE_VERSION" == 1.0.0 ]]
+          [[ "$(git rev-parse "$RELEASE_VERSION^{commit}")" == "$GITHUB_SHA" ]]
+          if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
+            echo 'Release already exists; refusing to replace published assets' >&2
+            exit 1
+          fi
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Run the complete source test suite
+        run: |
+          set -Eeuo pipefail
+          make rewrite-deps REWRITE_CACHE="$POWERLINUX_BUILD_CACHE"
+          make rewrite-test REWRITE_CACHE="$POWERLINUX_BUILD_CACHE" 2>&1 | tee "$RUNNER_TEMP/v1-source-tests.log"
+          go vet ./... 2>&1 | tee "$RUNNER_TEMP/v1-go-vet.log"
+      - name: Build amd64 and arm64 release packages
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/v1-release-assets"
+          bash scripts/rewrite/build.sh \
+            --version "$RELEASE_VERSION" \
+            --architectures amd64,arm64 \
+            --skip-install \
+            --output "$RUNNER_TEMP/v1-release-assets" 2>&1 | tee "$RUNNER_TEMP/v1-build.log"
+          (cd "$RUNNER_TEMP/v1-release-assets" && sha256sum --check CHECKSUMS.txt)
+          python3 scripts/rewrite/test-package.py "$RUNNER_TEMP/v1-release-assets/folio-$RELEASE_VERSION-linux-amd64.tar.gz" 2>&1 | tee "$RUNNER_TEMP/v1-package-smoke.log"
+          mkdir -p "$RUNNER_TEMP/v1-release-extracted"
+          tar -xzf "$RUNNER_TEMP/v1-release-assets/folio-$RELEASE_VERSION-linux-amd64.tar.gz" -C "$RUNNER_TEMP/v1-release-extracted"
+          grep -Fx "commit=$GITHUB_SHA" <(tar -xOzf "$RUNNER_TEMP/v1-release-assets/folio-$RELEASE_VERSION-linux-amd64.tar.gz" BUILDINFO)
+          grep -Fx 'working_tree_dirty=false' <(tar -xOzf "$RUNNER_TEMP/v1-release-assets/folio-$RELEASE_VERSION-linux-amd64.tar.gz" BUILDINFO)
+      - name: Install Chromium and browser-test tools
+        run: |
+          set -Eeuo pipefail
+          python3 -m venv "$RUNNER_TEMP/browser-venv"
+          "$RUNNER_TEMP/browser-venv/bin/pip" install playwright==1.62.0 Pillow
+          "$RUNNER_TEMP/browser-venv/bin/python" -m playwright install --with-deps chromium
+          echo "POWERLINUX_CHROMIUM=$("$RUNNER_TEMP/browser-venv/bin/python" -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')" >> "$GITHUB_ENV"
+      - name: Verify the packaged UI against the real server API
+        env:
+          POWERLINUX_TEST_BINARY: ${{ runner.temp }}/v1-release-extracted/folio
+          POWERLINUX_QA_ARTIFACTS: ${{ runner.temp }}/v1-production-browser
+        run: |
+          set -Eeuo pipefail
+          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/test_production_ui_browser.py 2>&1 | tee "$RUNNER_TEMP/v1-production-browser.log"
+      - name: Verify the static demo UI and all release screenshots
+        env:
+          POWERLINUX_TEST_BINARY: ${{ runner.temp }}/v1-release-extracted/folio
+          POWERLINUX_QA_ARTIFACTS: ${{ runner.temp }}/v1-static-demo-tests
+        run: |
+          set -Eeuo pipefail
+          "$RUNNER_TEMP/browser-venv/bin/python" scripts/rewrite/build-demo.py --binary "$POWERLINUX_TEST_BINARY" --output "$RUNNER_TEMP/v1-static-demo"
+          python3 -m http.server 4178 --directory "$RUNNER_TEMP/v1-static-demo" >"$RUNNER_TEMP/v1-demo-http.log" 2>&1 &
+          demo_pid=$!
+          trap 'kill "$demo_pid" 2>/dev/null || true; wait "$demo_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4178/ >/dev/null; then break; fi
+            sleep 1
+          done
+          export FOLIO_DEMO_URL=http://127.0.0.1:4178/
+          for test in test_static_demo_browser.py test_project_filters_browser.py test_overview_more_browser.py test_resource_ui_browser.py; do
+            "$RUNNER_TEMP/browser-venv/bin/python" "tests/rewrite/$test" 2>&1 | tee "$RUNNER_TEMP/${test%.py}.log"
+          done
+          mkdir -p "$RUNNER_TEMP/v1-release-gallery"
+          export POWERLINUX_TEST_BINARY
+          export POWERLINUX_QA_ARTIFACTS="$RUNNER_TEMP/v1-release-gallery"
+          "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/capture_panel_gallery.py 2>&1 | tee "$RUNNER_TEMP/v1-panel-gallery.log"
+          POWERLINUX_CHROMIUM="$POWERLINUX_CHROMIUM" "$RUNNER_TEMP/browser-venv/bin/python" tests/rewrite/capture_browser_gallery.py 2>&1 | tee "$RUNNER_TEMP/v1-browser-gallery.log"
+          [[ $(find "$RUNNER_TEMP/v1-release-gallery" -maxdepth 1 -name '*.png' | wc -l) -eq 56 ]]
+          find docs/screenshots/folio-1.0 -maxdepth 1 -name '*.png' -printf '%f\n' | sort > "$RUNNER_TEMP/v1-committed-gallery-files.txt"
+          find "$RUNNER_TEMP/v1-release-gallery" -maxdepth 1 -name '*.png' -printf '%f\n' | sort > "$RUNNER_TEMP/v1-built-gallery-files.txt"
+          diff -u "$RUNNER_TEMP/v1-committed-gallery-files.txt" "$RUNNER_TEMP/v1-built-gallery-files.txt"
+          tar -czf "$RUNNER_TEMP/v1-release-assets/folio-v1.0-screenshots.tar.gz" -C "$RUNNER_TEMP" v1-release-gallery
+      - name: Assemble checksums and release evidence
+        run: |
+          set -Eeuo pipefail
+          assets="$RUNNER_TEMP/v1-release-assets"
+          install -m 0755 scripts/rewrite/install-1.0.0.sh "$assets/install-1.0.0.sh"
+          python3 - "$assets/ACCEPTANCE.json" <<'PY'
+          import json, os, subprocess, sys
+          target=sys.argv[1]
+          info={
+            "version":"1.0.0",
+            "release_name":"Folio v1.0",
+            "commit":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),
+            "working_tree_dirty":bool(subprocess.check_output(["git","status","--porcelain","--untracked-files=normal"],text=True).strip()),
+            "workflow_run":{"id":os.environ["GITHUB_RUN_ID"],"url":f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"},
+            "packages_built":["linux-amd64","linux-arm64"],
+            "architectures_executed":["linux-amd64"],
+            "checks":{
+              "source_installer_mysql_and_go_race_tests":True,
+              "frontend_theme_tests_and_typecheck":True,
+              "go_vet":True,
+              "amd64_prefix_install_repeat_health_shutdown_and_data_preservation":True,
+              "production_ui_real_api_and_restart_persistence":True,
+              "static_demo_browser_flows":True,
+              "panel_chromium_and_firefox_wasm_server_network":True,
+              "release_gallery_matches_56_committed_screenshots":True
+            },
+            "scope_limits":[
+              "The arm64 package is cross-built and was not executed on ARM hardware.",
+              "Managed application runtime support remains Ubuntu 24.04 amd64 with systemd; this run did not repeat a systemd VM upgrade or rollback test.",
+              "No new real DNS provider or public CA acceptance is claimed.",
+              "The screenshots use isolated demonstration records and do not report real host health."
+            ],
+            "evidence":"verification-logs.tar.gz"
+          }
+          with open(target,"w",encoding="utf-8") as f: json.dump(info,f,ensure_ascii=False,indent=2); f.write("\n")
+          PY
+          tar -czf "$assets/verification-logs.tar.gz" \
+            "$RUNNER_TEMP/v1-source-tests.log" "$RUNNER_TEMP/v1-go-vet.log" \
+            "$RUNNER_TEMP/v1-build.log" "$RUNNER_TEMP/v1-package-smoke.log" \
+            "$RUNNER_TEMP/v1-production-browser.log" "$RUNNER_TEMP/v1-panel-gallery.log" \
+            "$RUNNER_TEMP/v1-browser-gallery.log" "$RUNNER_TEMP/v1-static-demo-tests" \
+            "$RUNNER_TEMP/test_static_demo_browser.log" "$RUNNER_TEMP/test_project_filters_browser.log" \
+            "$RUNNER_TEMP/test_overview_more_browser.log" "$RUNNER_TEMP/test_resource_ui_browser.log" \
+            "$RUNNER_TEMP/v1-production-browser" "$RUNNER_TEMP/v1-committed-gallery-files.txt" \
+            "$RUNNER_TEMP/v1-built-gallery-files.txt"
+          cp "$assets/CHECKSUMS.txt" "$assets/SHA256SUMS.txt"
+          (cd "$assets" && sha256sum install-1.0.0.sh folio-v1.0-screenshots.tar.gz ACCEPTANCE.json verification-logs.tar.gz >> SHA256SUMS.txt && sha256sum --check --strict SHA256SUMS.txt)
+      - name: Publish the immutable stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          gh release create "$RELEASE_VERSION" \
+            "$RUNNER_TEMP/v1-release-assets/folio-1.0.0-linux-amd64.tar.gz" \
+            "$RUNNER_TEMP/v1-release-assets/folio-1.0.0-linux-arm64.tar.gz" \
+            "$RUNNER_TEMP/v1-release-assets/install-1.0.0.sh" \
+            "$RUNNER_TEMP/v1-release-assets/SHA256SUMS.txt" \
+            "$RUNNER_TEMP/v1-release-assets/ACCEPTANCE.json" \
+            "$RUNNER_TEMP/v1-release-assets/verification-logs.tar.gz" \
+            "$RUNNER_TEMP/v1-release-assets/folio-v1.0-screenshots.tar.gz" \
+            --verify-tag --title 'Folio v1.0' --notes-file .github/release-notes/1.0.0.md
+      - name: Preserve validation diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: folio-v1-release-failure-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/v1-*.log
+            ${{ runner.temp }}/v1-production-browser
+            ${{ runner.temp }}/v1-static-demo-tests
+            ${{ runner.temp }}/v1-release-gallery
+          if-no-files-found: ignore
+          retention-days: 7

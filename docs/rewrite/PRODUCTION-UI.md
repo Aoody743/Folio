@@ -19,6 +19,6 @@ POWERLINUX_TEST_BINARY=/absolute/path/to/extracted/folio python3 tests/rewrite/t
 
 该测试不拦截或模拟 API：通过真实登录创建会话，在首页编辑便签、保存服务器显示名称，并重启隔离服务验证数据库持久化。同时检查正式页面没有演示入口和演示运行对象、桌面与手机布局不溢出。硬件指标来自运行该二进制的测试环境；软件和网站管理仍需在目标服务器配置执行器。
 
-这次同步不覆盖已发布的 1.0-beta7 安装资产。现有安装只有更新到包含本次源码的构建后才会显示新 UI；这份验证也不代表已操作用户的线上服务器。
+Folio v1.0 的正式包包含这套 UI。截图从当前生产界面构建和隔离演示数据生成；演示环境不会操作用户的服务器。
 
-2026-10-23 实测记录见 [ACCEPTANCE.json](evidence/ui-production-20261023/ACCEPTANCE.json)：amd64 和 arm64 包均构建并校验；amd64 包已完成隔离前缀安装、服务启动/退出、保留数据卸载以及真实浏览器持久化验证。arm64 仅完成交叉构建，未在 ARM 主机执行。前端 102 项测试通过，核心设置、网站服务与静态资源包检查通过。
+2026-10-23 开发包同步检查见 [ACCEPTANCE.json](evidence/ui-production-20261023/ACCEPTANCE.json)。稳定版的正式包、提交、校验和与最终浏览器验收以 [Folio v1.0 release](https://github.com/Aoody743/Folio/releases/tag/1.0.0) 附带的验收文件为准；arm64 仅交叉构建，未在 ARM 主机执行。

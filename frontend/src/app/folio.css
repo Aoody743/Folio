@@ -270,14 +270,19 @@
   .compact-file-table tbody td { padding: 5px 12px; height: 42px; font-size: 13px; vertical-align: middle; white-space: nowrap; }
   .compact-file-table td:first-child { width: 42%; }
   .compact-file-table td:first-child input { margin-right: 8px; vertical-align: middle; }
-  .compact-file-table .resource-name { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; vertical-align: middle; }
+  .compact-file-table .resource-name { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; min-width: 0; font-size: 14px; vertical-align: middle; overflow: hidden; }
+  .compact-file-table .file-entry-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .compact-file-table .button-row { flex-wrap: nowrap; gap: 4px; }
   .compact-file-table .astryx-button { min-height: 28px; }
   @media (max-width: 700px) {
     .compact-file-table th:nth-child(3), .compact-file-table td:nth-child(3), .compact-file-table th:nth-child(4), .compact-file-table td:nth-child(4) { display: none; }
     .compact-file-table td { padding: 5px 8px; }
-    .compact-file-table td:first-child { white-space: normal; overflow-wrap: anywhere; }
-    .compact-file-table .resource-name { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: start; }
+    .compact-file-table { table-layout: fixed; }
+    .compact-file-table th:first-child, .compact-file-table td:first-child { width: 55%; }
+    .compact-file-table th:nth-child(2), .compact-file-table td:nth-child(2) { width: 20%; }
+    .compact-file-table th:nth-child(5), .compact-file-table td:nth-child(5) { width: 25%; }
+    .compact-file-table td:first-child { white-space: nowrap; overflow: hidden; }
+    .compact-file-table .resource-name { max-width: calc(100% - 24px); white-space: nowrap; overflow-wrap: normal; word-break: normal; text-align: start; }
     .compact-file-table .button-row > .astryx-button { display: none; }
     .file-list-scroll { max-height: 55dvh; }
   }

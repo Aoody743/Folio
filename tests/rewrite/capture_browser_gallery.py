@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 import secrets
 import sys
@@ -107,6 +108,16 @@ try:
                               "httpOnly": True, "sameSite": "Strict"} for cookie in api.cookies])
         context.add_init_script("if(location.pathname==='/')localStorage.setItem('folio.language','en')")
         page = context.new_page()
+        page.route("**/api/v1/system/status", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({"data": {"hostname": "folio-demo", "os": "Ubuntu 24.04 LTS", "distribution_id": "ubuntu",
+                                       "distribution_name": "Ubuntu 24.04 LTS", "architecture": "amd64",
+                                       "cpu_percent": 23, "cpu_cores": 8, "uptime_seconds": 186324,
+                                       "memory": {"total_bytes": 17179869184, "used_bytes": 7730941132, "available_bytes": 9448928052},
+                                       "disk": {"total_bytes": 536870912000, "used_bytes": 204010946560},
+                                       "available": True, "sampled_at": "2026-10-22T10:00:00Z"}}),
+        ))
         page.goto(server.url + "/#/software?page=applications&subgroup=browsers")
         expect(page.get_by_role("heading", name="Browser apps", exact=True)).to_be_visible()
         expect(page.locator(".browser-app-row")).to_have_count(2)

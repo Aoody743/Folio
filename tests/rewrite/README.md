@@ -57,7 +57,7 @@ checkout until deliberately selecting documented examples.
 
 ### 可复现图库
 
-`capture_panel_gallery.py` 输出 33 张桌面与 8 张手机实际视口截图；列表/指标等使用只读展示数据，认证和软件目录来自实际隔离服务。夹具遵守网站/文件分页、过滤与归档标记。
+`capture_panel_gallery.py` 输出 39 张桌面与 14 张手机实际视口截图；列表/指标等使用只读展示数据，认证和软件目录来自实际隔离服务。夹具遵守网站/文件分页、过滤与归档标记，首页包含三条可编辑的近期便签。
 
 `capture_browser_gallery.py` 会在临时服务内按需安装两种浏览器组件，再实际访问 MDN 和本机演示站点；它可能下载固定版本组件。输出模式管理、Chromium 画面与 Firefox WASM 页面截图，并检查 Firefox 页面完成状态。
 
