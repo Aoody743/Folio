@@ -1,6 +1,9 @@
 name: Publish Folio v1.0
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - '1.0.0'
 permissions:
   contents: write
 concurrency:
@@ -8,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: github.repository == 'Aoody743/Folio' && github.ref == 'refs/heads/main'
+    if: github.repository == 'Aoody743/Folio' && (github.ref == 'refs/heads/main' || github.ref == 'refs/tags/1.0.0')
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
