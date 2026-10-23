@@ -88,6 +88,10 @@ const TerminalView = dynamic(
   () => import("./terminal").then((m) => m.TerminalView),
   { ssr: false },
 );
+const ServerBrowserView = dynamic(
+  () => import("./server-browser").then((m) => m.ServerBrowserView),
+  { ssr: false },
+);
 
 function displayPanelName(name?: string) {
   return !name || name === "Folio · 折纸面板"
@@ -199,6 +203,16 @@ const moreNav: { id: string; icon: string; title: string; desc: string }[] = [
     },
     get desc() {
       return translate("受控主机操作");
+    },
+  },
+  {
+    id: "browser",
+    icon: "sites",
+    get title() {
+      return translate("服务器浏览器");
+    },
+    get desc() {
+      return translate("使用服务器网络访问网页");
     },
   },
   {
@@ -419,6 +433,8 @@ export function Panel() {
       ? hasCapability("monitor_history") || hasCapability("services_list")
       : item.id === "terminal"
         ? hasCapability("terminal_targets_list")
+        : item.id === "browser"
+          ? hasCapability("browser_status")
         : item.id === "schedules"
           ? hasCapability("schedules_list") ||
             hasCapability("notifications_channels_list")
@@ -426,14 +442,18 @@ export function Panel() {
   );
   const refreshTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const refreshGeneration = useRef(0);
+  const pageIdentity = session?.authenticated
+    ? JSON.stringify([session.user?.id, session.user?.kind, session.user?.scopes, session.user?.resources])
+    : "";
   useEffect(() => {
+    if (!pageIdentity) return;
     const name = ["sites", "software", "files"].includes(section)
       ? section
-      : section === "more" && morePage === "terminal"
-        ? "terminal"
+      : section === "more" && ["terminal", "browser"].includes(morePage)
+        ? morePage
         : "";
     if (name) setVisited((v) => (v[name] ? v : { ...v, [name]: true }));
-  }, [section, morePage]);
+  }, [section, morePage, pageIdentity]);
   const scopes = session?.user?.scopes ?? [];
   const permitted = (scope: string) =>
     scopes.includes("*") ||
@@ -1093,6 +1113,18 @@ export function Panel() {
                     />
                   </div>
                 )}
+                {visited.browser && (
+                  <div hidden={section !== "more" || morePage !== "browser"}>
+                    <Button
+                      label={translate("返回更多")}
+                      variant="ghost"
+                      onClick={() => setMorePage("menu")}
+                    />
+                    <ServerBrowserView
+                      active={section === "more" && morePage === "browser"}
+                    />
+                  </div>
+                )}
                 {selectedAction &&
                   ["sites", "software", "files"].includes(section) && (
                     <ActionBrowser
@@ -1103,14 +1135,15 @@ export function Panel() {
                       onExecuted={noteSaved}
                     />
                   )}
-                {section === "more" && morePage !== "notes" && (
+                {section === "more" &&
+                  !["notes", "browser"].includes(morePage) && (
                   <>
                     {morePage === "menu" ? (
                       <div className="more-groups">
                         {[
                           {
                             title: translate("运维"),
-                            ids: ["monitor", "terminal", "schedules"],
+                            ids: ["monitor", "terminal", "browser", "schedules"],
                           },
                           {
                             title: translate("活动与记录"),
@@ -1313,7 +1346,7 @@ export function Panel() {
                               />
                             )}
                           </Card>
-                        ) : morePage === "terminal" ? null : [
+                        ) : ["terminal", "browser"].includes(morePage) ? null : [
                             "monitor",
                             "schedules",
                           ].includes(morePage) ? (

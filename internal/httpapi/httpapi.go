@@ -213,7 +213,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if h.options.ResourceHandler != nil && (strings.HasPrefix(path, "files/") || strings.HasPrefix(path, "terminal/") || strings.HasPrefix(path, "databases/") || strings.HasPrefix(path, "sites/") || strings.HasPrefix(path, "applications/")) {
+	if h.options.ResourceHandler != nil && (strings.HasPrefix(path, "files/") || strings.HasPrefix(path, "terminal/") || strings.HasPrefix(path, "databases/") || strings.HasPrefix(path, "sites/") || strings.HasPrefix(path, "applications/") || strings.HasPrefix(path, "browser/")) {
 		if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") && who.session != nil {
 			valid := false
 			for _, protocol := range strings.Split(r.Header.Get("Sec-WebSocket-Protocol"), ",") {

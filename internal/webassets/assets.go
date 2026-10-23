@@ -59,7 +59,7 @@ func Handler() http.Handler {
 			// Next's exported hydration scripts are static and trusted. Per-request
 			// nonces keep them working without permitting arbitrary inline scripts.
 			body = bytes.ReplaceAll(body, []byte("<script"), []byte(`<script nonce="`+nonce+`"`))
-			w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'nonce-"+nonce+"'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")
+			w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'nonce-"+nonce+"'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")
 			w.Header().Set("Cache-Control", "no-store")
 		} else if strings.HasPrefix(name, "_next/static/") {
 			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")

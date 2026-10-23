@@ -271,6 +271,17 @@ const fields: Record<string, string> = {
   directory: "目标目录",
 };
 const actions: Record<string, string> = {
+  browser_status: "浏览器环境与会话",
+  browser_open: "启动服务器浏览器",
+  browser_tabs: "浏览器标签页",
+  browser_tab_open: "新建浏览器标签页",
+  browser_tab_close: "关闭浏览器标签页",
+  browser_navigate: "打开网页",
+  browser_history: "浏览器导航",
+  browser_input: "浏览器输入",
+  browser_resize: "调整浏览器尺寸",
+  browser_dialog: "回复网页提示",
+  browser_close: "关闭服务器浏览器",
   fs_roots: "可访问的文件目录",
   fs_formats: "支持的归档格式",
   fs_list: "读取目录",

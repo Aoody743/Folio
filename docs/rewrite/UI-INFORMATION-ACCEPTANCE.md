@@ -50,3 +50,11 @@ a1ecef440b397e1dcb29a9eb46790723d3765f10c6fb8bc6dd400fdcc432d6d8  folio-1.0-beta
 ```
 
 复测入口：`npm --prefix frontend test`、`go test -race ./...`、`tests/rewrite/test_information_browser.py` 及现有便签、文件、双语、计划任务浏览器脚本。浏览器脚本的 `POWERLINUX_TEST_BINARY` 应指向实际打包后的 Folio 可执行文件。
+
+## 追加：服务器浏览器
+
+2026-10-23，在原 UI 验收后按明确追加需求集成。入口“更多 → 运维 → 服务器浏览器”；不变更五项底栏。前端单元测试增至 **96 项**。
+
+独立真实回归 `tests/rewrite/test_server_browser.py` 验证本机普通用户运行的沙箱 Chromium、私有 DevTools 管道、HTTP 页面实际执行、JPEG 画面、中文输入、滚轮、历史、标签页与尺寸、网页提示回复、新窗口链接、身份/资源/CSRF 检查、撤销凭据和进程/临时资料清理。面板客户端直接访问目标测试站点被阻止，目标页面仍由服务器浏览器成功访问；没有 iframe 或伪造截图。实际面板中进一步验证中文文本输入和网页提示回复、图片成功解码、CSP、桌面和 390/320 像素手机布局。
+
+新增浏览器的支持范围与环境要求见[服务器浏览器说明](SERVER-BROWSER.md)。发行包不捆绑 Chromium，不代表所有网站、视频或文件传输均已验收；ARM64 只构建，不扩展运行验收。正式发行的精确提交、包摘要与最终重测以[beta5 发行证据](evidence/beta5-20261023/ACCEPTANCE.json)为准。

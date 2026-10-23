@@ -8,6 +8,7 @@ import (
 	"github.com/Aoody743/PowerLinux/internal/core"
 	"github.com/Aoody743/PowerLinux/internal/httpapi"
 	"github.com/Aoody743/PowerLinux/internal/plugins"
+	"github.com/Aoody743/PowerLinux/internal/serverbrowser"
 	"github.com/Aoody743/PowerLinux/internal/sites"
 	"github.com/Aoody743/PowerLinux/internal/systemops"
 	"github.com/Aoody743/PowerLinux/internal/terminalbridge"
@@ -19,6 +20,7 @@ type runtimeModules struct {
 	database httpapi.ResourceHandler
 	website  httpapi.ResourceHandler
 	apps     httpapi.ResourceHandler
+	browser  *serverbrowser.Provider
 }
 type resourceHandlers []httpapi.ResourceHandler
 
@@ -114,6 +116,16 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 		sys.Close()
 		return nil, err
 	}
+	browser, err := serverbrowser.New(service.Runtime("serverbrowser"), serverbrowser.Options{})
+	if err != nil {
+		sys.Close()
+		return nil, err
+	}
+	if err = service.RegisterProvider(browser); err != nil {
+		browser.Close()
+		sys.Close()
+		return nil, err
+	}
 	registered = true
-	return &runtimeModules{system: sys, terminal: term, database: software.DatabaseResourceHandler(service), website: websites.BackupResourceHandler(service), apps: software.HostedAppSourceResourceHandler(service)}, nil
+	return &runtimeModules{system: sys, terminal: term, browser: browser, database: software.DatabaseResourceHandler(service), website: websites.BackupResourceHandler(service), apps: software.HostedAppSourceResourceHandler(service)}, nil
 }

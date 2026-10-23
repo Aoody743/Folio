@@ -1,6 +1,8 @@
-Current release and version-specific acceptance: [Folio beta4](../../docs/rewrite/CURRENT-RELEASE.md). Older RC and beta records retain their original scope.
+Current release and version-specific acceptance: [Folio beta5](../../docs/rewrite/CURRENT-RELEASE.md). Older RC and beta records retain their original scope.
 
 # Folio rewrite build and installation
+
+Beta5: [UI and navigation](../../docs/rewrite/UI-INFORMATION-REFACTOR.md), [server browser requirements](../../docs/rewrite/SERVER-BROWSER.md). Runtime browser use requires sandboxed Chromium/Chrome installed separately on the server.
 
 Beta4 installer and bilingual UI: [experience notes](../../docs/rewrite/EXPERIENCE-BETA4.md). Use `--lang zh-CN|en` and `--yes` for unattended installation. Earlier versioned bootstrap scripts remain unchanged.
 
@@ -53,14 +55,14 @@ provenance and host compatibility. User servers need no Node, Go or Python.
 
 ## Verified installation
 
-For the 1.0-beta2 Linux amd64 release, the release includes a one-command
+For the 1.0-beta5 Linux amd64 release, the release includes a one-command
 bootstrap installer. On a fresh Ubuntu 24.04 amd64 systemd host, run:
 
 ```sh
-curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta2/install-1.0-beta2.sh | sudo bash
+curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta5/install-1.0-beta5.sh | sudo bash
 ```
 
-The bootstrap downloads the beta2 archive and release `SHA256SUMS.txt`, checks
+The bootstrap downloads the beta5 archive and release `SHA256SUMS.txt`, checks
 the package SHA-256, then passes that archive to the package installer. A fresh
 system install enables the reviewed software and website/certificate modules;
 upgrades preserve an existing Agent policy. Use `--no-managed-features` to skip

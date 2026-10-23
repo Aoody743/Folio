@@ -1,19 +1,28 @@
 # Folio 当前发行与验收入口
 
-更新：2026-10-22（Asia/Singapore）。当前发行版为 **1.0-beta4**。
-本文件统一描述当前版本；RC15、beta1、beta2、beta3 的检查点和旧计划保留为历史，
+更新：2026-10-23（Asia/Singapore）。当前发行版为 **1.0-beta5**。
+本文件统一描述当前版本；RC15、beta1、beta2、beta3、beta4 的检查点和旧计划保留为历史，
 不会自动成为新版已验收声明。
 
 ## 版本与支持范围
 
-- 发行：Linux amd64 预发布包、`install-1.0-beta4.sh`、SHA-256 清单。
+- 发行：Linux amd64/arm64 预发布包、amd64 一键脚本 `install-1.0-beta5.sh`、SHA-256 清单。
 - 受管应用的目标平台延续 beta2：Ubuntu 24.04 amd64 + systemd。
 - Debian/ARM 不因能够编译或目录有条目而自动列入当前已验收平台。
 - beta2 运行时修复已合并，主线新增 phpMyAdmin/pgAdmin 适配器也保留。
   两个工具目前声明的 Debian 主机生命周期仍未验收，不属于支持矩阵。
 - 真实 DNS provider/公开 CA 验收沿用此前延期决定；本地协议证据与外部验证分开记录。
 
-## beta4 安装与界面体验
+## beta5 界面与服务器浏览器
+
+- 五项底栏保持顺序：首页聚焦主机、网站、应用；列表分页、资源独立详情与 hash 导航保留上下文。
+- 手机允许下滑，顶栏只留查看任务；语言进入“更多 → 语言与外观”，三套本地字体与五套配色独立选择。
+- 新增“更多 → 运维 → 服务器浏览器”，真实服务器 Chromium 访问网页，支持多标签、导航、中文输入、网页提示及适应窗口。需要服务器单独安装可用沙箱的 Chromium/Chrome。
+- 独立 `browser:use` / `browser:server` 授权，身份隔离、每帧鉴权、关闭清理，不开放 DevTools 端口。
+- ARM64 提供交叉构建包，本轮真实运行验收仍为 amd64；没有新增 ARM/systemd、DNS/公开 CA 验收声明。
+- [UI 验收与截图](UI-INFORMATION-ACCEPTANCE.md) · [服务器浏览器说明](SERVER-BROWSER.md) · [发行证据](evidence/beta5-20261023/ACCEPTANCE.json)。
+
+## 沿用 beta4 安装与界面体验
 
 - 安装脚本和面板支持中英双语；安装器支持 `--lang zh-CN|en`、终端语言选择与 `--yes` 自动化。
 - 展示真实安装阶段、升级保留项、恢复状态、私有摘要及访问/首次登录交接。
@@ -50,8 +59,9 @@
 
 ## 验收记录
 
-本轮源检查、双语浏览器与 Ubuntu systemd 升级测试详见
-[beta4 验收记录](BETA4-ACCEPTANCE-20261022.md)。此前业务整改见 [beta3 验收记录](BETA3-ACCEPTANCE-20261022.md)。
+本轮源检查、实际 amd64 包、服务器浏览器与 UI 回归详见
+[beta5 UI 验收记录](UI-INFORMATION-ACCEPTANCE.md)。beta4 的历史 Ubuntu systemd 升级测试见
+[beta4 验收记录](BETA4-ACCEPTANCE-20261022.md)，不将其冒充为 beta5 新执行证据。此前业务整改见 [beta3 验收记录](BETA3-ACCEPTANCE-20261022.md)。
 发布包的精确提交、版本、干净状态在包内 `BUILDINFO`；
 发布资产的 SHA-256 以同版本 GitHub Release 的 `SHA256SUMS.txt` 为准。
 独立包验证结果随发行资产保存，不复用 RC15 的性能数值或旧包结果。
