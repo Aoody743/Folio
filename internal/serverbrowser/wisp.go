@@ -56,6 +56,10 @@ func (c *wispConnection) send(kind byte, id uint32, data []byte) error {
 	err := c.ws.Write(ctx, websocket.MessageBinary, packet)
 	if err != nil {
 		c.cancel()
+	} else {
+		c.mu.Lock()
+		c.lastActivity = time.Now()
+		c.mu.Unlock()
 	}
 	return err
 }
