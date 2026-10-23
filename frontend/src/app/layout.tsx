@@ -8,7 +8,7 @@ import "./globals.css";
 import "./information.css";
 import "./folio.css";
 export const metadata: Metadata = {
-  title: "Folio · 折纸面板",
+  title: "折纸面板",
   description: "AI 时代的 Linux 服务器可视化工具",
   icons: { icon: "/folio-logo.png" },
 };

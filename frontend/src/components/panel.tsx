@@ -99,8 +99,8 @@ const ServerBrowserView = dynamic(
 );
 
 function displayPanelName(name?: string) {
-  return !name || name === "Folio · 折纸面板"
-    ? translate("Folio · 折纸面板")
+  return !name || ["Folio · 折纸面板", "Folio · Server Panel", "折纸面板", "Folio"].includes(name)
+    ? translate("折纸面板")
     : name;
 }
 
@@ -1680,9 +1680,6 @@ function Auth({
   }, [captcha, refreshCaptcha]);
   return (
     <main className="auth-shell">
-      <div className="auth-language">
-        <LanguageControl />
-      </div>
       <div className="auth-brand">
         <img
           className="brand-logo"
@@ -1846,12 +1843,12 @@ function Auth({
         )}
         <div className="auth-footer">
           <Icon name="shield" size={16} />
-          <span>{translate("一个面板 · 网页与 MCP 共用授权")}</span>
+          <span>{translate("AI 时代的轻量化面板")}</span>
         </div>
       </Card>
-      <p className="auth-caption">
-        {panel?.footer ?? translate("信息清晰，操作可追溯。")}
-      </p>
+      <div className="auth-language">
+        <LanguageControl />
+      </div>
     </main>
   );
 }

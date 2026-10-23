@@ -2049,17 +2049,13 @@ progress {
   font-size: 13px;
   white-space: nowrap;
 }
-.language-control select {
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 7px 9px;
-  color: var(--text);
-  background: var(--surface);
-  min-height: 36px;
-  max-width: 104px;
-}
+
 .auth-language {
-  align-self: flex-end;
+  align-self: center;
+  width: 156px;
+}
+.language-control {
+  width: 100%;
 }
 .setup-card {
   margin-bottom: 20px;

@@ -16,10 +16,10 @@ export function setLocale(value: Locale, persist = true) {
   if (typeof document !== "undefined") {
     document.documentElement.lang = value;
     if (
-      ["", "Folio · Server Panel", "Folio · 折纸面板"].includes(document.title)
+      ["", "Folio", "折纸面板", "Folio · Server Panel", "Folio · 折纸面板"].includes(document.title)
     ) {
       document.title =
-        value === "en" ? "Folio · Server Panel" : "Folio · 折纸面板";
+        value === "en" ? "Folio" : "折纸面板";
     }
     if (persist) {
       try {

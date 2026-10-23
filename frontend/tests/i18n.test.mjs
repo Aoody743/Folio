@@ -62,7 +62,10 @@ test("an explicit browser preference wins and disabled storage still permits swi
     assert.equal(getLocale(), "zh-CN");
     setLocale("en");
     assert.equal(document.documentElement.lang, "en");
-    assert.equal(document.title, "Folio · Server Panel");
+    assert.equal(document.title, "Folio");
+    setLocale("zh-CN");
+    assert.equal(document.title, "折纸面板");
+    setLocale("en");
     globalThis.localStorage.getItem = () => {
       throw new Error("blocked");
     };
