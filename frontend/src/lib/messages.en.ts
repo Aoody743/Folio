@@ -1,5 +1,11 @@
 // Application copy only. Resource data and user content are never translated.
 export const english: Record<string, string> = {
+ "暂无便签": "No notes yet",
+ "最近便签": "Recent notes",
+ "查看全部便签": "All notes",
+ "没有读取便签的权限": "You do not have permission to read notes",
+ "未命名便签": "Untitled note",
+
  "服务器显示名称": "Server display name",
  "服务器显示名称留空时使用系统主机名，不会修改系统主机名。": "Leave the server display name empty to use the system hostname. This does not change the system hostname.",
 

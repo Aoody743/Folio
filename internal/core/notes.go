@@ -28,6 +28,7 @@ type noteIDInput struct {
 	Revision         int64  `json:"revision,omitempty"`
 }
 type noteListInput struct {
+	Sort     string `json:"sort,omitempty"`
 	Archived bool   `json:"archived,omitempty"`
 	TargetID string `json:"target_id,omitempty"`
 	Limit    int    `json:"limit,omitempty"`
@@ -160,7 +161,14 @@ func (s *Service) noteList(ctx context.Context, a Actor, input noteListInput) (a
 		}
 		query += " AND (" + strings.Join(allowed, " OR ") + ")"
 	}
-	query += " ORDER BY pinned DESC,updated_at DESC,id LIMIT ? OFFSET ?"
+	if input.Sort != "" && input.Sort != "updated_at" {
+		return nil, invalid("Unsupported note order")
+	}
+	if input.Sort == "updated_at" {
+		query += " ORDER BY updated_at DESC,id LIMIT ? OFFSET ?"
+	} else {
+		query += " ORDER BY pinned DESC,updated_at DESC,id LIMIT ? OFFSET ?"
+	}
 	args = append(args, input.Limit, input.Offset)
 	rows, e := s.db.QueryContext(ctx, query, args...)
 	if e != nil {

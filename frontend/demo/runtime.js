@@ -52,6 +52,7 @@
   function currentTab(s,p) { return s.tabs.find(t=>t.id===(p.tab_id||s.active_tab_id))||s.tabs[0]; }
   function termOutput(t,value) {t.sequence=(t.sequence||0)+1;t.frames.push({sequence:t.sequence,data:btoa(unescape(encodeURIComponent(value)))});t.frames=t.frames.slice(-100);}
   async function run(name,p={}) {
+    if(name==='notes_list')return [...store.notes].filter(note=>note.archived===!!p.archived).sort((a,b)=>p.sort==='updated_at'?b.updated_at.localeCompare(a.updated_at):Number(b.pinned)-Number(a.pinned)||b.updated_at.localeCompare(a.updated_at)).slice(Number(p.offset)||0,(Number(p.offset)||0)+(Number(p.limit)||50));
     if(name==='system_status'||name==='system_info')return status();
     if(name==='plugins_catalog')return clone(seed.catalog);
     if(name==='plugins_list')return {...page(store.instances,p),availability:'ready'};

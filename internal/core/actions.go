@@ -27,7 +27,7 @@ func registry() []Action {
 	return []Action{
 		{Name: "capabilities_list", Description: "Discover actions permitted for the current identity", InputSchema: object(map[string]any{}), ReadOnly: true, Scope: ""},
 		{Name: "system_get_status", Description: "Read the cached, real host health and metrics snapshot", InputSchema: object(map[string]any{}), ReadOnly: true, Scope: "system:read"},
-		{Name: "notes_list", Description: "List shared notes within authorized resources", InputSchema: object(map[string]any{"archived": boolean(), "target_id": str(), "limit": integer(), "offset": integer()}), ReadOnly: true, Scope: "notes:read"},
+		{Name: "notes_list", Description: "List shared notes within authorized resources", InputSchema: object(map[string]any{"archived": boolean(), "target_id": str(), "limit": integer(), "offset": integer(), "sort": map[string]any{"type": "string", "enum": []string{"updated_at"}}}), ReadOnly: true, Scope: "notes:read"},
 		{Name: "notes_get", Description: "Read one shared note", InputSchema: object(id, "id"), ReadOnly: true, Scope: "notes:read"},
 		{Name: "notes_create", Description: "Create a shared note; identity is assigned by the server", InputSchema: object(map[string]any{"title": str(), "content": str(), "pinned": boolean(), "target_id": str()}, "title"), Scope: "notes:write"},
 		{Name: "notes_update", Description: "Update a note using optimistic revision concurrency", InputSchema: object(map[string]any{"id": str(), "expected_revision": integer(), "title": str(), "content": str(), "pinned": boolean(), "target_id": str()}, "id", "expected_revision"), Scope: "notes:write"},

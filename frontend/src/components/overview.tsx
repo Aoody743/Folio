@@ -1,10 +1,12 @@
 "use client";
 import { t as translate } from "@/lib/i18n";
-import { Capability, SystemStatus, duration, list, bytes, fullDate } from "@/lib/api";
+import { Capability, Note, SystemStatus, duration, list, bytes, fullDate } from "@/lib/api";
 import { Page } from "@/lib/resources";
 import { useResource } from "@/lib/resource-hook";
 import { applicationCounts, ApplicationState } from "@/lib/overview";
 import { navigate } from "@/lib/navigation";
+import { ResourceError } from "./resource-ui";
+import { Button } from "@astryxdesign/core/Button";
 import { Icon } from "./icon";
 
 export function Overview({
@@ -12,11 +14,15 @@ export function Overview({
   error,
   connection,
   capabilities,
+  onOpenNote,
+  canWriteNotes,
 }: {
   status?: SystemStatus;
   error?: string;
   connection: string;
   capabilities: Capability[];
+  onOpenNote: (note?: Note) => void;
+  canWriteNotes: boolean;
 }) {
   const has = (name: string) => capabilities.some((c) => c.name === name);
   const sites = useResource<Page<unknown>>(
@@ -30,6 +36,7 @@ export function Overview({
     has("hosted_apps_list"),
   );
   const counts = apps.data ? applicationCounts(list(apps.data)) : undefined;
+  const notes = useResource<Note[]>("notes_list", {limit: 3, sort: "updated_at"}, has("notes_list"));
   const percent = (value?: number | null) =>
     value == null || !Number.isFinite(value) ? "—" : `${Math.round(value)}%`;
   const ratio = (
@@ -39,7 +46,7 @@ export function Overview({
       ? (resource.used_bytes / resource.total_bytes) * 100
       : undefined;
   return (
-    <div className="status-overview">
+    <div className="overview-workspace"><div className="status-overview">
       <section
         className="summary-panel host-status"
         aria-label={translate("主机")}
@@ -171,6 +178,12 @@ export function Overview({
           )}
         </section>
       ))}
-    </div>
+    </div><section className="summary-panel overview-notes" aria-label={translate("最近便签")}>
+      <div className="overview-notes-heading"><span><Icon name="note"/><h2>{translate("最近便签")}</h2></span><div>
+        {canWriteNotes && <Button label={translate("新建便签")} icon={<Icon name="plus"/>} isIconOnly variant="ghost" onClick={()=>onOpenNote()}/>}
+        <Button label={translate("查看全部便签")} icon={<Icon name="arrow"/>} isIconOnly variant="ghost" onClick={()=>navigate("more",{page:"notes"})}/>
+      </div></div>
+      {!has("notes_list") ? <p className="muted">{translate("没有读取便签的权限")}</p> : notes.error ? <ResourceError error={notes.error} state={notes.state} retry={()=>void notes.reload()}/> : !notes.data ? <p className="muted" role="status">{translate("正在读取…")}</p> : list(notes.data).length ? <div className="overview-note-list">{list(notes.data).slice(0,3).map(note=><button className="overview-note" key={note.id} onClick={()=>onOpenNote(note)}><strong>{note.title || translate("未命名便签")}</strong><p>{note.content}</p><time dateTime={note.updated_at}>{fullDate(note.updated_at)}</time></button>)}</div> : <div className="overview-notes-empty"><p>{translate("暂无便签")}</p>{canWriteNotes && <Button label={translate("新建便签")} variant="ghost" onClick={()=>onOpenNote()}/>}</div>}
+    </section></div>
   );
 }

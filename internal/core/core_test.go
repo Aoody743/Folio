@@ -504,3 +504,32 @@ func TestRuntimeWorkspaceCannotBeRedirectedOutsideDataDirectory(t *testing.T) {
 		t.Fatal("failed initialization wrote outside controlled workspace")
 	}
 }
+
+func TestRecentNotesOrderDoesNotPromoteOlderPinnedNotes(t *testing.T) {
+	s, a := testService(t)
+	defer s.Close()
+	var oldest Note
+	for i, title := range []string{"pinned older", "recent one", "recent two", "recent three"} {
+		note := execute(t, s, a, "notes_create", map[string]any{"title": title, "pinned": i == 0}).(Note)
+		if i == 0 {
+			oldest = note
+		}
+		stamp := []string{"2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z", "2026-01-03T00:00:00Z", "2026-01-04T00:00:00Z"}[i]
+		if _, err := s.db.Exec("UPDATE notes SET updated_at=? WHERE id=?", stamp, note.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	recent := execute(t, s, a, "notes_list", map[string]any{"limit": 3, "sort": "updated_at"}).([]Note)
+	if len(recent) != 3 || recent[0].Title != "recent three" {
+		t.Fatal(recent)
+	}
+	for _, note := range recent {
+		if note.ID == oldest.ID {
+			t.Fatal("pinned note displaced recent note")
+		}
+	}
+	defaults := execute(t, s, a, "notes_list", map[string]any{"limit": 1}).([]Note)
+	if defaults[0].ID != oldest.ID {
+		t.Fatal("default pinned ordering changed")
+	}
+}

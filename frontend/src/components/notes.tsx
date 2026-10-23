@@ -78,6 +78,7 @@ export function NoteEditor({
   onDraftChange,
   canWrite = true,
   canDelete = false,
+  startEditing = false,
 }: {
   note?: Note;
   open: boolean;
@@ -86,10 +87,11 @@ export function NoteEditor({
   onDraftChange?: (dirty: boolean) => void;
   canWrite?: boolean;
   canDelete?: boolean;
+  startEditing?: boolean;
 }) {
   const [base, setBase] = useState(note);
   const [draft, setDraft] = useState(draftOf(note));
-  const [editing, setEditing] = useState(!note);
+  const [editing, setEditing] = useState(!note || (startEditing && canWrite));
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

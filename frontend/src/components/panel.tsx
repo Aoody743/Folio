@@ -1044,7 +1044,9 @@ export function Panel() {
                     </Card>
                   ) : (
                     <Overview
-                      status={status}
+                      status={status && session.panel?.server_name ? {...status,hostname:session.panel.server_name} : status}
+                      onOpenNote={openNote}
+                      canWriteNotes={canWriteNotes}
                       error={errors.system}
                       connection={connection}
                       capabilities={caps}
@@ -1138,7 +1140,7 @@ export function Panel() {
                             ],
                           },
                         ].map((group) => (
-                          <section key={group.title}>
+                          <section key={group.title} aria-label={group.title}>
                             <h2>{group.title}</h2>
                             <div className="more-grid">
                               {[
@@ -1179,9 +1181,8 @@ export function Panel() {
                                         : setMorePage(item.id)
                                     }
                                   >
-                                    <Icon name={item.icon as IconName} />
+                                    <span className="more-tile-icon"><Icon name={item.icon as IconName} size={28} /></span>
                                     <strong>{item.title}</strong>
-                                    <Icon name="arrow" size={16} />
                                   </button>
                                 ))}
                             </div>
@@ -1396,6 +1397,7 @@ export function Panel() {
                   onDraftChange={setHasDraft}
                   canWrite={canWriteNotes}
                   canDelete={canDeleteNotes}
+                  startEditing={section === "overview"}
                 />
               )}
               <ResourceDrawer

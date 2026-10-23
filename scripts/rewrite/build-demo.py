@@ -55,6 +55,7 @@ seed['notes'] = [
  {'id':'note-handoff','title':'欢迎体验 Folio','content':'这里的主机、网站、应用和文件都是演示数据。\n\n可以新建网站、编辑文件、安装软件、创建计划任务。修改仅保存在当前浏览器，点击右下角「演示数据」可重置。','pinned':True,'archived':False,'target_id':'host:local','revision':1,'created_at':seed['now'],'updated_at':seed['now'],'created_by':seed['actor'],'updated_by':seed['actor']},
  {'id':'note-review','title':'UI 反馈清单','content':'记录页面名称、屏幕尺寸和操作步骤，方便反馈布局或操作上的问题。','pinned':False,'archived':False,'revision':1,'created_at':seed['now'],'updated_at':seed['now'],'created_by':seed['actor'],'updated_by':seed['actor']},
 ]
+seed['notes'].append({'id':'note-release','title':'发布前检查','content':'检查网站配置、证书和备份。\n可以点击这条便签，体验编辑与保存。','pinned':False,'archived':False,'target_id':'host:local','revision':1,'created_at':seed['now'],'updated_at':seed['now'],'created_by':seed['actor'],'updated_by':seed['actor']})
 seed['contents'] = {'README.md': '# Folio 交互演示\n\n文件内容可以编辑、保存、下载和还原。\n所有操作只修改当前浏览器中的演示数据。\n', 'deploy.sh': '#!/bin/sh\necho "Folio demo — no server command is executed"\n', 'nginx.conf': 'server {\n    listen 80;\n    server_name northstar.example.com;\n    root /srv/www/northstar;\n}\n', 'config/app.json': '{\n  "name": "Northstar",\n  "mode": "demo"\n}\n', 'logs/access.log': '127.0.0.1 - - [23/Oct/2026] "GET / HTTP/1.1" 200\n', 'public/index.html': '<h1>Northstar Studio</h1>\n'}
 for row in seed['file_rows']:
     if row['type'] == 'file':
