@@ -1,26 +1,27 @@
 # Folio 当前发行与验收入口
 
-更新：2026-10-23（Asia/Singapore）。当前发行版为 **1.0-beta6**。
+更新：2026-10-23（Asia/Singapore）。当前发行版为 **1.0-beta7**。
 本文件统一描述当前版本；RC15、beta1、beta2、beta3、beta4 的检查点和旧计划保留为历史，
 不会自动成为新版已验收声明。
 
 ## 版本与支持范围
 
-- 发行：Linux amd64/arm64 预发布包、amd64 一键脚本 `install-1.0-beta6.sh`、SHA-256 清单。
+- 发行：Linux amd64/arm64 预发布包、amd64 一键脚本 `install-1.0-beta7.sh`、SHA-256 清单。
 - 受管应用的目标平台延续 beta2：Ubuntu 24.04 amd64 + systemd。
 - Debian/ARM 不因能够编译或目录有条目而自动列入当前已验收平台。
 - beta2 运行时修复已合并，主线新增 phpMyAdmin/pgAdmin 适配器也保留。
   两个工具目前声明的 Debian 主机生命周期仍未验收，不属于支持矩阵。
 - 真实 DNS provider/公开 CA 验收沿用此前延期决定；本地协议证据与外部验证分开记录。
 
-## beta6 可选浏览器应用
+## beta7 可选浏览器应用与导航修复
 
 - “软件 → 应用服务 → 浏览器应用”提供面板 Chromium 与完整 Firefox WASM 两种可选模式，默认均不安装，安装状态相互独立。
 - Firefox WASM 使用本服务器的认证 Wisp 出口；默认公共代理与外部字体请求已移除。需要 HTTPS 和 JSPI，完整 Firefox 控件使用上游语言。
 - 安装与卸载使用可追踪任务、固定版本和 SHA-256 校验；卸载关闭所属连接并移除下载组件，保留另一模式与系统浏览器。
 - Chromium 可复用系统安装，Linux amd64 缺少引擎时下载独立 headless shell 并检查沙箱；arm64 需先安装系统 Chromium。
-- [双模式说明](SERVER-BROWSER.md) · [本轮验收](BROWSER-APPS-BETA6.md) · [发行证据](evidence/beta6-20261023/ACCEPTANCE.json)。
-- beta5 保留为准备期源标签，未发布公开资产；本轮统一发行 beta6，旧标签和已发布 beta4 资产不变。
+- [双模式说明](SERVER-BROWSER.md) · [本轮验收](BROWSER-APPS-BETA7.md) · [发行证据](evidence/beta7-20261023/ACCEPTANCE.json)。
+- 修复 Next 对 hash 历史记录的异步覆盖，快速切页、浏览器返回与直接链接保持正确。
+- beta5、beta6 保留为准备期标签，未发布公开资产；本轮统一发行 beta7，已发布 beta4 资产保持不变。
 
 ## 沿用的界面信息优化
 

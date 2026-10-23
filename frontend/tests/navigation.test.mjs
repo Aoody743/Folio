@@ -6,7 +6,7 @@ const compile = async name => {
   const source = ts.transpileModule(readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText.replace('"react"', JSON.stringify(new URL('../node_modules/react/index.js', import.meta.url).href));
   return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 };
-const { parseRoute, routeHash, navigate, updateRoute } = await compile('navigation');
+const { parseRoute, routeHash, navigate, updateRoute, replaceNavigationHash } = await compile('navigation');
 const { pageItems } = await compile('collection');
 const { applicationCounts, applicationState } = await compile('overview');
 test('static hash routes round-trip Unicode names and discard non-view fields', () => {
@@ -45,4 +45,27 @@ test('application summaries preserve conflicts, transitional and unobserved stat
   assert.equal(applicationState({status:'running'}), 'unknown');
   assert.equal(applicationState({status:'building',running:true}), 'unknown');
   assert.deepEqual(applicationCounts([{status:'running',running:true},{status:'built',running:false},{status:'failed',running:false},{status:'stopped',running:true}]), {running:1,stopped:1,unknown:2});
+});
+
+test('hash navigation and credential cleanup bypass framework history patches', () => {
+  const previous = {location:globalThis.location,history:globalThis.history,History:globalThis.History};
+  try {
+    globalThis.location={hash:'#/overview'};
+    const writes=[];
+    class NativeHistory {
+      pushState(_state,_title,hash){writes.push(['push',hash]);globalThis.location.hash=hash;}
+      replaceState(_state,_title,hash){writes.push(['replace',hash]);globalThis.location.hash=hash;}
+    }
+    globalThis.History=NativeHistory;
+    globalThis.history=new NativeHistory();
+    // This models Next's patched instance APIs, which dispatch asynchronous
+    // canonical-URL restores. A static hash route must never invoke them.
+    history.pushState=history.replaceState=()=>{throw new Error('framework router was invoked')};
+    navigate('software',{page:'applications'});
+    updateRoute('software','group','logs');
+    navigate('sites',{});
+    replaceNavigationHash('#/sites?q=retained');
+    assert.equal(location.hash,'#/sites?q=retained');
+    assert.deepEqual(writes.map(([kind])=>kind),['push','replace','push','replace']);
+  } finally {for(const [key,value] of Object.entries(previous)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
 });

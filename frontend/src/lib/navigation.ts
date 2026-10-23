@@ -61,6 +61,21 @@ const emit = () => listeners.forEach((fn) => fn());
 function snapshot() {
   return typeof location === "undefined" ? "#/overview" : location.hash;
 }
+// Folio owns a single static page with hash routes. Next patches the instance
+// history methods and asynchronously restores its own canonical URL; using
+// those methods can roll a newer hash back to an older route.
+function writeHistory(method: "pushState" | "replaceState", hash: string) {
+  const native = typeof History !== "undefined" ? History.prototype[method] : history[method];
+  native.call(history, { folio: true }, "", hash);
+}
+export function replaceNavigationHash(hash: string) {
+  writeHistory("replaceState", hash);
+  acceptedHash = snapshot();
+  const route = parseRoute(acceptedHash);
+  remembered[route.section] = route.params;
+  emit();
+}
+
 type NavigationGuard = (next: PageRoute, current: PageRoute) => boolean;
 const guards = new Set<NavigationGuard>();
 let acceptedHash: string | undefined;
@@ -80,7 +95,7 @@ function permitted(next: PageRoute, current: PageRoute) {
 function changed() {
   const next = snapshot();
   if (acceptedHash && !permitted(parseRoute(next), parseRoute(acceptedHash)))
-    history.replaceState({ folio: true }, "", acceptedHash);
+    writeHistory("replaceState", acceptedHash);
   else {
     if (acceptedHash) {
       const previous = parseRoute(acceptedHash);
@@ -92,18 +107,23 @@ function changed() {
   }
   emit();
 }
+function popped(event: PopStateEvent) {
+  // Keep Next's popstate restore/reload handler out of this static hash router.
+  event.stopImmediatePropagation();
+  changed();
+}
 function subscribe(fn: () => void) {
   if (!listeners.size) {
     acceptedHash = snapshot();
     window.addEventListener("hashchange", changed);
-    window.addEventListener("popstate", changed);
+    window.addEventListener("popstate", popped, true);
   }
   listeners.add(fn);
   return () => {
     listeners.delete(fn);
     if (!listeners.size) {
       window.removeEventListener("hashchange", changed);
-      window.removeEventListener("popstate", changed);
+      window.removeEventListener("popstate", popped, true);
     }
   };
 }
@@ -118,7 +138,7 @@ export function navigate(
   const hash = routeHash(next);
   if (hash === snapshot()) return;
   if (typeof window !== "undefined" && !permitted(next, current)) return;
-  history[replace ? "replaceState" : "pushState"]({ folio: true }, "", hash);
+  writeHistory(replace ? "replaceState" : "pushState", hash);
   acceptedHash = hash;
   remembered[next.section] = next.params;
   emit();
@@ -127,7 +147,7 @@ export function resetNavigation() {
   for (const section of Object.keys(remembered))
     delete remembered[section as Section];
   acceptedHash = "#/overview";
-  history.replaceState({ folio: true }, "", acceptedHash);
+  writeHistory("replaceState", acceptedHash);
   emit();
 }
 export function updateRoute(

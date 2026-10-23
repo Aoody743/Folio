@@ -1,4 +1,5 @@
 "use client";
+import { replaceNavigationHash } from "@/lib/navigation";
 import { useResource } from "@/lib/resource-hook";
 import { t as translate } from "@/lib/i18n";
 import {
@@ -466,11 +467,8 @@ export function Panel() {
     permitted("notes:write") || caps.some((c) => c.name === "notes_update");
   const canDeleteNotes =
     permitted("notes:delete") || caps.some((c) => c.name === "notes_delete");
-  const initialHints = useRef(
-    typeof window !== "undefined"
-      ? loginHints(location.hash)
-      : { loginEntry: "", temporaryToken: "", remainingHash: "" },
-  );
+  const initialHash = useRef(typeof window !== "undefined" ? location.hash : "");
+  const initialHints = useRef(loginHints(initialHash.current));
   const bootstrapStarted = useRef(false);
   const sessionBoundary = useRef<string>(undefined);
   const receiveSession = useCallback((next: Session) => {
@@ -596,12 +594,8 @@ export function Panel() {
     if (bootstrapStarted.current) return;
     bootstrapStarted.current = true;
     const hints = initialHints.current;
-    if (hints.remainingHash !== location.hash)
-      history.replaceState(
-        null,
-        "",
-        location.pathname + location.search + hints.remainingHash,
-      );
+    if (hints.remainingHash !== initialHash.current && location.hash === initialHash.current)
+      replaceNavigationHash(hints.remainingHash);
     if (hints.temporaryToken) {
       setAuthBusy(true);
       void api("/auth/temporary", {

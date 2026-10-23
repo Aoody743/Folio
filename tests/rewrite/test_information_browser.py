@@ -34,6 +34,13 @@ def main():
             browser = p.chromium.launch(executable_path=os.environ.get('POWERLINUX_CHROMIUM','/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
             page = browser.new_page(locale='zh-CN',viewport={'width':1366,'height':768},reduced_motion='reduce')
             page.on('pageerror',lambda error: errors.append(str(error)))
+            page.add_init_script("""(() => {
+              window.__folioNavigationTrace=[];
+              const record=value=>{window.__folioNavigationTrace.push({...value,at:performance.now(),hash:location.hash,scrollY});if(window.__folioNavigationTrace.length>60)window.__folioNavigationTrace.shift()};
+              document.addEventListener('click',event=>{const button=event.target.closest?.('button');if(button)record({type:'click',label:button.textContent, trusted:event.isTrusted})},true);
+              for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){record({type:method,to:args[2]});return original.apply(this,args)}}
+              addEventListener('hashchange',event=>record({type:'hashchange',from:event.oldURL.split('#')[1],to:event.newURL.split('#')[1]}));
+            })()""")
             page.on('request',lambda request: errors.append('external font: '+request.url) if ('fonts.googleapis' in request.url or 'fonts.gstatic' in request.url) else None)
             def fixture(route):
                 name = route.request.url.split('/')[-1]
@@ -149,7 +156,7 @@ def main():
                 page.get_by_role('button',name='Create website',exact=True).click()
             except Exception:
                 page.screenshot(path=str(artifacts/'create-website-navigation-failed.png'),full_page=True)
-                state=page.evaluate('''() => ({hash:location.hash,lang:document.documentElement.lang,section:document.querySelector('.app')?.dataset.section,text:document.body.innerText,details:[...document.querySelectorAll('.resource-page')].map(e=>({hidden:e.hidden,title:e.getAttribute('aria-label')}))})''')
+                state=page.evaluate('''() => ({hash:location.hash,lang:document.documentElement.lang,section:document.querySelector('.app')?.dataset.section,trace:window.__folioNavigationTrace,text:document.body.innerText,details:[...document.querySelectorAll('.resource-page')].map(e=>({hidden:e.hidden,title:e.getAttribute('aria-label')}))})''')
                 (artifacts/'create-website-navigation-failed.json').write_text(json.dumps(state,ensure_ascii=False,indent=2))
                 print('Create website navigation state',json.dumps(state,ensure_ascii=False),flush=True)
                 raise

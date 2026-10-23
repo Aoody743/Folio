@@ -53,15 +53,15 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 
 ## 安装与首次登录
 
-当前发行版是 [Folio 1.0-beta6](https://github.com/Aoody743/Folio/releases/tag/1.0-beta6)，提供 Linux amd64、arm64 安装包，一键安装面向 amd64。ARM64 已交叉构建，本轮未扩展运行验收。在 Ubuntu 24.04 amd64、运行 systemd 的服务器上执行：
+当前发行版是 [Folio 1.0-beta7](https://github.com/Aoody743/Folio/releases/tag/1.0-beta7)，提供 Linux amd64、arm64 安装包，一键安装面向 amd64。ARM64 已交叉构建，本轮未扩展运行验收。在 Ubuntu 24.04 amd64、运行 systemd 的服务器上执行：
 
 ```sh
-curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta6/install-1.0-beta6.sh | sudo bash -s -- --lang zh-CN
+curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta7/install-1.0-beta7.sh | sudo bash -s -- --lang zh-CN
 ```
 
 英文安装使用 `--lang en`，无人值守增加 `--yes`；面板语言可在登录页及“更多 → 语言与外观”切换。
 
-安装脚本会下载发行包和 `SHA256SUMS.txt`，校验发行包后再运行包内安装器。可以先查看[一键安装脚本](scripts/rewrite/install-1.0-beta6.sh)及[发行校验清单](https://github.com/Aoody743/Folio/releases/download/1.0-beta6/SHA256SUMS.txt)。
+安装脚本会下载发行包和 `SHA256SUMS.txt`，校验发行包后再运行包内安装器。可以先查看[一键安装脚本](scripts/rewrite/install-1.0-beta7.sh)及[发行校验清单](https://github.com/Aoody743/Folio/releases/download/1.0-beta7/SHA256SUMS.txt)。
 
 安装完成后，服务由 systemd 管理，默认只监听服务器本机的 `127.0.0.1:9000`。在自己的电脑上建立 SSH 隧道：
 
@@ -77,7 +77,7 @@ ssh -L 9000:127.0.0.1:9000 your-user@your-server
 sudo systemctl status powerlinux.service
 sudo /opt/powerlinux/current/folio healthcheck \
   --server-config /etc/powerlinux/server.json \
-  --expected-version 1.0-beta6
+  --expected-version 1.0-beta7
 ```
 
 默认配置不向公网开放服务。如需通过其他入口访问，请先按[安装与运维手册](scripts/rewrite/README.md)配置并验证 HTTPS、监听地址和允许的来源。
@@ -108,7 +108,7 @@ make rewrite-dev
 
 ## 项目文档
 
-- [1.0-beta6 发布说明](.github/release-notes/1.0-beta6.md)
+- [1.0-beta7 发布说明](.github/release-notes/1.0-beta7.md)
 - [当前版本与验收范围](docs/rewrite/CURRENT-RELEASE.md)
 - [面板截图索引](docs/screenshots/panel-1.0-beta1/README.md)
 - [MCP 接入设计](docs/rewrite/AI-NATIVE-MCP.md)

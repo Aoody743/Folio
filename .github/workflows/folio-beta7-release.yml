@@ -1,0 +1,129 @@
+name: Publish Folio 1.0-beta7 prerelease
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: folio-1.0-beta7-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'Aoody743/Folio' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/../folio-beta7-build-cache
+      NEXT_TELEMETRY_DISABLED: '1'
+      # Race-test packages share the runner with Chromium cold starts.
+      GOFLAGS: '-p=1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve evidence and verify the successful source checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          cp -a docs/rewrite/evidence/beta7-20261023 "$RUNNER_TEMP/beta7-acceptance"
+          cp -a tests/rewrite "$RUNNER_TEMP/beta7-browser-tests"
+          printf 'Acceptance harness commit: %s\n' "$GITHUB_SHA"
+          expected=$(jq -er '.commit' "$RUNNER_TEMP/beta7-acceptance/ACCEPTANCE.json")
+          [[ $(git rev-parse '1.0-beta7^{commit}') == "$expected" ]]
+          ci_run=$(jq -er '.source_ci.run' "$RUNNER_TEMP/beta7-acceptance/ACCEPTANCE.json")
+          ci_commit=$(jq -er '.source_ci.commit' "$RUNNER_TEMP/beta7-acceptance/ACCEPTANCE.json")
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ci_run" > "$RUNNER_TEMP/beta7-source-ci.json"
+          jq -e --arg sha "$ci_commit" --arg repo "$GITHUB_REPOSITORY" '.head_sha == $sha and .repository.full_name == $repo and .workflow_id == 383305933 and .head_branch == "main" and .status == "completed" and .conclusion == "success"' "$RUNNER_TEMP/beta7-source-ci.json"
+          # The accepted source already passed all Go race, installer and UI
+          # unit checks. Permit only packaging-guide text between it and the tag.
+          validated=$(git diff --name-only "$ci_commit" 1.0-beta7 -- cmd internal frontend go.mod go.sum third_party scripts tests/rewrite Makefile)
+          validated=$(printf '%s\n' "$validated" | sed '/^$/d; \|^scripts/rewrite/README\.md$|d')
+          [[ -z "$validated" ]] || { printf '%s\n' "$validated"; exit 1; }
+          changed=$(git diff --name-only 1.0-beta7 "$GITHUB_SHA" -- cmd internal frontend go.mod go.sum third_party scripts Makefile)
+          changed=$(printf '%s\n' "$changed" | sed '/^$/d; \|^scripts/rewrite/README\.md$|d')
+          [[ -z "$changed" ]] || { printf '%s\n' "$changed"; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          ref: 1.0-beta7
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Allow Chromium sandbox namespaces on the ephemeral runner
+        run: |
+          # Ubuntu runner AppArmor policy otherwise blocks namespace-backed
+          # Chromium sandbox startup. This affects only this disposable job.
+          if sysctl kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+      - name: Build both Linux architectures from the validated source
+        run: |
+          set -Eeuo pipefail
+          make rewrite-deps REWRITE_CACHE="$POWERLINUX_BUILD_CACHE"
+          umask 077
+          go vet ./...
+          bash scripts/rewrite/build.sh --version 1.0-beta7 --architectures amd64,arm64 --skip-install --output "$GITHUB_WORKSPACE/release-assets"
+          (cd release-assets && sha256sum --check "$RUNNER_TEMP/beta7-acceptance/package-checksums.txt")
+          python3 scripts/rewrite/test-package.py release-assets/folio-1.0-beta7-linux-amd64.tar.gz
+          mkdir release-extracted
+          tar -xzf release-assets/folio-1.0-beta7-linux-amd64.tar.gz -C release-extracted
+      - name: Verify the packaged panel in Chromium
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          python3 -m venv "$RUNNER_TEMP/browser-venv"
+          "$RUNNER_TEMP/browser-venv/bin/pip" install playwright==1.62.0
+          "$RUNNER_TEMP/browser-venv/bin/python" -m playwright install --with-deps chromium
+          export POWERLINUX_CHROMIUM=$("$RUNNER_TEMP/browser-venv/bin/python" -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')
+          export POWERLINUX_TEST_BINARY="$GITHUB_WORKSPACE/release-extracted/folio"
+          export POWERLINUX_QA_ARTIFACTS="$RUNNER_TEMP/beta7-browser"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta7-browser-tests/test_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta7-browser-tests/test_beta3_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta7-browser-tests/test_experience_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta7-browser-tests/phase2/test_files_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta7-browser-tests/test_information_browser.py"
+          command -v google-chrome || command -v chromium
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta7-browser-tests/test_server_browser.py"
+          "$RUNNER_TEMP/browser-venv/bin/python" "$RUNNER_TEMP/beta7-browser-tests/test_browser_apps.py"
+      - name: Prepare verified release assets
+        run: |
+          set -Eeuo pipefail
+          install -m 0755 scripts/rewrite/install-1.0-beta7.sh release-assets/install-1.0-beta7.sh
+          cp "$RUNNER_TEMP/beta7-acceptance/ACCEPTANCE.json" "$RUNNER_TEMP/beta7-acceptance/verification-logs.tar.gz" release-assets/
+          cd release-assets
+          cp CHECKSUMS.txt SHA256SUMS.txt
+          sha256sum install-1.0-beta7.sh ACCEPTANCE.json verification-logs.tar.gz >> SHA256SUMS.txt
+          sha256sum --check --strict SHA256SUMS.txt
+      - name: Publish prerelease without replacing published assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          if gh release view 1.0-beta7 >/dev/null 2>&1; then
+            echo 'Release exists; refusing to replace published assets' >&2
+            exit 1
+          fi
+          gh release create 1.0-beta7 \
+            release-assets/folio-1.0-beta7-linux-amd64.tar.gz \
+            release-assets/folio-1.0-beta7-linux-arm64.tar.gz \
+            release-assets/install-1.0-beta7.sh \
+            release-assets/SHA256SUMS.txt \
+            release-assets/ACCEPTANCE.json \
+            release-assets/verification-logs.tar.gz \
+            --verify-tag --title 'Folio 1.0-beta7' \
+            --notes-file .github/release-notes/1.0-beta7.md --prerelease
+
+      - name: Preserve failed browser acceptance diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beta7-browser-failure-${{ github.run_id }}
+          path: ${{ runner.temp }}/beta7-browser
+          if-no-files-found: ignore
+          retention-days: 7
