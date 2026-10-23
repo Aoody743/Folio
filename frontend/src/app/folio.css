@@ -320,7 +320,7 @@
 @layer folio {
  .topbar .host-pill > .distro-logo { display: inline-block; width: 20px; height: 20px; flex-shrink: 0; background: var(--accent); mask-size: contain; mask-position: center; mask-repeat: no-repeat; }
  .distro-logo-fallback { color: var(--muted); display: inline-flex; }
- .more-groups { display: flex; flex-direction: column; min-height: min(620px, calc(100dvh - 220px)); gap: 24px; }
+ .more-groups { display: flex; flex-direction: column; min-height: min(560px, calc(100dvh - 280px)); gap: 24px; }
  .more-groups > section { min-width: 0; }
  .more-groups .more-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 12px; }
  .more-groups .more-tile { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 106px; padding: 16px 10px; gap: 12px; border: 1px solid var(--border); border-radius: 12px; text-align: center; }

@@ -37,6 +37,10 @@ with sync_playwright() as p:
  toolbar.get_by_role('button',name='更多文件选项',exact=True).click()
  page.get_by_role('menuitem',name='取消选择',exact=True).click()
  expect(page.get_by_role('checkbox',name='选择本页文件',exact=True)).not_to_be_checked()
+ toolbar.get_by_role('button',name='更多文件选项',exact=True).click()
+ page.get_by_role('menuitem',name='筛选与排序',exact=True).click()
+ page.get_by_role('menuitem',name='按大小降序',exact=True).click()
+ expect(page.locator('.compact-file-table tbody tr').first).to_contain_text('README.md')
  toolbar.get_by_role('textbox',name='按文件名筛选').fill('README')
  toolbar.get_by_role('button',name='筛选文件',exact=True).click();expect(page.locator('.compact-file-table tbody tr')).to_have_count(1)
  toolbar.get_by_role('textbox',name='按文件名筛选').fill('');toolbar.get_by_role('button',name='筛选文件',exact=True).click();expect(page.locator('.compact-file-table tbody tr')).to_have_count(6)
@@ -44,6 +48,7 @@ with sync_playwright() as p:
  visit('#/more')
  expect(page.locator('.more-groups')).to_be_visible()
  assert page.locator('.more-tile').first.bounding_box()['height'] >= 90
+ assert page.locator('.more-signout').bounding_box()['y']+page.locator('.more-signout').bounding_box()['height'] < page.locator('.bottom-nav').bounding_box()['y']
  page.screenshot(path=str(out/'more-tiles.png'))
  expect(page.locator('.distro-logo')).to_be_visible()
  assert 'ubuntu.svg' in page.locator('.distro-logo').get_attribute('style')
