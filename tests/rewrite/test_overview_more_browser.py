@@ -4,7 +4,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 out=Path(os.environ.get('POWERLINUX_QA_ARTIFACTS','/tmp/folio-overview-more'));out.mkdir(parents=True,exist_ok=True)
 with sync_playwright() as p:
- b=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+ b=p.chromium.launch(executable_path=os.environ.get('POWERLINUX_CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox'])
  page=b.new_page(viewport={'width':1297,'height':778},locale='zh-CN');errors=[]
  page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto(os.environ.get('FOLIO_DEMO_URL','http://127.0.0.1:4178'));page.locator('#demo-enter').click()

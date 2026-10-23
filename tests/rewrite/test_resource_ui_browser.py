@@ -6,7 +6,7 @@ url = os.environ.get("FOLIO_DEMO_URL", "http://127.0.0.1:4178")
 out = Path(os.environ.get("POWERLINUX_QA_ARTIFACTS", "/tmp/folio-resource-ui"))
 out.mkdir(parents=True, exist_ok=True)
 with sync_playwright() as p:
- b=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+ b=p.chromium.launch(executable_path=os.environ.get('POWERLINUX_CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox'])
  page=b.new_page(viewport={'width':1297,'height':778},locale='zh-CN');errors=[]
  page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto(url);page.locator('#demo-enter').click();expect(page.locator('.status-overview')).to_be_visible()
