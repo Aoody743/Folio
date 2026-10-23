@@ -61,7 +61,7 @@ export function BrowserApps({
     if (
       app.installed &&
       !window.confirm(
-        translate(
+        name(app.id) + "\n" + translate(
           "卸载将关闭此模式的所有浏览器连接，并删除面板下载的组件。系统浏览器和另一模式不受影响。是否继续？",
         ),
       )
