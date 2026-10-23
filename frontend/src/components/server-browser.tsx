@@ -249,7 +249,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
     (input: BrowserInput, result: InputResult = {}) => {
       const current = currentSession.current;
       const tab = currentTab.current;
-      if (!current || !tab || inputPaused.current || !image.current?.complete || image.current.naturalWidth !== current.width || image.current.naturalHeight !== current.height) {
+      if (!current || !tab || inputPaused.current || !image.current || image.current.naturalWidth !== current.width || image.current.naturalHeight !== current.height) {
         result.reject?.(
           new Error(translate("输入未确认，已保留文字。请核对网页后重试。")),
         );

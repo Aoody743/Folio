@@ -49,7 +49,7 @@ def main():
                 for name in ("主机", "网站", "应用"):
                     expect(page.get_by_role("region", name=name, exact=True)).to_be_visible()
                 nav = page.get_by_role("navigation", name="主导航")
-                assert nav.get_by_role("button").count() == 5
+                expect(nav.get_by_role("button")).to_have_count(5)
                 for name in ("概览", "网站", "软件", "文件", "更多"):
                     expect(nav.get_by_role("button", name=name, exact=True)).to_be_visible()
                 assert "聊天" not in page.locator("body").inner_text()
