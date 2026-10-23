@@ -320,19 +320,24 @@
 @layer folio {
  .topbar .host-pill > .distro-logo { display: inline-block; width: 20px; height: 20px; flex-shrink: 0; background: var(--accent); mask-size: contain; mask-position: center; mask-repeat: no-repeat; }
  .distro-logo-fallback { color: var(--muted); display: inline-flex; }
- .more-groups { display: flex; flex-wrap: wrap; justify-content: center; width: min(100%, 1040px); min-height: 0; margin: 12px auto 0; gap: 12px; }
- .more-groups > section, .more-groups .more-grid { display: contents; }
- .more-groups h2 { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
- .more-groups .more-tile { position: relative; display: block; flex: 0 0 calc((100% - 72px) / 7); height: 124px; min-height: 124px; padding: 0; border: 1px solid var(--border); border-radius: 12px; text-align: center; }
+ .more-groups { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); width: min(100%, 1040px); min-height: 0; margin: 12px auto 0; gap: 24px 12px; }
+ .more-groups > section { display: block; min-width: 0; grid-column: span 4; }
+ .more-groups > section:nth-of-type(2) { grid-column: span 3; }
+ .more-groups > section:last-of-type { grid-column: 1 / -1; }
+ .more-groups .more-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+ .more-groups > section:nth-of-type(2) .more-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+ .more-groups > section:last-of-type .more-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+ .more-groups h2 { position: static; width: auto; height: auto; margin: 0 0 12px; overflow: visible; clip-path: none; white-space: normal; text-align: center; font-size: 15px; }
+ .more-groups .more-tile { position: relative; display: block; min-width: 0; width: 100%; height: 124px; min-height: 124px; padding: 0; border: 1px solid var(--border); border-radius: 12px; text-align: center; }
  .more-groups .more-tile > .more-tile-icon { position: absolute; display: flex; justify-content: center; align-items: center; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 32px; height: 32px; color: var(--accent); }
  .more-groups .more-tile > strong { position: absolute; bottom: 10px; left: 6px; right: 6px; display: block; text-align: center; font-size: 14px; line-height: 1.3; font-weight: 500; overflow-wrap: anywhere; }
- .more-signout { flex-basis: 100%; margin: 12px 0 0; padding: 16px 0 4px; border-top: 1px solid var(--border); display: flex; justify-content: center; }
- @media (min-width: 701px) and (max-width: 1050px) {
-  .more-groups .more-tile { flex-basis: calc((100% - 48px) / 5); }
- }
+ .more-signout { grid-column: 1 / -1; margin: 12px 0 0; padding: 16px 0 4px; border-top: 1px solid var(--border); display: flex; justify-content: center; }
  @media (max-width: 700px) {
-  .more-groups .more-tile { flex-basis: calc((100% - 24px) / 3); height: 124px; min-height: 124px; }
+  .more-groups { display: flex; flex-direction: column; gap: 24px; }
+  .more-groups .more-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .more-groups .more-tile { flex: 0 0 calc((100% - 24px) / 3); height: 124px; min-height: 124px; }
  }
+
 }
 @layer folio {
  .overview-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }

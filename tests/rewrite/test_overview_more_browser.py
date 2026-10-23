@@ -17,6 +17,10 @@ with sync_playwright() as p:
  page.get_by_role('button',name='完成',exact=True).click()
  expect(page.locator('.overview-note').first).to_contain_text('首页编辑保存成功')
  page.evaluate('location.hash="#/more"');expect(page.locator('.more-tile')).to_have_count(14)
+ for name in ['运维','活动与记录','设置与接入']:expect(page.get_by_role('heading',name=name,exact=True)).to_be_visible()
+ assert page.get_by_role('region',name='运维',exact=True).locator('.more-tile').count()==4
+ assert page.get_by_role('region',name='活动与记录',exact=True).locator('.more-tile').count()==3
+ assert page.get_by_role('region',name='设置与接入',exact=True).locator('.more-tile').count()==7
  tiles=page.locator('.more-tile').all();boxes=[tile.bounding_box() for tile in tiles]
  assert len({round(box['y']) for box in boxes})==2,boxes
  for box in boxes:assert abs(box['width']-boxes[0]['width'])<1
