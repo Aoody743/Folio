@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -75,6 +76,22 @@ func availableEngine(opts EngineOptions) (string, string) {
 	}
 	for _, name := range []string{"chromium", "chromium-browser", "google-chrome", "google-chrome-stable"} {
 		if path, err := exec.LookPath(name); err == nil {
+			// CDP owns inherited descriptors 3/4. Distribution launch scripts
+			// may manipulate descriptors or wait on desktop integration. Use
+			// the sibling native browser where the known package provides it.
+			resolved, _ := filepath.EvalSymlinks(path)
+			candidates := []string{}
+			if strings.HasPrefix(name, "google-chrome") {
+				candidates = append(candidates, filepath.Join(filepath.Dir(resolved), "chrome"))
+			}
+			if resolved == "/usr/bin/chromium" {
+				candidates = append(candidates, "/usr/lib/chromium/chromium")
+			}
+			for _, candidate := range candidates {
+				if actual, e := exec.LookPath(candidate); e == nil {
+					return actual, ""
+				}
+			}
 			return path, ""
 		}
 	}
@@ -113,7 +130,7 @@ func startEngine(ctx context.Context, opts EngineOptions, width, height int) (*e
 	}
 	command := exec.Command(executable, args...)
 	command.ExtraFiles = []*os.File{commandRead, messageWrite}
-	command.Env = append(os.Environ(), "XDG_CACHE_HOME="+profile+"/cache", "XDG_CONFIG_HOME="+profile+"/config")
+	command.Env = append(os.Environ(), "XDG_CACHE_HOME="+profile+"/cache", "XDG_CONFIG_HOME="+profile+"/config", "XDG_DATA_HOME="+profile+"/data")
 	command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	// Browser diagnostics may include visited URLs. Do not copy them into
 	// Folio logs, action output or persistent audit records.

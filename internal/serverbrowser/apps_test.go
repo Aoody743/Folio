@@ -73,8 +73,10 @@ func TestOptionalBrowserLifecycleAndPermissions(t *testing.T) {
 	if _, err := f.service.Execute(ctx, restricted, "browser_app_change", encoded(appChange{ID: "panel", Operation: "install"})); core.ErrorStatus(err) != 403 {
 		t.Fatalf("use-only identity installed app: %v", err)
 	}
-	if _, reason := availableEngine(f.browser.options.Engine); reason != "" {
+	if path, reason := availableEngine(f.browser.options.Engine); reason != "" {
 		t.Skip(reason)
+	} else {
+		t.Logf("Native browser executable: %s", path)
 	}
 	waitAppTask(t, f, call(t, f, f.admin, "browser_app_change", appChange{ID: "panel", Operation: "install"}))
 	if !f.browser.installed(ctx, "panel") || f.browser.installed(ctx, "firefox-wasm") {
