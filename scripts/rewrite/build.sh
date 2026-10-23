@@ -49,6 +49,11 @@ if (( !skip_frontend )); then
   NEXT_BUILD_ID="$commit" NEXT_TELEMETRY_DISABLED=1 npm run build --prefix frontend
 fi
 [[ -s frontend/out/index.html ]] || { echo 'Build frontend/out first; placeholder UI cannot be packaged' >&2; exit 1; }
+# Static demos are packaged separately and must never become a server release.
+if [[ -e frontend/out/demo/runtime.js || -e frontend/out/demo/seed.js ]] || grep -Eq '/demo/(runtime|seed)\.js' frontend/out/index.html; then
+  echo 'Refusing to embed a static demo in the production server package' >&2
+  exit 1
+fi
 mkdir -p internal/webassets/dist
 # Only this owned generated asset directory is refreshed, never the checkout.
 find internal/webassets/dist -mindepth 1 -maxdepth 1 ! -name README.txt -exec rm -rf -- {} +
