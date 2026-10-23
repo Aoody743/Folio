@@ -27,3 +27,7 @@
 真实运行环境为 Debian 13 amd64、非 root 面板进程、Chromium 154 客户端；独立引擎为固定 Chrome headless shell 156。这些是本轮浏览器功能验证，不扩展受管服务的主机平台支持矩阵。
 
 ARM64 包交叉编译；未新增 ARM 运行、systemd VM 升级/回滚/重启、真实 DNS provider 或公开 CA 验收。beta4 的 VM 记录保留为历史。Firefox WASM 是上游实验性实现；面板应用与启动交接为中英双语，原生 Firefox 控件使用上游语言。
+
+## 本轮截图
+
+[中文应用页](../screenshots/browser-apps-beta6/zh-apps-desktop.png) · [英文应用页](../screenshots/browser-apps-beta6/en-apps-desktop.png) · [手机 390](../screenshots/browser-apps-beta6/zh-apps-390.png) · [手机 320](../screenshots/browser-apps-beta6/zh-apps-320.png) · [完整 Firefox WASM](../screenshots/browser-apps-beta6/firefox-wasm-desktop.png)。
