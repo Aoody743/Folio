@@ -10,6 +10,8 @@ with sync_playwright() as p:
  page.goto(os.environ.get('FOLIO_DEMO_URL','http://127.0.0.1:4178'));page.locator('#demo-enter').click()
  expect(page.locator('.overview-note')).to_have_count(3)
  left=page.locator('.status-overview').bounding_box();right=page.locator('.overview-notes').bounding_box();assert left['x']+left['width']<right['x']
+ assert abs(left['height']-right['height'])<2,(left,right)
+ resources=page.locator('.status-overview .resource-status').all();assert resources[1].bounding_box()['y']>=resources[0].bounding_box()['y']+resources[0].bounding_box()['height']
  page.screenshot(path=str(out/'overview-notes.png'))
  page.locator('.overview-note').first.click()
  expect(page.get_by_role('textbox',name='标题',exact=False)).to_be_visible()

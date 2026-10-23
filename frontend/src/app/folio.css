@@ -368,3 +368,11 @@
  .overview-notes-empty { padding: 24px 0; text-align: center; color: var(--muted); }
  @media (max-width: 800px) { .overview-workspace { grid-template-columns: minmax(0, 1fr); } }
 }
+@layer folio {
+ .overview-workspace { align-items: stretch; }
+ .overview-workspace .status-overview { grid-template-columns: minmax(0, 1fr); }
+ .overview-workspace .overview-notes { display: flex; flex-direction: column; }
+ .overview-workspace .overview-note-list { display: flex; flex-direction: column; flex: 1; }
+ .overview-workspace .overview-note { flex: 1; }
+ @media (max-width: 800px) { .overview-workspace .overview-note { flex: initial; } }
+}
