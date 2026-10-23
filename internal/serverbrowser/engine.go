@@ -43,24 +43,25 @@ type cdpResponse struct {
 }
 
 type engine struct {
-	cmd         *exec.Cmd
-	profile     string
-	commands    *os.File
-	messages    *os.File
-	writeMu     sync.Mutex
-	mu          sync.Mutex
-	pending     map[int64]chan cdpResponse
-	tabs        map[string]string // issued target ID -> private flattened CDP session
-	dialogs     map[string]Dialog // private CDP session -> pending website dialog
-	frames      map[string][]byte
-	changed     chan struct{}
-	order       []string
-	next        atomic.Int64
-	done        chan struct{}
-	processDone chan struct{}
-	events      chan struct{}
-	closeOnce   sync.Once
-	cleanupOnce sync.Once
+	cmd          *exec.Cmd
+	profile      string
+	commands     *os.File
+	messages     *os.File
+	writeMu      sync.Mutex
+	mu           sync.Mutex
+	pending      map[int64]chan cdpResponse
+	tabs         map[string]string // issued target ID -> private flattened CDP session
+	dialogs      map[string]Dialog // private CDP session -> pending website dialog
+	frames       map[string][]byte
+	changed      chan struct{}
+	order        []string
+	next         atomic.Int64
+	initializing atomic.Bool
+	done         chan struct{}
+	processDone  chan struct{}
+	events       chan struct{}
+	closeOnce    sync.Once
+	cleanupOnce  sync.Once
 }
 
 func availableEngine(opts EngineOptions) (string, string) {
@@ -176,7 +177,11 @@ func startEngine(ctx context.Context, opts EngineOptions, width, height int) (*e
 	e := &engine{cmd: command, profile: profile, commands: commandWrite, messages: messageRead, pending: map[int64]chan cdpResponse{}, tabs: map[string]string{}, dialogs: map[string]Dialog{}, frames: map[string][]byte{}, changed: make(chan struct{}), done: make(chan struct{}), processDone: make(chan struct{}), events: make(chan struct{}, 128)}
 	go e.readLoop()
 	go func() { _ = command.Wait(); close(e.processDone); e.shutdown(); e.cleanup() }()
-	initCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	// Installation health probes can afford a cold browser start. The caller
+	// still bounds interactive opens, and individual website controls keep
+	// their ordinary timeout after initialization.
+	e.initializing.Store(true)
+	initCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 	phase := "Browser.getVersion"
 	if err = e.call(initCtx, "", "Browser.getVersion", nil, nil); err == nil {
@@ -191,6 +196,7 @@ func startEngine(ctx context.Context, opts EngineOptions, width, height int) (*e
 		phase = "initial blank tab"
 		_, err = e.NewTab(initCtx, "about:blank", width, height)
 	}
+	e.initializing.Store(false)
 	if err != nil {
 		e.Close()
 		if errors.Is(err, context.DeadlineExceeded) {
@@ -324,7 +330,11 @@ func (e *engine) readLoop() {
 	}
 }
 func (e *engine) call(ctx context.Context, session, method string, params any, out any) error {
-	ctx, cancel := context.WithTimeout(ctx, 12*time.Second)
+	limit := 12 * time.Second
+	if e.initializing.Load() {
+		limit = 45 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, limit)
 	defer cancel()
 	id := e.next.Add(1)
 	message := map[string]any{"id": id, "method": method}

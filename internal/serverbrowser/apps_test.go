@@ -32,7 +32,7 @@ func waitAppTask(t *testing.T, f providerFixture, result any) {
 		TaskID string `json:"task_id"`
 	}
 	_ = json.Unmarshal(encoded(result), &response)
-	deadline := time.Now().Add(45 * time.Second)
+	deadline := time.Now().Add(60 * time.Second)
 	for time.Now().Before(deadline) {
 		job, e := f.service.Runtime("serverbrowser").Tasks.Get(context.Background(), f.admin, response.TaskID)
 		if e != nil {
