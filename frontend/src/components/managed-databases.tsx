@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { BackupRetention } from "./backup-retention";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
@@ -194,9 +196,7 @@ export function ManagedDatabaseResources({
         <summary>{translate("技术详情")}</summary>
         <code>{`db:${instanceID}:${current.database}`}</code>
       </details>
-      <div
-        className="section-tabs"
-        role="tablist"
+      <ResourceTabs
         aria-label={translate("数据库资源分类")}
       >
         {[
@@ -217,7 +217,7 @@ export function ManagedDatabaseResources({
             {tab.label}
           </button>
         ))}
-      </div>
+      </ResourceTabs>
       {group === "imports" ? (
         <DatabaseImport
           key={`${instanceID}:${current.database}:${current.revision}`}
@@ -231,7 +231,7 @@ export function ManagedDatabaseResources({
       ) : group === "backups" ? (
         <>
           <BackupRetention key={instanceID+":"+current.database} kind="database" target={{instance_id:instanceID,database:current.database}} capabilities={capabilities} onExecuted={refresh}/>
-          <div className="card-heading">
+          <SectionHeader icon="database" className="card-heading">
             <h3>{translate("实际数据库备份")}</h3>
             {create && (
               <Button
@@ -242,7 +242,7 @@ export function ManagedDatabaseResources({
                 }}
               />
             )}
-          </div>
+          </SectionHeader>
           {backups.error && (
             <div className="notice danger" role="alert">
               {backups.error}

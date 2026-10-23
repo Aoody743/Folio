@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { useEffect, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -30,7 +31,7 @@ export function EnvironmentView({capabilities}:{capabilities:Capability[]}) {
   },[sequence]);
   const retry=()=>{setSequence(s=>s+1);void executor.reload();void browsers.reload();};
   return <Card className="panel-card environment-panel">
-    <div className="card-heading"><h2>{translate("环境与维护")}</h2><Button label={translate("重新检查")} onClick={retry}/></div>
+    <SectionHeader icon="server" className="card-heading"><h2>{translate("环境与维护")}</h2><Button label={translate("重新检查")} onClick={retry}/></SectionHeader>
     <section><h3>{translate("面板连接")}</h3>
       {error ? <ResourceError error={error} retry={retry}/> : health ? <><p>{translate("已连接")} · {translate("当前版本")} <strong>{health.version}</strong></p><p className="muted">{translate("检查时间")} {fullDate(checked)}</p></> : <p role="status">{translate("正在检查…")}</p>}
       <p className="muted">{translate("连接检查只验证面板服务，不代表网站公网可用或主机全部正常。")}</p>

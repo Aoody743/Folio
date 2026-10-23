@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -320,7 +321,7 @@ export function PHPMaintenance({
             )}
         </>
       )}
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h3>{translate("PHP会话统计")}</h3>
         {statsCapability && (
           <Button
@@ -330,7 +331,7 @@ export function PHPMaintenance({
             onClick={() => void statsResource.reload()}
           />
         )}
-      </div>
+      </SectionHeader>
       {!statsCapability ? (
         <Unavailable title={translate("当前没有PHP会话统计权限")} />
       ) : statsResource.error ? (

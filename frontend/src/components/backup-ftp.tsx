@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -224,7 +225,7 @@ export function BackupFTPMaintenance({
 
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="backup" className="card-heading">
         <div>
           <h2>{translate("远程备份 FTP")}</h2>
           <p className="muted">
@@ -239,7 +240,7 @@ export function BackupFTPMaintenance({
             onClick={() => void destinationsResource.reload()}
           />
         )}
-      </div>
+      </SectionHeader>
       {destinationsResource.error && (
         <div className="notice danger" role="alert">
           {destinationsResource.error}
@@ -359,7 +360,7 @@ export function BackupFTPMaintenance({
             <Unavailable title={translate("当前账户没有远程目录读取权限")} />
           ) : (
             <>
-              <div className="card-heading">
+              <SectionHeader icon="backup" className="card-heading">
                 <div>
                   <h3>{translate("远程目录")}</h3>
                   <p className="muted">
@@ -382,7 +383,7 @@ export function BackupFTPMaintenance({
                     onClick={() => void directoryResource.reload()}
                   />
                 </div>
-              </div>
+              </SectionHeader>
               {directoryResource.loading && !directory && (
                 <p role="status">{translate("正在读取远程目录…")}</p>
               )}

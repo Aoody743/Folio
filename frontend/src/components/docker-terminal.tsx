@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
@@ -633,7 +634,7 @@ export function DockerTerminalManagement({
 
   return (
     <section className="stack" aria-label={translate("交互式Docker终端")}>
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h3>{translate("交互式 Docker 终端")}</h3>
         {session && (
           <span
@@ -642,7 +643,7 @@ export function DockerTerminalManagement({
             {dockerTerminalStateLabel(session.execution_state)}
           </span>
         )}
-      </div>
+      </SectionHeader>
       {missing.length ? (
         <Unavailable
           title={translate("当前账户或后端未提供完整的 Docker 终端能力")}

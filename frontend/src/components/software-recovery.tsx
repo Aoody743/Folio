@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -237,7 +238,7 @@ export function SoftwareRecovery({
   return (
     <div id="software-install-recovery">
       <Card className="panel-card">
-        <div className="card-heading">
+        <SectionHeader icon="history" className="card-heading">
           <div>
             <h2>{translate("安装恢复检查")}</h2>
             <p className="muted">
@@ -246,7 +247,7 @@ export function SoftwareRecovery({
               )}
             </p>
           </div>
-        </div>
+        </SectionHeader>
         {!canInspect ? (
           <div className="notice warning">
             {translate("当前身份没有可用的软件恢复检查权限或接口格式不兼容。")}

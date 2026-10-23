@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 
 import { useEffect, useRef, useState } from "react";
@@ -221,10 +222,10 @@ export function HostingStackSetup({
       );
     return (
       <Card className="panel-card setup-card">
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <h2>{translate("准备好创建第一个网站了吗？")}</h2>
           <span className="status-chip neutral">{translate("可选设置")}</span>
-        </div>
+        </SectionHeader>
         <p className="muted">
           {translate("选择适合你的网站运行环境，也可以稍后到软件页面设置。")}
         </p>
@@ -296,9 +297,9 @@ export function HostingStackSetup({
   if (installed.error && !web) {
     return (
       <Card className="panel-card">
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <h2>{translate("网站运行栈状态不可用")}</h2>
-        </div>
+        </SectionHeader>
         <div className="notice warning" role="alert">
           {installed.error}
           {translate("。请先确认主机特权执行器可连接，再刷新软件状态。")}
@@ -315,7 +316,7 @@ export function HostingStackSetup({
   if (pending) {
     return (
       <Card className="panel-card">
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <h2>
             {isOptionalDatabase(pendingPlugin)
               ? translate("{0} 安装任务", [
@@ -323,7 +324,7 @@ export function HostingStackSetup({
                 ])
               : translate("网站运行栈安装任务")}
           </h2>
-        </div>
+        </SectionHeader>
         <TaskResult
           submitted={pending}
           capabilities={capabilities}
@@ -342,13 +343,13 @@ export function HostingStackSetup({
   if (web && !php) {
     return (
       <Card className="panel-card">
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <h2>
             {web.plugin_id === "nginx" ? "Nginx" : "OpenResty"}
             {translate(" 网站栈")}
           </h2>
           <span className="status-chip neutral">{translate("已选择")}</span>
-        </div>
+        </SectionHeader>
         <p className="muted">
           {translate(
             "Web 服务已安装。继续安装受管 PHP-FPM 后即可创建 PHP 网站。",
@@ -384,10 +385,10 @@ export function HostingStackSetup({
   ) {
     return (
       <Card className="panel-card">
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <h2>{translate("可选数据库")}</h2>
           <span className="status-chip neutral">{translate("按需安装")}</span>
-        </div>
+        </SectionHeader>
         <p className="muted">
           {translate(
             "可以跳过数据库安装，也可以同时选择 MySQL 和 PostgreSQL。未选择的数据库不会安装，之后仍可在软件页面添加。",

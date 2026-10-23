@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -263,7 +264,7 @@ export function FilesView({
   return (
     <div className="stack">
       <Card className="panel-card">
-        <div className="card-heading">
+        <SectionHeader icon="files" className="card-heading">
           <h2>{translate("文件管理")}</h2>
           <div className="button-row">
             {!currentRoot?.read_only &&
@@ -300,7 +301,7 @@ export function FilesView({
               />
             )}
           </div>
-        </div>
+        </SectionHeader>
         {!has("fs_roots") ? (
           <Unavailable title={translate("文件资源服务暂不可用")} icon="files" />
         ) : (

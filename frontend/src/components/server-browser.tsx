@@ -10,6 +10,7 @@ import {
   browserPoint,
 } from "@/lib/server-browser";
 import "./browser.css";
+import { Icon } from "./icon";
 import { BrowserBookmarks } from "./browser-bookmarks";
 
 type BrowserInput = {
@@ -62,6 +63,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
   const [sendingText, setSendingText] = useState(false);
   const [error, setError] = useState("");
   const [frameError, setFrameError] = useState("");
+  const [reconnecting, setReconnecting] = useState(false);
   const [frameURL, setFrameURL] = useState("");
   const [retry, setRetry] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -283,9 +285,12 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
   useEffect(() => {
     if (!active || !id || !tabID) return;
     let stopped = false;
+    let failures = 0;
+    let recovering = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const controller = new AbortController();
     setFrameError("");
+    setReconnecting(false);
     inputPaused.current = false;
     const frame = async () => {
       try {
@@ -301,10 +306,27 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
         const previous = currentImage.current;
         currentImage.current = next;
         setFrameURL(next);
+        failures = 0;
+        if (recovering) {
+          inputPaused.current = false;
+          recovering = false;
+          setReconnecting(false);
+        }
         if (previous) URL.revokeObjectURL(previous);
         timer = setTimeout(frame, 400);
       } catch (e) {
         if (stopped || controller.signal.aborted) return;
+        // Retry only read-only frame requests while input is idle. An uncertain
+        // input result or authorization failure always requires explicit recovery.
+        if (e instanceof APIError && [502, 503, 504].includes(e.status) && failures < 2
+          && !queue.current.length && !draining.current && (!inputPaused.current || recovering)) {
+          inputPaused.current = true;
+          recovering = true;
+          setReconnecting(true);
+          timer = setTimeout(frame, ++failures * 800);
+          return;
+        }
+        setReconnecting(false);
         inputPaused.current = true;
         setFrameError(errorMessage(e));
       }
@@ -533,20 +555,18 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
   return (
     <section
       ref={root}
-      className={`server-browser ${fullscreen ? "is-fullscreen" : ""}`}
+      className={`server-browser ${session ? "has-session" : ""} ${fullscreen ? "is-fullscreen" : ""}`}
       aria-label={translate("服务器浏览器")}
     >
       <div className="browser-heading">
         <div>
           <h2>{translate("服务器浏览器")}</h2>
-          <p className="muted">
-            {translate("网页在服务器上打开，网络请求使用服务器的出口 IP。")}
-          </p>
+          <span className="browser-network"><Icon name="network" size={16} />{translate("服务器网络")}</span>
         </div>
         <div className="browser-heading-actions">
           {session && (
-            <button type="button" disabled={busy} onClick={() => void close()}>
-              {translate("关闭浏览器")}
+            <button type="button" title={translate("关闭浏览器")} disabled={busy} onClick={() => void close()}>
+              <Icon name="close" size={18} /><span className="sr-only">{translate("关闭浏览器")}</span>
             </button>
           )}
           {session && (
@@ -563,7 +583,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                     .catch((e) => setError(errorMessage(e)));
               }}
             >
-              {fullscreen ? translate("退出全屏") : translate("全屏")}
+              <Icon name={fullscreen ? "collapse" : "expand"} size={18} /><span className="sr-only">{fullscreen ? translate("退出全屏") : translate("全屏")}</span>
             </button>
           )}
         </div>
@@ -575,7 +595,8 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
       )}
       {!session && (
         <div className="browser-start">
-          <p>{translate("临时会话独立运行，关闭后清除本次浏览器资料。")}</p>
+          <div className="browser-start-title"><span className="heading-icon"><Icon name="browser" size={24} /></span><h3>{translate("面板浏览器")}</h3></div>
+          <p>{translate("使用服务器网络浏览网页，关闭后清除本次资料。")}</p>
           {!status && <p role="status">{translate("正在检查服务器浏览器…")}</p>}
           {status && !status.available && (
             <div className="browser-missing" role="status">
@@ -659,7 +680,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                     })
                   }
                 >
-                  ×
+                  <Icon name="close" size={16} />
                 </button>
               </div>
             ))}
@@ -684,7 +705,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                 })
               }
             >
-              ＋
+              <Icon name="plus" size={18} />
             </button>
           </div>
           <div className="browser-toolbar">
@@ -702,7 +723,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                   })
                 }
               >
-                ←
+                <Icon name="back" size={18} />
               </button>
               <button
                 type="button"
@@ -717,7 +738,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                   })
                 }
               >
-                →
+                <Icon name="forward" size={18} />
               </button>
               <button
                 type="button"
@@ -732,7 +753,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                   })
                 }
               >
-                ↻
+                <Icon name="refresh" size={18} />
               </button>
               <button
                 type="button"
@@ -747,7 +768,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                   })
                 }
               >
-                ×
+                <Icon name="stop" size={18} />
               </button>
             </div>
             <form
@@ -772,14 +793,14 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                 }}
               />
               <button type="submit" disabled={busy || !tabID}>
-                {translate("前往")}
+                <Icon name="forward" size={18} /><span className="sr-only">{translate("前往")}</span>
               </button>
             </form>
           </div>
-          <BrowserBookmarks currentURL={tabURL} onOpen={url=>{if(session && tabID)void run("browser_navigate",{id:session.id,tab_id:tabID,url});}}/>
+          <div className="browser-utility"><BrowserBookmarks currentURL={tabURL} onOpen={url=>{if(session && tabID)void run("browser_navigate",{id:session.id,tab_id:tabID,url});}}/>
           <div className="browser-view-tools">
-            <button type="button" disabled={busy} onClick={fitWindow}>{translate("适应窗口")}</button>
-            <label>
+            <button type="button" disabled={busy} onClick={fitWindow}><Icon name="monitor" size={18} />{translate("适应窗口")}</button>
+            <details className="browser-size-menu"><summary><Icon name="filter" size={18} />{translate("浏览器尺寸")}</summary><label>
               {translate("浏览器尺寸")}
               <select
                 value={`${session.width}x${session.height}`}
@@ -807,18 +828,15 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                   </option>
                 )}
               </select>
-            </label>
+            </label></details>
             <button
               type="button"
               aria-expanded={showText}
               onClick={() => setShowText((value) => !value)}
             >
-              {translate("输入文字")}
+              <Icon name="keyboard" size={18} />{translate("输入文字")}
             </button>
-            <span className="muted">
-              {translate("点击画面后可使用键盘；手机可滑动画面滚动网页。")}
-            </span>
-          </div>
+          </div></div>
           {dialog && (
             <section className="browser-page-dialog" role="dialog" aria-label={translate("网页提示")}>
               <strong>{translate("网页提示")}</strong>
@@ -850,7 +868,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
               />
               <button
                 type="submit"
-                disabled={!text || Boolean(frameError) || sendingText}
+                disabled={!text || Boolean(frameError) || sendingText || reconnecting}
               >
                 {translate("发送文字")}
               </button>
@@ -988,6 +1006,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
               touch.current = undefined;
             }}
           >
+            {reconnecting && <div className="browser-frame-status" role="status"><Icon name="refresh" size={16} />{translate("正在重新连接画面…")}</div>}
             {frameURL ? (
               <img
                 ref={image}
@@ -1005,12 +1024,14 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
               </div>
             )}
           </div>
+          <details className="browser-help"><summary><Icon name="help" size={18} />{translate("使用帮助")}</summary>
+          <p className="muted">{translate("点击画面后可使用键盘；手机可滑动画面滚动网页。")}</p>
           <p className="browser-session-note muted">{translate("面板模式暂不支持网页内上传与下载文件；请使用文件页传输服务器文件。")}</p>
           <p className="browser-session-note muted">
             {translate(
               "离开此页会暂停画面。关闭浏览器或会话到期后，会清除本次浏览数据。",
             )}
-          </p>
+          </p></details>
         </>
       )}
     </section>

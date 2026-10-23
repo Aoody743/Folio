@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import dynamic from "next/dynamic";
@@ -71,7 +73,7 @@ export function PHPResources({
   };
   return (
     <section className="stack" aria-label={translate("PHP运行环境")}>
-      <div className="card-heading">
+      <SectionHeader icon="terminal" className="card-heading">
         <h3>{translate("PHP运行环境")}</h3>
         {status.data && (
           <State
@@ -79,7 +81,7 @@ export function PHPResources({
             reason={status.data.health.reason}
           />
         )}
-      </div>
+      </SectionHeader>
       {status.error && (
         <div className="notice danger" role="alert">
           {status.error}
@@ -88,9 +90,7 @@ export function PHPResources({
       {status.data?.version && (
         <pre className="runtime-version">{status.data.version}</pre>
       )}
-      <div
-        className="section-tabs"
-        role="tablist"
+      <ResourceTabs
         aria-label={translate("PHP管理分类")}
       >
         {[
@@ -106,7 +106,7 @@ export function PHPResources({
             {item.label}
           </button>
         ))}
-      </div>
+      </ResourceTabs>
       {tab === "extensions" ? (
         <>
           {modules.error && (

@@ -225,10 +225,10 @@ export function ResourceDrawer({
           aria-label={translate("返回列表")}
           onClick={onClose}
         >
-          <span aria-hidden="true">←</span>
+          <Icon name="back" size={18} />
           {translate("返回")}
         </button>
-        <h1>{title}</h1>
+        <div className="resource-title">{title.includes(" · ") ? <><span className="resource-kind">{title.split(" · ")[0]}</span><h1>{title.split(" · ").slice(1).join(" · ")}</h1></> : <h1>{title}</h1>}</div>
       </div>
       <div className="resource-page-content">{children}</div>
     </section>,

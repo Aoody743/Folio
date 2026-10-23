@@ -1,4 +1,6 @@
 "use client";
+import { ResourceMeta } from "./resource-meta";
+import { ResourceTabs } from "./resource-tabs";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -419,9 +421,7 @@ export function SitesView({
   };
   return (
     <div className="stack">
-      <div
-        className="section-tabs"
-        role="tablist"
+      <ResourceTabs
         aria-label={translate("网站资源类型")}
       >
         {siteResourceTabs.map((tab) => (
@@ -434,7 +434,7 @@ export function SitesView({
             {tab.label}
           </button>
         ))}
-      </div>
+      </ResourceTabs>
       {activeResourcePage === "retained" ? (
         <RetainedSites
           capabilities={capabilities}
@@ -693,9 +693,7 @@ export function SitesView({
             />
             <span className="muted">{current.domains?.join(" · ")}</span>
           </div>
-          <div
-            className="section-tabs"
-            role="tablist"
+          <ResourceTabs
             aria-label={translate("网站详情分类")}
           >
             {primaryGroups.map((tab) => (
@@ -720,7 +718,7 @@ export function SitesView({
                 {tab.id === "overview" ? translate("概况") : tab.label}
               </button>
             ))}
-          </div>
+          </ResourceTabs>
           {["config", "domains", "tls", "php", "routing"].includes(
             activeGroup,
           ) && (
@@ -760,39 +758,12 @@ export function SitesView({
             )}
           {activeGroup === "overview" ? (
             <>
-              <div className="detail-grid">
-                <div>
-                  <small>{translate("站点目录")}</small>
-                  <code>{current.document_root || translate("未提供")}</code>
-                </div>
-                <div>
-                  <small>{translate("运行环境")}</small>
-                  <strong>
-                    {current.php_version
-                      ? `PHP ${current.php_version}`
-                      : translate("未提供")}
-                  </strong>
-                </div>
-                <div>
-                  <small>TLS</small>
-                  <strong>
-                    {current.tls?.enabled
-                      ? translate("已配置")
-                      : translate("未配置")}
-                  </strong>
-                  <span className="muted">
-                    {current.tls?.expires_at
-                      ? translate("到期 {0}", [
-                          fullDate(current.tls.expires_at),
-                        ])
-                      : ""}
-                  </span>
-                </div>
-                <div>
-                  <small>{translate("更新")}</small>
-                  <span>{fullDate(current.updated_at)}</span>
-                </div>
-              </div>
+              <ResourceMeta items={[
+                { label: translate("站点目录"), icon: "files", value: <code>{current.document_root || translate("未提供")}</code> },
+                { label: translate("运行环境"), icon: "terminal", value: current.php_version ? `PHP ${current.php_version}` : translate("未提供") },
+                { label: "TLS", icon: "lock", value: current.tls?.enabled ? translate("已配置") : translate("未配置"), detail: current.tls?.expires_at ? translate("到期 {0}", [fullDate(current.tls.expires_at)]) : undefined },
+                { label: translate("更新"), icon: "clock", value: fullDate(current.updated_at) },
+              ]} />
               <SiteDefault
                 key={current.id}
                 id={current.id}

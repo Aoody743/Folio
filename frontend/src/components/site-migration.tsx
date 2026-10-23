@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 
 import { useEffect, useState } from "react";
@@ -276,14 +277,14 @@ export function SiteMigration({
       ) : null}
       {localizedPlanCapability && !reviewedPlan && !planError && (
         <div className="panel-card">
-          <div className="card-heading">
+          <SectionHeader icon="settings" className="card-heading">
             <h3>{translate("规划迁移")}</h3>
             <p className="muted">
               {translate(
                 "先选择目标 Web 实例并生成只读计划；此步骤不会修改网站。",
               )}
             </p>
-          </div>
+          </SectionHeader>
           {!canListInstances ? (
             <div className="notice warning" role="status">
               {translate(
@@ -352,13 +353,13 @@ export function SiteMigration({
       )}
       {reviewedPlan && (
         <div className="panel-card">
-          <div className="card-heading">
+          <SectionHeader icon="settings" className="card-heading">
             <h3>{translate("核对迁移计划")}</h3>
             <p className="muted">
               {translate("计划号 ")}
               {reviewedPlan.id}
             </p>
-          </div>
+          </SectionHeader>
           <MigrationSummary plan={reviewedPlan} webInstances={webInstances} />
           {reviewedPlan.configuration_mode === "advanced" && (
             <div className="notice warning">

@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -202,7 +203,7 @@ export function PostgreSQLMaintenance({
   if (!anyRelated) return null;
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <div>
           <h3>{translate("PostgreSQL 访问规则与慢查询")}</h3>
           <p className="muted">
@@ -217,7 +218,7 @@ export function PostgreSQLMaintenance({
           onClick={refresh}
           isDisabled={busy}
         />
-      </div>
+      </SectionHeader>
       {(error ||
         accessResource.error ||
         slowStatusResource.error ||
@@ -230,7 +231,7 @@ export function PostgreSQLMaintenance({
         </div>
       )}
       <section className="stack" aria-label={translate("PostgreSQL访问规则")}>
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <div>
             <h4>{translate("数据库访问规则")}</h4>
             <p className="muted">
@@ -240,7 +241,7 @@ export function PostgreSQLMaintenance({
             </p>
           </div>
           {access && <State value={access.configuration_state} />}
-        </div>
+        </SectionHeader>
         {!accessRead ? (
           <Unavailable
             title={translate("当前没有 PostgreSQL 访问规则读取权限")}
@@ -394,7 +395,7 @@ export function PostgreSQLMaintenance({
         )}
       </section>
       <section className="stack" aria-label={translate("PostgreSQL慢查询日志")}>
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <div>
             <h4>{translate("慢查询日志")}</h4>
             <p className="muted">
@@ -404,7 +405,7 @@ export function PostgreSQLMaintenance({
             </p>
           </div>
           {slowStatus && <State value={slowStatus.configuration_state} />}
-        </div>
+        </SectionHeader>
         {!slowStatusCapability ? (
           <Unavailable
             title={translate("当前没有 PostgreSQL 慢查询状态读取权限")}
@@ -541,7 +542,7 @@ export function PostgreSQLMaintenance({
             )}
             {slowReadCapability && (
               <div className="stack">
-                <div className="card-heading">
+                <SectionHeader icon="settings" className="card-heading">
                   <h5>{translate("最近的慢查询")}</h5>
                   <Button
                     label={translate("刷新日志")}
@@ -549,7 +550,7 @@ export function PostgreSQLMaintenance({
                     isDisabled={slowReadResource.loading}
                     onClick={() => void slowReadResource.reload()}
                   />
-                </div>
+                </SectionHeader>
                 {slowReadResource.error && (
                   <div className="notice danger" role="alert">
                     {slowReadResource.error}

@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
@@ -414,12 +415,12 @@ export function TerminalView({
   return (
     <div className="stack">
       <Card className="panel-card">
-        <div className="card-heading">
+        <SectionHeader icon="terminal" className="card-heading">
           <h2>{translate("终端")}</h2>
           <span className="status-chip neutral">
             {translate("真实PTY / 校验主机密钥的SSH")}
           </span>
-        </div>
+        </SectionHeader>
         {!has("terminal_open") ? (
           <Unavailable
             title={translate("终端服务暂不可用")}

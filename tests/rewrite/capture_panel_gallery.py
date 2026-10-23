@@ -127,6 +127,14 @@ def action_fixture(route):
     if action == "sites_list":
         result = page_result(sites, route.request)
         all_matching=page_result(sites,route.request); query=str(body.get("query", "")).lower(); matching=[site for site in sites if query in " ".join([site["name"],*site["domains"]]).lower() and (not body.get("category_id") or site.get("category_id")==body["category_id"])]; result["status_counts"]={status:sum(site["status"]==status for site in matching) for status in ("running","stopped")}; result["status_counts"]["unknown"]=sum(site["status"] not in ("running","stopped") for site in matching)
+    elif action == "plugins_list":
+        result = {"items": instances, "total": len(instances), "availability": "available"}
+    elif action == "plugins_get":
+        result = next(item for item in instances if item["id"] == body.get("id"))
+    elif action == "database_connection_get":
+        result = next(item for item in dbs if item["id"] == body.get("id"))
+    elif action == "cache_connection_get":
+        result = next(item for item in caches if item["id"] == body.get("id"))
     elif action == "fs_list":
         result = {**page_result(file_rows,route.request),"root":body.get("root","workspace"),"path":body.get("path", "")}
     elif action == "sites_get":
@@ -203,6 +211,9 @@ def main():
                 expect(page.locator(".app")).to_have_attribute("data-section", section, timeout=10000)
                 page.wait_for_timeout(550)
                 page.evaluate("document.fonts.ready")
+                page.evaluate("document.activeElement?.blur()")
+                page.mouse.move(0, 0)
+                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (slug, "horizontal overflow")
                 page.screenshot(path=str(OUT / f"{slug}.png"), full_page=full_page)
 
             capture("01-overview", "#/overview", "overview")
@@ -243,10 +254,14 @@ def main():
             page.keyboard.press("Escape")
             capture("31-environment", "#/more?page=environment", "more")
             capture("32-monitor-alerts", "#/more?page=monitor&view=alerts", "more")
+            capture("33-database-detail", "#/software?page=database&id=db-primary", "software")
+            capture("34-cache-detail", "#/software?page=cache&id=cache-primary", "software")
+            capture("35-software-detail", "#/software?page=installed&id=nginx-main&group=operations", "software")
+            capture("36-application-detail", "#/software?page=applications&subgroup=hosted&id=billing-api&group=overview", "software")
 
             for width, height in ((390, 844),):
                 page.set_viewport_size({"width": width, "height": height})
-                for slug, route, section in (("31-environment", "#/more?page=environment", "more"), ("32-monitor-alerts", "#/more?page=monitor&view=alerts", "more"), ("01-overview", "#/overview", "overview"), ("02-sites", "#/sites", "sites"), ("08-software-installed", "#/software?page=installed", "software"), ("14-files", "#/files?root=workspace", "files"), ("18-more-menu", "#/more", "more"), ("26-appearance", "#/more?page=appearance", "more")):
+                for slug, route, section in (("31-environment", "#/more?page=environment", "more"), ("32-monitor-alerts", "#/more?page=monitor&view=alerts", "more"), ("01-overview", "#/overview", "overview"), ("02-sites", "#/sites", "sites"), ("08-software-installed", "#/software?page=installed", "software"), ("14-files", "#/files?root=workspace", "files"), ("18-more-menu", "#/more", "more"), ("26-appearance", "#/more?page=appearance", "more"), ("03-site-detail", "#/sites?id=site-main&group=overview", "sites"), ("09-software-library", "#/software?page=catalog", "software"), ("13-browser-apps", "#/software?page=browsers", "software"), ("21-schedules", "#/more?page=schedules", "more"), ("25-security", "#/more?page=security", "more"), ("27-mcp", "#/more?page=mcp", "more")):
                     capture(f"mobile-{slug}", route, section)
             assert not errors, errors
             browser.close()

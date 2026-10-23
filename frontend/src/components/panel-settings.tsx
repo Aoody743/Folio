@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Card } from "@astryxdesign/core/Card";
@@ -53,12 +55,10 @@ export function PanelSettings({
     : {};
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h2>{translate("面板与访问设置")}</h2>
-      </div>
-      <div
-        className="section-tabs"
-        role="tablist"
+      </SectionHeader>
+      <ResourceTabs
         aria-label={translate("面板访问设置分类")}
       >
         {[
@@ -82,7 +82,7 @@ export function PanelSettings({
             {item.label}
           </button>
         ))}
-      </div>
+      </ResourceTabs>
       {settings.error && (
         <div className="notice danger" role="alert">
           {settings.error}

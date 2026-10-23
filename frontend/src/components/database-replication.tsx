@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -853,9 +854,9 @@ export function DatabaseReplicationManagement({
   if (!engine) {
     return (
       <section className="stack" aria-label={translate("数据库复制管理")}>
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <h3>{translate("数据库复制")}</h3>
-        </div>
+        </SectionHeader>
         <Unavailable
           title={translate("{0}暂不支持托管复制", [
             pluginEngine || translate("此数据库引擎"),
@@ -873,7 +874,7 @@ export function DatabaseReplicationManagement({
       className="stack"
       aria-label={translate("MySQL 和 MariaDB 托管复制")}
     >
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <div>
           <h3>{translate("托管数据库复制")}</h3>
           <p className="muted">
@@ -886,7 +887,7 @@ export function DatabaseReplicationManagement({
           isDisabled={pairListResource.loading || pairStatusResource.loading}
           onClick={refresh}
         />
-      </div>
+      </SectionHeader>
       <p className="muted">
         {translate("当前数据库")}
         <code>{database}</code>
@@ -928,9 +929,9 @@ export function DatabaseReplicationManagement({
           {notice}
         </div>
       )}
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h4>{translate("新建复制对")}</h4>
-      </div>
+      </SectionHeader>
       {!listPluginsCapability || !getPluginCapability || !receiptCapability ? (
         <Unavailable
           title={translate("缺少端点或数据库读取能力")}
@@ -1225,9 +1226,9 @@ export function DatabaseReplicationManagement({
       )}
       {relevantPairs.length > 0 && (
         <div className="stack">
-          <div className="card-heading">
+          <SectionHeader icon="settings" className="card-heading">
             <h4>{translate("已登记复制对")}</h4>
-          </div>
+          </SectionHeader>
           <div className="instance-list">
             {relevantPairs.map((pair) => (
               <button
@@ -1276,7 +1277,7 @@ export function DatabaseReplicationManagement({
       )}
       {selectedPair && statusCapability && (
         <div className="stack">
-          <div className="card-heading">
+          <SectionHeader icon="settings" className="card-heading">
             <div>
               <h4>{translate("复制对状态")}</h4>
               <p className="muted">
@@ -1289,7 +1290,7 @@ export function DatabaseReplicationManagement({
               isDisabled={pairStatusResource.loading}
               onClick={() => void pairStatusResource.reload()}
             />
-          </div>
+          </SectionHeader>
           {!pairStatus && !!pairStatusResource.data && (
             <div className="notice danger" role="alert">
               {translate(

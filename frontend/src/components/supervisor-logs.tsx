@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -230,7 +232,7 @@ export function SupervisorLogs({
 
   return (
     <section className="stack" aria-label={translate("守护程序日志")}>
-      <div className="card-heading">
+      <SectionHeader icon="logs" className="card-heading">
         <h3>{translate("已注册任务日志")}</h3>
         {jobsCapability && (
           <Button
@@ -240,7 +242,7 @@ export function SupervisorLogs({
             onClick={() => void jobsResource.reload()}
           />
         )}
-      </div>
+      </SectionHeader>
       {jobsResource.error && (
         <div className="notice danger" role="alert">
           {jobsResource.error}
@@ -277,12 +279,12 @@ export function SupervisorLogs({
       )}
       {selectedJob && (
         <div className="stack">
-          <div className="card-heading">
+          <SectionHeader icon="logs" className="card-heading">
             <h3>{selectedJob.name}</h3>
             {selectedJob.state && (
               <span className="muted">{selectedJob.state}</span>
             )}
-          </div>
+          </SectionHeader>
           {!logCapability ? (
             <Unavailable title={translate("当前没有任务日志读取权限")} />
           ) : (
@@ -290,9 +292,7 @@ export function SupervisorLogs({
               <p className="muted">
                 {translate("每次读取最多返回末尾 64 KiB，不接受日志路径输入。")}
               </p>
-              <div
-                className="section-tabs"
-                role="tablist"
+              <ResourceTabs
                 aria-label={translate("守护程序日志流")}
               >
                 {(["stdout", "stderr"] as const).map((item) => (
@@ -309,7 +309,7 @@ export function SupervisorLogs({
                     {item}
                   </button>
                 ))}
-              </div>
+              </ResourceTabs>
               <Button
                 label={translate("读取 {0} 末尾日志", [stream])}
                 isDisabled={!canReadLog}

@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -208,12 +209,12 @@ export function DockerExecManagement({
 
   return (
     <section className="stack" aria-label={translate("Docker 一次性容器命令")}>
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h3>{translate("一次性容器命令")}</h3>
         <span className="status-chip neutral">
           {translate("argv · 非交互执行")}
         </span>
-      </div>
+      </SectionHeader>
       <p className="muted">
         {translate(
           "每一行作为独立参数直接传入，不附加 shell 或交互式 TTY；若 argv[0] 指向 shell，shell 本身仍会按传入参数运行。参数会保留在任务记录中，不要把密码放入 argv。连接中断后不会自动重试。",

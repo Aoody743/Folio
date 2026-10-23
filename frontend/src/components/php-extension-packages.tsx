@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -262,7 +263,7 @@ export function PHPExtensionPackages({
 
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <div>
           <h4>{translate("受信任 PHP 扩展包")}</h4>
           <p className="muted">
@@ -271,7 +272,7 @@ export function PHPExtensionPackages({
             )}
           </p>
         </div>
-      </div>
+      </SectionHeader>
       {error && (
         <div className="notice danger" role="alert">
           {error}

@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { resourceIdentity } from "@/lib/resource-identity";
 import { t as translate } from "@/lib/i18n";
 
@@ -266,7 +268,7 @@ export function HostedApplications({
   const paged = pageItems(matching, offset, limit);
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="software" className="card-heading">
         <div>
           <h2>{translate("应用服务")}</h2>{" "}
         </div>
@@ -285,7 +287,7 @@ export function HostedApplications({
           onClick={refresh}
         />
         </div>
-      </div>
+      </SectionHeader>
       {(error || apps.error || sites.error) && (
         <div className="notice danger" role="alert">
           {error || apps.error || sites.error}
@@ -441,9 +443,7 @@ export function HostedApplications({
                             : app.status
                       }
                     />
-                    <div
-                      className="section-tabs"
-                      role="tablist"
+                    <ResourceTabs
                       aria-label={translate("应用详情分类")}
                     >
                       {[
@@ -462,7 +462,7 @@ export function HostedApplications({
                           {group.label}
                         </button>
                       ))}
-                    </div>
+                    </ResourceTabs>
                     {allowed("hosted_apps_control") &&
                       detailGroup === "config" &&
                       app.status !== "retained" &&
@@ -862,7 +862,7 @@ function HostedApplicationLogs({
   );
   return (
     <section className="stack" aria-label={translate("应用日志")}>
-      <div className="card-heading">
+      <SectionHeader icon="software" className="card-heading">
         <h2>{translate("日志")}</h2>
         <Button
           label={translate("刷新")}
@@ -870,7 +870,7 @@ function HostedApplicationLogs({
           isLoading={logs.loading}
           onClick={() => void logs.reload()}
         />
-      </div>
+      </SectionHeader>
       {logs.error && (
         <ResourceError
           error={logs.error}

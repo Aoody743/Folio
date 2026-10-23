@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import dynamic from "next/dynamic";
@@ -160,7 +162,7 @@ export function InstanceResources({
   };
   return (
     <section className="stack" aria-label={translate("软件实例资源")}>
-      <div className="card-heading">
+      <SectionHeader icon="server" className="card-heading">
         <h3>
           {kind === "database" && databaseSection === "binlog"
             ? translate("Binlog 管理")
@@ -198,11 +200,9 @@ export function InstanceResources({
               }}
             />
           )}
-      </div>
+      </SectionHeader>
       {supportsBinlog && (
-        <div
-          className="section-tabs"
-          role="tablist"
+        <ResourceTabs
           aria-label={translate("数据库实例工具")}
         >
           {[
@@ -223,12 +223,10 @@ export function InstanceResources({
               {tab.label}
             </button>
           ))}
-        </div>
+        </ResourceTabs>
       )}
       {kind === "docker" && (
-        <div
-          className="section-tabs"
-          role="tablist"
+        <ResourceTabs
           aria-label={translate("Docker资源类型")}
         >
           {[
@@ -252,7 +250,7 @@ export function InstanceResources({
               {tab.label}
             </button>
           ))}
-        </div>
+        </ResourceTabs>
       )}
       {kind === "database" && databaseSection === "binlog" ? (
         <DatabaseBinlogManagement

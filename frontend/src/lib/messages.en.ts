@@ -1,5 +1,21 @@
 // Application copy only. Resource data and user content are never translated.
 export const english: Record<string, string> = {
+  "缓存连接详情": "Cache connection details",
+  "删除缓存连接": "Delete cache connection",
+  "正在重新连接画面…": "Reconnecting display…",
+  "安装状态未知": "Install status unknown",
+  "持续监控 CPU、内存与磁盘，超限时记录或通知。": "Monitor CPU, memory and disk. Record or notify on sustained thresholds.",
+  "告警说明": "About alerts",
+  "连接说明": "Connection details",
+  "服务器网络": "Server network",
+  "使用服务器网络浏览网页，关闭后清除本次资料。": "Browse through the server. Session data is cleared when closed.",
+  "使用帮助": "Help",
+  "设备兼容": "Device supported",
+  "两个模式均使用服务器网络，按需安装。": "Both modes use the server network. Install either as needed.",
+  "服务器端 Chromium，支持手机和常用浏览器。": "Server-side Chromium for phones and common browsers.",
+  "完整 Firefox 界面，需要 HTTPS 和支持 JSPI 的 Chrome / Edge。": "Full Firefox interface. Requires HTTPS and Chrome / Edge with JSPI.",
+  "在独立窗口使用完整 Firefox，网页流量走本服务器。": "Open full Firefox in its own window, using the server network.",
+
   "外部服务": "External service",
   "按名称升序": "Name: A to Z",
   "按名称降序": "Name: Z to A",

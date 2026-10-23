@@ -25,7 +25,7 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 
 ## 当前界面截图
 
-以下为 UI 分批优化后的 **main 开发版**：33 张桌面页面、8 张手机页面，以及 3 张真实浏览器模式截图，见[完整截图索引](docs/screenshots/ui-polish-current/README.md)。面板列表使用隔离展示数据；公开发行仍是 **1.0-beta7**，新界面尚未发行。已发行版本的[beta7 图库](docs/screenshots/panel-1.0-beta7/README.md)保留。
+以下为 基于 Astryx 定制统一规范的 **main 开发版**：37 张桌面页面、14 张手机页面，以及 3 张真实浏览器模式截图，见[完整截图索引](docs/screenshots/ui-polish-current/README.md)。面板列表使用隔离展示数据；公开发行仍是 **1.0-beta7**，新界面尚未发行。已发行版本的[beta7 图库](docs/screenshots/panel-1.0-beta7/README.md)保留。
 
 ### 概览
 
@@ -125,7 +125,7 @@ make rewrite-dev
 - [beta7 面板与浏览器完整截图索引](docs/screenshots/panel-1.0-beta7/README.md)
 - [beta1 历史面板截图](docs/screenshots/panel-1.0-beta1/README.md)
 - [MCP 接入设计](docs/rewrite/AI-NATIVE-MCP.md)
-- [界面设计规范](docs/rewrite/UI-SPEC.md)
+- [界面设计规范](docs/rewrite/FOLIO-DESIGN-SYSTEM.md)
 - [开发计划](docs/rewrite/DEVELOPMENT-PLAN.md)
 
 仓库仍包含旧版兼容代码；新版界面、产品名称及安装命令统一使用 **Folio**。

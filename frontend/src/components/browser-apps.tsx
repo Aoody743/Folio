@@ -1,4 +1,7 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { Icon } from "./icon";
+import { ResourceTabs } from "./resource-tabs";
 import { ResourceError } from "./resource-ui";
 import { useEffect, useState } from "react";
 import { wasmCompatibility } from "@/lib/browser-usability";
@@ -30,13 +33,13 @@ const name = (id: BrowserApp["id"]) =>
 const pending = (app: BrowserApp) =>
   ["queued", "running"].includes(app.task_status || "");
 const appsRoute = () =>
-  navigate("software", { page: "applications", subgroup: "browsers" });
+  navigate("software", { page: "browsers" });
 const wasmURL = "/api/v1/browser/firefox-wasm/";
 function FirefoxLaunch() {
   const [state,setState]=useState<"checking"|"ready"|"insecure"|"unsupported">("checking");
   useEffect(()=>setState(wasmCompatibility(window.isSecureContext,window.WebAssembly)),[]);
   return <div className="wasm-compatibility">
-    {state==="ready" ? <><p role="status">{translate("此设备支持 Firefox WASM 所需的安全连接与 JSPI。")}</p><a className="button-link" href={wasmURL} target="_blank" rel="noopener noreferrer">{translate("打开 Firefox")}</a></> : <p role="status" className="notice warning">{state==="checking"?translate("正在检查设备兼容性…"):state==="insecure"?translate("请通过 HTTPS 访问面板，再打开 Firefox WASM。"):translate("此设备不支持 JSPI，请升级 Chrome/Edge，或改用面板浏览器。")}</p>}
+    {state==="ready" ? <><span className="browser-ready" role="status"><Icon name="check" size={16} />{translate("设备兼容")}</span><a className="button-link" href={wasmURL} target="_blank" rel="noopener noreferrer">{translate("打开 Firefox")}</a></> : <p role="status" className="notice warning">{state==="checking"?translate("正在检查设备兼容性…"):state==="insecure"?translate("请通过 HTTPS 访问面板，再打开 Firefox WASM。"):translate("此设备不支持 JSPI，请升级 Chrome/Edge，或改用面板浏览器。")}</p>}
   </div>;
 }
 
@@ -97,14 +100,10 @@ export function BrowserApps({
   if (!allowed("browser_apps_list")) return null;
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="browser" className="card-heading">
         <h2>{translate("浏览器应用")}</h2>
-      </div>
-      <p className="muted">
-        {translate(
-          "按需安装，两个模式均通过服务器网络访问网页。可以都不安装，也可以同时安装。",
-        )}
-      </p>
+      </SectionHeader>
+      <p className="section-caption">{translate("两个模式均使用服务器网络，按需安装。")}</p>
       {apps.error && <ResourceError error={apps.error} state={apps.state} retry={() => void apps.reload()} />}
       {!apps.data && !apps.error && (
         <p role="status">{translate("正在读取…")}</p>
@@ -113,14 +112,14 @@ export function BrowserApps({
         {apps.data?.items.map((app) => (
           <section key={app.id} className="browser-app-row">
             <div>
-              <h3>{name(app.id)}</h3>
+              <div className="browser-app-title"><span className="heading-icon"><Icon name={app.id === "panel" ? "browser" : "sites"} /></span><h3>{name(app.id)}</h3></div>
               <p>
                 {app.id === "panel"
                   ? translate(
-                      "Chromium 在服务器运行，兼容手机与常用浏览器。优先复用系统浏览器；未安装时下载独立引擎（Linux x64）。",
+                      "服务器端 Chromium，支持手机和常用浏览器。",
                     )
                   : translate(
-                      "完整 Firefox 界面在当前设备运行，网络通过本服务器转发。需要 HTTPS、新版 Chrome/Edge 和 JSPI，首次加载较大。",
+                      "完整 Firefox 界面，需要 HTTPS 和支持 JSPI 的 Chrome / Edge。",
                     )}
               </p>
               <p className="muted" role="status">
@@ -150,6 +149,8 @@ export function BrowserApps({
                 (app.id === "panel" ? (
                   <Button
                     label={translate("打开浏览器")}
+                    variant="primary"
+                    icon={<Icon name="external" size={18} />}
                     onClick={() =>
                       navigate("more", { page: "browser", kind: "panel" })
                     }
@@ -166,6 +167,7 @@ export function BrowserApps({
                         ? translate("卸载")
                         : translate("安装")
                   }
+                  variant={app.installed ? "ghost" : "primary"}
                   isDisabled={
                     !!busy || pending(app) || (!app.available && !app.installed)
                   }
@@ -207,11 +209,28 @@ export function BrowserHub({ active = true }: { active?: boolean }) {
   const installed = apps.data?.items.filter((a) => a.installed) || [];
   const selected = installed.find((a) => a.id === mode) || installed[0];
   return (
-    <div className="stack">
-      <div className="card-heading">
-        <h2>{translate("浏览器")}</h2>
+    <div className="stack browser-hub">
+      <div className="browser-mode-bar">
+      {installed.length > 0 && (
+        <ResourceTabs
+          aria-label={translate("浏览器模式")}
+        >
+          {installed.map((a) => (
+            <button
+              key={a.id}
+              role="tab"
+              aria-selected={selected?.id === a.id}
+              onClick={() => setMode(a.id)}
+            >
+              {name(a.id)}
+            </button>
+          ))}
+        </ResourceTabs>
+      )}
+
         <Button
           label={translate("管理浏览器应用")}
+          icon={<Icon name="settings" size={18} />}
           variant="ghost"
           onClick={appsRoute}
         />
@@ -230,38 +249,14 @@ export function BrowserHub({ active = true }: { active?: boolean }) {
           />
         </Card>
       )}
-      {installed.length > 1 && (
-        <div
-          className="section-tabs"
-          role="tablist"
-          aria-label={translate("浏览器模式")}
-        >
-          {installed.map((a) => (
-            <button
-              key={a.id}
-              role="tab"
-              aria-selected={selected?.id === a.id}
-              onClick={() => setMode(a.id)}
-            >
-              {name(a.id)}
-            </button>
-          ))}
-        </div>
-      )}
       {selected?.id === "panel" && <ServerBrowserView active={active} />}
       {selected?.id === "firefox-wasm" && (
         <Card className="panel-card">
           <h3>Firefox WASM</h3>
           <p>
-            {translate(
-              "在独立窗口使用完整 Firefox 界面，网页流量走本服务器。关闭窗口即可断开网络连接。",
-            )}
+            {translate("在独立窗口使用完整 Firefox，网页流量走本服务器。")}
           </p>
-          <p className="muted">
-            {translate(
-              "需要 HTTPS 和支持 JSPI 的浏览器。Firefox 中的网站内容和按钮语言由上游 Firefox 决定。",
-            )}
-          </p>
+          <details className="browser-help"><summary><Icon name="help" size={18} />{translate("使用帮助")}</summary><p className="muted">{translate("需要 HTTPS 和支持 JSPI 的浏览器。Firefox 中的网站内容和按钮语言由上游 Firefox 决定。")}</p></details>
           {selected.available ? <FirefoxLaunch/> : <p className="notice warning">{translate("浏览器组件暂不可用，请到应用中检查安装状态。")}</p>}
         </Card>
       )}

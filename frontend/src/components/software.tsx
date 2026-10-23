@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { ResourceError } from "./resource-ui";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
@@ -37,7 +39,7 @@ import { CatalogItem, Page, SoftwareInstance } from "@/lib/resources";
 import { isFirstReleaseCatalogPlugin } from "@/lib/first-release-surface";
 import { useResource } from "@/lib/resource-hook";
 import { ActionBrowser, ActionForm } from "./actions";
-import { Icon } from "./icon";
+import { Icon, type IconName } from "./icon";
 import { ChangeSummary } from "./change-summary";
 import { TaskResult } from "./task-result";
 import { SoftwareRecovery } from "./software-recovery";
@@ -89,6 +91,16 @@ const hasInstallableDefault = (item: CatalogItem) => {
 import { usePageState } from "@/lib/navigation";
 import { pageItems, usePageSize } from "@/lib/collection";
 import { Pager } from "./resource-ui";
+function installedCatalogItem(target: SoftwareInstance): CatalogItem {
+  return { id: target.plugin_id, name: target.plugin_id, description: "", category: "",
+    integration_version: "", versions: [], platforms: [], capabilities: [] };
+}
+function categoryIcon(category: string): IconName {
+  return category === "database" || category === "database-ui" ? "database"
+    : ["container", "containers"].includes(category) ? "package"
+    : category === "runtime" ? "terminal" : category === "web" ? "sites"
+    : category === "storage" ? "disk" : category === "security" ? "shield" : "software";
+}
 export function SoftwareView({
   capabilities,
   onExecuted,
@@ -192,33 +204,28 @@ export function SoftwareView({
     )
       ? [{ id: "cache", label: translate("缓存连接") }]
       : []),
-    ...(capabilities.some((capability) =>
-      ["hosted_apps_list", "browser_apps_list"].includes(capability.name),
-    )
-      ? [{ id: "applications", label: translate("应用服务") }]
-      : []),
+    ...(capabilities.some(c => c.name === "hosted_apps_list")
+      ? [{ id: "applications", label: translate("已部署应用") }] : []),
+    ...(capabilities.some(c => c.name === "browser_apps_list")
+      ? [{ id: "browsers", label: translate("浏览器应用") }] : []),
   ];
-  const activeResourcePage = softwareTabs.some((tab) => tab.id === resourcePage)
-    ? resourcePage
-    : softwareTabs[0]?.id;
+  // Preserve existing bookmarked browser-install URLs.
+  const requestedPage = resourcePage === "applications" && appGroup === "browsers" ? "browsers" : resourcePage;
+  const activeResourcePage = softwareTabs.some(tab => tab.id === requestedPage)
+    ? requestedPage : softwareTabs[0]?.id;
   useEffect(() => {
-    if (!selectedID || !catalog.data) return;
-    const target = instances.find((item) => item.id === selectedID);
-    const item = visibleItems.find(
-      (item) => item.id === (target?.plugin_id ?? selectedID),
-    );
-    if (item) {
-      setSelected(item);
-      setInstance(target ?? associated(item)[0]);
-    } else setSelected(undefined);
+    if (!selectedID) { setSelected(undefined); setInstance(undefined); return; }
+    const target = instances.find(item => item.id === selectedID);
+    const item = visibleItems.find(item => item.id === (target?.plugin_id ?? selectedID))
+      ?? (target ? installedCatalogItem(target) : undefined);
+    setSelected(item);
+    setInstance(target ?? (item ? associated(item)[0] : undefined));
   }, [selectedID, catalog.data, installed.data]);
   const openSoftware = (item: CatalogItem, target?: SoftwareInstance) => {
     setSelected(item);
     setInstance(target ?? associated(item)[0]);
     setTab(
-      target && hasInstanceResources(target.plugin_id)
-        ? "operations"
-        : "instances",
+      target ? "operations" : "instances",
     );
     setOperation(undefined);
     setPlan(undefined);
@@ -364,9 +371,7 @@ export function SoftwareView({
   };
   return (
     <div className="stack">
-      <div
-        className="section-tabs"
-        role="tablist"
+      <ResourceTabs
         aria-label={translate("软件资源类型")}
       >
         {softwareTabs.map((tab) => (
@@ -378,61 +383,22 @@ export function SoftwareView({
               setSelectedID("");
               setOffset(0);
               setResourcePage(tab.id);
+              setAppGroup(tab.id === "browsers" ? "browsers" : "hosted");
             }}
           >
             {tab.label}
           </button>
         ))}
-      </div>
+      </ResourceTabs>
       {!activeResourcePage ? (
         <Unavailable title={translate("当前没有可用的软件管理能力")} />
+      ) : activeResourcePage === "browsers" ? (
+        <BrowserApps capabilities={capabilities} onExecuted={onExecuted} active={active} />
       ) : activeResourcePage === "applications" ? (
-        <>
-          <div
-            className="section-tabs"
-            role="tablist"
-            aria-label={translate("应用类型")}
-          >
-            {capabilities.some((c) => c.name === "hosted_apps_list") && (
-              <button
-                role="tab"
-                aria-selected={appGroup !== "browsers"}
-                onClick={() => setAppGroup("hosted")}
-              >
-                {translate("已部署应用")}
-              </button>
-            )}
-            {capabilities.some((c) => c.name === "browser_apps_list") && (
-              <button
-                role="tab"
-                aria-selected={
-                  appGroup === "browsers" ||
-                  !capabilities.some((c) => c.name === "hosted_apps_list")
-                }
-                onClick={() => setAppGroup("browsers")}
-              >
-                {translate("浏览器应用")}
-              </button>
-            )}
-          </div>
-          {appGroup === "browsers" ||
-          !capabilities.some((c) => c.name === "hosted_apps_list") ? (
-            <BrowserApps
-              capabilities={capabilities}
-              onExecuted={onExecuted}
-              active={active}
-            />
-          ) : (
-            <HostedApplications
-              capabilities={capabilities}
-              onExecuted={onExecuted}
-              active={active}
-            />
-          )}
-        </>
+        <HostedApplications capabilities={capabilities} onExecuted={onExecuted} active={active} />
       ) : activeResourcePage === "installed" ? (
         <Card className="panel-card">
-          <div className="card-heading">
+          <SectionHeader icon="software" className="card-heading">
             <h2>{translate("已安装服务")}</h2>
             <div className="button-row">
               <TextInput
@@ -447,6 +413,8 @@ export function SoftwareView({
               />
               <Button
                 label={translate("安装软件")}
+                icon={<Icon name="plus" />}
+                isDisabled={!capabilities.some(c => c.name === "plugins_catalog")}
                 variant="primary"
                 onClick={() => {
                   setOffset(0);
@@ -454,7 +422,7 @@ export function SoftwareView({
                 }}
               />
             </div>
-          </div>
+          </SectionHeader>
           {installed.error ? (
             <ResourceError error={installed.error} state={installed.state} retry={() => void installed.reload()} />
           ) : installed.data?.availability === "agent_not_configured" ? (
@@ -485,7 +453,7 @@ export function SoftwareView({
                               const item = items.find(
                                 (item) => item.id === target.plugin_id,
                               );
-                              if (item) openSoftware(item, target);
+                              openSoftware(item ?? installedCatalogItem(target), target);
                             }}
                           >
                             {items.find((item) => item.id === target.plugin_id)
@@ -529,8 +497,8 @@ export function SoftwareView({
         />
       ) : (
         <Card className="panel-card">
-          <div className="card-heading">
-            <h2>{translate("软件与插件")}</h2>
+          <SectionHeader icon="software" className="card-heading">
+            <h2>{translate("软件库")}</h2>
             <TextInput
               label={translate("搜索软件")}
               isLabelHidden
@@ -542,10 +510,8 @@ export function SoftwareView({
               placeholder={translate("名称或功能")}
               startIcon={<Icon name="search" />}
             />
-          </div>
-          <div
-            className="section-tabs"
-            role="tablist"
+          </SectionHeader>
+          <ResourceTabs
             aria-label={translate("软件分类")}
           >
             {[
@@ -560,20 +526,17 @@ export function SoftwareView({
                 role="tab"
                 aria-selected={filter === t.id}
                 key={t.id}
-                onClick={() => setFilter(t.id)}
+                onClick={() => { setFilter(t.id); setOffset(0); }}
               >
                 {t.label}
               </button>
             ))}
-          </div>
+          </ResourceTabs>
           {catalog.error && (
             <ResourceError error={catalog.error} state={catalog.state} retry={() => void catalog.reload()} />
           )}
           {installed.error && (
-            <div className="notice warning">
-              {translate("安装状态读取失败：")}
-              {installed.error}
-            </div>
+            <details className="notice warning"><summary>{translate("安装状态读取失败：")}</summary><pre>{installed.error}</pre></details>
           )}
           {installed.data?.availability === "agent_not_configured" && (
             <div className="notice warning">
@@ -582,7 +545,7 @@ export function SoftwareView({
               )}
             </div>
           )}
-          {!capabilities.some((c) => c.name === "plugins_catalog") ? (
+          {catalog.error ? null : !capabilities.some((c) => c.name === "plugins_catalog") ? (
             <Unavailable title={translate("软件目录服务暂不可用")} />
           ) : catalog.loading && !catalog.data ? (
             <p role="status">{translate("正在读取软件目录…")}</p>
@@ -610,7 +573,7 @@ export function SoftwareView({
                 >
                   <div className="software-card-title">
                     <span className="heading-icon">
-                      <Icon name="software" />
+                      <Icon name={categoryIcon(item.category)} />
                     </span>
                     <div>
                       <strong>{item.name}</strong>
@@ -622,23 +585,26 @@ export function SoftwareView({
                   <p>{translate(item.description ?? "")}</p>
                   <div className="software-card-foot">
                     <span>
-                      {associated(item).length
+                      {!installed.data || installed.error || installed.data.availability === "agent_not_configured"
+                        ? translate("安装状态未知")
+                        : associated(item).length
                         ? translate("{0} 个可见实例", [associated(item).length])
                         : translate("可安装")}
                     </span>
+                    <Icon name="arrow" size={18} />
                   </div>
                 </button>
               ))}
             </div>
           )}
-          <Pager
+          {!catalog.error && <Pager
             offset={catalogPage.offset}
             limit={limit}
             total={catalogPage.total}
             count={catalogPage.items.length}
             loading={catalog.loading}
             onOffset={setOffset}
-          />
+          />}
         </Card>
       )}
       {activeResourcePage === "catalog" &&
@@ -655,19 +621,9 @@ export function SoftwareView({
           onClose={() => setOpen(false)}
         >
           <div className="resource-summary">
-            <span>{translate(selected.description ?? "")}</span>
-            <span>{translate("软件来源验证")}</span>
-            <State
-              value={selected.verification?.status}
-              reason={selected.verification?.reason}
-            />
+            {instance ? <><State value={detail.data?.status ?? instance.status} /><span>{instance.installed_version || "—"}</span><span className="muted">{instance.instance_id}</span></> : <span>{translate(selected.description ?? "")}</span>}
           </div>
-          {selected.verification?.reason && (
-            <div className="notice warning">{selected.verification.reason}</div>
-          )}
-          <div
-            className="section-tabs"
-            role="tablist"
+          <ResourceTabs
             aria-label={translate("软件详情分类")}
           >
             {detailTabs.map((t) => (
@@ -683,7 +639,7 @@ export function SoftwareView({
                 {t.label}
               </button>
             ))}
-          </div>
+          </ResourceTabs>
           {activeDetailTab === "instances" ? (
             <>
               <div className="instance-list">
@@ -715,7 +671,7 @@ export function SoftwareView({
                   />
                 )}
               </div>
-              {planAction && (
+              {planAction && hasInstallableDefault(selected) && (
                 <ActionForm
                   capability={planAction}
                   presentation="business"
@@ -730,6 +686,8 @@ export function SoftwareView({
             </>
           ) : activeDetailTab === "source" ? (
             <div className="version-list">
+              <div className="resource-summary"><span>{translate("软件来源验证")}</span><State value={selected.verification?.status} reason={selected.verification?.reason} /></div>
+              {selected.verification?.reason && <div className="notice warning">{selected.verification.reason}</div>}
               <p className="muted">
                 {translate("集成版本")}
                 {selected.integration_version}
@@ -776,15 +734,6 @@ export function SoftwareView({
             </div>
           ) : (
             <>
-              {instance && (
-                <div className="resource-summary">
-                  <span>
-                    {translate("当前实例 · ")}
-                    {instance.instance_id ?? instance.id}
-                  </span>
-                  <State value={detail.data?.status ?? instance.status} />
-                </div>
-              )}
               {instance &&
                 ["phpmyadmin", "pgadmin"].includes(instance.plugin_id) &&
                 instance.config &&

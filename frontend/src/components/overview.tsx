@@ -49,7 +49,7 @@ export function Overview({
           onClick={() => navigate("more", { page: "monitor" })}
         >
           <span>
-            <Icon name="overview" />
+            <Icon name="server" />
             <strong>{translate("主机")}</strong>
           </span>
           <span className="summary-connection">
@@ -75,12 +75,12 @@ export function Overview({
         </div>
         <div className="summary-metrics">
           {[
-            { label: "CPU", value: status?.cpu_percent, capacity: typeof status?.cpu_cores === "number" ? translate("{0} 核", [status.cpu_cores]) : "—" },
-            { label: translate("内存"), value: ratio(status?.memory), capacity: status?.memory ? `${bytes(status.memory.used_bytes)} / ${bytes(status.memory.total_bytes)}` : "—" },
-            { label: translate("磁盘"), value: ratio(status?.disk), capacity: status?.disk ? `${bytes(status.disk.used_bytes)} / ${bytes(status.disk.total_bytes)}` : "—" },
-          ].map(({ label, value, capacity }) => (
+            { icon: "cpu" as const, label: "CPU", value: status?.cpu_percent, capacity: typeof status?.cpu_cores === "number" ? translate("{0} 核", [status.cpu_cores]) : "—" },
+            { icon: "memory" as const, label: translate("内存"), value: ratio(status?.memory), capacity: status?.memory ? `${bytes(status.memory.used_bytes)} / ${bytes(status.memory.total_bytes)}` : "—" },
+            { icon: "disk" as const, label: translate("磁盘"), value: ratio(status?.disk), capacity: status?.disk ? `${bytes(status.disk.used_bytes)} / ${bytes(status.disk.total_bytes)}` : "—" },
+          ].map(({ icon, label, value, capacity }) => (
             <div key={String(label)}>
-              <span>{label}</span>
+              <span><Icon name={icon} size={18} />{label}</span>
               <strong>{percent(value)}</strong>
               <small className="metric-capacity">{capacity}</small>
               <progress

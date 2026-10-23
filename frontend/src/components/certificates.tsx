@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { ResourceError } from "./resource-ui";
 import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
@@ -385,7 +387,7 @@ export function CertificatesView({
             {lookupError}
           </div>
         )}
-        <div className="card-heading">
+        <SectionHeader icon="shield" className="card-heading">
           <h2>{translate("证书与验证")}</h2>
           <div className="button-row">
             {has("certificates_import") && (
@@ -420,10 +422,8 @@ export function CertificatesView({
               </>
             )}
           </div>
-        </div>
-        <div
-          className="section-tabs"
-          role="tablist"
+        </SectionHeader>
+        <ResourceTabs
           aria-label={translate("证书资源类型")}
         >
           {pageTabs.map((tab) => (
@@ -440,7 +440,7 @@ export function CertificatesView({
               {tab.label}
             </button>
           ))}
-        </div>
+        </ResourceTabs>
         {activePage === "certificates" ? (
           <>
             {certificates.error && (
@@ -742,7 +742,7 @@ export function CertificatesView({
           </div>
         ) : (
           <>
-            <div className="card-heading">
+            <SectionHeader icon="shield" className="card-heading">
               <h3>{translate("受保护的DNS凭据")}</h3>
               {has("certificates_dns_credentials_save") && (
                 <Button
@@ -753,7 +753,7 @@ export function CertificatesView({
                   }}
                 />
               )}
-            </div>
+            </SectionHeader>
             {credentials.error && (
               <ResourceError error={credentials.error} state={credentials.state} retry={() => void credentials.reload()} />
             )}

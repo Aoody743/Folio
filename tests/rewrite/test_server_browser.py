@@ -4,7 +4,9 @@
 A local HTTP fixture records requests received by the remote Chromium. The panel's
 client browser explicitly blocks direct requests to that fixture, proving that
 navigation and typing use the server browser rather than an iframe/local proxy.
-No remote website, browser engine, action response or screenshot is mocked.
+Successful frames, browser actions and websites are real. Two frame transport
+errors (503 / 403) are explicitly injected to verify bounded read recovery and
+permission failure handling; no browser input is replayed.
 """
 from __future__ import annotations
 
@@ -273,6 +275,17 @@ def run_ui(server, website, password, artifacts, errors):
                 direct.append(route.request.url)
                 route.abort()
             page.route(website.url + "/**", block_direct)
+            frame_fault = {"status": 0, "calls": 0, "persistent": False}
+            def frame_transport(route):
+                if frame_fault["status"]:
+                    frame_fault["calls"] += 1
+                    code = frame_fault["status"]
+                    if code == 503 and not frame_fault["persistent"]:
+                        frame_fault["status"] = 0
+                    route.fulfill(status=code, json={"error": {"code": "browser_unavailable" if code == 503 else "forbidden", "message": "Injected frame transport failure"}})
+                else:
+                    route.continue_()
+            page.route("**/api/v1/browser/sessions/*/tabs/*/frame", frame_transport)
             page.goto(server.url)
             page.get_by_label(re.compile(r"^用户名(?:\s|$)")).fill("remote-browser-qa")
             page.get_by_label(re.compile(r"^密码(?:\s|$)")).fill(password)
@@ -291,6 +304,26 @@ def run_ui(server, website, password, artifacts, errors):
             expect(screen).to_be_visible(timeout=15000)
             eventually(lambda: website.saw("/first", ui_nonce=ui_nonce), "UI did not navigate the server browser")
             page.wait_for_function("() => document.querySelector('.server-browser-viewport img')?.naturalWidth > 0")
+            frame_fault.update(status=503, calls=0)
+            expect(view.get_by_text("正在重新连接画面…", exact=True)).to_be_visible()
+            expect(view.get_by_text("正在重新连接画面…", exact=True)).not_to_be_visible(timeout=10000)
+            assert frame_fault["calls"] == 1
+            expect(view.locator(".browser-error")).to_have_count(0)
+            frame_fault.update(status=503, calls=0, persistent=True)
+            expect(view.locator(".browser-error")).to_be_visible(timeout=10000)
+            page.wait_for_timeout(1000)
+            assert frame_fault["calls"] == 3, "Frame retries were not bounded"
+            frame_fault.update(status=0, persistent=False)
+            view.get_by_role("button", name="重新连接", exact=True).click()
+            expect(view.locator(".browser-error")).to_have_count(0)
+            frame_fault.update(status=403, calls=0)
+            expect(view.locator(".browser-error")).to_be_visible(timeout=10000)
+            page.wait_for_timeout(1800)
+            assert frame_fault["calls"] == 1, "Authorization failure was retried automatically"
+            frame_fault["status"] = 0
+            view.get_by_role("button", name="重新连接", exact=True).click()
+            expect(view.locator(".browser-error")).to_have_count(0)
+            assert sum(row["path"] == "/first" and row["query"].get("ui_nonce") == [ui_nonce] for row in website.requests) == 1, "Read recovery replayed navigation"
             def remote_click(x, y):
                 screen.scroll_into_view_if_needed()
                 box = screen.bounding_box()

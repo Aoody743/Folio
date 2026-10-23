@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { replaceNavigationHash } from "@/lib/navigation";
 import { useResource } from "@/lib/resource-hook";
 import { t as translate } from "@/lib/i18n";
@@ -24,7 +25,7 @@ import {
 } from "@/lib/i18n";
 import { LanguageControl } from "./language-control";
 import zhCN from "@astryxdesign/core/locales/zh-CN.generated.js";
-import { neutralTheme } from "@astryxdesign/theme-neutral/built";
+import { folioTheme } from "@/themes/folio";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -212,7 +213,7 @@ const moreNav: { id: string; icon: string; title: string; desc: string }[] = [
   },
   {
     id: "browser",
-    icon: "sites",
+    icon: "browser",
     get title() {
       return translate("服务器浏览器");
     },
@@ -317,15 +318,10 @@ function CardTitle({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="card-heading">
-      <h2>
-        <span className="heading-icon">
-          <Icon name={icon} />
-        </span>
-        {title}
-      </h2>
+    <SectionHeader icon={icon} className="card-heading">
+      <h2>{title}</h2>
       {children}
-    </div>
+    </SectionHeader>
   );
 }
 function Empty({
@@ -767,7 +763,7 @@ export function Panel() {
       messages={{ "zh-CN": zhCN, en }}
     >
       <Theme
-        theme={neutralTheme}
+        theme={folioTheme}
         mode={palette === "space" || palette === "pine" ? "dark" : "light"}
       >
         <div
@@ -876,7 +872,8 @@ export function Panel() {
               </header>
               <main id="main" tabIndex={-1} className="main">
                 <div className="page-heading">
-                  <div>
+                  <div className="page-title-row">
+                    {section === "more" && morePage !== "menu" && <Button label={translate("返回更多")} isIconOnly icon={<Icon name="back" />} variant="ghost" onClick={() => setMorePage("menu")} />}
                     <h1>
                       {section === "overview"
                         ? notesAll
@@ -957,7 +954,7 @@ export function Panel() {
                   (section === "more" && morePage === "notes")) &&
                   (notesAll || morePage === "notes" ? (
                     <Card className="panel-card">
-                      <div className="card-heading">
+                      <SectionHeader icon="note" className="card-heading">
                         <h2>
                           {translate("全部便签")}{" "}
                           <span className="status-chip neutral">
@@ -989,7 +986,7 @@ export function Panel() {
                             }}
                           />
                         </div>
-                      </div>
+                      </SectionHeader>
                       {errors.notes && (
                         <div className="notice danger">{errors.notes}</div>
                       )}
@@ -1115,11 +1112,6 @@ export function Panel() {
                 )}
                 {visited.browser && (
                   <div hidden={section !== "more" || morePage !== "browser"}>
-                    <Button
-                      label={translate("返回更多")}
-                      variant="ghost"
-                      onClick={() => setMorePage("menu")}
-                    />
                     <ServerBrowserView
                       active={section === "more" && morePage === "browser"}
                     />
@@ -1209,11 +1201,6 @@ export function Panel() {
                       </div>
                     ) : (
                       <>
-                        <Button
-                          label={translate("返回更多")}
-                          variant="ghost"
-                          onClick={() => setMorePage("menu")}
-                        />
                         {["appearance", "mcp", "security"].includes(
                           morePage,
                         ) ? (

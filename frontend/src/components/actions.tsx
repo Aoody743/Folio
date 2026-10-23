@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
@@ -1076,7 +1077,7 @@ export function ActionBrowser({
     );
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h2>{translate("已授权的操作")}</h2>
         <TextInput
           label={translate("筛选操作")}
@@ -1086,7 +1087,7 @@ export function ActionBrowser({
           placeholder={translate("按名称筛选")}
           startIcon={<Icon name="search" />}
         />
-      </div>
+      </SectionHeader>
       {!prefixes[category] && (
         <label className="native-field action-category">
           {translate("操作分类")}

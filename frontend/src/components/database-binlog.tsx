@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -213,7 +214,7 @@ export function DatabaseBinlogManagement({
       className="stack"
       aria-label={translate("MySQL和MariaDB二进制日志管理")}
     >
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <div>
           <h3>{translate("Binlog 管理")}</h3>
           <p className="muted">
@@ -235,7 +236,7 @@ export function DatabaseBinlogManagement({
             onClick={refresh}
           />
         </div>
-      </div>
+      </SectionHeader>
       {statusResource.error && (
         <div className="notice danger" role="alert">
           {statusResource.error}
@@ -417,7 +418,7 @@ export function DatabaseBinlogManagement({
       ) : statusResource.data !== undefined ? (
         <Unavailable title={translate("Binlog 状态响应无效，请重新读取")} />
       ) : null}
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h4>{translate("现有日志")}</h4>
         {binlogs && (
           <span className="muted">
@@ -426,7 +427,7 @@ export function DatabaseBinlogManagement({
             {binlogs.truncated ? translate(" · 当前页后还有日志") : ""}
           </span>
         )}
-      </div>
+      </SectionHeader>
       {!listCapability ? (
         <Unavailable title={translate("当前账户没有 Binlog 列表读取能力")} />
       ) : binlogs ? (
@@ -482,9 +483,9 @@ export function DatabaseBinlogManagement({
       )}
       {previewCapability && listCapability && binlogs && (
         <section className="stack" aria-label={translate("Binlog 清理预览")}>
-          <div className="card-heading">
+          <SectionHeader icon="settings" className="card-heading">
             <h4>{translate("按保留位置预览清理")}</h4>
-          </div>
+          </SectionHeader>
           <p className="muted">
             {translate(
               "选择保留起点后，服务会冻结将清理的旧日志清单；当前活动日志和保留起点会保留。",

@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { sha256 } from "@noble/hashes/sha2.js";
@@ -591,12 +592,12 @@ export function DockerImageArchiveManagement({
       className="stack"
       aria-label={translate("Docker 镜像归档保存与加载")}
     >
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h3>{translate("镜像归档保存与加载")}</h3>
         <span className="status-chip neutral">
           {translate("精确摘要 · 受管证明")}
         </span>
-      </div>
+      </SectionHeader>
       <p className="muted">
         {translate(
           "归档清单中的证明由面板生成并绑定此精确镜像。加载必须使用配套 .tar 和 .json 清单；任意 tar、其他摘要或其他 API 主机的证明都不会被接受。",

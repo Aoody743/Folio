@@ -1,4 +1,6 @@
 "use client";
+import { Icon } from "./icon";
+import { Unavailable } from "./resource-ui";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -20,10 +22,10 @@ export function MonitorAlerts({capabilities}:{capabilities:Capability[]}){
  const refresh=()=>{void rules.reload();window.dispatchEvent(new Event("powerlinux:invalidate"));};
  const metrics=[{id:"cpu",label:"CPU"},{id:"memory",label:translate("内存")},{id:"disk",label:translate("磁盘")}];
  return <div className="form-stack alert-rules">
-  <p>{translate("按真实采样判断 CPU、内存或磁盘是否持续超限。缺失数据不算正常，也不计入持续时间。")}</p>
-  <p className="muted">{translate("规则默认停用。可只记录本地状态，或选择通知渠道；提交通知任务不代表收件人已收到。恢复需回落到阈值以下 5 个百分点。")}</p>
+  <p className="section-caption">{translate("持续监控 CPU、内存与磁盘，超限时记录或通知。")}</p>
+  <details className="optional-options"><summary>{translate("告警说明")}</summary><p>{translate("按真实采样判断 CPU、内存或磁盘是否持续超限。缺失数据不算正常，也不计入持续时间。")}</p><p className="muted">{translate("规则默认停用。可只记录本地状态，或选择通知渠道；提交通知任务不代表收件人已收到。恢复需回落到阈值以下 5 个百分点。")}</p></details>
   {rules.error && <ResourceError error={rules.error} state={rules.state} retry={()=>void rules.reload()}/>}
-  {save && !creating && !current && <Button label={translate("新增告警规则")} onClick={()=>{setCreating(true);setSaved(false);}}/>}
+  {save && !creating && !current && <Button label={translate("新增告警规则")} icon={<Icon name="plus" />} variant="primary" onClick={()=>{setCreating(true);setSaved(false);}}/>}
   {(creating || current) && save ? <section>
    <Button label={translate("返回规则列表")} variant="ghost" onClick={()=>{setSelected(undefined);setCreating(false);setShowTask(false);}}/>
    <h2>{creating?translate("新增告警规则"):current?.name}</h2>
@@ -45,6 +47,6 @@ export function MonitorAlerts({capabilities}:{capabilities:Capability[]}){
      {current.state.task_id && allowed("tasks_get") && <><Button label={translate("查看通知任务")} variant="ghost" onClick={()=>setShowTask(!showTask)}/>{showTask && <TaskResult submitted={{task_id:current.state.task_id}}/>}</>}
      {remove && <details className="advanced-actions"><summary>{translate("删除规则")}</summary><ActionForm capability={remove} showInputTools={false} preset={{id:current.id,expected_revision:current.revision}} lockedPresetFields={["id","expected_revision"]} presentation="business" showTitle={false} onExecuted={()=>{setSelected(undefined);refresh();}}/></details>}
    </>}
-  </section>:<div className="rows">{list(rules.data).map(rule=><button className="alert-rule-row" key={rule.id} onClick={()=>{setSelected(rule);setCreating(false);setShowTask(false);setSaved(false);}}><strong>{rule.name}</strong><span>{!rule.enabled?translate("已停用"):Date.now()-Date.parse(rule.state.last_sample)>120000?translate("数据已过期"):phase(rule.state.phase)}</span><small>{metrics.find(m=>m.id===rule.metric)?.label} ≥ {rule.threshold}% · {rule.duration_seconds}s</small></button>)}{rules.data && !rules.error && !list(rules.data).length && <p>{translate("尚未配置告警规则")}</p>}</div>}
+  </section>:<div className="rows">{list(rules.data).map(rule=><button className="alert-rule-row" key={rule.id} onClick={()=>{setSelected(rule);setCreating(false);setShowTask(false);setSaved(false);}}><strong>{rule.name}</strong><span>{!rule.enabled?translate("已停用"):Date.now()-Date.parse(rule.state.last_sample)>120000?translate("数据已过期"):phase(rule.state.phase)}</span><small>{metrics.find(m=>m.id===rule.metric)?.label} ≥ {rule.threshold}% · {rule.duration_seconds}s</small></button>)}{rules.data && !rules.error && !list(rules.data).length && <Unavailable title={translate("尚未配置告警规则")} icon="events" />}</div>}
  </div>;
 }

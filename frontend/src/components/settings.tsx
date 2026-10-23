@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -136,12 +137,12 @@ export function Settings({
   if (page === "appearance")
     return (
       <Card className="panel-card">
-        <div className="card-heading">
+        <SectionHeader icon="settings" className="card-heading">
           <h2>{translate("外观与配色")}</h2>
-          <span className="status-chip neutral">
+          <span className="meta-tag">
             {translate("当前浏览器偏好")}
           </span>
-        </div>
+        </SectionHeader>
         <p className="muted">
           {translate(
             "选择后立即应用。配色只改变个人外观，不改变业务状态语义。",
@@ -222,10 +223,10 @@ export function Settings({
     return (
       <div className="stack">
         <Card className="panel-card">
-          <div className="card-heading">
+          <SectionHeader icon="settings" className="card-heading">
             <h2>{translate("连接方式")}</h2>
-            <span className="status-chip neutral">{translate("原生协议")}</span>
-          </div>
+            <span className="meta-tag">{translate("原生协议")}</span>
+          </SectionHeader>
           <p>
             {translate(
               "通过 MCP 连接客户端，按所选权限查看信息和管理资源，操作可在记录中查看。",
@@ -256,11 +257,7 @@ export function Settings({
               </p>
             </div>
           </div>
-          <p className="muted">
-            {translate(
-              "MCP 服务可用代表接入能力，不能据此判断有 AI 客户端在线。",
-            )}
-          </p>
+          <details className="optional-options"><summary>{translate("连接说明")}</summary><p className="muted">{translate("MCP 服务可用代表接入能力，不能据此判断有 AI 客户端在线。")}</p></details>
           <div className="button-row">
             <Button
               label={translate("查看操作记录")}
@@ -270,7 +267,7 @@ export function Settings({
           </div>
         </Card>
         <Card className="panel-card">
-          <h2>{translate("客户端访问令牌")}</h2>
+          <SectionHeader icon="key"><h2>{translate("客户端访问令牌")}</h2></SectionHeader>
           <p className="muted">
             {translate(
               "仅授权所需范围。令牌只在创建时显示一次，撤销后立即失效。",
@@ -413,7 +410,7 @@ export function Settings({
   return (
     <div className="stack">
       <Card className="panel-card">
-        <h2>{translate("修改密码")}</h2>
+        <SectionHeader icon="key"><h2>{translate("修改密码")}</h2></SectionHeader>
         <p className="muted">
           {translate("当前账户 · ")}
           {session.user?.name}
@@ -481,7 +478,7 @@ export function Settings({
         </form>
       </Card>
       <Card className="panel-card">
-        <h2>{translate("两步验证")}</h2>
+        <SectionHeader icon="shield"><h2>{translate("两步验证")}</h2></SectionHeader>
         <p className="muted">
           {translate("登录和敏感账户操作按同一验证规则执行。")}
         </p>

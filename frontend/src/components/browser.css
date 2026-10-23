@@ -1,297 +1,104 @@
-.server-browser {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  color: var(--text);
-}
-.server-browser button,
-.server-browser input,
-.server-browser select,
-.server-browser textarea {
-  font: inherit;
-}
-.server-browser button,
-.server-browser select {
-  min-height: 40px;
-}
-.server-browser button:not(.astryx-button) {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  padding: 7px 12px;
-  cursor: pointer;
-}
-.server-browser button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-.browser-heading,
-.browser-heading-actions,
-.browser-start-actions,
-.browser-view-tools {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.browser-heading {
-  justify-content: space-between;
-}
-.browser-heading h2 {
-  margin: 0 0 4px;
-}
-.browser-heading p,
-.browser-session-note {
-  margin: 0;
-}
-.browser-start {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 16px;
-  padding: 20px;
-}
-.browser-start > p {
-  margin-top: 0;
-}
-.browser-start-actions {
-  margin-top: 16px;
-}
-.server-browser label {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.server-browser select,
-.browser-address input,
-.browser-text-entry textarea {
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 12px;
-  min-width: 0;
-}
-.browser-error,
-.browser-missing {
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  background: var(--surface);
-  border-radius: 8px;
-  padding: 12px;
-  overflow-wrap: anywhere;
-}
-.browser-error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.browser-tabs {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 2px;
-  max-width: 100%;
-}
-.browser-tab {
-  display: flex;
-  flex: 0 0 auto;
-  max-width: 260px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-}
-.browser-tab.selected {
-  border-color: var(--accent);
-  background: var(--soft);
-}
-.server-browser .browser-tab button {
-  border: 0;
-  background: transparent;
-}
-.browser-tab button[role="tab"] {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 90px;
-  text-align: left;
-}
-.server-browser .browser-tab-close {
-  flex: 0 0 38px;
-  padding: 6px;
-}
-.browser-new-tab {
-  flex: 0 0 42px;
-}
-.browser-toolbar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.browser-history-controls {
-  display: flex;
-  gap: 4px;
-}
-.server-browser .browser-history-controls button {
-  font-size: 22px;
-  line-height: 1;
-  min-width: 40px;
-  padding: 4px 8px;
-}
-.browser-address {
-  display: flex;
-  gap: 8px;
-  flex: 1 1 320px;
-  min-width: 0;
-}
-.browser-address input {
-  flex: 1;
-  min-width: 0;
-}
-.browser-view-tools {
-  gap: 8px 16px;
-}
-.browser-view-tools .muted {
-  flex: 1 1 260px;
-}
-.browser-text-entry {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.browser-text-entry label {
-  flex-basis: 100%;
-}
-.browser-text-entry textarea {
-  flex: 1 1 260px;
-  resize: vertical;
-}
-.browser-surface {
-  position: relative;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  align-self: stretch;
-  touch-action: none;
-  user-select: none;
-  line-height: 0;
-}
-.browser-surface:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.browser-surface img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-}
-.browser-frame-loading {
-  min-height: 300px;
-  display: grid;
-  place-items: center;
-  color: #333;
-  line-height: 1.5;
-  padding: 24px;
-}
-.server-browser.is-fullscreen {
-  overflow-y: auto;
-  background: var(--bg);
-  padding: 16px;
-}
-.server-browser.is-fullscreen .browser-surface {
-  flex-shrink: 0;
-}
-@media (max-width: 600px) {
-  .browser-heading {
-    align-items: flex-start;
-  }
-  .browser-heading-actions {
-    gap: 8px;
-  }
-  .browser-heading-actions .astryx-button {
-    min-height: 40px;
-  }
-  .browser-start {
-    padding: 16px;
-  }
-  .browser-address {
-    flex-basis: 100%;
-  }
-  .browser-tab {
-    max-width: 210px;
-  }
-  .browser-view-tools .muted {
-    flex-basis: 100%;
-  }
-  .browser-surface {
-    border-radius: 6px;
-  }
-  .server-browser.is-fullscreen {
-    padding: 12px;
+@layer folio {
+  .server-browser { min-width: 0; display: flex; flex-direction: column; gap: 0; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--folio-radius); }
+  .server-browser button, .server-browser input, .server-browser select, .server-browser textarea { font: inherit; }
+  .server-browser button:not(.astryx-button) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--folio-control-height); border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--text); padding: 8px 12px; cursor: pointer; font-size: 14px; }
+  .server-browser button:not(.astryx-button):hover { background: var(--soft); }
+  .server-browser button:disabled { opacity: .45; cursor: not-allowed; }
+  .browser-mode-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
+  .browser-mode-bar .resource-tabs { flex: 1; min-width: 200px; }
+  .browser-mode-bar > .astryx-button { margin-inline-start: auto; }
+  .browser-heading, .browser-heading-actions, .browser-start-actions, .browser-view-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .browser-heading { justify-content: space-between; padding: 8px 12px; }
+  .server-browser .browser-heading h2 { display: none; }
+  .browser-network { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .browser-heading-actions > button { width: var(--folio-control-height); padding: 8px; }
+  .browser-start { padding: 32px 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+  .browser-start-title { display: flex; align-items: center; gap: 12px; }
+  .browser-start p { color: var(--muted); font-size: 14px; max-width: 60ch; }
+  .browser-start-actions { margin-top: 8px; justify-content: center; }
+  .server-browser .browser-start-actions > button:first-of-type { background: var(--accent); color: var(--on-accent); }
+  .server-browser label { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 14px; }
+  .server-browser select, .browser-address input, .browser-text-entry textarea, .browser-page-dialog input { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-width: 0; font-size: 15px; }
+  .browser-error, .browser-missing { border: 1px solid var(--border); border-inline-start: 3px solid var(--warning); background: var(--bg); border-radius: 8px; padding: 12px; overflow-wrap: anywhere; }
+  .browser-error { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 12px; }
+  .browser-tabs { display: flex; gap: 4px; overflow-x: auto; padding: 4px 12px 0; max-width: 100%; background: var(--bg); border-top: 1px solid var(--border); }
+  .browser-tab { display: flex; flex: 0 0 auto; max-width: 240px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; }
+  .browser-tab.selected { border-color: var(--border); background: var(--surface); }
+  .server-browser .browser-tab button { border: 0; background: transparent; border-radius: 6px; }
+  .browser-tab button[role="tab"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 90px; max-width: 200px; text-align: start; display: block; }
+  .server-browser .browser-tab-close { flex: 0 0 36px; padding: 6px; }
+  .browser-new-tab { flex: 0 0 40px; }
+  .browser-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; }
+  .browser-history-controls { display: flex; gap: 4px; }
+  .server-browser .browser-history-controls button { min-width: var(--folio-control-height); padding: 8px; }
+  .browser-address { display: flex; gap: 4px; flex: 1 1 240px; min-width: 0; }
+  .browser-address input { flex: 1; min-width: 0; background: var(--bg); }
+  .browser-utility { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; padding: 0 12px 8px; }
+  .browser-view-tools { gap: 4px; }
+  .browser-size-menu, .browser-bookmarks { position: relative; padding: 0; }
+  .browser-size-menu > summary, .browser-bookmarks > summary, .browser-help > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; padding: 8px; min-height: var(--folio-control-height); border-radius: 8px; color: var(--muted); }
+  .browser-size-menu > summary:hover, .browser-bookmarks > summary:hover { background: var(--bg); }
+  .browser-size-menu[open] > label { padding: 12px; }
+  .browser-bookmarks[open] { flex-basis: 100%; padding: 8px; background: var(--bg); border-radius: 8px; }
+  .browser-bookmarks[open] > p { font-size: 13px; color: var(--muted); margin: 8px 0; }
+  .bookmark-row { display: flex; gap: 8px; margin-top: 8px; }
+  .bookmark-row button:first-child { flex: 1; min-width: 0; text-align: start; overflow-wrap: anywhere; }
+  .browser-text-entry { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px; border-top: 1px solid var(--border); }
+  .browser-text-entry label { flex-basis: 100%; }
+  .browser-text-entry textarea { flex: 1 1 260px; resize: vertical; }
+  .browser-surface { position: relative; background: #fff; border-top: 1px solid var(--border); overflow: hidden; align-self: stretch; touch-action: none; user-select: none; line-height: 0; }
+  .browser-surface:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .browser-surface img { display: block; width: 100%; height: auto; max-width: 100%; }
+  .browser-frame-loading { min-height: 300px; display: grid; place-items: center; color: #333; line-height: 1.5; padding: 24px; }
+  .server-browser.is-fullscreen { overflow-y: auto; background: var(--surface); padding: 12px; border-radius: 0; }
+  .server-browser.is-fullscreen .browser-surface { flex-shrink: 0; }
+  .browser-page-dialog { border: 2px solid var(--accent); border-radius: 8px; padding: 16px; background: var(--surface); margin: 12px; }
+  .browser-page-dialog p { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 200px; overflow: auto; }
+  .browser-page-dialog label { margin: 12px 0; }
+  .browser-page-dialog input { max-width: 100%; min-width: 0; }
+  .browser-help { padding: 8px 12px; border-top: 1px solid var(--border); }
+  .browser-help p { margin: 8px 0; font-size: 13px; }
+  .browser-app-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--border); }
+  .browser-app-row:last-child { border-bottom: 0; padding-bottom: 0; }
+  .browser-app-title { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .browser-app-title h3 { font-size: 16px; font-weight: 500; }
+  .browser-app-row p { margin: 4px 0; max-width: 60ch; font-size: 14px; }
+  .browser-app-row .button-row { flex-shrink: 0; flex-wrap: wrap; }
+  .wasm-compatibility { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .browser-ready { display: inline-flex; gap: 6px; align-items: center; color: var(--success); font-size: 13px; }
+  .button-link { display: inline-flex; align-items: center; justify-content: center; min-height: var(--folio-control-height); padding: 8px 16px; border-radius: 8px; background: var(--accent); color: var(--on-accent); text-decoration: none; font-size: 14px; font-weight: 500; }
+  @media (max-width: 640px) {
+    .browser-mode-bar .resource-tabs { min-width: 100%; }
+    .browser-mode-bar > .astryx-button { margin-inline-start: 0; }
+    .browser-heading { padding: 8px; }
+    .browser-toolbar { padding: 8px; }
+    .browser-address { flex-basis: 100%; }
+    .server-browser input, .server-browser select, .server-browser textarea { font-size: 16px; }
+    .browser-tab { max-width: 200px; }
+    .browser-utility { padding: 0 8px 8px; gap: 4px; }
+    .browser-view-tools { flex-wrap: wrap; }
+    .server-browser.is-fullscreen { padding: 8px; }
+    .browser-start { padding: 24px 16px; }
+    .browser-app-row { align-items: stretch; flex-direction: column; gap: 12px; }
+    .browser-app-row .button-row { justify-content: flex-start; }
+    .browser-size-menu[open] { flex-basis: 100%; }
   }
 }
-.browser-page-dialog {
-  border: 2px solid var(--accent);
-  border-radius: 10px;
-  padding: 16px;
-  background: var(--surface);
-}
-.browser-page-dialog p {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: 200px;
-  overflow: auto;
-}
-.browser-page-dialog label {
-  margin-bottom: 12px;
-}
-.browser-page-dialog input {
-  max-width: 100%;
-  min-width: 0;
-}
-.server-browser:not(.is-fullscreen) .browser-heading h2 {
-  display: none;
-}
-
-.browser-app-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 0;
-  border-top: 1px solid var(--border-color, #8884);
-}
-.browser-app-row h3 {
-  margin: 0 0 8px;
-}
-.browser-app-row p {
-  margin: 4px 0;
-  max-width: 70ch;
-}
-.browser-app-row .button-row {
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-.button-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 16px;
-  border-radius: 8px;
-  background: var(--accent-color, #425be7);
-  color: white;
-  text-decoration: none;
-}
-@media (max-width: 700px) {
-  .browser-app-row {
-    align-items: stretch;
-    flex-direction: column;
+@layer folio {
+  .server-browser.has-session { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .server-browser.has-session > * { grid-column: 1 / -1; min-width: 0; }
+  .server-browser.has-session > .browser-heading { grid-column: 2; grid-row: 1; background: var(--bg); border-start-end-radius: var(--folio-radius); gap: 12px; }
+  .server-browser.has-session > .browser-tabs { grid-column: 1; grid-row: 1; border-top: 0; border-start-start-radius: var(--folio-radius); align-items: flex-end; }
+  .server-browser.has-session .browser-tab { margin-top: 8px; }
+  @media (max-width: 640px) {
+    .server-browser.has-session .browser-network { display: none; }
+    .server-browser.has-session > .browser-heading { padding: 4px; }
+    .server-browser.has-session .browser-heading-actions { gap: 0; }
+    .server-browser.has-session > .browser-tabs { padding-inline: 8px 0; }
+    .server-browser.has-session .browser-tab { max-width: 150px; }
+    .server-browser.has-session .browser-tab button[role="tab"] { min-width: 60px; max-width: 110px; }
   }
+}
+@layer folio {
+  .browser-frame-status { position: absolute; inset-block-start: 12px; inset-inline-end: 12px; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--muted); font-size: 13px; line-height: 1.5; pointer-events: none; }
 }

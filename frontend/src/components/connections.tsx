@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { ResourceError } from "./resource-ui";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
@@ -205,7 +207,7 @@ export function ConnectionsView({
     : {};
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="network" className="card-heading">
         <h2>{title}</h2>
         {register && (
           <Button
@@ -218,7 +220,7 @@ export function ConnectionsView({
             onClick={() => setCreateOpen(true)}
           />
         )}
-      </div>
+      </SectionHeader>
 
       {resources.error && (
         <ResourceError error={resources.error} state={resources.state} retry={() => void resources.reload()} />
@@ -364,6 +366,7 @@ export function ConnectionsView({
               </span>
             </div>
           </div>
+          <details className="optional-options"><summary>{translate("连接说明")}</summary>
           {typeof current.resource === "string" && (
             <p className="muted">
               {translate("授权资源")}
@@ -391,9 +394,8 @@ export function ConnectionsView({
               )}
             </p>
           )}
-          <div
-            className="section-tabs"
-            role="tablist"
+          </details>
+          <ResourceTabs
             aria-label={translate("{0}分类", [title])}
           >
             {visibleGroups.map((tab) => (
@@ -409,7 +411,7 @@ export function ConnectionsView({
                 {tab.label}
               </button>
             ))}
-          </div>
+          </ResourceTabs>
           {activeGroup === "config" && register ? (
             <>
               {kind === "database" && current.instance_id ? (

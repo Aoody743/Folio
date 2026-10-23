@@ -1,4 +1,6 @@
 "use client";
+import { SectionHeader } from "./section-header";
+import { ResourceTabs } from "./resource-tabs";
 import { ResourceError } from "./resource-ui";
 import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
@@ -201,13 +203,13 @@ export function OperationsView({
     <div className="stack">
       {page === "monitor" && has("monitor_history") && (
         <Card className="panel-card">
-          <div className="card-heading">
+          <SectionHeader icon="monitor" className="card-heading">
             <h2>{translate("指标历史")}</h2>
             {has("monitor_alerts_list") && <Button label={translate("告警规则")} variant="ghost" onClick={()=>setChangeOpen("alerts")}/>}
             <select aria-label={translate("监控时间范围")} value={rangeHours} onChange={event => { setRangeHours(Number(event.target.value)); setWindowTime(Date.now()); }}>
               {[1, 6, 24, 168].map(hours => <option key={hours} value={hours}>{hours === 168 ? translate("最近 7 天") : translate("最近 {0} 小时", [hours])}</option>)}
             </select>
-          </div>
+          </SectionHeader>
           {history.error && <ResourceError error={history.error} state={history.state} retry={() => void history.reload()} />}
           {history.data?.samples.length ? <MetricChart samples={history.data.samples} interval={history.data.sample_interval_seconds} /> : !history.error && <Unavailable title={history.loading ? translate("正在读取监控历史…") : translate("暂无历史样本")} detail={translate("采样器会保存真实主机数据；没有采样的时段不会补造数据。")} />}
         </Card>
@@ -216,7 +218,7 @@ export function OperationsView({
       {((page === "monitor" && has("services_list")) ||
         (page === "schedules" && pageTabs.length > 0)) && (
         <Card className="panel-card">
-          <div className="card-heading">
+          <SectionHeader icon="monitor" className="card-heading">
             <h2>{title}</h2>
             {activeTab !== "services" && create && (
               <Button
@@ -229,11 +231,9 @@ export function OperationsView({
                 onClick={() => setCreating(true)}
               />
             )}
-          </div>
+          </SectionHeader>
           {page === "schedules" && pageTabs.length > 1 && (
-            <div
-              className="section-tabs"
-              role="tablist"
+            <ResourceTabs
               aria-label={translate("自动化分类")}
             >
               {pageTabs.map((t) => (
@@ -250,7 +250,7 @@ export function OperationsView({
                   {t.label}
                 </button>
               ))}
-            </div>
+            </ResourceTabs>
           )}
           {records.error && (
             <ResourceError error={records.error} state={records.state} retry={() => void records.reload()} />

@@ -1,3 +1,4 @@
+@layer folio-legacy {
 /* Shared information layout. Fonts are shipped offline under SIL OFL 1.1. */
 @font-face {
   font-family: Folio Inter;
@@ -1059,4 +1060,6 @@ html {
   .file-toolbar > form { grid-column: 1 / -1; grid-row: 2; }
   .file-toolbar > .file-sort-field { grid-column: 1; grid-row: 3; }
   .file-toolbar > .astryx-button { grid-row: auto; grid-column: 2; }
+}
+
 }

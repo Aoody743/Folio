@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { BackupRetention } from "./backup-retention";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
@@ -126,7 +127,7 @@ export function SiteDefault({
   };
   return (
     <section className="stack" aria-label={translate("默认网站切换")}>
-      <div className="card-heading">
+      <SectionHeader icon="files" className="card-heading">
         <h3>{translate("默认网站")}</h3>
         <Button
           label={
@@ -138,7 +139,7 @@ export function SiteDefault({
             setConfirm(false);
           }}
         />
-      </div>
+      </SectionHeader>
       {expanded && (
         <>
           {!canRead ? (
@@ -360,7 +361,7 @@ export function SiteBackups({
   return (
     <section className="stack" aria-label={translate("网站备份")}>
       <BackupRetention key={id} kind="site" target={{id}} capabilities={capabilities} onExecuted={refresh}/>
-      <div className="card-heading">
+      <SectionHeader icon="files" className="card-heading">
         <h3>{translate("网站备份")}</h3>
         {create && (
           <Button
@@ -373,7 +374,7 @@ export function SiteBackups({
             }}
           />
         )}
-      </div>
+      </SectionHeader>
       {records.error && (
         <div className="notice danger" role="alert">
           {records.error}
@@ -513,9 +514,9 @@ export function RetainedSites({
   };
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="files" className="card-heading">
         <h2>{translate("保留的网站内容")}</h2>
-      </div>
+      </SectionHeader>
       <p className="muted">
         {translate(
           "这里是删除网站后仍保留的内容，保留内容不代表网站正在提供服务。",

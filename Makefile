@@ -28,6 +28,7 @@ rewrite-mysql-test:
 
 rewrite-test: rewrite-install-test rewrite-mysql-test
 	$(GO_BIN) test -race -count=1 ./...
+	npm run theme:check --prefix frontend
 	npm test --prefix frontend
 	npm run typecheck --prefix frontend
 

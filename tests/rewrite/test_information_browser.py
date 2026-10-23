@@ -145,7 +145,7 @@ def main():
             assert 'status=running' in page.url
             # Logs open on the third click from Software; executor failures stay visible in the detail.
             goto('/software')
-            page.get_by_role('tab',name='Application services',exact=True).click()
+            page.get_by_role('tab',name='Deployed apps',exact=True).click()
             page.locator('.resource-table:visible .resource-name').first.click()
             page.get_by_role('tab',name='Log',exact=True).click()
             expect(page.get_by_role('region',name='Application logs',exact=True).get_by_role('alert')).to_be_visible()

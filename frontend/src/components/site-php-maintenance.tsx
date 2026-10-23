@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -336,7 +337,7 @@ export function SitePHPMaintenance({
           )}
         </>
       )}
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <h3>{translate("网站 PHP 会话")}</h3>
         {statsCapability && phpInstance && (
           <Button
@@ -346,7 +347,7 @@ export function SitePHPMaintenance({
             onClick={() => void statsResource.reload()}
           />
         )}
-      </div>
+      </SectionHeader>
       {!phpInstance ? (
         <Unavailable title={translate("此网站没有绑定受管 PHP 实例")} />
       ) : !statsCapability ? (

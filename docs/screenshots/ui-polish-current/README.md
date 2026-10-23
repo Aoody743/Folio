@@ -1,10 +1,12 @@
 # Folio UI 优化开发版截图
 
-本图库使用 `1.0-beta7-ui-batch3` 开发验证包，涵盖 33 张桌面页面、8 张手机页面和 3 张浏览器实测截图，共 44 张。截图截取实际视口，长页面与手机列表允许下滑。公开发行仍为 **1.0-beta7**，这套界面尚未发行新 beta。
+本图库使用 `1.0-beta7-ui-refresh` 开发验证包，涵盖 37 张桌面页面、14 张手机页面和 3 张浏览器实测截图，共 54 张。截图截取实际视口，长页面与手机列表允许下滑。公开发行仍为 **1.0-beta7**，这套界面尚未发行新 beta。
 
-面板列表、指标、网站、应用、文件、任务和便签使用明确的只读展示夹具；认证和内置软件目录来自隔离服务。这些展示数据不证明真实主机健康。两种浏览器模式使用实际安装组件与服务器网络：面板浏览器访问 MDN，Firefox WASM 通过 Wisp 打开本机 Open Atlas 演示网页。
+面板列表、指标、网站、已安装软件、外部连接、应用、文件、任务和便签使用明确的只读展示夹具；认证和内置软件目录来自隔离服务。这些展示数据不证明真实主机健康。两种浏览器模式使用实际安装组件与服务器网络：面板浏览器访问 MDN，Firefox WASM 通过 Wisp 打开本机 Open Atlas 演示网页。
 
 生成脚本：[面板图库](../../../tests/rewrite/capture_panel_gallery.py)、[浏览器图库](../../../tests/rewrite/capture_browser_gallery.py)。开发构建含未提交工作树，未将这些验证包作为正式发行资产。真实接口、任务与权限检查另见[分批实现记录](../../rewrite/UI-POLISH-BATCHES.md)。
+
+统一视觉与操作规则见 [Folio 定制 Astryx 设计规范](../../rewrite/FOLIO-DESIGN-SYSTEM.md)。截图生成过程检查所有面板页面无水平溢出；浏览器截图另检查真实画面与断线状态，依赖 Python Playwright 与 Pillow。
 
 ## 桌面页面
 
@@ -36,6 +38,10 @@
 | 缓存连接 | [11-cache-connections.png](11-cache-connections.png) |
 | 部署的应用 | [12-deployed-apps.png](12-deployed-apps.png) |
 | 浏览器应用安装管理 | [13-browser-apps.png](13-browser-apps.png) |
+| 外部数据库详情 | [33-database-detail.png](33-database-detail.png) |
+| 缓存连接详情 | [34-cache-detail.png](34-cache-detail.png) |
+| 软件实例管理 | [35-software-detail.png](35-software-detail.png) |
+| 应用详情 | [36-application-detail.png](36-application-detail.png) |
 
 ### 文件
 
@@ -78,6 +84,12 @@
 | 语言与外观 | [mobile-26-appearance.png](mobile-26-appearance.png) |
 | 环境与维护 | [mobile-31-environment.png](mobile-31-environment.png) |
 | 监控告警 | [mobile-32-monitor-alerts.png](mobile-32-monitor-alerts.png) |
+| 网站详情 | [mobile-03-site-detail.png](mobile-03-site-detail.png) |
+| 软件库 | [mobile-09-software-library.png](mobile-09-software-library.png) |
+| 浏览器应用 | [mobile-13-browser-apps.png](mobile-13-browser-apps.png) |
+| 计划任务 | [mobile-21-schedules.png](mobile-21-schedules.png) |
+| 安全与账户 | [mobile-25-security.png](mobile-25-security.png) |
+| MCP 接入 | [mobile-27-mcp.png](mobile-27-mcp.png) |
 
 ## 浏览器模式
 

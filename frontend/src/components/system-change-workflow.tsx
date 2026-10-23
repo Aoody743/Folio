@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -524,7 +525,7 @@ export function SystemChangeWorkflow({
 
   return (
     <Card className="panel-card system-change-workflow">
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <div>
           <h2>{translate("系统变更计划")}</h2>
           <p className="muted">
@@ -534,7 +535,7 @@ export function SystemChangeWorkflow({
           </p>
         </div>
         {plan && <PlanState state={plan.state} />}
-      </div>
+      </SectionHeader>
       {storageError && (
         <div className="notice danger" role="alert">
           {storageError}

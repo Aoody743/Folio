@@ -1,4 +1,5 @@
 "use client";
+import { SectionHeader } from "./section-header";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -104,7 +105,7 @@ export function FTPAccountRecovery({
   if (!inspectCapability) return null;
   return (
     <Card className="panel-card">
-      <div className="card-heading">
+      <SectionHeader icon="settings" className="card-heading">
         <div>
           <h4>{translate("FTP 账号状态恢复")}</h4>
           <p className="muted">
@@ -117,7 +118,7 @@ export function FTPAccountRecovery({
           isDisabled={inspectionResource.loading || busy}
           onClick={() => void inspectionResource.reload()}
         />
-      </div>
+      </SectionHeader>
       {(error || inspectionResource.error) && (
         <div className="notice danger" role="alert">
           {error || inspectionResource.error}

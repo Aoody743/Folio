@@ -405,6 +405,8 @@ const actions: Record<string, string> = {
   mongodb_documents_delete: "删除MongoDB文档",
   cache_connections_list: "缓存空间列表",
   cache_connection_register: "验证并保存缓存空间",
+  cache_connection_get: "缓存连接详情",
+  cache_connection_delete: "删除缓存连接",
   cache_status: "验证缓存连接",
   cache_cluster_info: "读取缓存集群状态",
   cache_cluster_nodes: "读取缓存集群节点",

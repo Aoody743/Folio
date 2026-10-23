@@ -2,6 +2,7 @@
 """Search display fixtures; real environment probe, queued uploads and batch copy.
 All filesystem mutations are confined to RunningServer's temporary workspace.
 """
+import re
 import json,os,secrets
 from collections import Counter
 from pathlib import Path
@@ -34,7 +35,7 @@ def main():
                 page.evaluate('(r)=>{location.hash=r;window.scrollTo(0,0)}',route)
                 expect(page.locator('.app')).to_have_attribute('data-section',route.split('?')[0].split('/')[-1])
             visit('#/more?page=environment')
-            expect(page.locator('.environment-panel')).to_contain_text('1.0-beta7-ui-batch3')
+            expect(page.locator('.environment-panel')).to_contain_text(re.compile(r'1\.0-beta[0-9]+'))
             expect(page.locator('.environment-panel')).to_contain_text('执行器尚未配置')
             page.screenshot(path=str(output/'environment.png'))
             visit('#/more?page=monitor&view=alerts')

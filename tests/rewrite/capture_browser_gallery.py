@@ -127,6 +127,23 @@ try:
         page.set_viewport_size({"width": 1440, "height": 1100})
         page.evaluate("window.scrollTo(0, 0)")
         page.wait_for_timeout(500)
+        # A cross-origin navigation may briefly interrupt screenshot capture.
+        # Exercise the existing read-only reconnect action; never replay navigation/input.
+        for attempt in range(2):
+            reconnect = view.get_by_role("button", name="Reconnect", exact=True)
+            if not reconnect.is_visible():
+                break
+            reconnect.click()
+            page.wait_for_timeout(2500)
+        expect(view.locator(".browser-error")).to_have_count(0)
+        expect(image).to_be_visible()
+        # A loaded <img> can still be an obsolete blank frame after a disconnect.
+        from io import BytesIO
+        from PIL import Image, ImageStat
+        frame = Image.open(BytesIO(image.screenshot())).convert("RGB")
+        assert max(ImageStat.Stat(frame).stddev) > 12, "Remote website frame is blank"
+        page.evaluate("document.activeElement?.blur(); window.scrollTo(0, 0)")
+        page.mouse.move(0, 0)
         page.screenshot(path=str(output / "panel-browser-mdn.png"))
 
         page.evaluate("location.hash='/software?page=applications&subgroup=browsers'")
@@ -154,6 +171,10 @@ try:
         state = firefox.evaluate("() => window.geckoEvalChrome('JSON.stringify({url:gBrowser.currentURI.spec,state:content.document.readyState,title:content.document.title,body:content.document.body?.innerText?.slice(0,120)})')")
         print("Firefox browser state:", state)
         print("Firefox console errors:", firefox_errors[:8])
+        import json
+        loaded = json.loads(state) if isinstance(state, str) else state
+        assert loaded["state"] == "complete" and loaded["title"] == "Open Atlas", loaded
+        assert not firefox_errors, firefox_errors
         firefox.screenshot(path=str(output / "firefox-wasm-atlas.png"))
         assert len((output / "firefox-wasm-atlas.png").read_bytes()) > 30000, firefox_errors
         browser.close()

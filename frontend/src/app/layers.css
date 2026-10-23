@@ -1,0 +1,2 @@
+/* Module layout sits below the component theme. Folio owns app composition. */
+@layer reset, astryx-base, folio-legacy, astryx-theme, folio;
