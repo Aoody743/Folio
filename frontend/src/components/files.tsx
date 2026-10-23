@@ -391,7 +391,7 @@ export function FilesView({
                 </thead>
                 <tbody>
                   {rows.map((entry) => (
-                    <tr key={entry.path} onContextMenu={event => { event.preventDefault(); (event.currentTarget.querySelector('[aria-haspopup="menu"]') as HTMLButtonElement | null)?.click(); }}>
+                    <tr key={entry.path} onContextMenu={event => { event.preventDefault(); const trigger = event.currentTarget.querySelector('[aria-haspopup="menu"]') as HTMLButtonElement | null; if (trigger) requestAnimationFrame(() => trigger.click()); }}>
                       <td>
                         {has("fs_batch") && has("fs_preflight") && !currentRoot?.read_only && entry.type!=="symlink" && <input type="checkbox" aria-label={translate("选择 {0}",[entry.name])} checked={checked.includes(entry.path)} onChange={e=>setChecked(old=>e.target.checked?[...old,entry.path]:old.filter(p=>p!==entry.path))}/>}
                         <button
