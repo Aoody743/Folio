@@ -46,3 +46,19 @@ checkout until deliberately selecting documented examples.
 ### 创建与监控界面回归
 
 `test_creation_monitor_browser.py` 使用 `POWERLINUX_TEST_BINARY` 启动隔离服务，验证网站/应用默认标识、手动修改、草稿、确认和失败重试幂等、监控读数与时间范围，以及实际创建 MCP 令牌后的权限和有效期。网站提交被拦截，不写入主机。展示夹具与实际接口验证分别标注，截图输出到 `POWERLINUX_QA_ARTIFACTS`。
+
+### 搜索、文件队列、告警与保留策略
+
+`test_resource_tools_browser.py`：真实隔离服务验证两文件上传、第二项故障暂停/继续、完成项不重复上传、排序路由与刷新、多选预检及真实批量复制；搜索资源仅用明确的展示夹具。手机检查过滤控件无重叠、列表至少四项、无页面水平溢出，并覆盖从告警切到文件的导航。
+
+`test_safety_tools_browser.py`：实际保存/更新默认停用的告警和资源绑定保留策略。清理预览使用展示夹具，执行提交拦截为失败，核对确认和目标参数，未删除主机备份。
+
+两者均使用 `POWERLINUX_TEST_BINARY`，截图写入 `POWERLINUX_QA_ARTIFACTS`。Go 的 `internal/systemops/alerts_test.go` 与 `retention_test.go` 验证真实元数据、权限重检、任务保留和受控派发源，不向外部发送通知。
+
+### 可复现图库
+
+`capture_panel_gallery.py` 输出 33 张桌面与 8 张手机实际视口截图；列表/指标等使用只读展示数据，认证和软件目录来自实际隔离服务。夹具遵守网站/文件分页、过滤与归档标记。
+
+`capture_browser_gallery.py` 会在临时服务内按需安装两种浏览器组件，再实际访问 MDN 和本机演示站点；它可能下载固定版本组件。输出模式管理、Chromium 画面与 Firefox WASM 页面截图，并检查 Firefox 页面完成状态。
+
+两脚本使用相同的 `POWERLINUX_TEST_BINARY` / `POWERLINUX_CHROMIUM` 环境参数，可通过 `POWERLINUX_QA_ARTIFACTS` 指定输出目录；默认输出到专用开发图库，保留历史发行截图。截图不是实际主机业务验收的替代品。

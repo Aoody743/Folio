@@ -25,39 +25,39 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 
 ## 当前界面截图
 
-面板已按 beta7 当前界面重新采集，包含 31 张桌面页面和 6 张手机页面；两种浏览器模式的 3 张截图也已收录在同一套[完整截图索引](docs/screenshots/panel-1.0-beta7/README.md)。所有面板截图使用隔离的展示数据，不代表真实服务器状态。
+以下为 UI 分批优化后的 **main 开发版**：33 张桌面页面、8 张手机页面，以及 3 张真实浏览器模式截图，见[完整截图索引](docs/screenshots/ui-polish-current/README.md)。面板列表使用隔离展示数据；公开发行仍是 **1.0-beta7**，新界面尚未发行。已发行版本的[beta7 图库](docs/screenshots/panel-1.0-beta7/README.md)保留。
 
 ### 概览
 
-[![Folio beta7 主机概览](docs/screenshots/panel-1.0-beta7/01-overview.png)](docs/screenshots/panel-1.0-beta7/01-overview.png)
+[![Folio 开发版主机概览](docs/screenshots/ui-polish-current/01-overview.png)](docs/screenshots/ui-polish-current/01-overview.png)
 
 ### 网站
 
-[![Folio beta7 网站列表](docs/screenshots/panel-1.0-beta7/02-sites.png)](docs/screenshots/panel-1.0-beta7/02-sites.png)
+[![Folio 开发版网站列表](docs/screenshots/ui-polish-current/02-sites.png)](docs/screenshots/ui-polish-current/02-sites.png)
 
 ### 软件
 
-[![Folio beta7 软件库](docs/screenshots/panel-1.0-beta7/09-software-library.png)](docs/screenshots/panel-1.0-beta7/09-software-library.png)
+[![Folio 开发版软件库](docs/screenshots/ui-polish-current/09-software-library.png)](docs/screenshots/ui-polish-current/09-software-library.png)
 
 ### 文件
 
-[![Folio beta7 文件管理](docs/screenshots/panel-1.0-beta7/14-files.png)](docs/screenshots/panel-1.0-beta7/14-files.png)
+[![Folio 开发版文件管理](docs/screenshots/ui-polish-current/14-files.png)](docs/screenshots/ui-polish-current/14-files.png)
 
 ## 浏览器模式截图
 
-以下截图来自 beta7 的实际浏览器界面。管理页展示可选安装入口；面板浏览器打开 MDN 的 HTTP 指南；Firefox WASM 打开独立的 Open Atlas 演示网页。
+以下截图来自优化开发版的实际浏览器界面。管理页展示可选安装入口；面板浏览器打开 MDN 的 HTTP 指南；Firefox WASM 打开独立的 Open Atlas 演示网页。
 
 ### 可选安装入口
 
-[![浏览器应用安装与管理](docs/screenshots/browser-modes-beta7/browser-modes-installed.png)](docs/screenshots/browser-modes-beta7/browser-modes-installed.png)
+[![浏览器应用安装与管理](docs/screenshots/ui-polish-browsers/browser-modes-installed.png)](docs/screenshots/ui-polish-browsers/browser-modes-installed.png)
 
 ### 面板浏览器：MDN HTTP 指南
 
-[![面板 Chromium 浏览器打开 MDN HTTP 指南](docs/screenshots/browser-modes-beta7/panel-browser-mdn.png)](docs/screenshots/browser-modes-beta7/panel-browser-mdn.png)
+[![面板 Chromium 浏览器打开 MDN HTTP 指南](docs/screenshots/ui-polish-browsers/panel-browser-mdn.png)](docs/screenshots/ui-polish-browsers/panel-browser-mdn.png)
 
 ### Firefox WASM：Open Atlas
 
-[![Firefox WASM 浏览器打开 Open Atlas 演示网页](docs/screenshots/browser-modes-beta7/firefox-wasm-atlas.png)](docs/screenshots/browser-modes-beta7/firefox-wasm-atlas.png)
+[![Firefox WASM 浏览器打开 Open Atlas 演示网页](docs/screenshots/ui-polish-browsers/firefox-wasm-atlas.png)](docs/screenshots/ui-polish-browsers/firefox-wasm-atlas.png)
 
 Firefox 截图中的 Open Atlas 是截图验收时在本机提供的演示网页，用于展示完整 Firefox 界面和 Wisp 浏览路径；它不是线上网站。
 
@@ -120,6 +120,8 @@ make rewrite-dev
 
 - [1.0-beta7 发布说明](.github/release-notes/1.0-beta7.md)
 - [当前版本与验收范围](docs/rewrite/CURRENT-RELEASE.md)
+- [UI 优化实施记录](docs/rewrite/UI-POLISH-BATCHES.md)
+- [开发版完整截图索引](docs/screenshots/ui-polish-current/README.md)
 - [beta7 面板与浏览器完整截图索引](docs/screenshots/panel-1.0-beta7/README.md)
 - [beta1 历史面板截图](docs/screenshots/panel-1.0-beta1/README.md)
 - [MCP 接入设计](docs/rewrite/AI-NATIVE-MCP.md)
