@@ -1,0 +1,196 @@
+{
+  "version": "1.0-beta7",
+  "commit": "245938eeecbee175ca7e774b1a23e085c80cd15a",
+  "working_tree_dirty": false,
+  "artifacts": [
+    {
+      "name": "folio-1.0-beta7-linux-amd64.tar.gz",
+      "sha256": "e0d711ab6b1b1ed01566bec943afab635f4618092739533bb1bd2ed048b9f5c3",
+      "platform": "linux-amd64",
+      "runtime_tested": true
+    },
+    {
+      "name": "folio-1.0-beta7-linux-arm64.tar.gz",
+      "sha256": "fda75cb420dcc26cb19e003faf2653eda5f12b1d1abc4e7bc53c5546924b6b5f",
+      "platform": "linux-arm64",
+      "runtime_tested": false
+    }
+  ],
+  "runtime_validation": "Debian 13 Linux amd64, unprivileged sandboxed Chromium 154 server; Chromium 151 client matching CI; real Firefox WASM v0.0.1 via authenticated Wisp; managed Chrome headless shell 156 downloaded and exercised separately",
+  "source_ci": {
+    "run": 39896060810,
+    "url": "https://github.com/Aoody743/Folio/actions/runs/39896060810",
+    "commit": "245938eeecbee175ca7e774b1a23e085c80cd15a",
+    "conclusion": "success",
+    "release_delta": []
+  },
+  "checks": {
+    "frontend": {
+      "passed": 97,
+      "failed": 0
+    },
+    "typescript": true,
+    "next_static_build": true,
+    "go_race": true,
+    "go_vet": true,
+    "mysql_driver_race": true,
+    "installer": {
+      "total": 39,
+      "passed": 37,
+      "skipped": 2,
+      "failed": 0
+    },
+    "actual_amd64_package": true,
+    "two_cpu_install_lifecycle": true,
+    "browsers": {
+      "panel": {
+        "real_api": true,
+        "real_server_chromium": true,
+        "sandbox_enabled": true,
+        "private_cdp_pipe": true,
+        "remote_http_requests": true,
+        "unicode_input": true,
+        "history_tabs_resize": true,
+        "owner_auth_csrf_revocation": true,
+        "process_profile_cleanup": true,
+        "ui": true,
+        "errors": [],
+        "artifacts": "/workspace/work/folio-browser-modes/beta7/qa"
+      },
+      "optional_apps": {
+        "optional_default_off": true,
+        "independent_installs": true,
+        "actual_firefox_wasm": true,
+        "server_wisp_egress": true,
+        "no_public_proxy": true,
+        "native_firefox_address_bar": true,
+        "unicode_clipboard": true,
+        "independent_uninstall": true,
+        "state_after_restart": true,
+        "bilingual_apps_ui": true,
+        "mobile_widths": [
+          390,
+          320
+        ],
+        "errors": []
+      },
+      "information": {
+        "real_server_and_files": true,
+        "explicit_site_app_display_fixtures": true,
+        "locale_font_theme_combinations": 30,
+        "viewports": [
+          [
+            1366,
+            768
+          ],
+          [
+            1440,
+            900
+          ],
+          [
+            390,
+            844
+          ],
+          [
+            360,
+            640
+          ],
+          [
+            320,
+            568
+          ]
+        ],
+        "back_refresh_filters": true,
+        "mobile_scroll_allowed": true,
+        "errors": [],
+        "artifacts": "/workspace/work/folio-browser-modes/beta7/qa"
+      },
+      "notes_mcp": {
+        "browser": "system Chromium",
+        "real_api": true,
+        "static_export": true,
+        "viewports": [
+          1440,
+          768,
+          390,
+          320
+        ],
+        "themes": 5,
+        "flows": [
+          "login",
+          "UI creates/MCP reads",
+          "MCP updates/UI SSE",
+          "history",
+          "real concurrent conflict",
+          "manual merge",
+          "offline draft+retry",
+          "Markdown XSS",
+          "human/MCP/API source labels",
+          "keyboard/Escape"
+        ],
+        "artifacts": "/workspace/work/folio-browser-modes/beta7/qa"
+      },
+      "files": {
+        "actual_release": "1.0-beta7",
+        "flows": [
+          "UIcreate",
+          "CodeMirror edit+realMCP read+actual byte metadata",
+          "realMCP concurrent409",
+          "closed conflict draft retention",
+          "manual merge",
+          "offline save retention+retry",
+          "select real historical version+human restore creates new revision",
+          "large CodeMirror UTF8PUT+GB18030 disk encoding+byte metadata",
+          "5MiB binary HTTP upload/transport interruption/resume",
+          "actual browser download hash"
+        ],
+        "viewports": [
+          1440,
+          768,
+          390,
+          320
+        ],
+        "artifacts": "/workspace/work/folio-browser-modes/beta7/qa"
+      },
+      "experience": {
+        "real_api": true,
+        "real_chromium": true,
+        "browser_language": true,
+        "live_switch_preserves_input": true,
+        "preference_persisted": true,
+        "user_content_unchanged": true,
+        "compact_status_overview": true,
+        "english_viewports": [
+          1440,
+          768,
+          390,
+          320
+        ],
+        "artifacts": "/workspace/work/folio-browser-modes/beta7/qa"
+      },
+      "schedules": {
+        "real_api": true,
+        "real_mcp": true,
+        "real_chromium": true,
+        "database_backup_schedulable": true,
+        "success_failure_history": true,
+        "api_restart": true,
+        "linked_task_ui": true,
+        "policy_ui": true
+      }
+    },
+    "native_hash_history": true,
+    "rapid_navigation_chromium_151": true
+  },
+  "scope_limits": [
+    "ARM64 is cross-built, without a new ARM runtime claim",
+    "Managed-service target remains Ubuntu 24.04 amd64 + systemd; no new managed Debian lifecycle claim",
+    "No new systemd VM upgrade/rollback/reboot validation; beta4 evidence remains historical",
+    "Large site/app layout collections are explicit display fixtures",
+    "Firefox WASM requires HTTPS/secure context and client JSPI; upstream Firefox controls retain their language",
+    "Firefox profiles are client-local and are not deleted by server app uninstall",
+    "Managed native Chromium download is Linux amd64; system libraries and sandbox remain required",
+    "No new real DNS provider/public CA acceptance"
+  ],
+  "evidence": "verification-logs.tar.gz"
+}

@@ -1,0 +1,2 @@
+e0d711ab6b1b1ed01566bec943afab635f4618092739533bb1bd2ed048b9f5c3  folio-1.0-beta7-linux-amd64.tar.gz
+fda75cb420dcc26cb19e003faf2653eda5f12b1d1abc4e7bc53c5546924b6b5f  folio-1.0-beta7-linux-arm64.tar.gz
