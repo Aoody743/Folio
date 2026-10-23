@@ -1,0 +1,25 @@
+Firefox WASM is an optional third-party application by Puter and contributors.
+Source: https://github.com/HeyPuter/firefox-wasm/tree/eadcb5fa828d7e8b54ae2df13b6b3208f6553944
+Pinned release: v0.0.1, chrome-demo-v0.0.1.tar.gz
+SHA-256: c6fd1c2101722f12cc5a933ec405af8a20c6d0ae849c66a5f1703b6d26db8e8b
+Firefox/Gecko source is provided under the Mozilla Public License 2.0.
+Upstream third-party components and Firefox trademarks retain their respective rights.
+
+Folio modifications to the upstream demo bootstrap and HTML:
+- Remove external Google Fonts and the Puter public Wisp endpoint lookup.
+- Force authenticated, same-origin Folio Wisp with a CSRF WebSocket subprotocol.
+- Scope saved launch preferences and local profiles by identity; start with a blank page.
+- Add bilingual launch controls, compatibility checks and return/fullscreen controls.
+- Reserve space above the Firefox canvas for Folio navigation.
+The complete human-readable modification source is internal/serverbrowser/wasm.go
+in the corresponding Folio release source, https://github.com/Aoody743/Folio.
+No Firefox WASM engine binary is modified. Source for covered files, including
+upstream build instructions and the changes above, is available at these URLs.
+
+The separately optional Chrome for Testing headless shell retains its upstream
+ABOUT and LICENSE.headless_shell files inside the downloaded app directory.
+Source and notices: https://chromium.googlesource.com/chromium/src/
+
+Wisp v1 specification: https://github.com/MercuryWorkshop/wisp-protocol/tree/v1
+Copyright Mercury Workshop; specification licensed CC BY 4.0.
+Folio implements the protocol in Go; it does not embed an upstream Wisp server.

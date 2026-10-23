@@ -68,7 +68,8 @@ type Input struct {
 	PromptText string  `json:"prompt_text,omitempty"`
 }
 type Options struct {
-	Engine EngineOptions
+	Engine  EngineOptions
+	AppsDir string // Trusted, private runtime directory; optional downloads never enter the panel bundle.
 	// IdleTimeout and MaxSessions may be lowered by trusted tests/composition.
 	IdleTimeout time.Duration
 	MaxSessions int
@@ -92,10 +93,13 @@ type Provider struct {
 	done       chan struct{}
 	stopped    chan struct{}
 	operations chan struct{}
+	appWork    chan struct{}
+	appGate    sync.RWMutex
+	wisps      map[*wispConnection]struct{}
 }
 
 func New(deps core.Dependencies, options Options) (*Provider, error) {
-	if deps.Authorize == nil || deps.ResolveActor == nil {
+	if deps.Authorize == nil || deps.ResolveActor == nil || deps.State == nil || deps.Tasks == nil {
 		return nil, errors.New("server browser requires persisted authorization")
 	}
 	if options.IdleTimeout <= 0 {
@@ -107,7 +111,23 @@ func New(deps core.Dependencies, options Options) (*Provider, error) {
 	if options.MaxLifetime <= 0 {
 		options.MaxLifetime = 4 * time.Hour
 	}
-	p := &Provider{deps: deps, options: options, sessions: map[string]*ownedSession{}, done: make(chan struct{}), stopped: make(chan struct{}), operations: make(chan struct{}, 8)}
+	p := &Provider{deps: deps, options: options, sessions: map[string]*ownedSession{}, wisps: map[*wispConnection]struct{}{}, appWork: make(chan struct{}, 1), done: make(chan struct{}), stopped: make(chan struct{}), operations: make(chan struct{}, 8)}
+
+	if deps.State != nil {
+		apps, err := deps.State.List(context.Background(), "apps")
+		if err != nil {
+			return nil, err
+		}
+		for id, raw := range apps {
+			var a browserApp
+			if json.Unmarshal(raw, &a) == nil && (a.TaskStatus == "queued" || a.TaskStatus == "running") {
+				a.TaskStatus = "interrupted"
+				if err = deps.State.Save(context.Background(), "apps", id, encoded(a)); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
 	go p.reaper()
 	return p, nil
 }
@@ -210,7 +230,7 @@ func (p *Provider) Bindings() []core.Binding {
 		{"browser_dialog", "Respond to a web page dialog in an owned browser tab", false, fields("id", "tab_id", "accept", "prompt_text"), []string{"id", "tab_id", "accept"}},
 		{"browser_close", "Close a private browser and remove its temporary profile", false, fields("id"), []string{"id"}},
 	}
-	bindings := make([]core.Binding, 0, len(definitions))
+	bindings := p.appBindings()
 	for _, definition := range definitions {
 		definition := definition
 		bindings = append(bindings, core.Binding{Action: core.Action{Name: definition.name, Description: definition.description, Scope: Scope, ReadOnly: definition.read, InputSchema: schema(definition.properties, definition.required...)}, Resources: func(ctx context.Context, a core.Actor, raw json.RawMessage) ([]string, error) {
@@ -305,7 +325,10 @@ func (p *Provider) perform(ctx context.Context, a core.Actor, name string, in In
 		return nil, failure("busy", "Too many browser requests; retry shortly", 429)
 	}
 	if name == "browser_status" {
-		path, reason := availableEngine(p.options.Engine)
+		path, reason := availableEngine(p.engineOptions())
+		if !p.installed(ctx, "panel") {
+			path, reason = "", "Install the panel browser from Software → Applications first."
+		}
 		result := struct {
 			Available bool      `json:"available"`
 			Reason    string    `json:"reason,omitempty"`
@@ -465,6 +488,11 @@ func validateInput(in Input, width, height int) error {
 	return nil
 }
 func (p *Provider) open(ctx context.Context, a core.Actor, in Input) (Session, error) {
+	p.appGate.RLock()
+	defer p.appGate.RUnlock()
+	if !p.installed(ctx, "panel") {
+		return Session{}, failure("browser_not_installed", "Install the panel browser from Software → Applications first", 409)
+	}
 	width, height, err := dimensions(in.Width, in.Height)
 	if err != nil {
 		return Session{}, err
@@ -482,11 +510,11 @@ func (p *Provider) open(ctx context.Context, a core.Actor, in Input) (Session, e
 	if len(p.sessions) >= p.options.MaxSessions {
 		return Session{}, failure("browser_limit", "The server browser session limit has been reached; close an existing session first", 429)
 	}
-	path, reason := availableEngine(p.options.Engine)
+	path, reason := availableEngine(p.engineOptions())
 	if path == "" || reason != "" {
 		return Session{}, failure("browser_unavailable", reason, 503)
 	}
-	browser, err := startEngine(ctx, p.options.Engine, width, height)
+	browser, err := startEngine(ctx, p.engineOptions(), width, height)
 	if err != nil {
 		return Session{}, engineError(err)
 	}
@@ -594,6 +622,9 @@ func (p *Provider) Close() {
 	}
 	p.closed = true
 	close(p.done)
+	for c := range p.wisps {
+		c.cancel()
+	}
 	sessions := p.sessions
 	p.sessions = map[string]*ownedSession{}
 	p.mu.Unlock()
@@ -635,6 +666,9 @@ func (p *Provider) HandleResource(w http.ResponseWriter, r *http.Request, _ core
 	a, err = p.actor(r.Context(), a)
 	if err != nil {
 		reply(w, err)
+		return true
+	}
+	if p.handleWasm(w, r, a) {
 		return true
 	}
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/v1/browser/"), "/")

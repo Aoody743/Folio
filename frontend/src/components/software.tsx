@@ -18,6 +18,7 @@ const HostedApplications = dynamic(
   () => import("./hosted-applications").then((m) => m.HostedApplications),
   { ssr: false },
 );
+import { BrowserApps } from "./browser-apps";
 import { hasInstanceResources } from "./instance-resources";
 const PHPMaintenance = dynamic(
   () => import("./php-maintenance").then((m) => m.PHPMaintenance),
@@ -114,6 +115,11 @@ export function SoftwareView({
     if (!value) setSelectedID("");
   };
   const [tab, setTab] = usePageState("software", "group", "instances");
+  const [appGroup, setAppGroup] = usePageState(
+    "software",
+    "subgroup",
+    "hosted",
+  );
   const [operation, setOperation] = useState<string>();
   const [other, setOther] = useState<string>();
   const [plan, setPlan] = useState<Record<string, unknown>>();
@@ -185,8 +191,8 @@ export function SoftwareView({
     )
       ? [{ id: "cache", label: translate("缓存连接") }]
       : []),
-    ...(capabilities.some(
-      (capability) => capability.name === "hosted_apps_list",
+    ...(capabilities.some((capability) =>
+      ["hosted_apps_list", "browser_apps_list"].includes(capability.name),
     )
       ? [{ id: "applications", label: translate("应用服务") }]
       : []),
@@ -380,11 +386,49 @@ export function SoftwareView({
       {!activeResourcePage ? (
         <Unavailable title={translate("当前没有可用的软件管理能力")} />
       ) : activeResourcePage === "applications" ? (
-        <HostedApplications
-          capabilities={capabilities}
-          onExecuted={onExecuted}
-          active={active}
-        />
+        <>
+          <div
+            className="section-tabs"
+            role="tablist"
+            aria-label={translate("应用类型")}
+          >
+            {capabilities.some((c) => c.name === "hosted_apps_list") && (
+              <button
+                role="tab"
+                aria-selected={appGroup !== "browsers"}
+                onClick={() => setAppGroup("hosted")}
+              >
+                {translate("已部署应用")}
+              </button>
+            )}
+            {capabilities.some((c) => c.name === "browser_apps_list") && (
+              <button
+                role="tab"
+                aria-selected={
+                  appGroup === "browsers" ||
+                  !capabilities.some((c) => c.name === "hosted_apps_list")
+                }
+                onClick={() => setAppGroup("browsers")}
+              >
+                {translate("浏览器应用")}
+              </button>
+            )}
+          </div>
+          {appGroup === "browsers" ||
+          !capabilities.some((c) => c.name === "hosted_apps_list") ? (
+            <BrowserApps
+              capabilities={capabilities}
+              onExecuted={onExecuted}
+              active={active}
+            />
+          ) : (
+            <HostedApplications
+              capabilities={capabilities}
+              onExecuted={onExecuted}
+              active={active}
+            />
+          )}
+        </>
       ) : activeResourcePage === "installed" ? (
         <Card className="panel-card">
           <div className="card-heading">

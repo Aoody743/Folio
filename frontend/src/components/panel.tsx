@@ -1,4 +1,5 @@
 "use client";
+import { useResource } from "@/lib/resource-hook";
 import { t as translate } from "@/lib/i18n";
 import {
   useCallback,
@@ -89,7 +90,7 @@ const TerminalView = dynamic(
   { ssr: false },
 );
 const ServerBrowserView = dynamic(
-  () => import("./server-browser").then((m) => m.ServerBrowserView),
+  () => import("./browser-apps").then((m) => m.BrowserHub),
   { ssr: false },
 );
 
@@ -423,18 +424,20 @@ export function Panel() {
           "plugins_catalog",
           "plugins_list",
           "hosted_apps_list",
+          "browser_apps_list",
           "database_connections_list",
           "cache_connections_list",
         ].some(hasCapability)) ||
       (item.id === "files" && hasCapability("fs_roots")),
   );
+  const browserApps = useResource<{items:{installed:boolean}[]}>("browser_apps_list",{},!!session?.authenticated && hasCapability("browser_apps_list"),15000);
   const visibleMoreNav = moreNav.filter((item) =>
     item.id === "monitor"
       ? hasCapability("monitor_history") || hasCapability("services_list")
       : item.id === "terminal"
         ? hasCapability("terminal_targets_list")
         : item.id === "browser"
-          ? hasCapability("browser_status")
+          ? hasCapability("browser_status") && !!browserApps.data?.items.some(app => app.installed)
         : item.id === "schedules"
           ? hasCapability("schedules_list") ||
             hasCapability("notifications_channels_list")

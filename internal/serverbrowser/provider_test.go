@@ -38,11 +38,18 @@ func setupProvider(t *testing.T, opts Options) providerFixture {
 	if err != nil {
 		t.Fatal(err)
 	}
+	opts.AppsDir = t.TempDir()
 	provider, err := New(service.Runtime("serverbrowser"), opts)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err = service.RegisterProvider(provider); err != nil {
+		t.Fatal(err)
+	}
+	if err = service.Runtime("serverbrowser").State.Save(context.Background(), "apps", "panel", encoded(browserApp{ID: "panel", Installed: true, Available: true})); err != nil {
+		t.Fatal(err)
+	}
+	if err = service.RegisterExecutor([]string{AppOperation}, provider); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(provider.Close)

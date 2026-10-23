@@ -271,6 +271,8 @@ const fields: Record<string, string> = {
   directory: "目标目录",
 };
 const actions: Record<string, string> = {
+  browser_apps_list: "浏览器应用",
+  browser_app_change: "安装或卸载浏览器应用",
   browser_status: "浏览器环境与会话",
   browser_open: "启动服务器浏览器",
   browser_tabs: "浏览器标签页",

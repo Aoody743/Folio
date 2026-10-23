@@ -137,6 +137,9 @@ def main():
         data(api.post("/api/v1/auth/setup", {"username": "remote-browser-qa", "password": password, "setup_token": server.bootstrap}))
         login = data(api.post("/api/v1/auth/login", {"username": "remote-browser-qa", "password": password}))
         api.csrf = login["csrf_token"]
+        assert not data(api.post("/api/v1/actions/browser_status", {}))["available"]
+        installed_task=data(api.post("/api/v1/actions/browser_app_change", {"id":"panel","operation":"install","expected_revision":0}))["task_id"]
+        eventually(lambda: data(api.post("/api/v1/actions/tasks_get", {"id":installed_task}))["status"]=="succeeded", "Optional panel browser installation did not complete",30)
         status = data(api.post("/api/v1/actions/browser_status", {}))
         assert status["available"], status
         assert status["sessions"] == [], status

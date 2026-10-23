@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"path/filepath"
 
 	"github.com/Aoody743/PowerLinux/internal/agent"
 	"github.com/Aoody743/PowerLinux/internal/core"
@@ -116,12 +117,17 @@ func registerModules(service *core.Service, client *agent.UnixClient) (*runtimeM
 		sys.Close()
 		return nil, err
 	}
-	browser, err := serverbrowser.New(service.Runtime("serverbrowser"), serverbrowser.Options{})
+	browser, err := serverbrowser.New(service.Runtime("serverbrowser"), serverbrowser.Options{AppsDir: filepath.Join(filepath.Dir(service.SetupSecretFile()), "browser-apps")})
 	if err != nil {
 		sys.Close()
 		return nil, err
 	}
 	if err = service.RegisterProvider(browser); err != nil {
+		browser.Close()
+		sys.Close()
+		return nil, err
+	}
+	if err = service.RegisterExecutor([]string{serverbrowser.AppOperation}, browser); err != nil {
 		browser.Close()
 		sys.Close()
 		return nil, err

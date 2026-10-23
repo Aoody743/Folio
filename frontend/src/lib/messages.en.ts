@@ -1,5 +1,34 @@
 // Application copy only. Resource data and user content are never translated.
 export const english: Record<string, string> = {
+  "任务已提交，可从对应应用查看进度。":
+    "Task submitted. View progress from the corresponding app.",
+  "浏览器环境暂不可用，请查看详情或重新安装。":
+    "The browser environment is unavailable. View details or reinstall this app.",
+  安装或卸载浏览器应用: "Install or uninstall browser apps",
+  应用类型: "Application type",
+  已部署应用: "Deployed apps",
+  面板浏览器: "Panel browser",
+  浏览器应用: "Browser apps",
+  管理浏览器应用: "Manage browser apps",
+  "打开 Firefox": "Open Firefox",
+
+  "卸载将关闭此模式的所有浏览器连接，并删除面板下载的组件。系统浏览器和另一模式不受影响。是否继续？":
+    "Uninstalling closes all connections for this mode and removes components downloaded by Folio. The system browser and the other mode stay available. Continue?",
+  "按需安装，两个模式均通过服务器网络访问网页。可以都不安装，也可以同时安装。":
+    "Install either, both, or neither. Both modes browse through the server network.",
+  "Chromium 在服务器运行，兼容手机与常用浏览器。优先复用系统浏览器；未安装时下载独立引擎（Linux x64）。":
+    "Chromium runs on the server and works with phones and common browsers. Reuses a system browser, or downloads a separate engine on Linux x64.",
+  "完整 Firefox 界面在当前设备运行，网络通过本服务器转发。需要 HTTPS、新版 Chrome/Edge 和 JSPI，首次加载较大。":
+    "The full Firefox interface runs on your device through this server’s network. Requires HTTPS, recent Chrome/Edge and JSPI; the first load is large.",
+  "正在处理，请查看任务进度。": "Working. View the task for progress.",
+  "安装一个浏览器模式，即可通过服务器网络浏览网页。":
+    "Install a browser mode to browse through the server network.",
+  前往应用安装: "Install from Apps",
+  浏览器模式: "Browser mode",
+  "在独立窗口使用完整 Firefox 界面，网页流量走本服务器。关闭窗口即可断开网络连接。":
+    "Use the full Firefox interface in a separate window through this server. Closing the window disconnects its network.",
+  "需要 HTTPS 和支持 JSPI 的浏览器。Firefox 中的网站内容和按钮语言由上游 Firefox 决定。":
+    "Requires HTTPS and a browser with JSPI. Website content and Firefox controls use the upstream Firefox language.",
   "输入未确认，已保留文字。请核对网页后重试。":
     "Input was not confirmed; your text has been kept. Check the web page before trying again.",
   "一次最多发送 16 KiB 文字，请分段发送；当前内容已保留。":
@@ -3509,15 +3538,21 @@ export const english: Record<string, string> = {
   涉及资源: "Affected resources",
   默认版本: "Default version",
   首次设置网站运行栈: "Set up your web stack",
-  "临时会话独立运行，关闭后清除本次浏览器资料。": "Sessions run independently. Closing the browser removes its temporary profile.",
+  "临时会话独立运行，关闭后清除本次浏览器资料。":
+    "Sessions run independently. Closing the browser removes its temporary profile.",
   网页提示: "Website dialog",
   回复内容: "Your response",
   回复网页提示: "Respond to website dialog",
   确定: "OK",
   适应窗口: "Fit window",
-  "浏览器沙箱未能启动，请检查服务器的浏览器安装与沙箱支持后重试。": "The browser sandbox could not start. Check the server's browser installation and sandbox support, then retry.",
-  "服务器浏览器暂不可用，请检查浏览器环境，或关闭当前会话后重新打开。": "The server browser is unavailable. Check its environment, or close the current session and open it again.",
-  "浏览器响应较慢，请稍后重连，或关闭会话后重新打开。": "The browser is taking too long to respond. Reconnect shortly, or close the session and open it again.",
-  "浏览器资源正在使用中，请关闭多余会话或标签页，稍后重试。": "Browser resources are busy. Close unused sessions or tabs and try again shortly.",
-  "请保留一个标签页；如需结束会话，请使用“关闭浏览器”。": "Keep one tab open. To end this session, choose Close browser.",
+  "浏览器沙箱未能启动，请检查服务器的浏览器安装与沙箱支持后重试。":
+    "The browser sandbox could not start. Check the server's browser installation and sandbox support, then retry.",
+  "服务器浏览器暂不可用，请检查浏览器环境，或关闭当前会话后重新打开。":
+    "The server browser is unavailable. Check its environment, or close the current session and open it again.",
+  "浏览器响应较慢，请稍后重连，或关闭会话后重新打开。":
+    "The browser is taking too long to respond. Reconnect shortly, or close the session and open it again.",
+  "浏览器资源正在使用中，请关闭多余会话或标签页，稍后重试。":
+    "Browser resources are busy. Close unused sessions or tabs and try again shortly.",
+  "请保留一个标签页；如需结束会话，请使用“关闭浏览器”。":
+    "Keep one tab open. To end this session, choose Close browser.",
 };
