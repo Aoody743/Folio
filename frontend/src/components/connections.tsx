@@ -311,6 +311,8 @@ export function ConnectionsView({
         >
           <ActionForm
             capability={register}
+            presentation="business"
+            showTitle={false}
             preset={{ expected_revision: 0 }}
             onExecuted={refresh}
           />

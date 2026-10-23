@@ -718,6 +718,8 @@ export function SoftwareView({
               {planAction && (
                 <ActionForm
                   capability={planAction}
+                  presentation="business"
+                  lockedPresetFields={["plugin_id", "operation"]}
                   preset={{ plugin_id: selected.id, operation: "install" }}
                   references={
                     selected.id === "phpmyadmin" ? databaseTargetReferences : {}

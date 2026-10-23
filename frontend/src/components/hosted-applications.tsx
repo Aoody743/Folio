@@ -1,4 +1,5 @@
 "use client";
+import { resourceIdentity } from "@/lib/resource-identity";
 import { t as translate } from "@/lib/i18n";
 
 import { useState } from "react";
@@ -299,16 +300,14 @@ export function HostedApplications({
           {error && <ApplicationActionError message={error} />}
           <section className="stack" aria-label={translate("创建应用服务")}>
             <h3>{translate("从模板创建")}</h3>
-            <TextInput
-              label={translate("应用编号（小写字母开头）")}
-              value={id}
-              onChange={setID}
-              autoComplete="off"
-            />
+
             <TextInput
               label={translate("应用名称")}
               value={name}
-              onChange={setName}
+              onChange={next => {
+                if (!id || id === resourceIdentity(name, "app")) setID(resourceIdentity(next, "app"));
+                setName(next);
+              }}
               autoComplete="off"
             />
             <label className="native-field">
@@ -324,6 +323,10 @@ export function HostedApplications({
                 <option value="go">Go</option>
               </select>
             </label>
+            <details className="optional-options">
+              <summary>{translate("可选设置")}</summary>
+              <TextInput label={translate("应用编号（小写字母开头）")} value={id} onChange={setID} autoComplete="off" />
+            </details>
             <Button
               label={translate("创建应用模板")}
               variant="primary"

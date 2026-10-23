@@ -1,6 +1,6 @@
 "use client";
 import { t as translate } from "@/lib/i18n";
-import { Capability, SystemStatus, duration, list } from "@/lib/api";
+import { Capability, SystemStatus, duration, list, bytes, fullDate } from "@/lib/api";
 import { Page } from "@/lib/resources";
 import { useResource } from "@/lib/resource-hook";
 import { applicationCounts, ApplicationState } from "@/lib/overview";
@@ -75,13 +75,14 @@ export function Overview({
         </div>
         <div className="summary-metrics">
           {[
-            ["CPU", status?.cpu_percent],
-            [translate("内存"), ratio(status?.memory)],
-            [translate("磁盘"), ratio(status?.disk)],
-          ].map(([label, value]) => (
+            { label: "CPU", value: status?.cpu_percent, capacity: typeof status?.cpu_cores === "number" ? translate("{0} 核", [status.cpu_cores]) : "—" },
+            { label: translate("内存"), value: ratio(status?.memory), capacity: status?.memory ? `${bytes(status.memory.used_bytes)} / ${bytes(status.memory.total_bytes)}` : "—" },
+            { label: translate("磁盘"), value: ratio(status?.disk), capacity: status?.disk ? `${bytes(status.disk.used_bytes)} / ${bytes(status.disk.total_bytes)}` : "—" },
+          ].map(({ label, value, capacity }) => (
             <div key={String(label)}>
               <span>{label}</span>
-              <strong>{percent(value as number | undefined)}</strong>
+              <strong>{percent(value)}</strong>
+              <small className="metric-capacity">{capacity}</small>
               <progress
                 max={100}
                 value={typeof value === "number" ? value : undefined}
@@ -90,6 +91,7 @@ export function Overview({
             </div>
           ))}
         </div>
+        <p className="overview-sampled">{translate("数据时间")}：{fullDate(status?.sampled_at ?? status?.updated_at)}{error ? ` · ${translate("保留最近数据")}` : ""}</p>
       </section>
       {[
         {

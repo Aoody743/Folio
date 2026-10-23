@@ -41,7 +41,8 @@ import {
   supportsSiteCategoryFilter,
 } from "@/lib/site-categories";
 import { Icon } from "./icon";
-import { usePageState } from "@/lib/navigation";
+import { navigate, usePageState } from "@/lib/navigation";
+import { SiteCreateFields } from "./site-create-fields";
 import { usePageSize } from "@/lib/collection";
 import { HostingStackSetup } from "./hosting-stack-setup";
 import { ActionForm, ActionBrowser, References } from "./actions";
@@ -650,8 +651,18 @@ export function SitesView({
           title={translate("创建网站")}
           onClose={() => setCreating(false)}
         >
-          <ActionForm
+          {instances.loading && !instances.data ? <p role="status">{translate("正在读取运行环境…")}</p> : instances.error ? (
+            <ResourceError error={instances.error} state={instances.state} retry={() => void instances.reload()} />
+          ) : instances.state === "unconfigured" || (instances.data && !references.web_instance?.length) ? (
+            <section className="stack">
+              <p>{translate("创建网站前，请先配置执行器并安装 Nginx 或 OpenResty。")}</p>
+              <Button label={translate("前往软件管理")} onClick={() => navigate("software", { page: "installed" })} />
+            </section>
+          ) : <ActionForm
             capability={create}
+            presentation="business"
+            showTitle={false}
+            renderFields={props => <SiteCreateFields {...props} references={references} />}
             references={references}
             preset={{
               ...(references.web_instance?.[0]
@@ -664,7 +675,7 @@ export function SitesView({
             onExecuted={() => {
               refresh();
             }}
-          />
+          />}
         </ResourceDrawer>
       )}
       {current && (

@@ -9,6 +9,7 @@ import { copyText } from "@/lib/clipboard";
 import { Palette, palettes } from "./panel";
 import { Icon } from "./icon";
 import { LanguageControl } from "./language-control";
+import { tokenPresetScopes, scopeLabel, type TokenPurpose } from "@/lib/token-presets";
 import { FontSettings } from "./font-settings";
 type APIToken = {
   id: string;
@@ -36,10 +37,20 @@ export function Settings({
 }) {
   const [tokens, setTokens] = useState<APIToken[]>([]);
   const [tokenName, setTokenName] = useState("");
+  const [tokenPurpose, setTokenPurpose] = useState<TokenPurpose>("custom");
+  const [tokenDays, setTokenDays] = useState(90);
+  const availableScopes = [...new Set(capabilities.map(capability => capability.scope).filter((scope): scope is string => !!scope))];
   const [tokenScopes, setTokenScopes] = useState<string[]>([
     "system:read",
     "notes:read",
-  ]);
+  ].filter(scope => availableScopes.includes(scope)));
+  const scopeSignature = availableScopes.slice().sort().join(",");
+  useEffect(() => {
+    setTokenScopes(previous => {
+      const next = previous.filter(scope => availableScopes.includes(scope));
+      return next.length === previous.length ? previous : next;
+    });
+  }, [scopeSignature]);
   const [resources, setResources] = useState("host:local");
   const [newToken, setNewToken] = useState("");
   const [tokenError, setTokenError] = useState("");
@@ -85,6 +96,7 @@ export function Settings({
         body: {
           name: tokenName,
           kind: "mcp",
+          expires_in_seconds: tokenDays * 86400,
           scopes: tokenScopes,
           resources: resources
             .split(",")
@@ -211,12 +223,12 @@ export function Settings({
       <div className="stack">
         <Card className="panel-card">
           <div className="card-heading">
-            <h2>{translate("MCP 接入")}</h2>
+            <h2>{translate("连接方式")}</h2>
             <span className="status-chip neutral">{translate("原生协议")}</span>
           </div>
           <p>
             {translate(
-              "已授权的 AI 客户端可通过 MCP 查询信息和管理资源。面板不运行模型；所有操作使用相同权限、便签版本与审计记录。",
+              "通过 MCP 连接客户端，按所选权限查看信息和管理资源，操作可在记录中查看。",
             )}
           </p>
           <div className="connection-options">
@@ -283,6 +295,27 @@ export function Settings({
               isRequired
               placeholder={translate("例如 Claude / 运维自动化")}
             />
+            <div className="business-field-pair">
+              <label className="native-field">{translate("授权用途")}
+                <select aria-label={translate("授权用途")} value={tokenPurpose} onChange={event => {
+                  const purpose = event.target.value as TokenPurpose;
+                  setTokenPurpose(purpose);
+                  if (purpose !== "custom") setTokenScopes(tokenPresetScopes(purpose, availableScopes));
+                }}>
+                  <option value="custom">{translate("自定义授权")}</option>
+                  <option value="monitor">{translate("只读监控")}</option>
+                  <option value="notes">{translate("便签交接")}</option>
+                </select>
+              </label>
+              <label className="native-field">{translate("令牌有效期")}
+                <select aria-label={translate("令牌有效期")} value={tokenDays} onChange={event => setTokenDays(Number(event.target.value))}>
+                  {[1, 7, 30, 90, 365].map(days => <option key={days} value={days}>{translate("{0} 天", [days])}</option>)}
+                </select>
+              </label>
+            </div>
+            <p className="selected-scopes">{translate("已选权限")}：{tokenScopes.length ? tokenScopes.map(scopeLabel).join("、") : translate("尚未选择权限")}</p>
+            <details className="optional-options">
+              <summary>{translate("自定义权限")}</summary>
             <fieldset>
               <legend>{translate("授权范围")}</legend>
               <div className="scope-grid">
@@ -295,19 +328,17 @@ export function Settings({
                       <input
                         type="checkbox"
                         checked={tokenScopes.includes(scope)}
-                        onChange={(e) =>
-                          setTokenScopes((s) =>
-                            e.target.checked
-                              ? [...s, scope]
-                              : s.filter((v) => v !== scope),
-                          )
-                        }
+                        onChange={(e) => {
+                          setTokenPurpose("custom");
+                          setTokenScopes((s) => e.target.checked ? [...s, scope] : s.filter((v) => v !== scope));
+                        }}
                       />
-                      <code>{scope}</code>
+                      <span>{scopeLabel(scope)}<small><code>{scope}</code></small></span>
                     </label>
                   ))}
               </div>
             </fieldset>
+            </details>
             <TextInput
               label={translate("资源范围")}
               value={resources}
@@ -320,6 +351,7 @@ export function Settings({
               label={translate("创建访问令牌")}
               variant="primary"
               isLoading={tokenBusy}
+              isDisabled={!tokenScopes.length}
               type="submit"
             />
           </form>
@@ -381,7 +413,7 @@ export function Settings({
   return (
     <div className="stack">
       <Card className="panel-card">
-        <h2>{translate("账户与安全")}</h2>
+        <h2>{translate("修改密码")}</h2>
         <p className="muted">
           {translate("当前账户 · ")}
           {session.user?.name}

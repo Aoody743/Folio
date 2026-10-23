@@ -2,7 +2,8 @@
 import { ResourceError } from "./resource-ui";
 import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { MetricChart, type MetricSample } from "./metric-chart";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Capability, fullDate, list } from "@/lib/api";
@@ -21,12 +22,6 @@ type RecordData = Record<string, unknown> & {
   id: string;
   name?: string;
   revision?: number;
-};
-type Sample = {
-  timestamp: string;
-  cpu_percent: number | null;
-  memory: { percent: number } | null;
-  disk: { percent: number } | null;
 };
 const descriptions: Record<string, string> = {
   get mode() {
@@ -95,6 +90,17 @@ export function OperationsView({
   onExecuted: () => void;
 }) {
   const [tab, setTab] = useState(page === "monitor" ? "services" : "schedules");
+  const [rangeHours, setRangeHours] = useState(24);
+  const [windowTime, setWindowTime] = useState(() => Date.now());
+  const [changeOpen, setChangeOpen] = usePageState("more", "view", "");
+  useEffect(() => {
+    if (page !== "monitor") return;
+    const tick = () => { if (document.visibilityState === "visible") setWindowTime(Date.now()); };
+    const timer = setInterval(tick, 60000);
+    document.addEventListener("visibilitychange", tick);
+    window.addEventListener("powerlinux:invalidate", tick);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", tick); window.removeEventListener("powerlinux:invalidate", tick); };
+  }, [page]);
   const [selectedID, setSelectedID] = usePageState("more", "id", "", true);
   const selected = selectedID ? ({ id: selectedID } as RecordData) : undefined;
   const setSelected = (value?: RecordData) => setSelectedID(value?.id ?? "");
@@ -135,29 +141,16 @@ export function OperationsView({
     has(name),
   );
   const history = useResource<{
-    samples: Sample[];
+    samples: MetricSample[];
     sample_interval_seconds: number;
   }>(
     "monitor_history",
-    { limit: 500 },
+    { start: new Date(windowTime - rangeHours * 3600000).toISOString(), limit: 500 },
     page === "monitor" && has("monitor_history"),
-    60000,
+    0,
   );
   const rows = list(records.data);
   const current = rows.find((row) => row.id === selected?.id) ?? selected;
-  const times = (history.data?.samples ?? []).map((sample) =>
-    Date.parse(sample.timestamp),
-  );
-  const intervals = times
-    .slice(1)
-    .map((time, i) => time - times[i])
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .sort((a, b) => a - b);
-  const gap =
-    Math.max(
-      (history.data?.sample_interval_seconds ?? 60) * 1000,
-      intervals[Math.floor(intervals.length / 2)] ?? 0,
-    ) * 3;
   const title =
     activeTab === "services"
       ? translate("主机服务")
@@ -201,119 +194,18 @@ export function OperationsView({
         expected_revision: current.revision,
       }
     : {};
-  const series = [
-    {
-      key: "cpu",
-      label: "CPU",
-      color: "var(--accent)",
-      values: (history.data?.samples ?? []).map((s) => s.cpu_percent),
-    },
-    {
-      key: "memory",
-      label: translate("内存"),
-      color: "var(--success)",
-      values: (history.data?.samples ?? []).map(
-        (s) => s.memory?.percent ?? null,
-      ),
-    },
-    {
-      key: "disk",
-      label: translate("磁盘"),
-      color: "var(--warning)",
-      values: (history.data?.samples ?? []).map((s) => s.disk?.percent ?? null),
-    },
-  ];
   return (
     <div className="stack">
       {page === "monitor" && has("monitor_history") && (
         <Card className="panel-card">
           <div className="card-heading">
             <h2>{translate("指标历史")}</h2>
-            <span className="muted">{translate("最近24小时")}</span>
+            <select aria-label={translate("监控时间范围")} value={rangeHours} onChange={event => { setRangeHours(Number(event.target.value)); setWindowTime(Date.now()); }}>
+              {[1, 6, 24, 168].map(hours => <option key={hours} value={hours}>{hours === 168 ? translate("最近 7 天") : translate("最近 {0} 小时", [hours])}</option>)}
+            </select>
           </div>
-          {history.error && (
-            <ResourceError error={history.error} state={history.state} retry={() => void history.reload()} />
-          )}
-          {history.data?.samples.length ? (
-            <>
-              <div
-                className="metric-history"
-                role="img"
-                aria-label={translate("实际主机CPU、内存与磁盘使用百分比历史")}
-              >
-                <svg viewBox="0 0 700 140" preserveAspectRatio="none">
-                  {[0, 25, 50, 75, 100].map((y) => (
-                    <line
-                      key={y}
-                      x1="0"
-                      x2="700"
-                      y1={140 - y * 1.4}
-                      y2={140 - y * 1.4}
-                      stroke="var(--border)"
-                      strokeDasharray="4 4"
-                    />
-                  ))}
-                  {series.map((series) => {
-                    let path = "";
-                    let segment = false;
-                    for (let i = 0; i < series.values.length; i++) {
-                      const value = series.values[i];
-                      if (
-                        typeof value !== "number" ||
-                        !Number.isFinite(value) ||
-                        !Number.isFinite(times[i])
-                      ) {
-                        segment = false;
-                        continue;
-                      }
-                      if (i > 0 && times[i] - times[i - 1] > gap)
-                        segment = false;
-                      path += `${segment ? "L" : "M"}${((times[i] - times[0]) / Math.max(1, times.at(-1)! - times[0])) * 700},${140 - Math.min(100, Math.max(0, value)) * 1.4} `;
-                      segment = true;
-                    }
-                    return (
-                      <path
-                        key={series.key}
-                        d={path}
-                        fill="none"
-                        stroke={series.color}
-                        strokeWidth="2"
-                      />
-                    );
-                  })}
-                </svg>
-              </div>
-              <div className="resource-summary">
-                {series.map((s) => (
-                  <span key={s.key} style={{ color: s.color }}>
-                    {s.label}
-                  </span>
-                ))}
-                <span className="muted">
-                  {history.data.samples.length}
-                  {translate("个实际样本 · 采样间隔")}
-                  {history.data.sample_interval_seconds}
-                  {translate("秒")}
-                </span>
-              </div>
-              <p className="muted">
-                {fullDate(history.data.samples[0].timestamp)}—{" "}
-                {fullDate(history.data.samples.at(-1)?.timestamp)}
-              </p>
-            </>
-          ) : (
-            <Unavailable
-              title={
-                history.loading
-                  ? translate("正在读取监控历史…")
-                  : translate("暂无历史样本")
-              }
-              icon="overview"
-              detail={translate(
-                "采样器会保存真实主机数据；没有采样的时段不会补造数据。",
-              )}
-            />
-          )}
+          {history.error && <ResourceError error={history.error} state={history.state} retry={() => void history.reload()} />}
+          {history.data?.samples.length ? <MetricChart samples={history.data.samples} interval={history.data.sample_interval_seconds} /> : !history.error && <Unavailable title={history.loading ? translate("正在读取监控历史…") : translate("暂无历史样本")} detail={translate("采样器会保存真实主机数据；没有采样的时段不会补造数据。")} />}
         </Card>
       )}
       {((page === "monitor" && has("services_list")) ||
@@ -431,11 +323,12 @@ export function OperationsView({
       {page === "monitor" &&
         has("system_change_plan") &&
         has("system_change_get") && (
-          <SystemChangeWorkflow
-            capabilities={capabilities}
-            identityKey={identityKey}
-            onExecuted={refresh}
-          />
+          <>
+            <Button label={translate("管理系统变更")} onClick={() => setChangeOpen("system-changes")} />
+            <ResourceDrawer open={changeOpen === "system-changes"} title={translate("系统变更与恢复")} onClose={() => setChangeOpen("")}>
+              <SystemChangeWorkflow capabilities={capabilities} identityKey={identityKey} onExecuted={refresh} />
+            </ResourceDrawer>
+          </>
         )}
       {current && (
         <ResourceDrawer

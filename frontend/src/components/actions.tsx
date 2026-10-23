@@ -1,6 +1,6 @@
 "use client";
 import { t as translate } from "@/lib/i18n";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 const SQLResult = dynamic(
   () => import("./sql-result").then((m) => m.SQLResult),
@@ -460,6 +460,9 @@ export function ActionForm({
   cacheKeySuffix = "",
   lockedPresetFields = [],
   formatError,
+  presentation = "technical",
+  showTitle = true,
+  renderFields,
 }: {
   capability: Capability;
   preset?: Record<string, unknown>;
@@ -470,6 +473,9 @@ export function ActionForm({
   cacheKeySuffix?: string;
   lockedPresetFields?: string[];
   formatError?: (error: APIError) => string | undefined;
+  presentation?: "technical" | "business";
+  showTitle?: boolean;
+  renderFields?: (props: { schema: Schema; value: unknown; onChange: (value: unknown) => void }) => ReactNode;
 }) {
   const baseSchema = (capability.input_schema ?? {
     type: "object",
@@ -762,40 +768,13 @@ export function ActionForm({
       setBusy(false);
     }
   };
-  return (
-    <div className={`action-form ${compact ? "compact" : ""}`}>
-      {onBack && (
-        <Button
-          label={translate("返回操作列表")}
-          variant="ghost"
-          onClick={onBack}
-        />
-      )}
-      <div className="page-heading">
-        <div>
-          <h2>{actionLabel(capability)}</h2>
-          <details className="technical-details">
-            <summary>{translate("技术详情")}</summary>
-            <code>{capability.name}</code>
-          </details>
-        </div>
-        <span className="status-chip neutral">
-          {capability.read_only
-            ? translate("只读查询")
-            : capability.task
-              ? translate("后台任务")
-              : translate("管理操作")}
-        </span>
-      </div>
-      <form
-        className="form-stack"
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          void submit();
-        }}
-      >
-        <div className="split-label">
+  const changeDraft = (value: unknown) => {
+    setDraft(value);
+    awaitingRevision.current = undefined;
+    setConfirm(false);
+  };
+  const inputTools = (
+<div className="split-label">
           <span className="muted">{translate("操作参数")}</span>
           <Button
             label={raw ? translate("使用表单") : translate("使用JSON输入")}
@@ -815,6 +794,41 @@ export function ActionForm({
             }}
           />
         </div>
+  );
+  return (
+    <div className={`action-form ${presentation} ${compact ? "compact" : ""}`}>
+      {onBack && (
+        <Button
+          label={translate("返回操作列表")}
+          variant="ghost"
+          onClick={onBack}
+        />
+      )}
+      {showTitle && <div className="page-heading">
+        <div>
+          <h2>{actionLabel(capability)}</h2>
+          {presentation === "technical" && <details className="technical-details">
+            <summary>{translate("技术详情")}</summary>
+            <code>{capability.name}</code>
+          </details>}
+        </div>
+        {presentation === "technical" && <span className="status-chip neutral">
+          {capability.read_only
+            ? translate("只读查询")
+            : capability.task
+              ? translate("后台任务")
+              : translate("管理操作")}
+        </span>}
+      </div>}
+      <form
+        className="form-stack"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
+        }}
+      >
+        {presentation === "technical" && inputTools}
         {raw ? (
           <TextArea
             label={translate("操作参数JSON")}
@@ -826,9 +840,13 @@ export function ActionForm({
               setConfirm(false);
             }}
           />
-        ) : (
+        ) : renderFields ? renderFields({ schema, value: draft, onChange: changeDraft }) : (
           <Field
-            schema={schema}
+            schema={presentation === "business" ? {
+              ...schema,
+              properties: Object.fromEntries(Object.entries(schema.properties ?? {}).filter(([key]) => !lockedPresetFields.includes(key))),
+              required: schema.required?.filter(key => !lockedPresetFields.includes(key)),
+            } : schema}
             value={draft}
             onChange={(v) => {
               setDraft(v);
@@ -849,6 +867,10 @@ export function ActionForm({
             )}
           />
         )}
+        {presentation === "business" && <details className="optional-options">
+          <summary>{translate("高级工具")}</summary>
+          {inputTools}
+        </details>}
         {error && (
           <div className="notice danger" role="alert">
             {error}
@@ -941,7 +963,7 @@ export function ActionForm({
               ? translate("确认执行")
               : capability.read_only
                 ? translate("查询")
-                : translate("执行操作")
+                : presentation === "business" ? actionLabel(capability) : translate("执行操作")
           }
           variant="primary"
           type="submit"

@@ -42,3 +42,7 @@ POWERLINUX_TEST_BINARY=/absolute/path/to/folio python3 tests/rewrite/test_ui_pol
 Both scripts use `POWERLINUX_CHROMIUM` for Chromium and
 `POWERLINUX_QA_ARTIFACTS` for screenshots. Keep those artifacts outside the
 checkout until deliberately selecting documented examples.
+
+### 创建与监控界面回归
+
+`test_creation_monitor_browser.py` 使用 `POWERLINUX_TEST_BINARY` 启动隔离服务，验证网站/应用默认标识、手动修改、草稿、确认和失败重试幂等、监控读数与时间范围，以及实际创建 MCP 令牌后的权限和有效期。网站提交被拦截，不写入主机。展示夹具与实际接口验证分别标注，截图输出到 `POWERLINUX_QA_ARTIFACTS`。
