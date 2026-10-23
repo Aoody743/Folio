@@ -37,6 +37,13 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Frozen dependency installation
         run: make rewrite-deps
+      - name: Allow Chromium sandbox namespaces on the ephemeral runner
+        run: |
+          # Keep Chromium's sandbox enabled while permitting its user namespace
+          # on GitHub's disposable Ubuntu runner; production settings are separate.
+          if sysctl kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
       - name: Go, UI and installer tests
         run: |
           umask 077
