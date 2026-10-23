@@ -1,4 +1,5 @@
 "use client";
+import { BackupRetention } from "./backup-retention";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import dynamic from "next/dynamic";
@@ -229,6 +230,7 @@ export function ManagedDatabaseResources({
         />
       ) : group === "backups" ? (
         <>
+          <BackupRetention key={instanceID+":"+current.database} kind="database" target={{instance_id:instanceID,database:current.database}} capabilities={capabilities} onExecuted={refresh}/>
           <div className="card-heading">
             <h3>{translate("实际数据库备份")}</h3>
             {create && (

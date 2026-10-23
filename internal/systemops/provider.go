@@ -31,6 +31,8 @@ type Provider struct {
 	cancel          context.CancelFunc
 	wg              sync.WaitGroup
 	mu              sync.Mutex
+	retentionMu     sync.Mutex
+	alertMu         sync.Mutex
 	scheduleMu      sync.Mutex
 	scheduleTargets map[string]bool
 	networkPrevious map[string]NetworkUsage
@@ -126,6 +128,8 @@ func (p *Provider) Bindings() []core.Binding {
 	bindings := p.scheduleBindings()
 	bindings = append(bindings, p.notificationBindings()...)
 	bindings = append(bindings, p.historyBindings()...)
+	bindings = append(bindings, p.alertBindings()...)
+	bindings = append(bindings, p.retentionBindings()...)
 	bindings = append(bindings, p.scriptBindings()...)
 	for _, spec := range []struct {
 		name, operation, scope string

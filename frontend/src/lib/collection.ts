@@ -11,7 +11,8 @@ export function pageItems<T>(items: T[], offset: number, limit: number) {
     total: items.length,
   };
 }
-// Measure the actual list origin; keep room for pagination and the fixed navigation.
+// Desktop pages fit the available height. Phones keep at least four rows and
+// allow natural scrolling, so a tall toolbar does not force one-item pages.
 export function usePageSize(rowHeight = 64, columns: number | "auto" = 1) {
   const ref = useRef<HTMLDivElement>(null);
   const [limit, setLimit] = useState(4 * (columns === "auto" ? 1 : columns));
@@ -83,7 +84,7 @@ export function usePageSize(rowHeight = 64, columns: number | "auto" = 1) {
         ? Math.max(1, getComputedStyle(ref.current).gridTemplateColumns.split(/\s+/).length)
         : columns;
       setLimit(
-        Math.max(1, Math.floor((available - header) / actualRowHeight)) * columnCount,
+        Math.max(window.innerWidth <= 700 ? 4 : 1, Math.floor((available - header) / actualRowHeight)) * columnCount,
       );
     };
     measure();

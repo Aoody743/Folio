@@ -1,6 +1,8 @@
 import { t as translate } from "./i18n";
 import type { Capability } from "./api";
 const fields: Record<string, string> = {
+  keep_count: "至少保留份数",
+  keep_days: "至少保留天数",
   changes: "变更内容",
   packages: "软件包",
   overlap_policy: "上次任务未结束时",
@@ -432,6 +434,17 @@ const actions: Record<string, string> = {
   php_extension_toggle: "启用或停用PHP扩展",
   php_extension_plan: "检查受信任PHP扩展包计划",
   php_extension_apply: "应用受信任PHP扩展包计划",
+  sites_retention_get: "查看网站备份保留策略",
+  sites_retention_save: "保存网站备份保留策略",
+  sites_retention_plan: "预览网站备份清理",
+  sites_retention_apply: "清理预览中的网站备份",
+  managed_database_retention_get: "查看数据库备份保留策略",
+  managed_database_retention_save: "保存数据库备份保留策略",
+  managed_database_retention_plan: "预览数据库备份清理",
+  managed_database_retention_apply: "清理预览中的数据库备份",
+  monitor_alerts_save: "保存告警规则",
+  monitor_alerts_delete: "删除告警规则",
+  monitor_alerts_list: "查看告警规则",
   fs_preflight: "预检批量文件变更",
   fs_batch: "应用批量文件变更",
   fs_trash_settings: "回收站设置",

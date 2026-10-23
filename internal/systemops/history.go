@@ -148,6 +148,9 @@ func (p *Provider) sample(ctx context.Context, now time.Time) error {
 	if err != nil {
 		return err
 	}
+	if err = p.evaluateAlerts(ctx, sample); err != nil {
+		return err
+	}
 	p.mu.Lock()
 	prune := now.Sub(p.historyPrunedAt) >= time.Hour
 	if prune {

@@ -1002,7 +1002,7 @@ html {
 .chart-readout time { color: var(--muted); font-size: 13px; }
 .network-readout { display: grid; gap: 8px; margin: 12px 0; }
 .network-readout > div { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-@media (max-width: 640px) { .chart-plot .metric-history { height: 150px; } .chart-x { font-size: 12px; } }
+@media (max-width: 640px) { .chart-plot .metric-history { height: 150px; } .chart-x { font-size: 13px; } }
 
 .metric-capacity, .overview-sampled { color: var(--muted); font-size: 13px; }
 .overview-sampled { margin-top: 12px; }
@@ -1021,3 +1021,42 @@ html {
 .business-fields > .optional-options > summary,
 .action-form.business > form > .optional-options > summary { margin: 0; padding: 4px 0; }
 .business-fields .optional-options[open] > .astryx-field { margin-top: 12px; }
+
+/* Resource search and transfer status remain readable at phone widths. */
+.resource-search h3 { font-size: 15px; margin: 16px 0 8px; }
+.resource-search section:empty { display: none; }
+.resource-search button span { min-width: 0; overflow-wrap: anywhere; }
+.resource-search button span small { display: block; }
+.environment-panel section { padding: 16px 0; border-top: 1px solid var(--border); }
+.environment-panel h3 { font-size: 18px; margin: 0 0 12px; }
+.environment-panel section p { margin: 8px 0; }
+.upload-queue, .batch-file-names { padding-left: 24px; margin: 0; }
+.upload-queue li { padding: 12px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.upload-queue li > div { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; }
+.upload-queue li > small { display: block; margin: 8px 0; }
+.upload-queue progress { width: 100%; }
+.browser-bookmarks { padding: 12px; overflow-wrap: anywhere; }
+.browser-bookmarks summary { cursor: pointer; }
+.bookmark-row { display: flex; gap: 8px; margin-top: 8px; }
+.bookmark-row button:first-child { flex: 1; min-width: 0; text-align: left; overflow-wrap: anywhere; }
+.bookmark-row button { color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; font: inherit; }
+
+.upload-queue progress { appearance: none; border: 0; background: var(--border); margin-top: 12px; }
+.upload-queue progress::-webkit-progress-bar { background: var(--border); }
+.upload-queue progress::-webkit-progress-value { background: var(--accent); }
+.upload-queue progress::-moz-progress-bar { background: var(--accent); }
+
+.alert-rule-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; color: var(--text); background: var(--surface); text-align: left; font: inherit; width: 100%; overflow-wrap: anywhere; }
+.alert-rule-row small { grid-column: 1 / -1; color: var(--muted); }
+
+.app .native-field > input { min-height: 40px; width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
+.app .native-field > input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 700px) { .app .native-field > input { min-height: 44px; } }
+
+@media (max-width: 700px) {
+  .file-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
+  .file-toolbar > .file-root-field { grid-column: 1; grid-row: 1; }
+  .file-toolbar > form { grid-column: 1 / -1; grid-row: 2; }
+  .file-toolbar > .file-sort-field { grid-column: 1; grid-row: 3; }
+  .file-toolbar > .astryx-button { grid-row: auto; grid-column: 2; }
+}

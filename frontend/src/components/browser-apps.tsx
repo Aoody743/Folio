@@ -1,6 +1,7 @@
 "use client";
 import { ResourceError } from "./resource-ui";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { wasmCompatibility } from "@/lib/browser-usability";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { action, Capability, intentKey } from "@/lib/api";
@@ -31,6 +32,14 @@ const pending = (app: BrowserApp) =>
 const appsRoute = () =>
   navigate("software", { page: "applications", subgroup: "browsers" });
 const wasmURL = "/api/v1/browser/firefox-wasm/";
+function FirefoxLaunch() {
+  const [state,setState]=useState<"checking"|"ready"|"insecure"|"unsupported">("checking");
+  useEffect(()=>setState(wasmCompatibility(window.isSecureContext,window.WebAssembly)),[]);
+  return <div className="wasm-compatibility">
+    {state==="ready" ? <><p role="status">{translate("此设备支持 Firefox WASM 所需的安全连接与 JSPI。")}</p><a className="button-link" href={wasmURL} target="_blank" rel="noopener noreferrer">{translate("打开 Firefox")}</a></> : <p role="status" className="notice warning">{state==="checking"?translate("正在检查设备兼容性…"):state==="insecure"?translate("请通过 HTTPS 访问面板，再打开 Firefox WASM。"):translate("此设备不支持 JSPI，请升级 Chrome/Edge，或改用面板浏览器。")}</p>}
+  </div>;
+}
+
 
 export function BrowserApps({
   capabilities,
@@ -146,14 +155,7 @@ export function BrowserApps({
                     }
                   />
                 ) : (
-                  <a
-                    className="button-link"
-                    href={wasmURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {translate("打开 Firefox")}
-                  </a>
+                  <FirefoxLaunch/>
                 ))}
               {allowed("browser_app_change") && (
                 <Button
@@ -260,14 +262,7 @@ export function BrowserHub({ active = true }: { active?: boolean }) {
               "需要 HTTPS 和支持 JSPI 的浏览器。Firefox 中的网站内容和按钮语言由上游 Firefox 决定。",
             )}
           </p>
-          <a
-            className="button-link"
-            href={wasmURL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {translate("打开 Firefox")}
-          </a>
+          {selected.available ? <FirefoxLaunch/> : <p className="notice warning">{translate("浏览器组件暂不可用，请到应用中检查安装状态。")}</p>}
         </Card>
       )}
     </div>

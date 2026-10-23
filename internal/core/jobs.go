@@ -182,7 +182,11 @@ func canAccessJobResources(a Actor, resources []string) bool {
 func (s *Service) jobView(ctx context.Context, j jobs.Job) map[string]any {
 	a := s.jobActor(ctx, j)
 	resources := s.taskResources(ctx, j)
-	return resolvedJobView(j, a, resources)
+	out := resolvedJobView(j, a, resources)
+	if metadata, ok := s.loadTaskMetadata(ctx, j.ID); ok && metadata.Action != "" {
+		out["action"] = metadata.Action
+	}
+	return out
 }
 func resolvedJobView(j jobs.Job, a Actor, resources []string) map[string]any {
 	if len(resources) == 0 {
@@ -222,7 +226,11 @@ func (s *Service) listJobs(ctx context.Context, a Actor) (any, error) {
 		for _, j := range all[start:end] {
 			if meta, ok := metadata[j.ID]; ok {
 				if canAccessJobResources(a, meta.Resources) {
-					out = append(out, resolvedJobView(j, meta.Actor.Public(), meta.Resources))
+					view := resolvedJobView(j, meta.Actor.Public(), meta.Resources)
+					if meta.Action != "" {
+						view["action"] = meta.Action
+					}
+					out = append(out, view)
 				}
 			} else if s.canAccessJob(ctx, a, j) {
 				// Preserve the existing legacy/malformed-metadata fallback.

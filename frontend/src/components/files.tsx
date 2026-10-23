@@ -35,6 +35,7 @@ import {
 } from "./resource-ui";
 import { addNavigationGuard, usePageState } from "@/lib/navigation";
 import { usePageSize } from "@/lib/collection";
+import { FileBatch } from "./file-batch";
 const CodeEditor = dynamic(() => import("./code-editor"), { ssr: false });
 const join = (path: string, name: string) =>
   path && path !== "." ? `${path}/${name}` : name;
@@ -76,6 +77,12 @@ export function FilesView({
   const [path, setPath] = usePageState("files", "path", "");
   const [offset, setOffset] = usePageState("files", "offset", 0);
   const { ref: listRef, limit } = usePageSize(72);
+  const [sortBy,setSortBy]=usePageState("files","sort","name");
+  const [sortOrder,setSortOrder]=usePageState("files","order","asc");
+  const [checked,setChecked]=useState<string[]>([]);
+  const [batchOpen,setBatchOpen]=useState(false);
+  const [batchSelection,setBatchSelection]=useState<FileEntry[]>([]);
+  useEffect(()=>{setChecked([]);setBatchOpen(false);},[root,path,offset,sortBy,sortOrder]);
   const [query, setQuery] = useState("");
   const [search, setSearch] = usePageState("files", "q", "");
   useEffect(() => {
@@ -197,8 +204,8 @@ export function FilesView({
       path,
       limit,
       offset,
-      sort: "name",
-      order: "asc",
+      sort: ["name","size","modified_at"].includes(sortBy)?sortBy:"name",
+      order: sortOrder==="desc"?"desc":"asc",
       ...(search ? { query: search } : {}),
     },
     active && !!root && has("fs_list"),
@@ -210,6 +217,8 @@ export function FilesView({
   );
   const currentRoot = availableRoots.find((r) => r.id === root);
   const rows = list(listing.data);
+  const batchItems=rows.filter(row=>checked.includes(row.path));
+  useEffect(()=>{if(!listing.loading && listing.data)setChecked(old=>old.filter(p=>list(listing.data).some(i=>i.path===p)));},[listing.data,listing.loading]);
   const refresh = () => {
     void listing.reload();
     void trash.reload();
@@ -297,7 +306,7 @@ export function FilesView({
         ) : (
           <>
             <div className="file-toolbar">
-              <label className="native-field">
+              <label className="native-field file-root-field">
                 {translate("资源目录")}
                 <select
                   aria-label={translate("文件根目录")}
@@ -339,6 +348,12 @@ export function FilesView({
                   type="submit"
                 />
               </form>
+              <label className="native-field file-sort-field">{translate("排序")}<select aria-label={translate("文件排序")} value={sortBy+":"+sortOrder} onChange={e=>{const [sort,order]=e.target.value.split(":");setSortBy(sort);setSortOrder(order);setOffset(0);}}>
+                <option value="name:asc">{translate("按名称升序")}</option><option value="name:desc">{translate("按名称降序")}</option>
+                <option value="size:asc">{translate("按大小升序")}</option><option value="size:desc">{translate("按大小降序")}</option>
+                <option value="modified_at:desc">{translate("最近修改优先")}</option><option value="modified_at:asc">{translate("最早修改优先")}</option>
+              </select></label>
+              {has("fs_batch") && has("fs_preflight") && !currentRoot?.read_only && batchItems.length>0 && <Button label={translate("批量操作 ({0})",[batchItems.length])} onClick={()=>guard(()=>{setBatchSelection(batchItems);setBatchOpen(true);} )}/>}
               {has("fs_trash_list") && (
                 <Button
                   label={translate("回收站")}
@@ -399,7 +414,7 @@ export function FilesView({
               <table className="resource-table">
                 <thead>
                   <tr>
-                    <th>{translate("名称")}</th>
+                    <th>{has("fs_batch") && has("fs_preflight") && !currentRoot?.read_only && <input type="checkbox" aria-label={translate("选择本页文件")} checked={rows.filter(r=>r.type!=="symlink").length>0 && rows.filter(r=>r.type!=="symlink").every(r=>checked.includes(r.path))} onChange={e=>setChecked(e.target.checked?rows.filter(r=>r.type!=="symlink").map(r=>r.path):[])}/>} {translate("名称")}</th>
                     <th>{translate("大小")}</th>
                     <th>{translate("权限 / 所有者")}</th>
                     <th>{translate("修改时间")}</th>
@@ -410,6 +425,7 @@ export function FilesView({
                   {rows.map((entry) => (
                     <tr key={entry.path}>
                       <td>
+                        {has("fs_batch") && has("fs_preflight") && !currentRoot?.read_only && entry.type!=="symlink" && <input type="checkbox" aria-label={translate("选择 {0}",[entry.name])} checked={checked.includes(entry.path)} onChange={e=>setChecked(old=>e.target.checked?[...old,entry.path]:old.filter(p=>p!==entry.path))}/>}
                         <button
                           className="resource-name"
                           onClick={() => enter(entry)}
@@ -484,6 +500,7 @@ export function FilesView({
           </>
         )}
       </Card>
+      {batchOpen && batchSelection.length>0 && <FileBatch root={root} path={path} items={batchSelection} roots={availableRoots} capabilities={capabilities} onClose={()=>setBatchOpen(false)} onSaved={refresh}/>}
       {create && (
         <ResourceDrawer
           open={createOpen}
@@ -996,170 +1013,89 @@ function FileEditor({
     </ResourceDrawer>
   );
 }
-function Uploader({
-  open,
-  root,
-  directory,
-  onClose,
-  onSaved,
-}: {
-  open: boolean;
-  root: string;
-  directory: string;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const [file, setFile] = useState<File>();
-  const [path, setPath] = useState("");
-  const [session, setSession] = useState<Upload>();
-  const [uploadRoot, setUploadRoot] = useState(root);
-  const [overwrite, setOverwrite] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [percent, setPercent] = useState(0);
-  const [stage, setStage] = useState("");
-  const abort = useRef<AbortController | undefined>(undefined);
-  const run = async () => {
-    if (!file || !path) {
-      setError(translate("请选择文件并填写目标路径。"));
-      return;
-    }
-    setBusy(true);
-    setError("");
-    abort.current = new AbortController();
-    try {
-      await uploadFile({
-        root: uploadRoot,
-        path,
-        file,
-        previous: session,
-        overwrite,
-        signal: abort.current.signal,
-        onSession: setSession,
-        onProgress: (value, label) => {
-          setPercent(value);
-          setStage(label);
-        },
-      });
-      setStage(translate("已校验并保存"));
-      setSession(undefined);
-      setFile(undefined);
-      setOverwrite(false);
-      if (input.current) input.current.value = "";
-      onSaved();
-    } catch (e) {
-      setError((e as Error).message);
-      setStage(translate("上传暂停，可续传"));
-    } finally {
-      setBusy(false);
-    }
+type UploadEntry={file:File;path:string;session?:Upload;status:"pending"|"running"|"paused"|"completed"|"skipped";percent:number;error?:string};
+function Uploader({open,root,directory,onClose,onSaved}:{open:boolean;root:string;directory:string;onClose:()=>void;onSaved:()=>void}) {
+  const [entries,setEntries]=useState<UploadEntry[]>([]);
+  const [uploadRoot,setUploadRoot]=useState(root);
+  const [overwrite,setOverwrite]=useState(false);
+  const [error,setError]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [stage,setStage]=useState("");
+  const input=useRef<HTMLInputElement>(null);
+  const abort=useRef<AbortController | undefined>(undefined);
+  const busyRef=useRef(false);
+  const queueRef=useRef(entries);
+  queueRef.current=entries;
+  const patch=(index:number,value:Partial<UploadEntry>)=>{
+    queueRef.current=queueRef.current.map((entry,i)=>i===index?{...entry,...value}:entry);
+    setEntries(queueRef.current);
   };
-  return (
-    <ResourceDrawer open={open} title={translate("上传文件")} onClose={onClose}>
-      <div className="form-stack">
-        <div className="file-picker">
-          <Button label={translate("选择本地文件")} onClick={() => input.current?.click()} isDisabled={busy || !!session} />
-          <span role="status">{file?.name ?? translate("尚未选择文件")}</span>
-          <input
-            ref={input}
-            type="file"
-            className="file-picker-input"
-            tabIndex={-1}
-            aria-label={translate("本地上传文件")}
-            disabled={busy || !!session}
-            onChange={(e) => {
-              const chosen = e.target.files?.[0];
-              setFile(chosen);
-              setOverwrite(false);
-              if (chosen) {
-                setPath(join(directory, chosen.name));
-                setUploadRoot(root);
-              }
-              setError("");
-            }}
-          />
-        </div>
-        <TextInput
-          label={translate("上传目标路径")}
-          value={path}
-          onChange={setPath}
-          isDisabled={busy || !!session}
-        />
-        <label className="check-label">
-          <input
-            type="checkbox"
-            checked={overwrite}
-            disabled={busy || !!session}
-            onChange={(e) => setOverwrite(e.target.checked)}
-          />
-          {translate("覆盖同路径已有文件")}
-        </label>
-        {file && (
-          <p className="muted">
-            {translate("目标")}
-            {uploadRoot}/ {path}· {file.name}· {bytes(file.size)}
-            {translate("· 分段传输与SHA-256验证")}
-          </p>
-        )}
-        {error && (
-          <div className="notice danger" role="alert">
-            {error}
-          </div>
-        )}
-        {stage && (
-          <div role="status">
-            <progress
-              value={percent}
-              max={100}
-              aria-label={translate("文件上传进度")}
-            />
-            <p>
-              {stage}· {percent.toFixed(0)}%
-            </p>
-          </div>
-        )}
-        <div className="button-row">
-          <Button
-            label={session ? translate("继续上传") : translate("开始上传")}
-            variant="primary"
-            isLoading={busy}
-            isDisabled={!file}
-            onClick={() => void run()}
-          />
-          {busy && (
-            <Button
-              label={translate("暂停上传")}
-              onClick={() => abort.current?.abort()}
-            />
-          )}{" "}
-          {!busy && session && (
-            <Button
-              label={translate("取消此上传")}
-              onClick={() =>
-                void action(
-                  "fs_upload_cancel",
-                  { root: uploadRoot, id: session.id },
-                  { idempotencyKey: intentKey() },
-                )
-                  .then(() => {
-                    setSession(undefined);
-                    setFile(undefined);
-                    setOverwrite(false);
-                    if (input.current) input.current.value = "";
-                    setStage(translate("已取消"));
-                  })
-                  .catch((e) => setError((e as Error).message))
-              }
-            />
-          )}
-        </div>
-        <p className="muted">
-          {translate(
-            "失败或断线时保留所选文件与上传会话；重新打开此窗口可续传。服务器仍会核对最终大小、摘要与目标版本。",
-          )}
-        </p>
+  useEffect(()=>()=>abort.current?.abort(),[]);
+  useEffect(()=>{
+    const warn=(event:BeforeUnloadEvent)=>{if(busyRef.current || queueRef.current.some(e=>!!e.session && e.status!=="completed" && e.status!=="skipped")){event.preventDefault();event.returnValue="";}};
+    window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);
+  },[]);
+  const pending=entries.filter(e=>e.status!=="completed" && e.status!=="skipped");
+  const hasSession=entries.some(e=>!!e.session);
+  const run=async()=>{
+    if(busyRef.current || !pending.length)return;
+    if(entries.some(e=>!e.path.trim()) || new Set(entries.map(e=>e.path)).size!==entries.length){setError(translate("目标路径不能为空或重复。"));return;}
+    busyRef.current=true;setBusy(true);setError("");
+    abort.current=new AbortController();
+    try{
+      for(let i=0;i<queueRef.current.length;i++){
+        const entry=queueRef.current[i];
+        if(entry.status==="completed" || entry.status==="skipped")continue;
+        abort.current.signal.throwIfAborted();
+        patch(i,{status:"running",error:undefined});
+        try{
+          await uploadFile({root:uploadRoot,path:entry.path,file:entry.file,previous:entry.session,overwrite,signal:abort.current.signal,onSession:session=>patch(i,{session}),onProgress:(percent,label)=>{patch(i,{percent});setStage(label);}});
+          patch(i,{status:"completed",session:undefined,percent:100});onSaved();
+        }catch(e){patch(i,{status:"paused",error:abort.current.signal.aborted?translate("上传已暂停"):(e as Error).message});throw e;}
+      }
+      setStage(translate("已校验并保存"));
+    }catch(e){setStage(translate("上传暂停，可续传"));setError(abort.current.signal.aborted?translate("上传已暂停，可继续队列。"):(e as Error).message);}
+    finally{busyRef.current=false;setBusy(false);}
+  };
+  const skip=async(index:number)=>{
+    if(busyRef.current)return;
+    busyRef.current=true;setBusy(true);setError("");
+    try{const entry=queueRef.current[index];if(entry.session) await action("fs_upload_cancel",{root:uploadRoot,id:entry.session.id},{idempotencyKey:`upload-cancel-${entry.session.id}`});patch(index,{status:"skipped",session:undefined,error:undefined});}
+    catch(e){setError((e as Error).message);}finally{busyRef.current=false;setBusy(false);}
+  };
+  const reset=async()=>{
+    if(busyRef.current)return;
+    busyRef.current=true;setBusy(true);setError("");
+    try{
+      for(let i=0;i<queueRef.current.length;i++)if(queueRef.current[i].session){const session=queueRef.current[i].session!;await action("fs_upload_cancel",{root:uploadRoot,id:session.id},{idempotencyKey:`upload-cancel-${session.id}`});patch(i,{session:undefined,status:"skipped"});}
+      setEntries([]);queueRef.current=[];setOverwrite(false);setStage(translate("已取消"));if(input.current)input.current.value="";
+    }catch(e){setError((e as Error).message);}finally{busyRef.current=false;setBusy(false);}
+  };
+  return <ResourceDrawer open={open} title={translate("上传文件")} onClose={onClose}>
+    <div className="form-stack">
+      <div className="file-picker"><Button label={translate("选择本地文件")} onClick={()=>input.current?.click()} isDisabled={busy || pending.length>0}/><span role="status">{entries.length===1?entries[0].file.name:entries.length?translate("已选择 {0} 个文件",[entries.length]):translate("尚未选择文件")}</span>
+        <input ref={input} type="file" multiple className="file-picker-input" tabIndex={-1} aria-label={translate("本地上传文件")} disabled={busy || pending.length>0} onChange={event=>{
+          const chosen=Array.from(event.target.files??[]);if(!chosen.length)return;
+          if(chosen.length>100){setError(translate("每批最多选择 100 个文件。"));event.target.value="";return;}
+          if(new Set(chosen.map(f=>f.name)).size!==chosen.length){setError(translate("选中的文件有同名项，请分批上传。"));event.target.value="";return;}
+          setEntries(chosen.map(file=>({file,path:join(directory,file.name),status:"pending",percent:0})));setUploadRoot(root);setOverwrite(false);setError("");setStage("");
+        }}/>
       </div>
-    </ResourceDrawer>
-  );
+      {entries.length===1 && <TextInput label={translate("上传目标路径")} value={entries[0].path} onChange={path=>patch(0,{path})} isDisabled={busy || hasSession || !pending.length}/>}
+      <p className="muted">{translate("目标根目录")} {uploadRoot}{entries.length>1?` / ${directory || "."}`:""}</p>
+      <label className="check-label"><input type="checkbox" checked={overwrite} disabled={busy || hasSession || !pending.length} onChange={e=>setOverwrite(e.target.checked)}/>{translate("覆盖同路径已有文件")}</label>
+      {entries.length>0 && <ol className="upload-queue" aria-label={translate("上传队列")}>{entries.map((entry,index)=><li key={index}>
+        <div><strong>{entry.file.name}</strong><span>{bytes(entry.file.size)} · {entry.status==="completed"?translate("已校验并保存"):entry.status==="skipped"?translate("已跳过"):entry.status==="running"?translate("上传中"):entry.status==="paused"?translate("上传已暂停"):translate("等待上传")}</span></div>
+        {entry.path!==entry.file.name && <small>{entry.path}</small>}<progress max={100} value={entry.percent} aria-label={translate("文件上传进度")}/>
+        {!busy && entry.status!=="completed" && entry.status!=="skipped" && <Button label={translate("跳过此文件")} variant="ghost" onClick={()=>void skip(index)}/>}
+      </li>)}</ol>}
+      {error && <ResourceError error={error}/>}
+      {stage && <p role="status">{stage}</p>}
+      <div className="button-row"><Button label={entries.some(e=>e.status==="paused")?translate("继续上传"):translate("开始上传")} variant="primary" isLoading={busy} isDisabled={!pending.length} onClick={()=>void run()}/>
+        {busy && <Button label={translate("暂停上传")} onClick={()=>abort.current?.abort()}/>}
+        {!busy && entries.length>0 && <Button label={translate("清空上传队列")} onClick={()=>void reset()}/>}
+      </div>
+      <p className="muted">{translate("逐个上传并校验 SHA-256；失败后暂停，继续时跳过已完成项。队列仅保留在本页面，刷新或退出会丢失本地文件选择。")}</p>
+    </div>
+  </ResourceDrawer>;
 }

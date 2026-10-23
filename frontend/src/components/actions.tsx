@@ -463,6 +463,8 @@ export function ActionForm({
   presentation = "technical",
   showTitle = true,
   renderFields,
+  showInputTools = true,
+  showResult = true,
 }: {
   capability: Capability;
   preset?: Record<string, unknown>;
@@ -475,6 +477,8 @@ export function ActionForm({
   formatError?: (error: APIError) => string | undefined;
   presentation?: "technical" | "business";
   showTitle?: boolean;
+  showInputTools?: boolean;
+  showResult?: boolean;
   renderFields?: (props: { schema: Schema; value: unknown; onChange: (value: unknown) => void }) => ReactNode;
 }) {
   const baseSchema = (capability.input_schema ?? {
@@ -620,7 +624,7 @@ export function ActionForm({
     const cachedRaw = readDraft(cacheKey + ":raw") as
       | { enabled: boolean; value: string }
       | undefined;
-    setRaw(cachedRaw?.enabled ?? false);
+    setRaw(showInputTools && (cachedRaw?.enabled ?? false));
     setRawValue(cachedRaw?.value ?? JSON.stringify(value, null, 2));
     const task = readDraft<TaskSubmission>(cacheKey + ":task");
     setResult(task?.submitted);
@@ -828,7 +832,7 @@ export function ActionForm({
           void submit();
         }}
       >
-        {presentation === "technical" && inputTools}
+        {showInputTools && presentation === "technical" && inputTools}
         {raw ? (
           <TextArea
             label={translate("操作参数JSON")}
@@ -867,7 +871,7 @@ export function ActionForm({
             )}
           />
         )}
-        {presentation === "business" && <details className="optional-options">
+        {showInputTools && presentation === "business" && <details className="optional-options">
           <summary>{translate("高级工具")}</summary>
           {inputTools}
         </details>}
@@ -961,9 +965,9 @@ export function ActionForm({
           label={
             confirm
               ? translate("确认执行")
-              : capability.read_only
+              : presentation === "business" ? actionLabel(capability) : capability.read_only
                 ? translate("查询")
-                : presentation === "business" ? actionLabel(capability) : translate("执行操作")
+                : translate("执行操作")
           }
           variant="primary"
           type="submit"
@@ -971,7 +975,7 @@ export function ActionForm({
           isDisabled={recovery}
         />
       </form>
-      {result !== undefined && (
+      {result !== undefined && (showResult || capability.task || recovery) && (
         <section className="action-result" aria-live="polite">
           <h3>{translate("操作结果")}</h3>
           {(capability.task || recovery) && (

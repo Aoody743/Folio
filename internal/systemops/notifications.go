@@ -487,7 +487,7 @@ func (p *Provider) telegramSend(ctx context.Context, chatID, token, content stri
 	return nil
 }
 
-var JobOperationNames = []string{"systemops_notification_send", "systemops_host_apply", "systemops_host_rollback", "systemops_script_run"}
+var JobOperationNames = []string{"systemops_backup_cleanup", "systemops_notification_send", "systemops_host_apply", "systemops_host_rollback", "systemops_script_run"}
 
 type hostJob struct {
 	Actor     core.Actor  `json:"actor"`
@@ -497,6 +497,15 @@ type hostJob struct {
 
 func (p *Provider) Validate(request agent.Request) error {
 	switch request.Operation {
+	case "systemops_backup_cleanup":
+		var job retentionJob
+		if err := strictJSON(request.Input, &job); err != nil {
+			return err
+		}
+		if job.Actor.ID == "" || !identifier.MatchString(job.PlanID) {
+			return agent.ErrInvalidInput
+		}
+		return nil
 	case "systemops_script_run":
 		var job scriptJob
 		if err := strictJSON(request.Input, &job); err != nil {
@@ -539,6 +548,9 @@ func (p *Provider) Run(ctx context.Context, request agent.Request) (result agent
 	}()
 	if err = p.Validate(request); err != nil {
 		return result, err
+	}
+	if request.Operation == "systemops_backup_cleanup" {
+		return p.runBackupCleanup(ctx, request)
 	}
 	if request.Operation == "systemops_script_run" {
 		return p.executeScript(ctx, request)

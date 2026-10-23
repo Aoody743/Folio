@@ -132,6 +132,7 @@ export function SitesView({
   active?: boolean;
   onFiles?: (root: string) => void;
 }) {
+  const [certificateSiteID] = usePageState("sites", "site", "");
   const [offset, setOffset] = usePageState("sites", "offset", 0);
   const { ref: listRef, limit } = usePageSize(72);
   const [resourcePage, setResourcePage] = usePageState(
@@ -446,6 +447,7 @@ export function SitesView({
           capabilities={capabilities}
           onExecuted={refresh}
           active={active}
+          siteID={certificateSiteID || undefined}
         />
       ) : (
         <Card className="panel-card">
@@ -872,12 +874,13 @@ export function SitesView({
                     capability.name,
                   ),
                 ) && (
-                  <CertificatesView
-                    capabilities={capabilities}
-                    onExecuted={refresh}
-                    active={active && open}
-                    siteID={current.id}
-                  />
+                  <section className="site-certificate-links">
+                    <p>{current.tls?.enabled ? translate("此网站已配置 TLS。") : translate("此网站尚未配置 TLS。")}</p>
+                    <div className="button-row">
+                      {current.tls?.certificate_id && <Button label={translate("查看绑定证书")} variant="ghost" onClick={()=>navigate("sites",{page:"certificates",resource:current.tls!.certificate_id!,site:current.id})}/>}
+                      <Button label={translate("管理证书与 DNS 凭据")} onClick={()=>navigate("sites",{page:"certificates",site:current.id})}/>
+                    </div>
+                  </section>
                 )}
               {groupedUpdate && (
                 <ActionForm

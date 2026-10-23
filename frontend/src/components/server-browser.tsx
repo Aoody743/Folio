@@ -10,6 +10,7 @@ import {
   browserPoint,
 } from "@/lib/server-browser";
 import "./browser.css";
+import { BrowserBookmarks } from "./browser-bookmarks";
 
 type BrowserInput = {
   kind: "mouse" | "wheel" | "key" | "text";
@@ -775,6 +776,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
               </button>
             </form>
           </div>
+          <BrowserBookmarks currentURL={tabURL} onOpen={url=>{if(session && tabID)void run("browser_navigate",{id:session.id,tab_id:tabID,url});}}/>
           <div className="browser-view-tools">
             <button type="button" disabled={busy} onClick={fitWindow}>{translate("适应窗口")}</button>
             <label>
@@ -1003,6 +1005,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
               </div>
             )}
           </div>
+          <p className="browser-session-note muted">{translate("面板模式暂不支持网页内上传与下载文件；请使用文件页传输服务器文件。")}</p>
           <p className="browser-session-note muted">
             {translate(
               "离开此页会暂停画面。关闭浏览器或会话到期后，会清除本次浏览数据。",

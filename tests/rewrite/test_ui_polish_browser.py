@@ -83,7 +83,7 @@ def main():
             page.get_by_role('button',name='下一页',exact=True).click()
             expect(page.locator('.action-tile').first).not_to_have_text(first)
             page.get_by_label('操作分类',exact=True).select_option('files')
-            expect(page.locator('.pagination')).to_contain_text('第 1 页')
+            expect(page.locator('.pagination:visible')).to_contain_text('第 1 页')
             names=page.locator('.action-tile p').all_text_contents()
             assert names and all(t.startswith(('fs_','file_','files_','directories_','paths_')) for t in names),names
             page.evaluate('window.scrollTo(0,0)')

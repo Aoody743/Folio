@@ -1,4 +1,5 @@
 "use client";
+import { BackupRetention } from "./backup-retention";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -358,6 +359,7 @@ export function SiteBackups({
   };
   return (
     <section className="stack" aria-label={translate("网站备份")}>
+      <BackupRetention key={id} kind="site" target={{id}} capabilities={capabilities} onExecuted={refresh}/>
       <div className="card-heading">
         <h3>{translate("网站备份")}</h3>
         {create && (

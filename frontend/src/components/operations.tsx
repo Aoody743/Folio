@@ -3,6 +3,7 @@ import { ResourceError } from "./resource-ui";
 import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useState } from "react";
+import { MonitorAlerts } from "./monitor-alerts";
 import { MetricChart, type MetricSample } from "./metric-chart";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -68,7 +69,9 @@ const descriptions: Record<string, string> = {
   },
 };
 const cell = (key: string, value: unknown) =>
-  typeof value === "boolean"
+  key === "ownership" && typeof value === "string"
+    ? value === "managed" ? translate("面板管理") : value === "external" ? translate("外部服务") : value === "adopted" ? translate("已接管") : translate("状态未知")
+    : typeof value === "boolean"
     ? value
       ? translate("是")
       : translate("否")
@@ -200,6 +203,7 @@ export function OperationsView({
         <Card className="panel-card">
           <div className="card-heading">
             <h2>{translate("指标历史")}</h2>
+            {has("monitor_alerts_list") && <Button label={translate("告警规则")} variant="ghost" onClick={()=>setChangeOpen("alerts")}/>}
             <select aria-label={translate("监控时间范围")} value={rangeHours} onChange={event => { setRangeHours(Number(event.target.value)); setWindowTime(Date.now()); }}>
               {[1, 6, 24, 168].map(hours => <option key={hours} value={hours}>{hours === 168 ? translate("最近 7 天") : translate("最近 {0} 小时", [hours])}</option>)}
             </select>
@@ -208,6 +212,7 @@ export function OperationsView({
           {history.data?.samples.length ? <MetricChart samples={history.data.samples} interval={history.data.sample_interval_seconds} /> : !history.error && <Unavailable title={history.loading ? translate("正在读取监控历史…") : translate("暂无历史样本")} detail={translate("采样器会保存真实主机数据；没有采样的时段不会补造数据。")} />}
         </Card>
       )}
+      {page==="monitor" && has("monitor_alerts_list") && changeOpen==="alerts" && <ResourceDrawer open title={translate("监控告警")} onClose={()=>setChangeOpen("")}><MonitorAlerts capabilities={capabilities}/></ResourceDrawer>}
       {((page === "monitor" && has("services_list")) ||
         (page === "schedules" && pageTabs.length > 0)) && (
         <Card className="panel-card">
@@ -292,7 +297,7 @@ export function OperationsView({
                         ).map((k) => (
                           <td key={k} className={`operation-${k}`}>
                             {k === "active_state" || k === "last_run_status" ? (
-                              <State value={row[k] as string} />
+                              <State value={(k === "active_state" ? row[k] === "active" ? "running" : row[k] === "inactive" ? "stopped" : row[k] : row[k]) as string} />
                             ) : (
                               cell(k, row[k])
                             )}

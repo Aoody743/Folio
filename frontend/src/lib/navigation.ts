@@ -38,6 +38,9 @@ const keys = new Set([
   "resource",
   "new",
   "subgroup",
+  "site",
+  "sort",
+  "order",
 ]);
 export function parseRoute(hash: string): PageRoute {
   const [path, query = ""] = hash.replace(/^#\/?/, "").split("?", 2);
@@ -136,12 +139,13 @@ export function navigate(
   remembered[current.section] = current.params;
   const next = { section, params: params ?? remembered[section] ?? {} };
   const hash = routeHash(next);
-  if (hash === snapshot()) return;
-  if (typeof window !== "undefined" && !permitted(next, current)) return;
+  if (hash === snapshot()) return true;
+  if (typeof window !== "undefined" && !permitted(next, current)) return false;
   writeHistory(replace ? "replaceState" : "pushState", hash);
   acceptedHash = hash;
   remembered[next.section] = next.params;
   emit();
+  return true;
 }
 export function resetNavigation() {
   for (const section of Object.keys(remembered))

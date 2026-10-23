@@ -57,6 +57,8 @@ import {
 } from "@/lib/navigation";
 import { ResourceDrawer, DetailScope } from "./resource-ui";
 import { initializeFont } from "@/lib/fonts";
+const ResourceSearch = dynamic(() => import("./resource-search").then(m => m.ResourceSearch), {ssr:false});
+const EnvironmentView = dynamic(() => import("./environment").then(m => m.EnvironmentView), {ssr:false});
 const NoteEditor = dynamic(() => import("./notes").then((m) => m.NoteEditor), {
   ssr: false,
 });
@@ -187,6 +189,7 @@ const nav: { id: string; label: string; icon: IconName }[] = [
   },
 ];
 const moreNav: { id: string; icon: string; title: string; desc: string }[] = [
+  {id:"environment",icon:"settings",get title(){return translate("环境与维护")},get desc(){return translate("连接、执行器与版本说明")}},
   {
     id: "monitor",
     icon: "overview",
@@ -411,7 +414,7 @@ export function Panel() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [actionPage, setActionPage] = usePageState("more", "view", "", true);
-  const selectedAction = actionPage || undefined;
+  const selectedAction = caps.some(capability=>capability.name===actionPage) ? actionPage : undefined;
   const setSelectedAction = (name?: string) => setActionPage(name ?? "");
   const hasCapability = (name: string) =>
     caps.some((capability) => capability.name === name);
@@ -1122,16 +1125,6 @@ export function Panel() {
                     />
                   </div>
                 )}
-                {selectedAction &&
-                  ["sites", "software", "files"].includes(section) && (
-                    <ActionBrowser
-                      capabilities={caps}
-                      category={section}
-                      selected={selectedAction}
-                      onSelect={setSelectedAction}
-                      onExecuted={noteSaved}
-                    />
-                  )}
                 {section === "more" &&
                   !["notes", "browser"].includes(morePage) && (
                   <>
@@ -1149,6 +1142,7 @@ export function Panel() {
                           {
                             title: translate("设置与接入"),
                             ids: [
+                              "environment",
                               "security",
                               "appearance",
                               "mcp",
@@ -1255,6 +1249,8 @@ export function Panel() {
                               </details>
                             )}
                           </>
+                        ) : morePage === "environment" ? (
+                          <EnvironmentView capabilities={caps}/>
                         ) : morePage === "activity" ? (
                           <Card className="panel-card">
                             <CardTitle
@@ -1484,10 +1480,12 @@ export function Panel() {
                   hasAutoFocus
                   value={query}
                   onChange={setQuery}
-                  placeholder={translate("页面、便签、软件与操作…")}
+                  placeholder={translate("页面、域名、应用与数据库…")}
                   startIcon={<Icon name="search" />}
                 />
                 <div className="search-results">
+                  {searchOpen && <ResourceSearch query={query} capabilities={caps} onPick={()=>setSearchOpen(false)}/>}
+                  {visibleMoreNav.filter(n=>n.title.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(n=><button key={n.id} onClick={()=>{if(navigate("more",{page:n.id}))setSearchOpen(false)}}><Icon name={n.icon as IconName}/><span>{n.title}</span><small>{translate("页面")}</small></button>)}
                   {visibleNav
                     .filter((n) => n.label.includes(query))
                     .map((n) => (

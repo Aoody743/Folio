@@ -22,6 +22,7 @@ def main():
     output.mkdir(parents=True,exist_ok=True)
     errors=[];creates=[];history_requests=[]
     available={'enabled':True}
+    metric_now=dt.datetime.now(dt.timezone.utc)
     try:
         api=APIClient(server.url)
         data(api.post('/api/v1/auth/setup',{'username':'business-qa','password':password,'setup_token':server.bootstrap}))
@@ -38,7 +39,7 @@ def main():
                     return route.fulfill(status=409,json={'error':{'code':'fixture_conflict','message':'Display fixture: no website was created'}})
                 elif action=='monitor_history':
                     history_requests.append(route.request.post_data_json)
-                    now=dt.datetime.now(dt.timezone.utc)
+                    now=metric_now
                     result={'sample_interval_seconds':60,'samples':[
                         {'timestamp':(now-dt.timedelta(minutes=1)).isoformat(),'cpu_percent':10,'memory':None,'disk':{'percent':42},'load_average':[0.2,0.3,0.4],'network':[{'interface':'eth0','receive_bytes_per_second':1024,'transmit_bytes_per_second':0}]},
                         {'timestamp':now.isoformat(),'cpu_percent':80,'memory':{'percent':55},'disk':{'percent':42},'load_average':[1.2,0.8,0.4],'network':[{'interface':'eth0','receive_bytes_per_second':2048,'transmit_bytes_per_second':1024}]},
@@ -107,7 +108,8 @@ def main():
             visit('#/more?page=monitor')
             expect(page.locator('.chart-readout')).to_contain_text('80.0%')
             selector=page.get_by_label('查看时间点',exact=True)
-            selector.focus();selector.press('Home')
+            selector.focus();expect(selector).to_be_focused();selector.press('Home')
+            expect(selector).to_have_value('0')
             expect(page.locator('.chart-readout')).to_contain_text('10.0%')
             expect(page.locator('.chart-readout')).to_contain_text('—')
             expect(page.locator('.network-readout')).to_contain_text('eth0')
