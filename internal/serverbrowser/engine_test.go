@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -166,5 +167,41 @@ func TestEngineProductionSandboxStartup(t *testing.T) {
 	tabs, err := e.Tabs(ctx)
 	if err != nil || len(tabs) != 1 {
 		t.Fatalf("sandboxed browser: %v %v", tabs, err)
+	}
+}
+
+func TestNativeBrowserIsPreferredOverEarlierDesktopLauncher(t *testing.T) {
+	root := t.TempDir()
+	bin := filepath.Join(root, "bin")
+	pkg := filepath.Join(root, "google-chrome")
+	if err := os.MkdirAll(bin, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(pkg, 0700); err != nil {
+		t.Fatal(err)
+	}
+	launcher := filepath.Join(bin, "chromium")
+	for _, path := range []string{launcher, filepath.Join(pkg, "google-chrome")} {
+		if err := os.WriteFile(path, []byte("#!/bin/sh\nexit 1\n"), 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	native := filepath.Join(pkg, "chrome")
+	if err := os.WriteFile(native, []byte{0x7f, 'E', 'L', 'F'}, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(pkg, "google-chrome"), filepath.Join(bin, "google-chrome")); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin)
+	opts := EngineOptions{UnsafeNoSandboxForTests: true}
+	if path, _ := availableEngine(opts); path != native {
+		t.Fatalf("selected desktop launcher %s instead of native browser %s", path, native)
+	}
+	if err := os.Remove(native); err != nil {
+		t.Fatal(err)
+	}
+	if path, _ := availableEngine(opts); path != launcher {
+		t.Fatalf("nonstandard launcher fallback changed: %s", path)
 	}
 }

@@ -74,28 +74,53 @@ func availableEngine(opts EngineOptions) (string, string) {
 		}
 		return path, ""
 	}
+	// Prefer a native executable across all known packages before falling back
+	// to launch scripts. In particular, Ubuntu may expose a Snap installer stub
+	// as chromium even when a usable native Google Chrome is already installed.
+	wrappers := []string{}
 	for _, name := range []string{"chromium", "chromium-browser", "google-chrome", "google-chrome-stable"} {
-		if path, err := exec.LookPath(name); err == nil {
-			// CDP owns inherited descriptors 3/4. Distribution launch scripts
-			// may manipulate descriptors or wait on desktop integration. Use
-			// the sibling native browser where the known package provides it.
-			resolved, _ := filepath.EvalSymlinks(path)
-			candidates := []string{}
-			if strings.HasPrefix(name, "google-chrome") {
-				candidates = append(candidates, filepath.Join(filepath.Dir(resolved), "chrome"))
-			}
-			if resolved == "/usr/bin/chromium" {
-				candidates = append(candidates, "/usr/lib/chromium/chromium")
-			}
-			for _, candidate := range candidates {
-				if actual, e := exec.LookPath(candidate); e == nil {
-					return actual, ""
-				}
-			}
+		path, err := exec.LookPath(name)
+		if err != nil {
+			continue
+		}
+		if nativeBrowserFile(path) {
 			return path, ""
 		}
+		resolved, _ := filepath.EvalSymlinks(path)
+		candidates := []string{}
+		if resolved != "" && strings.HasPrefix(name, "google-chrome") {
+			candidates = append(candidates, filepath.Join(filepath.Dir(resolved), "chrome"))
+		}
+		if resolved == "/usr/bin/chromium" {
+			candidates = append(candidates, "/usr/lib/chromium/chromium")
+		}
+		for _, candidate := range candidates {
+			if actual, e := exec.LookPath(candidate); e == nil && nativeBrowserFile(actual) {
+				return actual, ""
+			}
+		}
+		wrappers = append(wrappers, path)
+	}
+	if len(wrappers) > 0 {
+		return wrappers[0], ""
 	}
 	return "", "Install Chromium or Google Chrome on this server to use the server browser."
+}
+
+// Inspect only a regular installed file, never run a launcher during discovery.
+func nativeBrowserFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || !info.Mode().IsRegular() {
+		return false
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+	var magic [4]byte
+	_, err = io.ReadFull(file, magic[:])
+	return err == nil && bytes.Equal(magic[:], []byte{0x7f, 'E', 'L', 'F'})
 }
 
 func startEngine(ctx context.Context, opts EngineOptions, width, height int) (*engine, error) {
