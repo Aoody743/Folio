@@ -23,6 +23,26 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 
 两种浏览器模式可在“软件 → 应用服务 → 浏览器应用”独立安装或卸载，默认均不安装。面板模式在服务器运行 Chromium；Firefox WASM 提供完整 Firefox 界面，通过面板的认证 Wisp 出口访问网页，需要 HTTPS 和支持 JSPI 的客户端。安装后可从“更多 → 运维”打开。完整功能和环境说明见[服务器浏览器](docs/rewrite/SERVER-BROWSER.md)。
 
+## 当前界面截图
+
+面板已按 beta7 当前界面重新采集，包含 31 张桌面页面和 6 张手机页面；两种浏览器模式的 3 张截图也已收录在同一套[完整截图索引](docs/screenshots/panel-1.0-beta7/README.md)。所有面板截图使用隔离的展示数据，不代表真实服务器状态。
+
+### 概览
+
+[![Folio beta7 主机概览](docs/screenshots/panel-1.0-beta7/01-overview.png)](docs/screenshots/panel-1.0-beta7/01-overview.png)
+
+### 网站
+
+[![Folio beta7 网站列表](docs/screenshots/panel-1.0-beta7/02-sites.png)](docs/screenshots/panel-1.0-beta7/02-sites.png)
+
+### 软件
+
+[![Folio beta7 软件库](docs/screenshots/panel-1.0-beta7/09-software-library.png)](docs/screenshots/panel-1.0-beta7/09-software-library.png)
+
+### 文件
+
+[![Folio beta7 文件管理](docs/screenshots/panel-1.0-beta7/14-files.png)](docs/screenshots/panel-1.0-beta7/14-files.png)
+
 ## 浏览器模式截图
 
 以下截图来自 beta7 的实际浏览器界面。管理页展示可选安装入口；面板浏览器打开 MDN 的 HTTP 指南；Firefox WASM 打开独立的 Open Atlas 演示网页。
@@ -40,34 +60,6 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 [![Firefox WASM 浏览器打开 Open Atlas 演示网页](docs/screenshots/browser-modes-beta7/firefox-wasm-atlas.png)](docs/screenshots/browser-modes-beta7/firefox-wasm-atlas.png)
 
 Firefox 截图中的 Open Atlas 是截图验收时在本机提供的演示网页，用于展示完整 Firefox 界面和 Wisp 浏览路径；它不是线上网站。
-
-## 界面预览
-
-[查看当前 UI 中英文桌面及手机实测截图](docs/rewrite/UI-INFORMATION-ACCEPTANCE.md#截图)。
-
-以下 beta1 历史截图展示 5 个重点页面的布局。截图使用隔离的示例数据，不是某台服务器的实时信息。
-
-### 概览
-
-[![Folio 概览完整页面](docs/screenshots/panel-1.0-beta1/01-overview-full.png)](docs/screenshots/panel-1.0-beta1/01-overview-full.png)
-
-### 网站
-
-[![Folio 网站管理页面](docs/screenshots/panel-1.0-beta1/03-sites.png)](docs/screenshots/panel-1.0-beta1/03-sites.png)
-
-### 文件
-
-[![Folio 文件管理完整页面](docs/screenshots/panel-1.0-beta1/08-files-full.png)](docs/screenshots/panel-1.0-beta1/08-files-full.png)
-
-### 监控
-
-[![Folio 监控完整页面](docs/screenshots/panel-1.0-beta1/10-more-monitor-full.png)](docs/screenshots/panel-1.0-beta1/10-more-monitor-full.png)
-
-### MCP 接入
-
-[![Folio MCP 接入完整页面](docs/screenshots/panel-1.0-beta1/16-more-mcp-full.png)](docs/screenshots/panel-1.0-beta1/16-more-mcp-full.png)
-
-其余页面见[截图索引（全部 18 个页面）](docs/screenshots/panel-1.0-beta1/README.md)，也可下载[完整截图 ZIP](docs/screenshots/panel-1.0-beta1-screenshots.zip)。
 
 ## 安装与首次登录
 
@@ -128,7 +120,8 @@ make rewrite-dev
 
 - [1.0-beta7 发布说明](.github/release-notes/1.0-beta7.md)
 - [当前版本与验收范围](docs/rewrite/CURRENT-RELEASE.md)
-- [面板截图索引](docs/screenshots/panel-1.0-beta1/README.md)
+- [beta7 面板与浏览器完整截图索引](docs/screenshots/panel-1.0-beta7/README.md)
+- [beta1 历史面板截图](docs/screenshots/panel-1.0-beta1/README.md)
 - [MCP 接入设计](docs/rewrite/AI-NATIVE-MCP.md)
 - [界面设计规范](docs/rewrite/UI-SPEC.md)
 - [开发计划](docs/rewrite/DEVELOPMENT-PLAN.md)
