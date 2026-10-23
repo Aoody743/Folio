@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
-      POWERLINUX_BUILD_CACHE: ${{ runner.temp }}/folio-v1-build-cache
+      POWERLINUX_BUILD_CACHE: /tmp/folio-v1-build-cache
       NEXT_TELEMETRY_DISABLED: '1'
       GOFLAGS: '-p=1'
       RELEASE_VERSION: '1.0.0'
