@@ -1,4 +1,4 @@
-Current release and version-specific acceptance: [Folio beta5](../../docs/rewrite/CURRENT-RELEASE.md). Older RC and beta records retain their original scope.
+Current release and version-specific acceptance: [Folio beta6](../../docs/rewrite/CURRENT-RELEASE.md). Older RC and beta records retain their original scope.
 
 # Folio rewrite build and installation
 
@@ -55,14 +55,14 @@ provenance and host compatibility. User servers need no Node, Go or Python.
 
 ## Verified installation
 
-For the 1.0-beta5 Linux amd64 release, the release includes a one-command
+For the 1.0-beta6 Linux amd64 release, the release includes a one-command
 bootstrap installer. On a fresh Ubuntu 24.04 amd64 systemd host, run:
 
 ```sh
-curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta5/install-1.0-beta5.sh | sudo bash
+curl -fsSL https://github.com/Aoody743/Folio/releases/download/1.0-beta6/install-1.0-beta6.sh | sudo bash
 ```
 
-The bootstrap downloads the beta5 archive and release `SHA256SUMS.txt`, checks
+The bootstrap downloads the beta6 archive and release `SHA256SUMS.txt`, checks
 the package SHA-256, then passes that archive to the package installer. A fresh
 system install enables the reviewed software and website/certificate modules;
 upgrades preserve an existing Agent policy. Use `--no-managed-features` to skip
