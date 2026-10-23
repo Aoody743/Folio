@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: read
 concurrency:
   group: folio-1.0-beta6-release
   cancel-in-progress: false
@@ -20,12 +21,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Preserve evidence for the immutable source
+      - name: Preserve evidence and verify the successful source checks
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
           cp -a docs/rewrite/evidence/beta6-20261023 "$RUNNER_TEMP/beta6-acceptance"
           expected=$(jq -er '.commit' "$RUNNER_TEMP/beta6-acceptance/ACCEPTANCE.json")
           [[ $(git rev-parse '1.0-beta6^{commit}') == "$expected" ]]
+          ci_run=$(jq -er '.source_ci.run' "$RUNNER_TEMP/beta6-acceptance/ACCEPTANCE.json")
+          ci_commit=$(jq -er '.source_ci.commit' "$RUNNER_TEMP/beta6-acceptance/ACCEPTANCE.json")
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ci_run" > "$RUNNER_TEMP/beta6-source-ci.json"
+          jq -e --arg sha "$ci_commit" --arg repo "$GITHUB_REPOSITORY" '.head_sha == $sha and .repository.full_name == $repo and .workflow_id == 383305933 and .head_branch == "main" and .status == "completed" and .conclusion == "success"' "$RUNNER_TEMP/beta6-source-ci.json"
+          # The accepted source already passed all Go race, installer and UI
+          # unit checks. Permit only packaging-guide text between it and the tag.
+          validated=$(git diff --name-only "$ci_commit" 1.0-beta6 -- cmd internal frontend go.mod go.sum third_party scripts tests/rewrite Makefile)
+          validated=$(printf '%s\n' "$validated" | sed '/^$/d; \|^scripts/rewrite/README\.md$|d')
+          [[ -z "$validated" ]] || { printf '%s\n' "$validated"; exit 1; }
           changed=$(git diff --name-only 1.0-beta6 "$GITHUB_SHA" -- cmd internal frontend go.mod go.sum third_party scripts Makefile)
           changed=$(printf '%s\n' "$changed" | sed '/^$/d; \|^scripts/rewrite/README\.md$|d')
           [[ -z "$changed" ]] || { printf '%s\n' "$changed"; exit 1; }
@@ -48,12 +60,11 @@ jobs:
           if sysctl kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           fi
-      - name: Test and build both Linux architectures
+      - name: Build both Linux architectures from the validated source
         run: |
           set -Eeuo pipefail
           make rewrite-deps REWRITE_CACHE="$POWERLINUX_BUILD_CACHE"
           umask 077
-          make rewrite-test REWRITE_CACHE="$POWERLINUX_BUILD_CACHE"
           go vet ./...
           bash scripts/rewrite/build.sh --version 1.0-beta6 --architectures amd64,arm64 --skip-install --output "$GITHUB_WORKSPACE/release-assets"
           (cd release-assets && sha256sum --check "$RUNNER_TEMP/beta6-acceptance/package-checksums.txt")
