@@ -23,6 +23,24 @@ Folio 是一款用于管理 Linux 服务器的 Web 面板。它把主机状态�
 
 两种浏览器模式可在“软件 → 应用服务 → 浏览器应用”独立安装或卸载，默认均不安装。面板模式在服务器运行 Chromium；Firefox WASM 提供完整 Firefox 界面，通过面板的认证 Wisp 出口访问网页，需要 HTTPS 和支持 JSPI 的客户端。安装后可从“更多 → 运维”打开。完整功能和环境说明见[服务器浏览器](docs/rewrite/SERVER-BROWSER.md)。
 
+## 浏览器模式截图
+
+以下截图来自 beta7 的实际浏览器界面。管理页展示可选安装入口；面板浏览器打开 MDN 的 HTTP 指南；Firefox WASM 打开独立的 Open Atlas 演示网页。
+
+### 可选安装入口
+
+[![浏览器应用安装与管理](docs/screenshots/browser-modes-beta7/browser-modes-installed.png)](docs/screenshots/browser-modes-beta7/browser-modes-installed.png)
+
+### 面板浏览器：MDN HTTP 指南
+
+[![面板 Chromium 浏览器打开 MDN HTTP 指南](docs/screenshots/browser-modes-beta7/panel-browser-mdn.png)](docs/screenshots/browser-modes-beta7/panel-browser-mdn.png)
+
+### Firefox WASM：Open Atlas
+
+[![Firefox WASM 浏览器打开 Open Atlas 演示网页](docs/screenshots/browser-modes-beta7/firefox-wasm-atlas.png)](docs/screenshots/browser-modes-beta7/firefox-wasm-atlas.png)
+
+Firefox 截图中的 Open Atlas 是截图验收时在本机提供的演示网页，用于展示完整 Firefox 界面和 Wisp 浏览路径；它不是线上网站。
+
 ## 界面预览
 
 [查看当前 UI 中英文桌面及手机实测截图](docs/rewrite/UI-INFORMATION-ACCEPTANCE.md#截图)。

@@ -34,4 +34,4 @@ ARM64 包交叉编译；未新增 ARM 运行、systemd VM 升级/回滚/重启�
 
 ## 本轮截图
 
-[中文应用页](../screenshots/browser-apps-beta7/zh-apps-desktop.png) · [英文应用页](../screenshots/browser-apps-beta7/en-apps-desktop.png) · [手机 390](../screenshots/browser-apps-beta7/zh-apps-390.png) · [手机 320](../screenshots/browser-apps-beta7/zh-apps-320.png) · [完整 Firefox WASM](../screenshots/browser-apps-beta7/firefox-wasm-desktop.png)。
+[浏览器安装管理](../screenshots/browser-modes-beta7/browser-modes-installed.png) · [面板 Chromium 打开 MDN](../screenshots/browser-modes-beta7/panel-browser-mdn.png) · [Firefox WASM 打开 Open Atlas](../screenshots/browser-modes-beta7/firefox-wasm-atlas.png)。Open Atlas 是截图验收时在本机提供的演示网页，不是线上网站。
