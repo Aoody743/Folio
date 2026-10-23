@@ -1,6 +1,13 @@
 @layer folio-legacy {
 /* Shared information layout. Fonts are shipped offline under SIL OFL 1.1. */
 @font-face {
+  font-family: Folio Symbols;
+  src: url("/fonts/folio-symbols.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+  unicode-range: U+2219;
+}
+@font-face {
   font-family: Folio Inter;
   src: url("/fonts/inter.woff2") format("woff2");
   font-weight: 100 900;
@@ -14,13 +21,13 @@
 }
 :root,
 [data-font="modern"] {
-  --folio-font: "Folio Inter", "Folio Sans SC", system-ui, sans-serif;
+  --folio-font: "Folio Inter", "Folio Sans SC", "Folio Symbols", system-ui, sans-serif;
 }
 [data-font="native"] {
-  --folio-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --folio-font: system-ui, -apple-system, "Segoe UI", "Folio Symbols", sans-serif;
 }
 [data-font="reading"] {
-  --folio-font: "Folio Source", "Folio Serif SC", system-ui, serif;
+  --folio-font: "Folio Source", "Folio Serif SC", "Folio Symbols", system-ui, serif;
 }
 body,
 .app {
