@@ -13,6 +13,7 @@ import (
 )
 
 type Site struct {
+	ProjectType       string             `json:"project_type,omitempty"`
 	ID                string             `json:"id"`
 	Name              string             `json:"name"`
 	Domains           []string           `json:"domains"`

@@ -1,4 +1,5 @@
 "use client";
+import { DistroLogo } from "./distro-logo";
 import { SectionHeader } from "./section-header";
 import { replaceNavigationHash } from "@/lib/navigation";
 import { useResource } from "@/lib/resource-hook";
@@ -818,15 +819,16 @@ export function Panel() {
                   </strong>
                 </button>
                 <div className="host-pill">
+                  <DistroLogo os={status?.distribution_name || status?.distribution_id || status?.os} />
                   <span
                     className={`status-dot ${connection === "online" && !errors.system ? "online" : "offline"}`}
                   />
-                  <span>{status?.hostname ?? translate("当前主机")}</span>
+                  <span>{session.panel?.server_name || status?.hostname || translate("当前主机")}</span>
                   <small>
                     {errors.system
                       ? translate("数据读取失败")
                       : connection === "online"
-                        ? (status?.os || translate("在线"))
+                        ? (status?.distribution_name || status?.os || translate("在线"))
                         : connection === "connecting"
                           ? translate("连接中")
                           : translate("实时通道断开")}
@@ -1185,12 +1187,12 @@ export function Panel() {
                             </div>
                           </section>
                         ))}
-                        <Button
+                        <div className="more-signout"><Button
                           label={translate("退出登录")}
                           variant="ghost"
                           icon={<Icon name="logout" />}
                           onClick={() => void logout()}
-                        />
+                        /></div>
                       </div>
                     ) : (
                       <>

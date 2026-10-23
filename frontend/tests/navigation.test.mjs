@@ -69,3 +69,9 @@ test('hash navigation and credential cleanup bypass framework history patches', 
     assert.deepEqual(writes.map(([kind])=>kind),['push','replace','push','replace']);
   } finally {for(const [key,value] of Object.entries(previous)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
 });
+
+test('project type and multiple statuses survive a hash round trip without carrying credentials', () => {
+  const route = parseRoute('#/sites?project=php&status=running%2Cstopped&offset=6&password=secret');
+  assert.deepEqual(route.params, {project:'php', status:'running,stopped', offset:'6'});
+  assert.deepEqual(parseRoute(routeHash(route)), route);
+});

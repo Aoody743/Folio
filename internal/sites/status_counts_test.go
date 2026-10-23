@@ -43,3 +43,49 @@ func TestSiteStatusCountsRespectAuthorizationFiltersAndPagination(t *testing.T) 
 		t.Fatalf("unknown status lost: %#v", data)
 	}
 }
+
+func TestProjectAndMultipleStatusFiltersBeforePagination(t *testing.T) {
+	f := newCategoryCoordFixture(t)
+	for _, entry := range []struct{ id, kind, status string }{
+		{"php-a", "php", "running"}, {"php-b", "php", "stopped"}, {"php-c", "php", "future"},
+		{"static", "static", "running"}, {"git", "git", "running"}, {"proxy", "proxy", "running"}, {"hidden", "php", "running"},
+	} {
+		site := categoryTestSite(entry.id, "one")
+		site.Status = entry.status
+		switch entry.kind {
+		case "php":
+			site.PHPInstance = "php-main"
+		case "git":
+			site.ProjectType = "git"
+		case "proxy":
+			site.Proxies = []Proxy{{Enabled: true}}
+		}
+		f.agent.sites[entry.id] = site
+	}
+	_, actor := f.tokenActor(t, "projects", []string{"sites:read"}, []string{Resource("php-a"), Resource("php-b"), Resource("php-c"), Resource("static"), Resource("git"), Resource("proxy")})
+	for _, offset := range []int{0, 1, 5} {
+		result, err := f.service.Execute(context.Background(), actor, "sites_list", encode(map[string]any{"project_type": "php", "statuses": []string{"running", "stopped"}, "limit": 1, "offset": offset}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		data := result.(map[string]any)
+		if data["total"] != 2 {
+			t.Fatalf("incorrect total: %#v", data)
+		}
+		for _, site := range data["items"].([]Site) {
+			if site.ProjectType != "php" || site.ID == "hidden" {
+				t.Fatalf("wrong project: %#v", site)
+			}
+		}
+	}
+	for _, kind := range []string{"static", "git", "proxy"} {
+		result, err := f.service.Execute(context.Background(), actor, "sites_list", encode(map[string]any{"project_type": kind}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		data := result.(map[string]any)
+		if data["total"] != 1 || data["items"].([]Site)[0].ID != kind {
+			t.Fatalf("wrong %s selection: %#v", kind, data)
+		}
+	}
+}

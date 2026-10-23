@@ -231,6 +231,7 @@ const fields: Record<string, string> = {
   force: "立即续期",
   dns_alias: "DNS验证别名",
   panel_name: "面板名称",
+  server_name: "服务器显示名称",
   basic_username: "入口密码用户名",
   basic_password: "入口密码",
   unauthorized_status: "入口不匹配时的状态",

@@ -13,6 +13,7 @@ export type Session = {
   csrf_token?: string;
   panel?: {
     panel_name: string;
+    server_name?: string;
     footer: string;
     captcha_enabled: boolean;
     custom_login_entry: boolean;
@@ -74,6 +75,8 @@ export type Capability = {
 export type SystemStatus = {
   hostname?: string;
   os?: string;
+  distribution_id?: string;
+  distribution_name?: string;
   kernel?: string;
   architecture?: string;
   cpu_percent?: number | null;

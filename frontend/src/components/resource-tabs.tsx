@@ -8,6 +8,7 @@ const tabIcons: Record<string, IconName> = {
   database: "database", cache: "cache", connections: "network", websites: "sites",
   status: "overview", data: "database",
   sites: "sites", certificates: "shield", retained: "backup",
+  static: "files", php: "code", git: "git", proxy: "network",
   overview: "overview", config: "settings", logs: "logs", backup: "backup",
   source: "key", instances: "server", operations: "settings", domains: "sites",
   tls: "lock", runtime: "terminal", containers: "package", all: "overview",

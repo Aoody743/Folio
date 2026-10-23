@@ -162,7 +162,7 @@ func (p *Provider) Bindings() []core.Binding {
 		"directory_bindings": array(binding, 64), "proxies": array(proxy, 64), "redirects": array(redirect, 64),
 	}
 	bindings := []core.Binding{
-		p.binding("sites_list", "List actual websites with pagination and resource filtering", "sites:read", "site_list", true, false, object(map[string]any{"limit": number(1, 500), "offset": number(0, 1<<30), "query": text(256), "category_id": text(96), "status": choice("running", "stopped", "unknown")}), noResources),
+		p.binding("sites_list", "List actual websites with pagination and resource filtering", "sites:read", "site_list", true, false, object(map[string]any{"limit": number(1, 500), "offset": number(0, 1<<30), "query": text(256), "category_id": text(96), "status": choice("running", "stopped", "unknown"), "statuses": array(choice("running", "stopped", "unknown"), 3), "project_type": choice("static", "php", "git", "proxy")}), noResources),
 		p.binding("sites_get", "Read one actual website, configuration revision and runtime status", "sites:read", "site_get", true, false, object(map[string]any{"id": idField()}, "id"), siteResource),
 		p.binding("sites_create", "Create an isolated website, validate Web/PHP config and reload with rollback", "sites:write", "site_apply", false, true, object(fields, "id", "name", "domains", "web_instance"), p.applyResources),
 		p.binding("sites_update", "Update typed website settings using its expected revision", "sites:write", "site_apply", false, true, object(fields, "id", "expected_revision"), p.applyResources),
@@ -423,7 +423,9 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 			Limit, Offset int
 			Query         string
 			Status        string
-			CategoryID    string `json:"category_id"`
+			Statuses      []string `json:"statuses"`
+			ProjectType   string   `json:"project_type"`
+			CategoryID    string   `json:"category_id"`
 		}
 		if err := strict(raw, &in); err != nil {
 			return core.ActionResult{}, err
@@ -440,6 +442,10 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 			if !p.deps.Authorize(actor, "sites:read", Resource(site.ID)) {
 				continue
 			}
+			site.ProjectType = siteProjectType(site)
+			if in.ProjectType != "" && site.ProjectType != in.ProjectType {
+				continue
+			}
 			if in.CategoryID != "" && site.CategoryID != in.CategoryID {
 				continue
 			}
@@ -452,6 +458,18 @@ func (p *Provider) perform(ctx context.Context, actor core.Actor, name, operatio
 			}
 			if in.Status != "" && state != in.Status {
 				continue
+			}
+			if len(in.Statuses) > 0 {
+				matched := false
+				for _, status := range in.Statuses {
+					if state == status {
+						matched = true
+						break
+					}
+				}
+				if !matched {
+					continue
+				}
 			}
 			filtered = append(filtered, site)
 		}
@@ -881,4 +899,20 @@ func (p *Provider) restoreResources(ctx context.Context, actor core.Actor, raw j
 		resources = appendResource(resources, "host:local")
 	}
 	return resources, nil
+}
+
+// Project type is filtered before pagination and after resource authorization.
+func siteProjectType(site Site) string {
+	if site.ProjectType == "git" {
+		return "git"
+	}
+	if site.PHPVersion != "" || site.PHPInstance != "" {
+		return "php"
+	}
+	for _, proxy := range site.Proxies {
+		if proxy.Enabled {
+			return "proxy"
+		}
+	}
+	return "static"
 }

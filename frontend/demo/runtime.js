@@ -36,8 +36,11 @@
   function page(rows, p = {}) {
     let items = rows.filter(row => !p.query || JSON.stringify([row.name,row.id,row.domains,row.path]).toLowerCase().includes(String(p.query).toLowerCase()));
     if (p.category_id) items = items.filter(row => row.category_id === p.category_id);
-    const counts = {running:items.filter(r=>r.status==='running').length,stopped:items.filter(r=>r.status==='stopped').length,unknown:items.filter(r=>!['running','stopped'].includes(r.status)).length};
+
+    if(p.project_type) items=items.filter(row=>(row.project_type==='git'||row.deployment_type==='git'||row.git_repository?'git':row.php_version||row.php_instance?'php':row.proxies?.some(proxy=>proxy.enabled)?'proxy':'static')===p.project_type);
+    if(p.statuses?.length) items=items.filter(row=>p.statuses.includes(['running','stopped'].includes(row.status)?row.status:'unknown'));
     if(p.status) items=items.filter(r=>(['running','stopped'].includes(r.status)?r.status:'unknown')===p.status);
+    const counts = {running:items.filter(r=>r.status==='running').length,stopped:items.filter(r=>r.status==='stopped').length,unknown:items.filter(r=>!['running','stopped'].includes(r.status)).length};
     const key = p.sort || 'name'; items=[...items].sort((a,b)=>{const x=a[key]??a.id??'',y=b[key]??b.id??'';return (typeof x==='number'?x-y:String(x).localeCompare(String(y)))*(p.order==='desc'?-1:1)});
     const total=items.length, offset=Number(p.offset)||0, limit=Number(p.limit)||100;
     return {items:items.slice(offset,offset+limit),total,offset,limit,status_counts:counts};

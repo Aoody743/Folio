@@ -9,6 +9,7 @@ python3 scripts/rewrite/build-demo.py --binary /absolute/path/to/folio --output 
 python3 -m http.server 4178 --bind 127.0.0.1 --directory /absolute/path/to/site/dist
 FOLIO_DEMO_URL=http://127.0.0.1:4178 python3 tests/rewrite/test_static_demo_browser.py
 FOLIO_DEMO_URL=http://127.0.0.1:4178 python3 tests/rewrite/test_resource_ui_browser.py
+FOLIO_DEMO_URL=http://127.0.0.1:4178 python3 tests/rewrite/test_project_filters_browser.py
 ```
 
 构建依赖 Python Playwright、Pillow，字体再生成依赖 `fonttools[woff]`。构建器从隔离服务读取公开能力描述与软件目录，复用截图展示数据，不导出真实主机数据、管理员密码或登录令牌。输出目录必须专用于本演示，因为重新构建会替换它。
@@ -32,3 +33,7 @@ Astryx 的 FieldLabel 用 U+2219（`∙`）分隔字段名称和必填/可选信
 软件库按分类提供横向卡片轨道，完整列表保留搜索与筛选；点击卡片仍进入标准详情页。外部数据库与缓存连接合并在“数据连接”下，旧链接继续可用。浏览器安装模式采用独立卡片，使用页自动适配可用视口，低频工具收在菜单。演示画面按会话实际尺寸生成，不联系目标网页。
 
 文件列表以 50 项为服务端分页单位，使用紧凑行与内部滚动；“…”及右键打开同一个 Astryx 菜单，具体动作表单在本页对话框中保留原来的权限、变更确认与防重复提交逻辑。手机折叠部分元数据，仍可经文件工具查看。
+
+项目类型现在直接展开为总览、静态、PHP、Git、代理；状态采用 Astryx 多选下拉框。`sites_list` 新增可选 `project_type` 和 `statuses`，在授权过滤后、分页前组合筛选，旧 `status` 参数继续兼容。文件路径、短搜索、回收站和更多菜单合并成一条工具栏，排序、全选及批量操作集中在更多菜单。
+
+“更多”页采用分组磁贴，退出登录位于内容底部。全局名称设置新增可选 `server_name`，省略字段保持原值，空字符串恢复系统主机名；既有修订校验继续生效。系统状态额外读取 `/etc/os-release` 的发行版名称和 ID，不改变原有 `os` 含义。12 个 Simple Icons 发行版图标以离线、可随主题变色的单色 SVG 提供，来源和 CC0-1.0 许可在 `frontend/public/distro-logos/`。

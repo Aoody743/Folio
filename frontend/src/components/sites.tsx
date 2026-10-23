@@ -31,6 +31,8 @@ const SitePHPMaintenance = dynamic(
 );
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
+import { MultiSelector } from "@astryxdesign/core/MultiSelector";
+import { Selector } from "@astryxdesign/core/Selector";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Capability, fullDate, list } from "@/lib/api";
 import { Page, Site, SoftwareInstance } from "@/lib/resources";
@@ -145,6 +147,8 @@ export function SitesView({
   );
   const [query, setQuery] = usePageState("sites", "q", "");
   const [statusFilter, setStatusFilter] = usePageState("sites", "status", "");
+  const [projectFilter, setProjectFilter] = usePageState("sites", "project", "");
+  const selectedStatuses = statusFilter.split(",").filter(value => ["running", "stopped", "unknown"].includes(value));
   const [categoryFilter, setCategoryFilter] = usePageState(
     "sites",
     "category",
@@ -171,6 +175,7 @@ export function SitesView({
   const [operation, setOperation] = useState<string>();
   const [other, setOther] = useState<string>();
   const siteListCapability = capabilities.find((c) => c.name === "sites_list");
+  const listProperties = siteListCapability?.input_schema?.properties as Record<string, unknown> | undefined;
   const categoryCapabilities = siteCategoryCapabilities(capabilities);
   const available = !!siteListCapability;
   const categoryFilterAvailable =
@@ -199,11 +204,8 @@ export function SitesView({
         query,
         categoryID: categoryFilterAvailable ? categoryFilter : "",
       }),
-      ...(statusFilter &&
-      siteListCapability?.input_schema?.properties &&
-      Object.hasOwn(siteListCapability.input_schema.properties, "status")
-        ? { status: statusFilter }
-        : {}),
+      ...(projectFilter && listProperties?.project_type ? {project_type: projectFilter} : {}),
+      ...(selectedStatuses.length && listProperties?.statuses ? {statuses: selectedStatuses} : selectedStatuses.length === 1 && listProperties?.status ? {status: selectedStatuses[0]} : {}),
     },
     available && active,
   );
@@ -458,61 +460,18 @@ export function SitesView({
                 onClick={() => setCreating(true)}
               />
             )}
+            <details className="site-tools-menu"><summary aria-label={translate("网站工具")} title={translate("网站工具")}><Icon name="more"/></summary><div className="site-tools-content">
+              {siteResourceTabs.filter(tab=>tab.id!=="sites").map(tab=><Button key={tab.id} label={tab.label} variant="ghost" icon={<Icon name={tab.id==="certificates"?"shield":"backup"}/>} onClick={()=>setResourcePage(tab.id)}/>)}
+              {categoryFilterAvailable && <Selector label={translate("自定义分类")} value={categoryFilter} options={[{value:"",label:translate("全部分类")},...visibleCategories.map(category=>({value:category.id,label:category.name}))]} onChange={value=>{setCategoryFilter(value);setOffset(0);}}/>}
+              <SiteCategoriesManager capabilities={capabilities} categories={visibleCategories} loading={categoryResources.loading} listError={categoryResources.error} onReload={categoryResources.reload} onChanged={categoriesChanged}/>
+            </div></details>
           </div>
-          <details className="site-resource-tools"><summary>{translate("网站工具")}</summary><div className="list-controls">{siteResourceTabs.filter(tab => tab.id !== "sites").map(tab => <Button key={tab.id} label={tab.label} variant="ghost" icon={<Icon name={tab.id === "certificates" ? "shield" : "backup"}/>} onClick={() => setResourcePage(tab.id)} />)}</div></details>
-          <details className="list-options">
-            <summary>
-              {translate("筛选与分类")}
-              {statusFilter
-                ? ` · ${statusFilter === "running" ? translate("已启用") : statusFilter === "stopped" ? translate("已停用") : translate("状态未知")}`
-                : ""}
-            </summary>
-            <div className="list-controls">
-              <label className="native-field">
-                {translate("状态")}
-                <select
-                  aria-label={translate("网站状态筛选")}
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setOffset(0);
-                  }}
-                >
-                  <option value="">{translate("全部")}</option>
-                  <option value="running">{translate("已启用")}</option>
-                  <option value="stopped">{translate("已停用")}</option>
-                  <option value="unknown">{translate("状态未知")}</option>
-                </select>
-              </label>
-              {categoryFilterAvailable && (
-                <label className="native-field">
-                  {translate("网站分类筛选")}
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => {
-                      setCategoryFilter(e.target.value);
-                      setOffset(0);
-                    }}
-                  >
-                    <option value="">{translate("全部分类")}</option>
-                    {visibleCategories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              <SiteCategoriesManager
-                capabilities={capabilities}
-                categories={visibleCategories}
-                loading={categoryResources.loading}
-                listError={categoryResources.error}
-                onReload={categoryResources.reload}
-                onChanged={categoriesChanged}
-              />
-            </div>
-          </details>
+          <div className="site-project-filter-row">
+            <ResourceTabs aria-label={translate("项目类型")}>
+              {[{id:"",label:translate("总览"),icon:"overview"},{id:"static",label:translate("静态"),icon:"files"},{id:"php",label:"PHP",icon:"code"},{id:"git",label:"Git",icon:"git"},{id:"proxy",label:translate("代理"),icon:"network"}].map(item=><button key={item.id || "overview"} role="tab" aria-selected={projectFilter===item.id} onClick={()=>{setProjectFilter(item.id);setOffset(0);}}>{item.label}</button>)}
+            </ResourceTabs>
+            <MultiSelector label={translate("网站状态筛选")} isLabelHidden placeholder={translate("全部状态")} width={200} value={selectedStatuses} hasClear options={[{value:"running",label:translate("已启用")},{value:"stopped",label:translate("已停用")},{value:"unknown",label:translate("状态未知")}]} onChange={values=>{setStatusFilter(values.join(","));setOffset(0);}} />
+          </div>
           {!available ? (
             <Unavailable
               title={translate("网站资源服务暂不可用")}

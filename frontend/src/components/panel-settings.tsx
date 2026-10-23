@@ -12,6 +12,7 @@ import { ActionForm } from "./actions";
 import { Pager, ResourceActions, State, Unavailable } from "./resource-ui";
 type Settings = {
   panel_name: string;
+  server_name?: string;
   footer: string;
   login_entry: string;
   captcha_enabled: boolean;
@@ -51,13 +52,14 @@ export function PanelSettings({
           basic_username: settings.data.basic_auth_username,
           expected_revision: settings.data.revision,
         }
-      : { ...settings.data, expected_revision: settings.data.revision }
+      : { ...settings.data, server_name: settings.data.server_name ?? "", expected_revision: settings.data.revision }
     : {};
   return (
     <Card className="panel-card">
       <SectionHeader icon="settings" className="card-heading">
         <h2>{translate("面板与访问设置")}</h2>
       </SectionHeader>
+      {tab === "branding" && <p className="section-caption">{translate("服务器显示名称留空时使用系统主机名，不会修改系统主机名。")}</p>}
       <ResourceTabs
         aria-label={translate("面板访问设置分类")}
       >

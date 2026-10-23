@@ -28,6 +28,7 @@ func WithPeerIP(ctx context.Context, address string) context.Context {
 
 type PanelSettings struct {
 	PanelName          string `json:"panel_name"`
+	ServerName         string `json:"server_name"`
 	Footer             string `json:"footer"`
 	LoginEntry         string `json:"login_entry"`
 	CAPTCHAEnabled     bool   `json:"captcha_enabled"`
@@ -61,7 +62,7 @@ func loadPanelSettings(ctx context.Context, conn sqlState) (PanelSettings, error
 // credential, but disclosing it from every unauthenticated session defeats it.
 func (s *Service) PublicPanelSettings(ctx context.Context) (map[string]any, error) {
 	p, err := s.PanelSettings(ctx)
-	return map[string]any{"panel_name": p.PanelName, "footer": p.Footer, "captcha_enabled": p.CAPTCHAEnabled, "custom_login_entry": p.LoginEntry != "", "maintenance": p.Maintenance}, err
+	return map[string]any{"panel_name": p.PanelName, "server_name": p.ServerName, "footer": p.Footer, "captcha_enabled": p.CAPTCHAEnabled, "custom_login_entry": p.LoginEntry != "", "maintenance": p.Maintenance}, err
 }
 
 func (s *Service) CheckLoginEntry(ctx context.Context, entry string) error {
@@ -98,7 +99,7 @@ func (s *Service) registerIdentityBindings() error {
 			p, e := s.PanelSettings(ctx)
 			return ActionResult{Data: p}, e
 		}),
-		identityBinding("settings_branding_update", "Update plain-text panel name and footer with revision protection", "settings:write", false, object(map[string]any{"panel_name": map[string]any{"type": "string", "minLength": 1, "maxLength": 80}, "footer": boundedText(240), "expected_revision": map[string]any{"type": "integer", "minimum": 0}}, "panel_name", "footer", "expected_revision"), hostIdentityResource, s.updateBranding),
+		identityBinding("settings_branding_update", "Update plain-text panel name and footer with revision protection", "settings:write", false, object(map[string]any{"panel_name": map[string]any{"type": "string", "minLength": 1, "maxLength": 80}, "footer": boundedText(240), "server_name": boundedText(80), "expected_revision": map[string]any{"type": "integer", "minimum": 0}}, "panel_name", "footer", "expected_revision"), hostIdentityResource, s.updateBranding),
 	}
 	fields := credentialFields()
 	fields["login_entry"] = boundedText(64)
@@ -137,9 +138,10 @@ func (s *Service) savePanelSettings(ctx context.Context, p PanelSettings, expect
 }
 func (s *Service) updateBranding(ctx context.Context, a Actor, raw json.RawMessage) (ActionResult, error) {
 	var in struct {
-		PanelName string `json:"panel_name"`
-		Footer    string `json:"footer"`
-		Expected  int64  `json:"expected_revision"`
+		PanelName  string  `json:"panel_name"`
+		ServerName *string `json:"server_name"`
+		Footer     string  `json:"footer"`
+		Expected   int64   `json:"expected_revision"`
 	}
 	if e := decodeInput(raw, &in); e != nil {
 		return ActionResult{}, e
@@ -150,6 +152,12 @@ func (s *Service) updateBranding(ctx context.Context, a Actor, raw json.RawMessa
 	p, e := s.PanelSettings(ctx)
 	if e != nil {
 		return ActionResult{}, e
+	}
+	if in.ServerName != nil {
+		if !utf8.ValidString(*in.ServerName) {
+			return ActionResult{}, invalid("Server display name must be plain text")
+		}
+		p.ServerName = strings.TrimSpace(*in.ServerName)
 	}
 	p.PanelName = in.PanelName
 	p.Footer = in.Footer

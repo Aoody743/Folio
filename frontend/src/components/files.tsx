@@ -4,6 +4,7 @@ import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@astryxdesign/core/Button";
+import { Selector } from "@astryxdesign/core/Selector";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { Dialog } from "@astryxdesign/core/Dialog";
 import { Card } from "@astryxdesign/core/Card";
@@ -318,74 +319,10 @@ export function FilesView({
           <Unavailable title={translate("文件资源服务暂不可用")} icon="files" />
         ) : (
           <>
-            <div className="file-toolbar">
-              <label className="native-field file-root-field">
-                {translate("资源目录")}
-                <select
-                  aria-label={translate("文件根目录")}
-                  value={root}
-                  onChange={(e) =>
-                    guard(() => {
-                      setRoot(e.target.value);
-                      setPath("");
-                      setOffset(0);
-                    })
-                  }
-                >
-                  {availableRoots.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.label || r.id}
-                      {r.read_only ? translate(" · 只读") : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setSearch(query);
-                  setOffset(0);
-                }}
-              >
-                <TextInput
-                  label={translate("按文件名筛选")}
-                  isLabelHidden
-                  value={query}
-                  onChange={setQuery}
-                  placeholder={translate("当前目录文件名")}
-                />
-                <Button
-                  label={translate("筛选文件")}
-                  icon={<Icon name="search" />}
-                  isIconOnly
-                  type="submit"
-                />
-              </form>
-              <label className="native-field file-sort-field">{translate("排序")}<select aria-label={translate("文件排序")} value={sortBy+":"+sortOrder} onChange={e=>{const [sort,order]=e.target.value.split(":");setSortBy(sort);setSortOrder(order);setOffset(0);}}>
-                <option value="name:asc">{translate("按名称升序")}</option><option value="name:desc">{translate("按名称降序")}</option>
-                <option value="size:asc">{translate("按大小升序")}</option><option value="size:desc">{translate("按大小降序")}</option>
-                <option value="modified_at:desc">{translate("最近修改优先")}</option><option value="modified_at:asc">{translate("最早修改优先")}</option>
-              </select></label>
-              {has("fs_batch") && has("fs_preflight") && !currentRoot?.read_only && batchItems.length>0 && <Button label={translate("批量操作 ({0})",[batchItems.length])} onClick={()=>guard(()=>{setBatchSelection(batchItems);setBatchOpen(true);} )}/>}
-              {has("fs_trash_list") && (
-                <Button
-                  label={translate("回收站")}
-                  variant="ghost"
-                  onClick={() => setTrashOpen(true)}
-                />
-              )}
-            </div>
+            <div className="file-location-toolbar">
             <nav className="breadcrumbs" aria-label={translate("文件路径")}>
-              <button
-                onClick={() =>
-                  guard(() => {
-                    setPath("");
-                    setOffset(0);
-                  })
-                }
-              >
-                {currentRoot?.label || root || translate("选择目录")}
-              </button>
+              <div className="file-location-root"><Selector label={translate("文件根目录")} isLabelHidden value={root} options={availableRoots.map(item=>({value:item.id,label:(item.label||item.id)+(item.read_only?translate(" · 只读"):"")}))} onChange={value=>guard(()=>{setRoot(value);setPath("");setOffset(0);})}/></div>
+              {path && <button className="file-root-home" aria-label={translate("返回根目录")} title={translate("返回根目录")} onClick={()=>guard(()=>{setPath("");setOffset(0);})}><Icon name="files" size={16}/></button>}
               {path
                 .split("/")
                 .filter(Boolean)
@@ -405,6 +342,24 @@ export function FilesView({
                   </span>
                 ))}
             </nav>
+              <form className="file-location-search" onSubmit={event=>{event.preventDefault();setSearch(query);setOffset(0);}}>
+                <TextInput label={translate("按文件名筛选")} isLabelHidden value={query} onChange={setQuery} placeholder={translate("搜索文件")} startIcon={<Icon name="search" size={18}/>}/>
+                <Button label={translate("筛选文件")} icon={<Icon name="search" size={18}/>} isIconOnly variant="ghost" type="submit"/>
+              </form>
+              {has("fs_trash_list") && <Button label={translate("回收站")} icon={<Icon name="trash" size={18}/>} variant="ghost" onClick={()=>setTrashOpen(true)}/>}
+              <DropdownMenu button={{label:translate("更多文件选项"),icon:<Icon name="more"/>,isIconOnly:true,variant:"ghost"}} alignment="end" menuWidth={220} items={[
+                {id:"filter",label:translate("筛选与排序"),icon:<Icon name="filter"/>,items:[
+                  {id:"apply",label:translate("应用名称筛选"),onClick:()=>{setSearch(query);setOffset(0);}},
+                  {id:"clear",label:translate("清除筛选"),onClick:()=>{setQuery("");setSearch("");setOffset(0);}},
+                  ...([['name:asc','按名称升序'],['name:desc','按名称降序'],['size:asc','按大小升序'],['size:desc','按大小降序'],['modified_at:desc','最近修改优先'],['modified_at:asc','最早修改优先']] as const).map(([value,label])=>({id:value,label:translate(label),icon:value===sortBy+":"+sortOrder?<Icon name="check"/>:undefined,onClick:()=>{const [sort,order]=value.split(":");setSortBy(sort);setSortOrder(order);setOffset(0);}}))
+                ]},
+                ...(has("fs_batch")&&has("fs_preflight")&&!currentRoot?.read_only?[
+                  {id:"select-all",label:translate("全选本页"),icon:<Icon name="check"/>,onClick:()=>setChecked(rows.filter(item=>item.type!=="symlink").map(item=>item.path))},
+                  {id:"clear-selection",label:translate("取消选择"),onClick:()=>setChecked([])},
+                  {id:"batch",label:translate("批量操作 ({0})",[batchItems.length]),isDisabled:!batchItems.length,onClick:()=>guard(()=>{setBatchSelection(batchItems);setBatchOpen(true);})}
+                ]:[])
+              ]}/>
+            </div>
             {[error, roots.error, listing.error].filter(Boolean).map((e, i) => (
               <ResourceError error={translate(e)} key={i} retry={refresh} />
             ))}

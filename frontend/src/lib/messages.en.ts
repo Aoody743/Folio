@@ -1,5 +1,20 @@
 // Application copy only. Resource data and user content are never translated.
 export const english: Record<string, string> = {
+ "服务器显示名称": "Server display name",
+ "服务器显示名称留空时使用系统主机名，不会修改系统主机名。": "Leave the server display name empty to use the system hostname. This does not change the system hostname.",
+
+ "返回根目录": "Back to root",
+ "更多文件选项": "More file options",
+ "筛选与排序": "Filter and sort",
+ "应用名称筛选": "Apply name filter",
+ "全选本页": "Select this page",
+ "取消选择": "Clear selection",
+
+  "项目类型": "Project type",
+  "全部状态": "All statuses",
+  "自定义分类": "Custom categories",
+  "静态": "Static",
+  "代理": "Proxy",
   "关闭": "Close",
   "数据连接": "Data connections",
   "左右滑动查看更多": "Scroll sideways to explore",

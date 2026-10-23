@@ -24,6 +24,7 @@ const keys = new Set([
   "q",
   "offset",
   "category",
+  "project",
   "status",
   "id",
   "group",

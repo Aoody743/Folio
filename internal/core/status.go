@@ -19,6 +19,8 @@ type Usage struct {
 type SystemStatus struct {
 	Hostname              string    `json:"hostname"`
 	OS                    string    `json:"os"`
+	DistributionID        string    `json:"distribution_id,omitempty"`
+	DistributionName      string    `json:"distribution_name,omitempty"`
 	Architecture          string    `json:"architecture"`
 	CPUCores              int       `json:"cpu_cores"`
 	CPUPercent            *float64  `json:"cpu_percent"`
@@ -73,6 +75,11 @@ func (s *statusSampler) sample() {
 	host, _ := os.Hostname()
 	stamp := nowString()
 	v := SystemStatus{Hostname: host, OS: runtime.GOOS, Architecture: runtime.GOARCH, CPUCores: runtime.NumCPU(), DiskPath: "/", UpdatedAt: stamp, SampledAt: stamp, SampleIntervalSeconds: 1, Available: true, LoadAverage: []float64{}}
+	if runtime.GOOS == "linux" {
+		if data, err := os.ReadFile("/etc/os-release"); err == nil {
+			v.DistributionID, v.DistributionName = parseDistribution(string(data))
+		}
+	}
 	if data, e := os.ReadFile("/proc/stat"); e == nil {
 		line := strings.SplitN(string(data), "\n", 2)[0]
 		fields := strings.Fields(line)
@@ -156,4 +163,29 @@ func (s *statusSampler) sample() {
 	s.mu.Lock()
 	s.value = v
 	s.mu.Unlock()
+}
+
+func parseDistribution(data string) (id, name string) {
+	for _, line := range strings.Split(data, "\n") {
+		key, value, ok := strings.Cut(line, "=")
+		if !ok || (key != "ID" && key != "PRETTY_NAME") {
+			continue
+		}
+		value = strings.TrimSpace(value)
+		if strings.HasPrefix(value, "\"") {
+			if decoded, err := strconv.Unquote(value); err == nil {
+				value = decoded
+			} else {
+				continue
+			}
+		} else {
+			value = strings.Trim(value, "'")
+		}
+		if key == "ID" {
+			id = value
+		} else {
+			name = value
+		}
+	}
+	return
 }

@@ -280,3 +280,30 @@ func TestCAPTCHAImagePeerExpiryReplayAndCustomEntry(t *testing.T) {
 		t.Fatal("CAPTCHA image unnecessarily persisted")
 	}
 }
+
+func TestServerDisplayNameOptionalAndRevisionProtected(t *testing.T) {
+	s, a := testService(t)
+	defer s.Close()
+	first := execute(t, s, a, "settings_branding_update", map[string]any{"panel_name": "Folio", "footer": "", "server_name": " Production 01 ", "expected_revision": 0}).(PanelSettings)
+	if first.ServerName != "Production 01" {
+		t.Fatal(first)
+	}
+	next := execute(t, s, a, "settings_branding_update", map[string]any{"panel_name": "Folio", "footer": "new", "expected_revision": 1}).(PanelSettings)
+	if next.ServerName != first.ServerName {
+		t.Fatal("legacy client cleared display name")
+	}
+	cleared := execute(t, s, a, "settings_branding_update", map[string]any{"panel_name": "Folio", "footer": "", "server_name": "", "expected_revision": 2}).(PanelSettings)
+	if cleared.ServerName != "" {
+		t.Fatal(cleared)
+	}
+}
+func TestDistributionReleaseParsing(t *testing.T) {
+	id, name := parseDistribution("ID=ubuntu\nPRETTY_NAME=\"Ubuntu 24.04 LTS\"\nIGNORED=value\n")
+	if id != "ubuntu" || name != "Ubuntu 24.04 LTS" {
+		t.Fatal(id, name)
+	}
+	id, name = parseDistribution("ID=debian\nPRETTY_NAME='Debian GNU/Linux 12'\n")
+	if id != "debian" || name != "Debian GNU/Linux 12" {
+		t.Fatal(id, name)
+	}
+}
