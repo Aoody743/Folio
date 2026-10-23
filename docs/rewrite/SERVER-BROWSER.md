@@ -15,6 +15,8 @@
 
 本版本用于交互访问网页，不提供远程文件上传、下载管理、音频或摄像头转发。网页声音、视频和动画的体验受截图传输频率及服务器资源影响。
 
+实测截图：[桌面](../screenshots/server-browser-beta5/server-browser-desktop.png) · [手机 390](../screenshots/server-browser-beta5/server-browser-390.png) · [手机 320](../screenshots/server-browser-beta5/server-browser-320.png)。画面中的网站为真实服务器浏览器打开的隔离测试站点，非线上用户资产。
+
 ## 服务器环境
 
 需要 Linux 服务器已安装 Chromium 或 Google Chrome，且 Folio 服务用户可以在沙箱中启动它。面板会检查浏览器环境；没有可用引擎时会提示安装后重试。Folio 发行包不捆绑浏览器引擎，不会在后台自动安装系统软件。

@@ -287,7 +287,7 @@ def run_ui(server, website, password, artifacts, errors):
             screen = view.locator(".server-browser-viewport img")
             expect(screen).to_be_visible(timeout=15000)
             eventually(lambda: website.saw("/first", ui_nonce=ui_nonce), "UI did not navigate the server browser")
-            page.wait_for_function("document.querySelector('.server-browser-viewport img')?.naturalWidth > 0")
+            page.wait_for_function("() => document.querySelector('.server-browser-viewport img')?.naturalWidth > 0")
             def remote_click(x, y):
                 screen.scroll_into_view_if_needed()
                 box = screen.bounding_box()
@@ -314,7 +314,7 @@ def run_ui(server, website, password, artifacts, errors):
             view.get_by_role("button", name="关闭标签页 2", exact=True).click()
             expect(view.get_by_role("tab")).to_have_count(1)
             view.get_by_role("button", name="适应窗口", exact=True).click()
-            page.wait_for_function("Number(document.querySelector('.server-browser-viewport img')?.getAttribute('width')) !== 1280")
+            page.wait_for_function("() => Number(document.querySelector('.server-browser-viewport img')?.getAttribute('width')) !== 1280")
             view.get_by_role("button", name="全屏", exact=True).click()
             expect(view).to_have_class(re.compile("is-fullscreen"))
             page.wait_for_timeout(500)

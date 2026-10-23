@@ -115,7 +115,7 @@ def main():
                     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), (path,w)
                     if w>=1000:
                         page.screenshot(path=str(artifacts/f'debug-{path.split("?")[0][1:]}-{w}.png'),full_page=True)
-                        page.wait_for_function('document.documentElement.scrollHeight<=innerHeight',timeout=5000)
+                        page.wait_for_function('() => document.documentElement.scrollHeight<=innerHeight',timeout=5000)
                         assert page.evaluate('document.documentElement.scrollHeight<=innerHeight'), (path,w,'desktop list scroll',page.evaluate('({height:document.documentElement.scrollHeight,list:document.querySelector(".resource-table-wrap")?.getBoundingClientRect().toJSON(),rows:document.querySelectorAll(".resource-table tbody tr").length,pager:document.querySelector(".pagination")?.getBoundingClientRect().toJSON()})'))
                     pager=page.locator('.pagination:visible')
                     expect(pager).to_be_visible()
