@@ -315,6 +315,7 @@ def run_ui(server, website, password, artifacts, errors):
             expect(view.get_by_role("tab")).to_have_count(1)
             view.get_by_role("button", name="适应窗口", exact=True).click()
             page.wait_for_function("() => Number(document.querySelector('.server-browser-viewport img')?.getAttribute('width')) !== 1280")
+            page.wait_for_function("() => { const image = document.querySelector('.server-browser-viewport img'); return image?.naturalWidth === Number(image?.getAttribute('width')) && image?.naturalHeight === Number(image?.getAttribute('height')); }")
             view.get_by_role("button", name="全屏", exact=True).click()
             expect(view).to_have_class(re.compile("is-fullscreen"))
             page.wait_for_timeout(500)
@@ -324,6 +325,7 @@ def run_ui(server, website, password, artifacts, errors):
             for width, height in [(390, 844), (320, 568)]:
                 page.set_viewport_size({"width": width, "height": height})
                 view.get_by_role("button", name="适应窗口", exact=True).click()
+                page.wait_for_function("() => { const image = document.querySelector('.server-browser-viewport img'); return image?.naturalWidth === Number(image?.getAttribute('width')) && image?.naturalHeight === Number(image?.getAttribute('height')); }")
                 page.wait_for_timeout(300)
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (width, "horizontal UI overflow")
                 page.screenshot(path=str(artifacts / f"server-browser-{width}.png"), full_page=True)

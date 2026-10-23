@@ -117,6 +117,8 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
 
   const accept = useCallback((next: BrowserSession) => {
     if (!mounted.current) return;
+    if (currentSession.current && (currentSession.current.width !== next.width || currentSession.current.height !== next.height))
+      setFrameURL("");
     setSession(next);
     setTabID((previous) =>
       next.tabs.some((tab) => tab.id === previous)
@@ -153,7 +155,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
       busyRef.current = true;
       setBusy(true);
       setError("");
-      const epoch = generation.current;
+      const epoch = ++generation.current;
       try {
         // Session responses contain browsing URLs. Keep them out of the durable
         // idempotency cache; these controls are never retried automatically.
@@ -247,7 +249,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
     (input: BrowserInput, result: InputResult = {}) => {
       const current = currentSession.current;
       const tab = currentTab.current;
-      if (!current || !tab || inputPaused.current) {
+      if (!current || !tab || inputPaused.current || !image.current?.complete || image.current.naturalWidth !== current.width || image.current.naturalHeight !== current.height) {
         result.reject?.(
           new Error(translate("输入未确认，已保留文字。请核对网页后重试。")),
         );
@@ -313,7 +315,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
       clearTimeout(timer);
       clearQueue();
     };
-  }, [active, id, tabID, retry, clearQueue]);
+  }, [active, id, tabID, session?.width, session?.height, retry, clearQueue]);
 
   useEffect(() => {
     if (!active || !id) return;
@@ -321,13 +323,14 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = async () => {
+      const epoch = generation.current;
       try {
         const result = await action<BrowserSession>(
           "browser_tabs",
           { id },
           { signal: controller.signal },
         );
-        if (!stopped && currentSession.current?.id === id) accept(result);
+        if (!stopped && !busyRef.current && generation.current === epoch && currentSession.current?.id === id) accept(result);
       } catch (e) {
         if (
           !stopped &&
