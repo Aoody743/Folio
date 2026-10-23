@@ -1,0 +1,31 @@
+name: Diagnose sandboxed browser installation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GOFLAGS: '-p=1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Inspect ephemeral runner and allow sandbox namespaces
+        run: |
+          free -m
+          df -h /dev/shm
+          command -v chromium || true
+          command -v google-chrome || true
+          google-chrome --version
+          if sysctl kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+      - name: Real browser installation lifecycle with failure diagnostics
+        run: |
+          umask 077
+          go test -race -count=1 -v -run '^TestOptionalBrowserLifecycleAndPermissions$' ./internal/serverbrowser

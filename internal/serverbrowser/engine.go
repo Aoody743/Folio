@@ -24,8 +24,9 @@ import (
 // EngineOptions belongs to trusted server composition, never to action input.
 // The sandbox override exists only to exercise the engine inside isolated CI.
 type EngineOptions struct {
-	Executable              string
-	UnsafeNoSandboxForTests bool
+	Executable                 string
+	UnsafeNoSandboxForTests    bool
+	StartupDiagnosticsForTests io.Writer
 }
 
 type cdpResponse struct {
@@ -118,6 +119,9 @@ func startEngine(ctx context.Context, opts EngineOptions, width, height int) (*e
 	// Folio logs, action output or persistent audit records.
 	command.Stdout = io.Discard
 	command.Stderr = io.Discard
+	if opts.StartupDiagnosticsForTests != nil {
+		command.Stderr = opts.StartupDiagnosticsForTests
+	}
 	if err = command.Start(); err != nil {
 		commandRead.Close()
 		commandWrite.Close()
@@ -132,18 +136,28 @@ func startEngine(ctx context.Context, opts EngineOptions, width, height int) (*e
 	go func() { _ = command.Wait(); close(e.processDone); e.shutdown(); e.cleanup() }()
 	initCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
+	phase := "Browser.getVersion"
 	if err = e.call(initCtx, "", "Browser.getVersion", nil, nil); err == nil {
+		phase = "Browser.setDownloadBehavior"
 		err = e.call(initCtx, "", "Browser.setDownloadBehavior", map[string]any{"behavior": "deny"}, nil)
 	}
 	if err == nil {
+		phase = "Target.setDiscoverTargets"
 		err = e.call(initCtx, "", "Target.setDiscoverTargets", map[string]any{"discover": true}, nil)
 	}
 	if err == nil {
+		phase = "initial blank tab"
 		_, err = e.NewTab(initCtx, "about:blank", width, height)
 	}
 	if err != nil {
 		e.Close()
-		return nil, failure("browser_sandbox_unavailable", "Chromium could not start with its sandbox. Check the server's Chromium installation and sandbox support.", 503)
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, failure("browser_timeout", "Chromium startup timed out during "+phase+"; retry or check server load", 504)
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, err
+		}
+		return nil, failure("browser_sandbox_unavailable", "Chromium could not start during "+phase+" ("+err.Error()+"). Check the server's Chromium installation and sandbox support.", 503)
 	}
 	return e, nil
 }

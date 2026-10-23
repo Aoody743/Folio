@@ -42,6 +42,10 @@ func waitAppTask(t *testing.T, f providerFixture, result any) {
 		case "succeeded":
 			return
 		case "failed", "canceled", "interrupted":
+			if file, ok := f.browser.options.Engine.StartupDiagnosticsForTests.(*os.File); ok {
+				body, _ := os.ReadFile(file.Name())
+				t.Logf("Chromium startup diagnostics: %s", body)
+			}
 			t.Fatalf("app task: %v", job)
 		}
 		time.Sleep(250 * time.Millisecond)
@@ -49,7 +53,12 @@ func waitAppTask(t *testing.T, f providerFixture, result any) {
 	t.Fatal("app task timed out")
 }
 func TestOptionalBrowserLifecycleAndPermissions(t *testing.T) {
-	f := setupProvider(t, Options{Engine: EngineOptions{UnsafeNoSandboxForTests: os.Geteuid() == 0}})
+	diagnostics, err := os.CreateTemp(t.TempDir(), "chromium-startup-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer diagnostics.Close()
+	f := setupProvider(t, Options{Engine: EngineOptions{UnsafeNoSandboxForTests: os.Geteuid() == 0, StartupDiagnosticsForTests: diagnostics}})
 	ctx := context.Background()
 	state := f.service.Runtime("serverbrowser").State
 	_ = state.Delete(ctx, "apps", "panel")
