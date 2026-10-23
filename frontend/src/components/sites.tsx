@@ -1,4 +1,5 @@
 "use client";
+import { ResourceSignal, siteProject } from "./resource-summary";
 import { ResourceMeta } from "./resource-meta";
 import { ResourceTabs } from "./resource-tabs";
 import { t as translate } from "@/lib/i18n";
@@ -136,7 +137,7 @@ export function SitesView({
 }) {
   const [certificateSiteID] = usePageState("sites", "site", "");
   const [offset, setOffset] = usePageState("sites", "offset", 0);
-  const { ref: listRef, limit } = usePageSize(72);
+  const { ref: listRef, limit } = usePageSize(180, "auto");
   const [resourcePage, setResourcePage] = usePageState(
     "sites",
     "page",
@@ -390,7 +391,7 @@ export function SitesView({
         }
       : undefined;
   const siteResourceTabs = [
-    { id: "sites", label: translate("网站") },
+    { id: "sites", label: translate("总览") },
     ...(capabilities.some((capability) =>
       ["certificates_list", "certificates_import"].includes(capability.name),
     )
@@ -421,20 +422,7 @@ export function SitesView({
   };
   return (
     <div className="stack">
-      <ResourceTabs
-        aria-label={translate("网站资源类型")}
-      >
-        {siteResourceTabs.map((tab) => (
-          <button
-            role="tab"
-            aria-selected={activeResourcePage === tab.id}
-            key={tab.id}
-            onClick={() => setResourcePage(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </ResourceTabs>
+      {activeResourcePage !== "sites" && <Button label={translate("返回网站总览")} icon={<Icon name="back" />} variant="ghost" onClick={() => setResourcePage("sites")} />}
       {activeResourcePage === "retained" ? (
         <RetainedSites
           capabilities={capabilities}
@@ -471,6 +459,7 @@ export function SitesView({
               />
             )}
           </div>
+          <details className="site-resource-tools"><summary>{translate("网站工具")}</summary><div className="list-controls">{siteResourceTabs.filter(tab => tab.id !== "sites").map(tab => <Button key={tab.id} label={tab.label} variant="ghost" icon={<Icon name={tab.id === "certificates" ? "shield" : "backup"}/>} onClick={() => setResourcePage(tab.id)} />)}</div></details>
           <details className="list-options">
             <summary>
               {translate("筛选与分类")}
@@ -553,67 +542,25 @@ export function SitesView({
                   />
                 </div>
               )}
-              <div ref={listRef} className="resource-table-wrap">
-                <table className="resource-table sites-table">
-                  <thead>
-                    <tr>
-                      <th>{translate("网站 / 域名")}</th>
-                      <th>{translate("状态")}</th>
-                      <th className="site-runtime">{translate("运行环境")}</th>
-                      <th className="site-tls">TLS</th>
-                      <th className="site-updated">{translate("更新")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((site) => (
-                      <tr key={site.id}>
-                        <td>
-                          <button
-                            className="resource-name"
-                            onClick={() => {
-                              setSelected(site);
-                              setGroup("overview");
-                              setOperation(undefined);
-                              setOpen(true);
-                            }}
-                          >
-                            {site.name}
-                          </button>
-                          {site.default && (
-                            <span className="status-chip neutral">
-                              {translate("默认网站")}
-                            </span>
-                          )}
-                          <small>
-                            {site.domains?.join(" · ") ||
-                              translate("未配置域名")}
-                          </small>
-                        </td>
-                        <td>
-                          <State
-                            value={
-                              site.status === "running" ? "active" : site.status
-                            }
-                          />
-                        </td>
-                        <td className="site-runtime">
-                          {site.php_version ? `PHP ${site.php_version}` : "—"}
-                        </td>
-                        <td className="site-tls">
-                          {site.tls?.enabled ? (
-                            <span title={fullDate(site.tls.expires_at)}>
-                              {translate("已配置")}
-                              <small>{fullDate(site.tls.expires_at)}</small>
-                            </span>
-                          ) : (
-                            translate("未配置")
-                          )}
-                        </td>
-                        <td className="site-updated">{fullDate(site.updated_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div ref={listRef} className="resource-card-grid">
+                {[...rows].sort((a,b)=>siteProject(a).key.localeCompare(siteProject(b).key)).map(site => {
+                  const project = siteProject(site);
+                  const tlsLabel = translate(site.tls?.enabled ? "证书已部署" : "未部署证书");
+                  const select = (group: string) => { setSelected(site); setGroup(group); setOperation(undefined); setOpen(true); };
+                  return <article className="resource-summary-card" key={site.id}>
+                    <div className="resource-summary-heading">
+                      <span className="resource-summary-icon"><Icon name={project.icon} size={24} /></span>
+                      <div className="resource-summary-name"><button className="resource-name" onClick={() => select("overview")}>{site.name}</button><span className="muted">{project.label}{site.php_version ? ` · ${site.php_version}` : ""}</span></div>
+                      <ResourceSignal status={site.status} configuration />
+                    </div>
+                    <p className="resource-summary-domain" title={site.domains?.join(" · ")}>{site.domains?.join(" · ") || translate("未配置域名")}</p>
+                    <div className="resource-summary-footer">
+                      <button className={`resource-indicator ${site.tls?.enabled ? "positive" : "neutral"}`} title={site.tls?.enabled ? `${tlsLabel} · ${fullDate(site.tls.expires_at)}` : tlsLabel} onClick={() => select("tls")}><Icon name={site.tls?.enabled ? "shield" : "lock"} size={17} /><span>{tlsLabel}</span></button>
+                      {site.default && <span className="resource-indicator" title={translate("默认网站")}><Icon name="pin" size={16} /><span>{translate("默认网站")}</span></span>}
+                      <button className="resource-detail-link" aria-label={translate("查看网站详情")} onClick={() => select("overview")}><Icon name="arrow" size={18}/></button>
+                    </div>
+                  </article>;
+                })}
               </div>
               {!rows.length && !resources.loading && !resources.error && (
                 <Unavailable

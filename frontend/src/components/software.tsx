@@ -1,4 +1,5 @@
 "use client";
+import { ResourceSignal } from "./resource-summary";
 import { SectionHeader } from "./section-header";
 import { ResourceTabs } from "./resource-tabs";
 import { ResourceError } from "./resource-ui";
@@ -112,7 +113,7 @@ export function SoftwareView({
 }) {
   const [filter, setFilter] = usePageState("software", "filter", "all");
   const [offset, setOffset] = usePageState("software", "offset", 0);
-  const { ref: listRef, limit } = usePageSize(76);
+  const { ref: listRef, limit } = usePageSize(180, "auto");
   const [resourcePage, setResourcePage] = usePageState(
     "software",
     "page",
@@ -189,28 +190,20 @@ export function SoftwareView({
   );
   const softwareTabs = [
     ...(capabilities.some((c) => c.name === "plugins_list")
-      ? [{ id: "installed", label: translate("已安装服务") }]
+      ? [{ id: "installed", label: translate("总览") }]
       : []),
     ...(capabilities.some((capability) => capability.name === "plugins_catalog")
       ? [{ id: "catalog", label: translate("软件库") }]
       : []),
-    ...(capabilities.some(
-      (capability) => capability.name === "database_connections_list",
-    )
-      ? [{ id: "database", label: translate("外部数据库") }]
-      : []),
-    ...(capabilities.some(
-      (capability) => capability.name === "cache_connections_list",
-    )
-      ? [{ id: "cache", label: translate("缓存连接") }]
-      : []),
+    ...(capabilities.some(capability => ["database_connections_list", "cache_connections_list"].includes(capability.name)) ? [{id:"connections",label:translate("数据连接")}] : []),
     ...(capabilities.some(c => c.name === "hosted_apps_list")
       ? [{ id: "applications", label: translate("已部署应用") }] : []),
     ...(capabilities.some(c => c.name === "browser_apps_list")
-      ? [{ id: "browsers", label: translate("浏览器应用") }] : []),
+      ? [{ id: "browsers", label: translate("浏览器") }] : []),
   ];
   // Preserve existing bookmarked browser-install URLs.
-  const requestedPage = resourcePage === "applications" && appGroup === "browsers" ? "browsers" : resourcePage;
+  const requestedPage = resourcePage === "applications" && appGroup === "browsers" ? "browsers" : ["database", "cache"].includes(resourcePage) ? "connections" : resourcePage;
+  const connectionKind = resourcePage === "cache" || appGroup === "cache" ? "cache" : capabilities.some(c => c.name === "database_connections_list") ? "database" : "cache";
   const activeResourcePage = softwareTabs.some(tab => tab.id === requestedPage)
     ? requestedPage : softwareTabs[0]?.id;
   useEffect(() => {
@@ -240,7 +233,7 @@ export function SoftwareView({
         .includes(query.toLowerCase()),
   );
   const installedPage = pageItems(installedMatches, offset, limit);
-  const catalogPage = pageItems(matchingItems, offset, limit);
+
   const planAction = capabilities.find((c) => c.name === "software_plan");
   const applyAction = capabilities.find((c) => c.name === "software_apply");
   const databaseTargetReferences = {
@@ -434,41 +427,23 @@ export function SoftwareView({
             <p role="status">{translate("正在读取…")}</p>
           ) : (
             <>
-              <div ref={listRef} className="resource-table-wrap">
-                <table className="resource-table">
-                  <thead>
-                    <tr>
-                      <th>{translate("服务")}</th>
-                      <th>{translate("状态")}</th>
-                      <th>{translate("版本")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {installedPage.items.map((target) => (
-                      <tr key={target.id}>
-                        <td>
-                          <button
-                            className="resource-name"
-                            onClick={() => {
-                              const item = items.find(
-                                (item) => item.id === target.plugin_id,
-                              );
-                              openSoftware(item ?? installedCatalogItem(target), target);
-                            }}
-                          >
-                            {items.find((item) => item.id === target.plugin_id)
-                              ?.name ?? target.plugin_id}
-                            <small>{target.instance_id}</small>
-                          </button>
-                        </td>
-                        <td>
-                          <State value={target.status} />
-                        </td>
-                        <td>{target.installed_version || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div ref={listRef} className="resource-card-grid">
+                {installedPage.items.map(target => {
+                  const item = items.find(item => item.id === target.plugin_id);
+                  const icon = /mysql|maria|postgres|sqlite/i.test(target.plugin_id) ? "database" : /redis|memcached/i.test(target.plugin_id) ? "cache" : /php|node|python/i.test(target.plugin_id) ? "code" : /nginx|apache|caddy/i.test(target.plugin_id) ? "network" : "package";
+                  const open = () => openSoftware(item ?? installedCatalogItem(target), target);
+                  return <article className="resource-summary-card" key={target.id}>
+                    <div className="resource-summary-heading">
+                      <span className="resource-summary-icon"><Icon name={icon} size={24}/></span>
+                      <div className="resource-summary-name"><button className="resource-name" onClick={open}>{item?.name ?? target.plugin_id}</button><span className="muted">{target.instance_id}</span></div>
+                      <ResourceSignal status={target.status} />
+                    </div>
+                    <div className="resource-summary-footer">
+                      <span className="resource-indicator" title={translate("版本")}><Icon name="package" size={17}/><span>{target.installed_version || translate("状态未知")}</span></span>
+                      <button className="resource-detail-link" aria-label={translate("查看服务详情")} onClick={open}><Icon name="arrow" size={18}/></button>
+                    </div>
+                  </article>;
+                })}
               </div>
               {!installedMatches.length && (
                 <Unavailable
@@ -487,14 +462,8 @@ export function SoftwareView({
             </>
           )}
         </Card>
-      ) : ["database", "cache"].includes(activeResourcePage ?? "") ? (
-        <ConnectionsView
-          key={activeResourcePage}
-          kind={activeResourcePage as "database" | "cache"}
-          capabilities={capabilities}
-          onExecuted={onExecuted}
-          active={active}
-        />
+      ) : activeResourcePage === "connections" ? (
+        <div className="stack"><ResourceTabs aria-label={translate("数据连接")}>{[{id:"database",cap:"database_connections_list",label:translate("外部数据库")},{id:"cache",cap:"cache_connections_list",label:translate("缓存连接")}].filter(item=>capabilities.some(c=>c.name===item.cap)).map(item=><button key={item.id} role="tab" aria-selected={connectionKind===item.id} onClick={()=>{setSelectedID("");setResourcePage("connections");setAppGroup(item.id);}}>{item.label}</button>)}</ResourceTabs><ConnectionsView key={connectionKind} kind={connectionKind} capabilities={capabilities} onExecuted={onExecuted} active={active}/></div>
       ) : (
         <Card className="panel-card">
           <SectionHeader icon="software" className="card-heading">
@@ -550,7 +519,7 @@ export function SoftwareView({
           ) : catalog.loading && !catalog.data ? (
             <p role="status">{translate("正在读取软件目录…")}</p>
           ) : (
-            <div ref={listRef} className="software-grid software-list">
+            <div className="catalog-sections">
               {!matchingItems.length && (
                 <div className="empty software-empty" role="status">
                   <strong>{translate("没有匹配的软件")}</strong>
@@ -565,7 +534,7 @@ export function SoftwareView({
                   />
                 </div>
               )}
-              {catalogPage.items.map((item) => (
+              {[...new Set(matchingItems.map(item => item.category))].map(category => <section key={category} className="catalog-category"><SectionHeader icon={categoryIcon(category)}><h3>{categoryName[category] ?? translate("其他")}</h3><span className="muted">{translate("左右滑动查看更多")}</span></SectionHeader><div className="catalog-rail" role="region" aria-label={categoryName[category] ?? category} tabIndex={0}>{matchingItems.filter(item => item.category === category).map((item) => (
                 <button
                   className="software-card"
                   key={item.id}
@@ -594,17 +563,10 @@ export function SoftwareView({
                     <Icon name="arrow" size={18} />
                   </div>
                 </button>
-              ))}
+              ))}</div></section>)}
             </div>
           )}
-          {!catalog.error && <Pager
-            offset={catalogPage.offset}
-            limit={limit}
-            total={catalogPage.total}
-            count={catalogPage.items.length}
-            loading={catalog.loading}
-            onOffset={setOffset}
-          />}
+
         </Card>
       )}
       {activeResourcePage === "catalog" &&

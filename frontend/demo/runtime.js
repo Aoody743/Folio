@@ -185,7 +185,17 @@
     if(path.startsWith('/account/')){toast(text('演示模式：账户安全设置不会更改真实密码或两步验证。','Demo mode: real passwords and two-step verification are not changed.'));return {demo:true,secret:'DEMOONLYNOTFORLOGIN',uri:'otpauth://totp/Folio:demo?secret=DEMOONLYNOTFORLOGIN',recovery_codes:['demo-only-not-valid']};}
     if(path.startsWith('/files/text'))return new Response(store.contents[url.searchParams.get('path')]||'',{headers:{'Content-Type':'text/plain;charset=utf-8'}});
     if(path.includes('/files/uploads/')&&method==='PATCH'){const upload=store.uploads[path.split('/')[3]]||fail('Demo upload not found',404);const bytes=options.body instanceof Uint8Array?options.body:new Uint8Array(await new Response(options.body).arrayBuffer());upload.chunks.push([...bytes]);upload.offset+=bytes.length;save();return new Response(null,{status:204});}
-    if(path.endsWith('/frame')){const ids=path.split('/'),s=pick(store.sessions,ids[3]),t=s.tabs.find(t=>t.id===ids[5])||s.tabs[0];const frame=t.url.includes('mozilla')?'mdn':t.url==='about:blank'?'welcome':'atlas';return nativeFetch('/demo/browser-'+frame+'.jpg');}
+    if(path.endsWith('/frame')){
+      const ids=path.split('/'),s=pick(store.sessions,ids[3]),t=s.tabs.find(t=>t.id===ids[5])||s.tabs[0];
+      const canvas=document.createElement('canvas');canvas.width=s.width;canvas.height=s.height;const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#f5f7fb';ctx.fillRect(0,0,s.width,s.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,s.width,58);
+      ctx.fillStyle='#182230';ctx.font='500 18px sans-serif';ctx.fillText(t.url.includes('mozilla')?'MDN Web Docs':t.url==='about:blank'?'Folio browser demo':'Open Atlas',24,36);
+      const pad=s.width<600?24:48;ctx.font='500 '+(s.width<600?24:36)+'px sans-serif';ctx.fillText('Static UI demo',pad,124);
+      ctx.font='16px sans-serif';ctx.fillStyle='#596579';
+      const lines=s.width<600?['Browser controls are interactive.','This is a simulated page.','No external website is contacted.']:['Browser controls are interactive; this page is simulated.','No external website is contacted.'];
+      lines.forEach((line,i)=>ctx.fillText(line,pad,174+i*28));ctx.fillStyle='#2859d6';ctx.fillText(t.url,pad,Math.min(s.height-24,280),s.width-pad*2);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.86));return new Response(blob,{headers:{'Content-Type':'image/jpeg'}});
+    }
     return unknown(path);
   }
   window.fetch=async(input,options={})=>{

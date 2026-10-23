@@ -1,5 +1,24 @@
 // Application copy only. Resource data and user content are never translated.
 export const english: Record<string, string> = {
+  "关闭": "Close",
+  "数据连接": "Data connections",
+  "左右滑动查看更多": "Scroll sideways to explore",
+  "浏览器工具": "Browser tools",
+  "打开目录": "Open folder",
+  "更多文件工具": "More file tools",
+
+  "全局设置": "Global settings",
+  "Git 项目": "Git project",
+  "PHP 项目": "PHP project",
+  "代理项目": "Proxy project",
+  "静态项目": "Static project",
+  "证书已部署": "Certificate deployed",
+  "未部署证书": "No certificate",
+  "返回网站总览": "Back to websites",
+  "查看网站详情": "Website details",
+  "查看服务详情": "Service details",
+  "网站工具": "Website tools",
+
   "缓存连接详情": "Cache connection details",
   "删除缓存连接": "Delete cache connection",
   "正在重新连接画面…": "Reconnecting display…",

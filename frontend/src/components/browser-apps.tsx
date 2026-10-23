@@ -108,9 +108,9 @@ export function BrowserApps({
       {!apps.data && !apps.error && (
         <p role="status">{translate("正在读取…")}</p>
       )}
-      <div className="stack">
+      <div className="browser-app-grid">
         {apps.data?.items.map((app) => (
-          <section key={app.id} className="browser-app-row">
+          <section key={app.id} className="browser-app-row resource-summary-card">
             <div>
               <div className="browser-app-title"><span className="heading-icon"><Icon name={app.id === "panel" ? "browser" : "sites"} /></span><h3>{name(app.id)}</h3></div>
               <p>
@@ -230,6 +230,7 @@ export function BrowserHub({ active = true }: { active?: boolean }) {
 
         <Button
           label={translate("管理浏览器应用")}
+          isIconOnly
           icon={<Icon name="settings" size={18} />}
           variant="ghost"
           onClick={appsRoute}

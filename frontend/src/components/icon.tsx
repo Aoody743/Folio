@@ -6,7 +6,7 @@ import {
   Database, Boxes, Package, AppWindow, ArrowLeft, ArrowRight, Maximize,
   Minimize, Keyboard, Bookmark, ExternalLink, Download, Upload, SlidersHorizontal,
   FileText, Archive, KeyRound, Clock, CircleHelp, Monitor, Circle, Trash2,
-  Square, Network, CircleAlert, LockKeyhole,
+  Square, Network, CircleAlert, LockKeyhole, Code2, GitBranch,
 } from "lucide-react";
 const icons = {
   overview: LayoutGrid, sites: Globe, software: Layers, files: Folder,
@@ -20,7 +20,7 @@ const icons = {
   external: ExternalLink, download: Download, upload: Upload, filter: SlidersHorizontal,
   logs: FileText, backup: Archive, key: KeyRound, clock: Clock, help: CircleHelp,
   monitor: Monitor, dot: Circle, trash: Trash2, stop: Square, network: Network,
-  warning: CircleAlert, lock: LockKeyhole,
+  warning: CircleAlert, lock: LockKeyhole, code: Code2, git: GitBranch,
 } as const;
 export type IconName = keyof typeof icons;
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {

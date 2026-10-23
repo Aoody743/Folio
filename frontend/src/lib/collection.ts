@@ -27,7 +27,7 @@ export function usePageSize(rowHeight = 64, columns: number | "auto" = 1) {
       if (!ref.current || !ref.current.getClientRects().length) return;
       const visibleRows = [
         ...ref.current.querySelectorAll(
-          "tbody tr, .software-card, .instance-row, .action-tile",
+          "tbody tr, .software-card, .instance-row, .action-tile, .resource-summary-card",
         ),
       ];
       // A server-page change temporarily removes rows. Keep the last measured

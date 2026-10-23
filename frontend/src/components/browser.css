@@ -102,3 +102,28 @@
 @layer folio {
   .browser-frame-status { position: absolute; inset-block-start: 12px; inset-inline-end: 12px; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--muted); font-size: 13px; line-height: 1.5; pointer-events: none; }
 }
+@layer folio {
+  .browser-app-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+  .browser-app-grid .browser-app-row { flex-direction: column; align-items: stretch; justify-content: space-between; padding: 20px; border: 1px solid var(--border); gap: 16px; }
+  .browser-app-grid .browser-app-row .button-row { justify-content: flex-start; }
+  .browser-app-grid .browser-app-row p { font-size: 13px; }
+  .app[data-section="more"][data-page="browser"] .page-heading { display: none; }
+  .browser-hub { gap: 8px; }
+  .browser-hub .browser-mode-bar .resource-tabs { margin-bottom: 0; }
+  .browser-tools-menu { position: relative; }
+  .browser-tools-menu > summary { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; cursor: pointer; list-style: none; border-radius: 8px; }
+  .browser-tools-menu > summary::-webkit-details-marker { display: none; }
+  .browser-tools-menu > summary:hover { background: var(--soft); }
+  .browser-tools-menu .browser-utility { position: absolute; z-index: 5; right: 0; top: calc(100% + 4px); width: min(360px, calc(100vw - 48px)); max-height: 60dvh; overflow: auto; flex-direction: column; align-items: stretch; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 8px 24px #0002; }
+  .browser-tools-menu .browser-view-tools { flex-direction: column; align-items: stretch; }
+  .browser-toolbar .browser-address { flex: 1; min-width: 0; }
+  .browser-help { font-size: 13px; }
+  .browser-help summary { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  @media (max-width: 640px) {
+    .browser-app-grid { grid-template-columns: 1fr; }
+    .browser-mode-bar .resource-tabs { min-width: 0; }
+    .browser-toolbar { gap: 4px; }
+    .browser-toolbar .browser-address { flex-basis: 0; }
+    .server-browser .browser-history-controls button { min-width: 28px; padding: 4px; }
+  }
+}

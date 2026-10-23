@@ -201,11 +201,11 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
   }, [run]);
 
   useEffect(() => {
-    if (!active || !fullscreen) return;
+    if (!active || !session?.id) return;
     const timer = setTimeout(fitWindow, 100);
     window.addEventListener("resize", fitWindow);
     return () => { clearTimeout(timer); window.removeEventListener("resize", fitWindow); };
-  }, [active, fullscreen, showText, fitWindow]);
+  }, [active, session?.id, fullscreen, showText, fitWindow]);
 
   const drain = useCallback(async () => {
     if (draining.current || inputPaused.current) return;
@@ -796,8 +796,7 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
                 <Icon name="forward" size={18} /><span className="sr-only">{translate("前往")}</span>
               </button>
             </form>
-          </div>
-          <div className="browser-utility"><BrowserBookmarks currentURL={tabURL} onOpen={url=>{if(session && tabID)void run("browser_navigate",{id:session.id,tab_id:tabID,url});}}/>
+            <details className="browser-tools-menu"><summary aria-label={translate("浏览器工具")} title={translate("浏览器工具")}><Icon name="more" size={20}/></summary><div className="browser-utility"><BrowserBookmarks currentURL={tabURL} onOpen={url=>{if(session && tabID)void run("browser_navigate",{id:session.id,tab_id:tabID,url});}}/>
           <div className="browser-view-tools">
             <button type="button" disabled={busy} onClick={fitWindow}><Icon name="monitor" size={18} />{translate("适应窗口")}</button>
             <details className="browser-size-menu"><summary><Icon name="filter" size={18} />{translate("浏览器尺寸")}</summary><label>
@@ -836,7 +835,8 @@ export function ServerBrowserView({ active = true }: { active?: boolean }) {
             >
               <Icon name="keyboard" size={18} />{translate("输入文字")}
             </button>
-          </div></div>
+          </div></div></details>
+          </div>
           {dialog && (
             <section className="browser-page-dialog" role="dialog" aria-label={translate("网页提示")}>
               <strong>{translate("网页提示")}</strong>

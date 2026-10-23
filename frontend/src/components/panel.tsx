@@ -190,6 +190,7 @@ const nav: { id: string; label: string; icon: IconName }[] = [
   },
 ];
 const moreNav: { id: string; icon: string; title: string; desc: string }[] = [
+  {id:"panel",icon:"settings",get title(){return translate("全局设置")},get desc(){return translate("面板与访问设置")}},
   {id:"environment",icon:"settings",get title(){return translate("环境与维护")},get desc(){return translate("连接、执行器与版本说明")}},
   {
     id: "monitor",
@@ -825,7 +826,7 @@ export function Panel() {
                     {errors.system
                       ? translate("数据读取失败")
                       : connection === "online"
-                        ? translate("在线")
+                        ? (status?.os || translate("在线"))
                         : connection === "connecting"
                           ? translate("连接中")
                           : translate("实时通道断开")}
@@ -834,6 +835,7 @@ export function Panel() {
                 <div className="top-actions">
                   <Button
                     label={translate("查看任务")}
+                    isIconOnly
                     icon={
                       <span className="activity-icon">
                         <Icon name="tasks" />
@@ -857,17 +859,7 @@ export function Panel() {
                     variant="ghost"
                     onClick={() => navigate("more", { page: "activity" })}
                   />
-                  <button
-                    className="user-badge"
-                    title={session.user?.name}
-                    aria-label={translate("账户设置")}
-                    onClick={() => {
-                      setSection("more");
-                      setMorePage("security");
-                    }}
-                  >
-                    {(session.user?.name ?? "U").slice(0, 1).toUpperCase()}
-                  </button>
+                  <Button label={translate("全局设置")} icon={<Icon name="settings" />} isIconOnly variant="ghost" onClick={() => navigate("more", { page: "panel" })} />
                 </div>
               </header>
               <main id="main" tabIndex={-1} className="main">
@@ -1134,6 +1126,7 @@ export function Panel() {
                           {
                             title: translate("设置与接入"),
                             ids: [
+                              "panel",
                               "environment",
                               "security",
                               "appearance",
@@ -1236,6 +1229,8 @@ export function Panel() {
                               </details>
                             )}
                           </>
+                        ) : morePage === "panel" ? (
+                          <PanelSettings capabilities={caps} onExecuted={() => { void loadSession(); noteSaved(); }} />
                         ) : morePage === "environment" ? (
                           <EnvironmentView capabilities={caps}/>
                         ) : morePage === "activity" ? (

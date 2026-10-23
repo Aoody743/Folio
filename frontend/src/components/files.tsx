@@ -4,6 +4,8 @@ import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@astryxdesign/core/Button";
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
+import { Dialog } from "@astryxdesign/core/Dialog";
 import { Card } from "@astryxdesign/core/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import {
@@ -35,7 +37,7 @@ import {
   Unavailable,
 } from "./resource-ui";
 import { addNavigationGuard, usePageState } from "@/lib/navigation";
-import { usePageSize } from "@/lib/collection";
+
 import { FileBatch } from "./file-batch";
 const CodeEditor = dynamic(() => import("./code-editor"), { ssr: false });
 const join = (path: string, name: string) =>
@@ -77,7 +79,9 @@ export function FilesView({
   const [root, setRoot] = usePageState("files", "root", "");
   const [path, setPath] = usePageState("files", "path", "");
   const [offset, setOffset] = usePageState("files", "offset", 0);
-  const { ref: listRef, limit } = usePageSize(72);
+  const listRef = useRef<HTMLDivElement>(null);
+  const limit = 50;
+  const [listHeight, setListHeight] = useState(320);
   const [sortBy,setSortBy]=usePageState("files","sort","name");
   const [sortOrder,setSortOrder]=usePageState("files","order","asc");
   const [checked,setChecked]=useState<string[]>([]);
@@ -218,6 +222,14 @@ export function FilesView({
   );
   const currentRoot = availableRoots.find((r) => r.id === root);
   const rows = list(listing.data);
+  useEffect(() => {
+    const measure = () => { if (listRef.current) setListHeight(Math.max(180, window.innerHeight - listRef.current.getBoundingClientRect().top - 174)); };
+    const timer = setTimeout(measure, 100);
+    const observer = new ResizeObserver(measure);
+    if (listRef.current) observer.observe(listRef.current);
+    window.addEventListener("resize", measure);
+    return () => { clearTimeout(timer); observer.disconnect(); window.removeEventListener("resize", measure); };
+  }, [active, listing.data]);
   const batchItems=rows.filter(row=>checked.includes(row.path));
   useEffect(()=>{if(!listing.loading && listing.data)setChecked(old=>old.filter(p=>list(listing.data).some(i=>i.path===p)));},[listing.data,listing.loading]);
   const refresh = () => {
@@ -263,7 +275,7 @@ export function FilesView({
   const create = capabilities.find((c) => c.name === createName);
   return (
     <div className="stack">
-      <Card className="panel-card">
+      <Card className="panel-card file-manager">
         <SectionHeader icon="files" className="card-heading">
           <h2>{translate("文件管理")}</h2>
           <div className="button-row">
@@ -411,8 +423,8 @@ export function FilesView({
                 {translate("正在读取目录…")}
               </p>
             )}
-            <div ref={listRef} className="resource-table-wrap">
-              <table className="resource-table">
+            <div ref={listRef} className="resource-table-wrap file-list-scroll" style={{maxHeight: listHeight}}>
+              <table className="resource-table compact-file-table">
                 <thead>
                   <tr>
                     <th>{has("fs_batch") && has("fs_preflight") && !currentRoot?.read_only && <input type="checkbox" aria-label={translate("选择本页文件")} checked={rows.filter(r=>r.type!=="symlink").length>0 && rows.filter(r=>r.type!=="symlink").every(r=>checked.includes(r.path))} onChange={e=>setChecked(e.target.checked?rows.filter(r=>r.type!=="symlink").map(r=>r.path):[])}/>} {translate("名称")}</th>
@@ -424,7 +436,7 @@ export function FilesView({
                 </thead>
                 <tbody>
                   {rows.map((entry) => (
-                    <tr key={entry.path}>
+                    <tr key={entry.path} onContextMenu={event => { event.preventDefault(); (event.currentTarget.querySelector('[aria-haspopup="menu"]') as HTMLButtonElement | null)?.click(); }}>
                       <td>
                         {has("fs_batch") && has("fs_preflight") && !currentRoot?.read_only && entry.type!=="symlink" && <input type="checkbox" aria-label={translate("选择 {0}",[entry.name])} checked={checked.includes(entry.path)} onChange={e=>setChecked(old=>e.target.checked?[...old,entry.path]:old.filter(p=>p!==entry.path))}/>}
                         <button
@@ -437,22 +449,14 @@ export function FilesView({
                           />
                           {entry.name}
                         </button>
-                        <small>
-                          {entry.type === "directory"
-                            ? translate("目录")
-                            : entry.type === "symlink"
-                              ? translate("符号链接")
-                              : translate("文件")}
-                        </small>
+
                       </td>
                       <td>
                         {entry.type === "directory" ? "—" : bytes(entry.size)}
                       </td>
                       <td>
-                        <code>{permissions(entry.mode)}</code>
-                        <small>
-                          UID {entry.owner ?? "—"}/ GID {entry.group ?? "—"}
-                        </small>
+                        <code title={`UID ${entry.owner ?? "—"} / GID ${entry.group ?? "—"}`}>{permissions(entry.mode)}</code>
+
                       </td>
                       <td>{fullDate(entry.modified_at)}</td>
                       <td>
@@ -465,17 +469,13 @@ export function FilesView({
                               variant="ghost"
                             />
                           )}
-                          <Button
-                            label={translate("操作")}
-                            aria-label={translate("操作 {0}", [entry.name])}
-                            variant="ghost"
-                            onClick={() =>
-                              guard(() => {
-                                setSelected(entry);
-                                setOperation("operations");
-                              })
-                            }
-                          />
+                          <DropdownMenu button={{label: translate("操作 {0}", [entry.name]), icon: <Icon name="more" size={18}/>, isIconOnly: true, variant: "ghost"}} menuWidth={200} alignment="end" items={[
+                            {id:"open",label:translate(entry.type === "directory" ? "打开目录" : "编辑文件"),icon:<Icon name={entry.type === "directory" ? "files" : "code"}/>,isDisabled:entry.type !== "directory" && (!has("fs_read") || entry.type !== "file"),onClick:()=>enter(entry)},
+                            ...(entry.type === "file" ? [{id:"download",label:translate("下载"),icon:<Icon name="download"/>,href:downloadURL(root,entry.path)}] : []),
+                            ...([['fs_copy','复制','files'],['fs_move','移动或重命名','forward'],['fs_chmod','权限','key'],['fs_delete','删除','trash']] as const).filter(([name])=>has(name)&&!currentRoot?.read_only).map(([name,label,icon])=>({id:name,label:translate(label),icon:<Icon name={icon}/>,variant:name === 'fs_delete' ? 'destructive' as const : 'default' as const,onClick:()=>guard(()=>{setSelected(entry);setOperation(name);})})),
+                            {id:"advanced",label:translate("更多文件工具"),icon:<Icon name="settings"/>,onClick:()=>guard(()=>{setSelected(entry);setOperation("operations");})}
+                          ]}/>
+
                         </div>
                       </td>
                     </tr>
@@ -540,11 +540,8 @@ export function FilesView({
         />
       )}
       {selected && (
-        <ResourceDrawer
-          open={!!operation}
-          title={translate("文件操作 · {0}", [selected.name])}
-          onClose={() => setOperation(undefined)}
-        >
+        <Dialog isOpen={!!operation} onOpenChange={open => {if (!open) setOperation(undefined);}} width={640} padding={6} aria-label={translate("文件操作 · {0}", [selected.name])}>
+          <div className="dialog-title"><h2>{selected.name}</h2><Button label={translate("关闭")} icon={<Icon name="close"/>} isIconOnly variant="ghost" onClick={()=>setOperation(undefined)}/></div>
           <ResourceActions
             capabilities={capabilities}
             names={(name) =>
@@ -566,7 +563,7 @@ export function FilesView({
             onSelect={(value) => setOperation(value ?? "operations")}
             onExecuted={refresh}
           />
-        </ResourceDrawer>
+        </Dialog>
       )}
       {root && (
         <Uploader
