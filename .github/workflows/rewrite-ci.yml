@@ -23,6 +23,8 @@ jobs:
       attestations: write
     env:
       NEXT_TELEMETRY_DISABLED: '1'
+      # Keep real Chromium startup within its deadline under race instrumentation.
+      GOFLAGS: '-p=1'
       POWERLINUX_BUILD_CACHE: ${{ github.workspace }}/.cache/rewrite
     steps:
       - uses: actions/checkout@v4
