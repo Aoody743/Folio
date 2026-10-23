@@ -1,0 +1,169 @@
+{
+  "version": "1.0-beta5",
+  "commit": "c3fd1faa5f8f2964a7ee6055595ee37b8fd9bfa3",
+  "working_tree_dirty": false,
+  "artifacts": [
+    {
+      "name": "folio-1.0-beta5-linux-amd64.tar.gz",
+      "sha256": "635c77f46f91132931a6473971a96c4b5ef9efc72f5abc5ba5bca92a4e87736b",
+      "platform": "linux-amd64",
+      "runtime_tested": true
+    },
+    {
+      "name": "folio-1.0-beta5-linux-arm64.tar.gz",
+      "sha256": "6547f21080dba66549b1e1031f552523ade898feef531277bf4e0f94bd367377",
+      "platform": "linux-arm64",
+      "runtime_tested": false
+    }
+  ],
+  "runtime_validation": "Debian 13 Linux amd64, unprivileged isolated prefix; Chromium 154 with sandbox and private CDP pipe",
+  "checks": {
+    "frontend": {
+      "passed": 96,
+      "failed": 0
+    },
+    "typescript": true,
+    "next_static_build": true,
+    "go_race": true,
+    "go_vet": true,
+    "mysql_driver_race": true,
+    "installer": {
+      "total": 39,
+      "passed": 37,
+      "skipped": 2,
+      "failed": 0,
+      "skipped_reason": "Root-only ownership fixtures; beta5 does not claim a new systemd/VM upgrade run"
+    },
+    "installer_generation_consistency": true,
+    "package_smoke": true,
+    "real_browser_regressions": {
+      "browser": {
+        "real_api": true,
+        "real_server_chromium": true,
+        "sandbox_enabled": true,
+        "private_cdp_pipe": true,
+        "remote_http_requests": true,
+        "unicode_input": true,
+        "history_tabs_resize": true,
+        "owner_auth_csrf_revocation": true,
+        "process_profile_cleanup": true,
+        "ui": true,
+        "errors": [],
+        "artifacts": "/workspace/work/folio-beta5-release/browser"
+      },
+      "information": {
+        "real_server_and_files": true,
+        "explicit_site_app_display_fixtures": true,
+        "locale_font_theme_combinations": 30,
+        "viewports": [
+          [
+            1366,
+            768
+          ],
+          [
+            1440,
+            900
+          ],
+          [
+            390,
+            844
+          ],
+          [
+            360,
+            640
+          ],
+          [
+            320,
+            568
+          ]
+        ],
+        "back_refresh_filters": true,
+        "mobile_scroll_allowed": true,
+        "errors": [],
+        "artifacts": "/workspace/work/folio-beta5-release/information"
+      },
+      "notes": {
+        "browser": "system Chromium",
+        "real_api": true,
+        "static_export": true,
+        "viewports": [
+          1440,
+          768,
+          390,
+          320
+        ],
+        "themes": 5,
+        "flows": [
+          "login",
+          "UI creates/MCP reads",
+          "MCP updates/UI SSE",
+          "history",
+          "real concurrent conflict",
+          "manual merge",
+          "offline draft+retry",
+          "Markdown XSS",
+          "human/MCP/API source labels",
+          "keyboard/Escape"
+        ],
+        "artifacts": "/workspace/work/folio-beta5-release/notes"
+      },
+      "files": {
+        "actual_release": "1.0-beta5",
+        "flows": [
+          "UIcreate",
+          "CodeMirror edit+realMCP read+actual byte metadata",
+          "realMCP concurrent409",
+          "closed conflict draft retention",
+          "manual merge",
+          "offline save retention+retry",
+          "select real historical version+human restore creates new revision",
+          "large CodeMirror UTF8PUT+GB18030 disk encoding+byte metadata",
+          "5MiB binary HTTP upload/transport interruption/resume",
+          "actual browser download hash"
+        ],
+        "viewports": [
+          1440,
+          768,
+          390,
+          320
+        ],
+        "artifacts": "/workspace/work/folio-beta5-release/files"
+      },
+      "bilingual": {
+        "real_api": true,
+        "real_chromium": true,
+        "browser_language": true,
+        "live_switch_preserves_input": true,
+        "preference_persisted": true,
+        "user_content_unchanged": true,
+        "compact_status_overview": true,
+        "english_viewports": [
+          1440,
+          768,
+          390,
+          320
+        ],
+        "artifacts": "/workspace/work/folio-beta5-release/bilingual"
+      },
+      "schedules": {
+        "real_api": true,
+        "real_mcp": true,
+        "real_chromium": true,
+        "database_backup_schedulable": true,
+        "success_failure_history": true,
+        "api_restart": true,
+        "linked_task_ui": true,
+        "policy_ui": true
+      }
+    }
+  },
+  "scope_limits": [
+    "ARM64 is cross-built; no ARM runtime acceptance",
+    "Managed-service platform support remains Ubuntu 24.04 amd64 + systemd; no new Debian managed lifecycle claim",
+    "No new systemd VM upgrade/rollback/reboot execution in beta5; beta4 evidence remains historical",
+    "Large website/application layout collections are explicit display fixtures, not production health checks",
+    "Server browser requires separately installed sandbox-capable Chromium/Chrome; no remote upload/download/media forwarding",
+    "No new real DNS provider/public CA acceptance"
+  ],
+  "evidence": "verification-logs.tar.gz"
+}
