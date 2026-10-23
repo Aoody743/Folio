@@ -100,7 +100,8 @@ def main():
                 parser = Scripts()
                 parser.feed(page)
                 assert parser.sources, "Packaged UI has no Next.js scripts (placeholder or incorrect embed)"
-                assert "Folio" in page, "Packaged UI must identify the product"
+                assert ("折纸面板" in page or "Folio" in page) and "/folio-logo.png" in page, "Packaged UI must identify the localized product"
+                assert "/demo/runtime.js" not in page and "/demo/seed.js" not in page, "Packaged UI must not load the static demo transport"
                 assert "PowerLinux" not in page, "Packaged UI must not show the retired product name"
                 static = next(source for source in parser.sources if "/_next/static/" in source)
                 with urlopen(endpoint + static, timeout=3) as response:

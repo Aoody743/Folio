@@ -1,0 +1,31 @@
+{
+  "source_commit": "489998e443d5141d5c9bb7825792112eed2e3e1b",
+  "working_tree_dirty": false,
+  "build_version": "dev-ui-production",
+  "go": "1.27.2",
+  "architectures_built": [
+    "amd64",
+    "arm64"
+  ],
+  "architectures_executed": [
+    "amd64"
+  ],
+  "checksums": {
+    "folio-dev-ui-production-linux-amd64.tar.gz": "c6780ce6acfd258a5d0982bdd9e8fb2f00c4a02ff1ab9018a48d0c98fe252705",
+    "folio-dev-ui-production-linux-arm64.tar.gz": "2b18789da1638535c3ab677e6746c91c38af83b4d52d4fe08c525cacdc477ddf"
+  },
+  "checks": {
+    "frontend_tests": 102,
+    "go_packages": [
+      "internal/core",
+      "internal/sites",
+      "internal/webassets"
+    ],
+    "package_prefix_install_upgrade_lock_shutdown_uninstall": "passed",
+    "production_browser_real_api_no_mocks": "passed",
+    "notes_and_server_name_persist_after_restart": true,
+    "production_demo_runtime_present": false,
+    "systemd_vm_acceptance": false
+  },
+  "release_published": false
+}
