@@ -29,6 +29,8 @@ import { validateSQLParameters } from "@/lib/sql-wire";
 import { Icon } from "./icon";
 import { actionLabel, fieldLabel, choiceLabel } from "@/lib/labels";
 import { TaskResult } from "./task-result";
+import { Pager } from "./resource-ui";
+import { pageItems, usePageSize } from "@/lib/collection";
 import { readDraft, saveDraft, forgetDraft } from "@/lib/draft-cache";
 const prefixes: Record<string, RegExp> = {
   sites:
@@ -1015,14 +1017,25 @@ export function ActionBrowser({
   preset?: Record<string, unknown>;
 }) {
   const [filter, setFilter] = useState("");
+  const [group, setGroup] = useState("all");
+  const [offset, setOffset] = useState(0);
+  const { ref: listRef, limit } = usePageSize(88, "auto");
+  const categories = [
+    ["sites", translate("网站")], ["software", translate("软件")],
+    ["files", translate("文件")], ["monitor", translate("监控")],
+    ["terminal", translate("终端")], ["schedules", translate("计划任务")],
+    ["security", translate("安全与账户")],
+  ];
   const selectedCapability = capabilities.find((c) => c.name === selected);
   const matching = capabilities.filter(
     (c) =>
       (prefixes[category]?.test(c.name) ?? true) &&
-      (c.name.includes(filter) ||
-        c.description?.includes(filter) ||
+      (!!prefixes[category] || group === "all" || prefixes[group]?.test(c.name)) &&
+      (c.name.toLowerCase().includes(filter.toLowerCase()) ||
+        c.description?.toLowerCase().includes(filter.toLowerCase()) ||
         actionLabel(c).toLowerCase().includes(filter.toLowerCase())),
   );
+  const paged = pageItems(matching, offset, limit);
   if (selectedCapability)
     return (
       <Card className="panel-card action-detail">
@@ -1043,18 +1056,27 @@ export function ActionBrowser({
           label={translate("筛选操作")}
           isLabelHidden
           value={filter}
-          onChange={setFilter}
+          onChange={(value) => { setFilter(value); setOffset(0); }}
           placeholder={translate("按名称筛选")}
           startIcon={<Icon name="search" />}
         />
       </div>
+      {!prefixes[category] && (
+        <label className="native-field action-category">
+          {translate("操作分类")}
+          <select aria-label={translate("操作分类")} value={group} onChange={(event) => { setGroup(event.target.value); setOffset(0); }}>
+            <option value="all">{translate("全部分类")}</option>
+            {categories.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+          </select>
+        </label>
+      )}
       {error ? (
         <div className="notice danger" role="alert">
           {error}
         </div>
       ) : matching.length ? (
-        <div className="action-grid">
-          {matching.map((c) => (
+        <div ref={listRef} className="action-grid">
+          {paged.items.map((c) => (
             <button
               className="action-tile"
               key={c.name}
@@ -1080,6 +1102,7 @@ export function ActionBrowser({
           <p>{translate("此模块尚未提供可用动作，或当前账户无访问权限。")}</p>
         </div>
       )}
+      {!error && <Pager offset={paged.offset} limit={limit} total={paged.total} count={paged.items.length} loading={false} onOffset={setOffset} />}
       <p className="section-caption">
         {translate("网页与MCP使用同一业务动作、权限、任务与审计。")}
       </p>

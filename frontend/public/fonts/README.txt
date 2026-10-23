@@ -18,3 +18,9 @@ Reading: Source Sans 3 + Noto Serif SC
 
 CSS font-display: swap keeps UI text visible while a selected font loads.
 Code, SQL and logs retain the independent system monospace stack.
+
+Chinese variable font sources are retained under assets/fonts outside the static
+web root. Generated subsets are rebuilt by scripts/rewrite/subset-fonts.py.
+The base subset covers application copy; additional Unicode ranges load only
+when resource names or user content need them. All original cmap characters
+are retained across disjoint subsets. Licenses apply to every subset.

@@ -12,9 +12,9 @@ export function pageItems<T>(items: T[], offset: number, limit: number) {
   };
 }
 // Measure the actual list origin; keep room for pagination and the fixed navigation.
-export function usePageSize(rowHeight = 64, columns = 1) {
+export function usePageSize(rowHeight = 64, columns: number | "auto" = 1) {
   const ref = useRef<HTMLDivElement>(null);
-  const [limit, setLimit] = useState(4 * columns);
+  const [limit, setLimit] = useState(4 * (columns === "auto" ? 1 : columns));
   const measured = useRef({
     row: rowHeight,
     header: 44,
@@ -26,7 +26,7 @@ export function usePageSize(rowHeight = 64, columns = 1) {
       if (!ref.current || !ref.current.getClientRects().length) return;
       const visibleRows = [
         ...ref.current.querySelectorAll(
-          "tbody tr, .software-card, .instance-row",
+          "tbody tr, .software-card, .instance-row, .action-tile",
         ),
       ];
       // A server-page change temporarily removes rows. Keep the last measured
@@ -79,9 +79,11 @@ export function usePageSize(rowHeight = 64, columns = 1) {
         );
       const actualRowHeight = measured.current.row;
       const header = measured.current.header;
+      const columnCount = columns === "auto"
+        ? Math.max(1, getComputedStyle(ref.current).gridTemplateColumns.split(/\s+/).length)
+        : columns;
       setLimit(
-        Math.max(1, Math.floor((available - header) / actualRowHeight)) *
-          columns,
+        Math.max(1, Math.floor((available - header) / actualRowHeight)) * columnCount,
       );
     };
     measure();

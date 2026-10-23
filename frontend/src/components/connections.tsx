@@ -1,4 +1,5 @@
 "use client";
+import { ResourceError } from "./resource-ui";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
@@ -220,9 +221,7 @@ export function ConnectionsView({
       </div>
 
       {resources.error && (
-        <div className="notice danger" role="alert">
-          {resources.error}
-        </div>
+        <ResourceError error={resources.error} state={resources.state} retry={() => void resources.reload()} />
       )}
       {!capabilities.some((c) => c.name === name) ? (
         <Unavailable title={translate("{0}服务暂不可用", [title])} />

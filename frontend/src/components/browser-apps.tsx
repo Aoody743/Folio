@@ -1,4 +1,5 @@
 "use client";
+import { ResourceError } from "./resource-ui";
 import { useState } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
@@ -95,7 +96,7 @@ export function BrowserApps({
           "按需安装，两个模式均通过服务器网络访问网页。可以都不安装，也可以同时安装。",
         )}
       </p>
-      {apps.error && <p role="alert">{apps.error}</p>}
+      {apps.error && <ResourceError error={apps.error} state={apps.state} retry={() => void apps.reload()} />}
       {!apps.data && !apps.error && (
         <p role="status">{translate("正在读取…")}</p>
       )}
@@ -213,7 +214,7 @@ export function BrowserHub({ active = true }: { active?: boolean }) {
           onClick={appsRoute}
         />
       </div>
-      {apps.error && <p role="alert">{apps.error}</p>}
+      {apps.error && <ResourceError error={apps.error} state={apps.state} retry={() => void apps.reload()} />}
       {!apps.data && !apps.error && (
         <p role="status">{translate("正在读取…")}</p>
       )}

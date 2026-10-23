@@ -269,6 +269,7 @@ export function HostedApplications({
         <div>
           <h2>{translate("应用服务")}</h2>{" "}
         </div>
+        <div className="button-row">
         {canCreate && (
           <Button
             label={translate("部署应用")}
@@ -282,6 +283,7 @@ export function HostedApplications({
           isDisabled={busy}
           onClick={refresh}
         />
+        </div>
       </div>
       {(error || apps.error || sites.error) && (
         <div className="notice danger" role="alert">
@@ -336,6 +338,7 @@ export function HostedApplications({
       <div className="list-controls">
         <TextInput
           label={translate("搜索应用")}
+          placeholder={translate("搜索应用")}
           isLabelHidden
           value={query}
           onChange={(value) => {

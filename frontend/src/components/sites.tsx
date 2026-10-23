@@ -551,14 +551,14 @@ export function SitesView({
                 </div>
               )}
               <div ref={listRef} className="resource-table-wrap">
-                <table className="resource-table">
+                <table className="resource-table sites-table">
                   <thead>
                     <tr>
                       <th>{translate("网站 / 域名")}</th>
                       <th>{translate("状态")}</th>
-                      <th>{translate("运行环境")}</th>
-                      <th>TLS</th>
-                      <th>{translate("更新")}</th>
+                      <th className="site-runtime">{translate("运行环境")}</th>
+                      <th className="site-tls">TLS</th>
+                      <th className="site-updated">{translate("更新")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -593,20 +593,20 @@ export function SitesView({
                             }
                           />
                         </td>
-                        <td>
+                        <td className="site-runtime">
                           {site.php_version ? `PHP ${site.php_version}` : "—"}
                         </td>
-                        <td>
+                        <td className="site-tls">
                           {site.tls?.enabled ? (
                             <span title={fullDate(site.tls.expires_at)}>
-                              {translate("已配置 ·")}
-                              {fullDate(site.tls.expires_at)}
+                              {translate("已配置")}
+                              <small>{fullDate(site.tls.expires_at)}</small>
                             </span>
                           ) : (
                             translate("未配置")
                           )}
                         </td>
-                        <td>{fullDate(site.updated_at)}</td>
+                        <td className="site-updated">{fullDate(site.updated_at)}</td>
                       </tr>
                     ))}
                   </tbody>

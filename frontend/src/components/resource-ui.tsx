@@ -104,9 +104,7 @@ export function Unavailable({
         <Icon name={icon} size={24} />
       </span>
       <strong>{title}</strong>
-      <p>
-        {detail ?? translate("当前服务未提供此能力，或当前账户没有访问权限。")}
-      </p>
+      {detail && <p>{detail}</p>}
     </div>
   );
 }
@@ -124,7 +122,7 @@ export function ResourceError({
       error,
     );
   return (
-    <div className="notice danger" role="alert">
+    <div className={`notice ${unconfigured || state === "unconfigured" ? "warning" : "danger"}`} role="alert">
       <div>
         {state === "forbidden"
           ? translate("无访问权限")
@@ -132,6 +130,9 @@ export function ResourceError({
             ? translate("主机执行器未配置")
             : translate("读取失败，请重试")}
       </div>
+      {(unconfigured || state === "unconfigured") && (
+        <p>{translate("请检查服务器执行器配置，然后重试。")}</p>
+      )}
       <details>
         <summary>{translate("技术详情")}</summary>
         <pre>{error}</pre>

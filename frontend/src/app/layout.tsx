@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@astryxdesign/core/reset.css";
 import "@astryxdesign/core/astryx.css";
 import "@astryxdesign/theme-neutral/theme.css";
+import "./font-subsets.css";
 import "./globals.css";
 import "./information.css";
 export const metadata: Metadata = {

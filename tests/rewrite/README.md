@@ -20,3 +20,25 @@ The preliminary performance measurement is from the cloud workspace, not a contr
 An initial Python stopwatch included constructing `APIClient` for every request. In Python3.12, the default urllib HTTPSHandler loads a TLS CA context during opener construction even when the target is HTTP. Independent200/20 profiling measured constructorp95≈1864ms; those initial request p95s were therefore not pureHTTP evidence. Per-worker urllib reuse still showed its own scheduling/socket baseline (health165ms, businessstatus115ms), so the independent Go client measures actual requests with a shared keep-alive transport. No request count, concurrency or goal was relaxed.
 
 Actual dev.3 full fourteen-case black-box run passed: statusHTTPp50=8.77ms/p95=38.14ms, healthp95=4.56ms, API RSS100,752kB (~98.39MiB). This is a cloud workspace baseline, not an assertion of a controlled2vCPU/2GiB host or a multi-process privileged Agent budget.
+
+## Current information UI and polish regressions
+
+`test_information_browser.py` covers the current three-area overview, five-item
+bottom navigation, hash routes, list pagination, drafts and the Chinese/English ×
+three-font × five-palette matrix over five desktop/mobile sizes. Website and app
+collections are explicit display fixtures; files use a real isolated server.
+
+`test_ui_polish_browser.py` covers semantic mobile website/schedule columns,
+empty recycle-bin wording, translated upload selection without submitting a
+file, unavailable/forbidden certificate states, advanced-tool classification and
+pagination, terminal guidance and default font transfer size. Authentication and
+files are real; the site rows, schedule and certificate failures are display
+fixtures. It executes no host/software/site mutations.
+
+```sh
+POWERLINUX_TEST_BINARY=/absolute/path/to/folio python3 tests/rewrite/test_ui_polish_browser.py
+```
+
+Both scripts use `POWERLINUX_CHROMIUM` for Chromium and
+`POWERLINUX_QA_ARTIFACTS` for screenshots. Keep those artifacts outside the
+checkout until deliberately selecting documented examples.

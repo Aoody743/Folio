@@ -6,20 +6,8 @@
   font-display: swap;
 }
 @font-face {
-  font-family: Folio Sans SC;
-  src: url("/fonts/noto-sans-sc.woff2") format("woff2");
-  font-weight: 100 900;
-  font-display: swap;
-}
-@font-face {
   font-family: Folio Source;
   src: url("/fonts/source-sans.woff2") format("woff2");
-  font-weight: 200 900;
-  font-display: swap;
-}
-@font-face {
-  font-family: Folio Serif SC;
-  src: url("/fonts/noto-serif-sc.woff2") format("woff2");
   font-weight: 200 900;
   font-display: swap;
 }
@@ -944,3 +932,47 @@ html {
   background: var(--bg);
   min-height: 80px;
 }
+
+/* Shared control and resource contracts, independent of individual modules. */
+.app select { font-size: inherit; line-height: 1.5; max-width: 100%; }
+.app .astryx-text-input input:focus-visible,
+.app .astryx-text-area textarea:focus-visible { outline: none; }
+.app .astryx-text-input, .app .astryx-text-area { font-size: 15px; }
+.summary-metrics progress, .task-info progress {
+  appearance: none; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.summary-metrics progress::-webkit-progress-bar, .task-info progress::-webkit-progress-bar { background: var(--border); }
+.summary-metrics progress::-webkit-progress-value, .task-info progress::-webkit-progress-value { background: var(--accent); }
+.summary-metrics progress::-moz-progress-bar, .task-info progress::-moz-progress-bar { background: var(--accent); }
+.file-picker { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; overflow-wrap: anywhere; }
+.file-picker-input { display: none; }
+.form-stack { width: 100%; max-width: 760px; }
+.note-tile p { font-size: 14px; }
+.resource-table time { white-space: nowrap; }
+@media (max-width: 640px) {
+  .app .astryx-text-input, .app .astryx-text-area,
+  .app input:not([type="checkbox"]), .app select { font-size: 16px; }
+  .resource-table.sites-table .site-runtime,
+  .resource-table.sites-table .site-updated { display: none; }
+  .resource-table.sites-table .site-tls { display: table-cell; width: 28%; }
+  .sites-table .site-tls small { display: none; }
+  .resource-table.sites-table th:first-child { width: 48%; }
+  .sites-table td:first-child small { overflow-wrap: anywhere; }
+}
+
+.action-category { max-width: 320px; margin-bottom: 16px; }
+.terminal-placeholder { padding: 40px 16px; text-align: center; color: var(--muted); background: var(--bg); border: 1px dashed var(--border); border-radius: 12px; }
+.terminal-canvas.terminal-idle { height: 0; min-height: 0; padding: 0; overflow: hidden; }
+
+@media (max-width: 640px) {
+  .operations-table.services .operation-unit,
+  .operations-table.services .operation-ownership,
+  .operations-table.schedules .operation-enabled { display: none; }
+  .resource-table.operations-table .operation-active_state,
+  .resource-table.operations-table .operation-next_run_at,
+  .resource-table.operations-table .operation-last_run_status { display: table-cell; }
+  .operations-table.schedules th:first-child { width: 42%; }
+  .operations-table.schedules th:last-child { width: 28%; }
+}
+
+.summary-metrics progress:indeterminate { visibility: hidden; }

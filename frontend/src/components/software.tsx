@@ -1,4 +1,5 @@
 "use client";
+import { ResourceError } from "./resource-ui";
 import { t as translate } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -455,7 +456,7 @@ export function SoftwareView({
             </div>
           </div>
           {installed.error ? (
-            <div className="notice danger">{installed.error}</div>
+            <ResourceError error={installed.error} state={installed.state} retry={() => void installed.reload()} />
           ) : installed.data?.availability === "agent_not_configured" ? (
             <Unavailable
               title={translate("主机特权执行器未配置")}
@@ -566,7 +567,7 @@ export function SoftwareView({
             ))}
           </div>
           {catalog.error && (
-            <div className="notice danger">{catalog.error}</div>
+            <ResourceError error={catalog.error} state={catalog.state} retry={() => void catalog.reload()} />
           )}
           {installed.error && (
             <div className="notice warning">
@@ -801,7 +802,7 @@ export function SoftwareView({
                   </div>
                 )}
               {detail.error && (
-                <div className="notice danger">{detail.error}</div>
+                <ResourceError error={detail.error} state={detail.state} retry={() => void detail.reload()} />
               )}
               {instance &&
                 ["php", "php-apt", "php-yum"].includes(instance.plugin_id) &&

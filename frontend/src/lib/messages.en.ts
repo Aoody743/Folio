@@ -1,5 +1,11 @@
 // Application copy only. Resource data and user content are never translated.
 export const english: Record<string, string> = {
+  "尚未连接，选择目标后连接终端。": "Not connected. Select a target and connect to the terminal.",
+
+  "请检查服务器执行器配置，然后重试。": "Check the server executor configuration, then retry.",
+  "尚未选择文件": "No file selected",
+  "操作分类": "Operation category",
+
   "任务已提交，可从对应应用查看进度。":
     "Task submitted. View progress from the corresponding app.",
   "浏览器环境暂不可用，请查看详情或重新安装。":

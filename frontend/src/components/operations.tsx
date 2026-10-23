@@ -1,4 +1,5 @@
 "use client";
+import { ResourceError } from "./resource-ui";
 import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
 import { useState } from "react";
@@ -231,9 +232,7 @@ export function OperationsView({
             <span className="muted">{translate("最近24小时")}</span>
           </div>
           {history.error && (
-            <div className="notice danger" role="alert">
-              {history.error}
-            </div>
+            <ResourceError error={history.error} state={history.state} retry={() => void history.reload()} />
           )}
           {history.data?.samples.length ? (
             <>
@@ -357,16 +356,14 @@ export function OperationsView({
             </div>
           )}
           {records.error && (
-            <div className="notice danger" role="alert">
-              {records.error}
-            </div>
+            <ResourceError error={records.error} state={records.state} retry={() => void records.reload()} />
           )}
           {!has(name) ? (
             <Unavailable title={translate("{0}服务暂不可用", [title])} />
           ) : (
             <>
               <ClientTable>
-                <table className="resource-table">
+                <table className={`resource-table operations-table ${activeTab}`}>
                   <thead>
                     <tr>
                       <th>{translate("名称")}</th>
@@ -376,7 +373,7 @@ export function OperationsView({
                           ? ["kind"]
                           : ["enabled", "next_run_at", "last_run_status"]
                       ).map((k) => (
-                        <th key={k}>{descriptions[k] ?? k}</th>
+                        <th key={k} className={`operation-${k}`}>{descriptions[k] ?? k}</th>
                       ))}
                     </tr>
                   </thead>
@@ -401,7 +398,7 @@ export function OperationsView({
                             ? ["kind"]
                             : ["enabled", "next_run_at", "last_run_status"]
                         ).map((k) => (
-                          <td key={k}>
+                          <td key={k} className={`operation-${k}`}>
                             {k === "active_state" || k === "last_run_status" ? (
                               <State value={row[k] as string} />
                             ) : (
@@ -531,9 +528,7 @@ function ScheduleHistory({
     <section className="stack">
       <h3>{translate("最近执行")}</h3>
       {history.error && (
-        <div className="notice danger" role="alert">
-          {history.error}
-        </div>
+        <ResourceError error={history.error} state={history.state} retry={() => void history.reload()} />
       )}
       {history.data?.map((run) => (
         <div key={run.id} className="resource-summary">

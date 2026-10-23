@@ -1,4 +1,5 @@
 "use client";
+import { ResourceError } from "./resource-ui";
 import { ClientTable } from "./client-table";
 import { t as translate } from "@/lib/i18n";
 import { useRef, useState } from "react";
@@ -443,9 +444,7 @@ export function CertificatesView({
         {activePage === "certificates" ? (
           <>
             {certificates.error && (
-              <div className="notice danger" role="alert">
-                {certificates.error}
-              </div>
+              <ResourceError error={certificates.error} state={certificates.state} retry={() => void certificates.reload()} />
             )}
             {!has("certificates_list") ? (
               <Unavailable title={translate("证书服务暂不可用")} />
@@ -529,9 +528,7 @@ export function CertificatesView({
               />
             </form>
             {order.error && (
-              <div className="notice danger" role="alert">
-                {order.error}
-              </div>
+              <ResourceError error={order.error} state={order.state} retry={() => void order.reload()} />
             )}
             {orderTask && (
               <TaskResult submitted={orderTask} capabilities={capabilities} />
@@ -758,9 +755,7 @@ export function CertificatesView({
               )}
             </div>
             {credentials.error && (
-              <div className="notice danger" role="alert">
-                {credentials.error}
-              </div>
+              <ResourceError error={credentials.error} state={credentials.state} retry={() => void credentials.reload()} />
             )}
             <div className="instance-list">
               {list(credentials.data).map((item) => (
@@ -797,9 +792,7 @@ export function CertificatesView({
             )}
             <h3>{translate("DNS提供商")}</h3>
             {providers.error && (
-              <div className="notice danger" role="alert">
-                {providers.error}
-              </div>
+              <ResourceError error={providers.error} state={providers.state} retry={() => void providers.reload()} />
             )}
             <div className="provider-grid">
               {list(providers.data).map((provider) => (

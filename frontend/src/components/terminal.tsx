@@ -162,7 +162,7 @@ export function TerminalView({
     );
     let scheduled: ReturnType<typeof setTimeout> | undefined;
     const resize = () => {
-      if (!canvas.current?.clientWidth) return;
+      if (!canvas.current?.clientWidth || !canvas.current.clientHeight) return;
       try {
         fitter.fit();
       } catch {}
@@ -535,9 +535,10 @@ export function TerminalView({
                     : translate("已连接")}
               </p>
             )}
+            {!session && <div className="terminal-placeholder" role="status">{translate("尚未连接，选择目标后连接终端。")}</div>}
             <div
               ref={canvas}
-              className="terminal-canvas"
+              className={`terminal-canvas ${!session ? "terminal-idle" : ""}`}
               aria-label={translate("终端输出")}
             />
             {list(commands.data).length > 0 && (

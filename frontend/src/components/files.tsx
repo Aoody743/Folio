@@ -564,7 +564,7 @@ export function FilesView({
         title={translate("文件回收站")}
         onClose={() => setTrashOpen(false)}
       >
-        {trash.error && <div className="notice danger">{trash.error}</div>}
+        {trash.error && <ResourceError error={trash.error} state={trash.state} retry={() => void trash.reload()} />}
         {list(trash.data)
           .filter((t) => t.state === "trashed")
           .map((item) => (
@@ -594,7 +594,7 @@ export function FilesView({
             </div>
           ))}
         {!list(trash.data).filter((t) => t.state === "trashed").length &&
-          !trash.loading && (
+          !trash.loading && !trash.error && (
             <Unavailable title={translate("回收站为空")} icon="files" />
           )}
       </ResourceDrawer>
@@ -1058,11 +1058,14 @@ function Uploader({
   return (
     <ResourceDrawer open={open} title={translate("上传文件")} onClose={onClose}>
       <div className="form-stack">
-        <label className="native-field">
-          {translate("选择本地文件")}
+        <div className="file-picker">
+          <Button label={translate("选择本地文件")} onClick={() => input.current?.click()} isDisabled={busy || !!session} />
+          <span role="status">{file?.name ?? translate("尚未选择文件")}</span>
           <input
             ref={input}
             type="file"
+            className="file-picker-input"
+            tabIndex={-1}
             aria-label={translate("本地上传文件")}
             disabled={busy || !!session}
             onChange={(e) => {
@@ -1076,7 +1079,7 @@ function Uploader({
               setError("");
             }}
           />
-        </label>
+        </div>
         <TextInput
           label={translate("上传目标路径")}
           value={path}
